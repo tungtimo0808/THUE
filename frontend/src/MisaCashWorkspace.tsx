@@ -7315,6 +7315,7 @@ export function PaymentRequestsTab({
 
   const [editingDoc, setEditingDoc] = useState<PaymentRequestDoc | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"view" | "edit">("view");
 
   const effectiveCompanyId = useMemo(() => {
     try {
@@ -7400,6 +7401,7 @@ export function PaymentRequestsTab({
       voucherCode: "",
       branchId: branchScope !== "all" ? branchScope : undefined,
     });
+    setModalMode("edit");
     setIsModalOpen(true);
   };
 
@@ -7510,100 +7512,124 @@ export function PaymentRequestsTab({
 
       {/* Table */}
       <div style={{ flex: 1, overflowX: "auto", overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-        <table className="misa-tax-table" style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", tableLayout: "fixed" }}>
+        <table className="misa-tax-table" style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
           <thead>
             <tr>
-              <th style={{ width: 34, textAlign: "center" }}><input type="checkbox" aria-label="Chọn tất cả" /></th>
-              <th style={{ width: 95 }}>Số đề nghị</th>
-              <th style={{ width: 88 }}>Ngày đề nghị</th>
-              <th style={{ width: 120 }}>Người đề nghị</th>
-              <th style={{ width: 125 }}>Bộ phận</th>
+              <th style={{ width: 32, textAlign: "center" }}><input type="checkbox" aria-label="Chọn tất cả" /></th>
+              <th style={{ whiteSpace: "nowrap" }}>Số / Ngày ĐN</th>
+              <th style={{ whiteSpace: "nowrap" }}>Người đề nghị / Bộ phận</th>
               <th>Nội dung chi</th>
-              <th className="numeric" style={{ width: 115 }}>Số tiền đề nghị</th>
-              <th style={{ width: 96, textAlign: "center" }}>Trạng thái</th>
-              <th style={{ width: 92 }}>Chứng từ chi</th>
-              <th style={{ width: 132, textAlign: "center" }}>Thao tác</th>
+              <th className="numeric" style={{ whiteSpace: "nowrap" }}>Số tiền đề nghị</th>
+              <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái</th>
+              <th style={{ whiteSpace: "nowrap" }}>Chứng từ chi</th>
+              <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((r) => (
               <tr key={r.id}>
                 <td style={{ textAlign: "center" }}><input type="checkbox" aria-label={`Chọn ${r.code}`} /></td>
-                <td>
+                <td style={{ whiteSpace: "nowrap" }}>
                   <strong
-                    style={{ color: "#00b06b", cursor: "pointer" }}
+                    style={{ color: "#00b06b", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
                     onClick={() => {
                       setEditingDoc({ ...r });
+                      setModalMode("view");
                       setIsModalOpen(true);
                     }}
                   >
                     {r.code}
                   </strong>
+                  <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 1 }}>{r.date}</div>
                 </td>
-                <td>{r.date}</td>
-                <td><strong>{r.requester}</strong></td>
-                <td>{r.dept}</td>
-                <td>{r.purpose}</td>
-                <td className="numeric"><strong>{formatVND(r.amount)} đ</strong></td>
-                <td style={{ textAlign: "center" }}>
-                  {r.status === "paid" ? (
-                    <span style={{ background: "#dcfce7", color: "#15803d", padding: "3px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>Đã chi tiền</span>
-                  ) : r.status === "approved" ? (
-                    <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "3px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>Đã duyệt</span>
-                  ) : r.status === "rejected" ? (
-                    <span style={{ background: "#fee2e2", color: "#b91c1c", padding: "3px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>Từ chối</span>
-                  ) : (
-                    <span style={{ background: "#fef3c7", color: "#b45309", padding: "3px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
-                  )}
+                <td style={{ whiteSpace: "nowrap" }}>
+                  <strong>{r.requester}</strong>
+                  <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 1 }}>{r.dept}</div>
                 </td>
-                <td>{r.voucherCode ? <strong style={{ color: "#0284c7" }}>{r.voucherCode}</strong> : <span style={{ color: "#94a3b8" }}>-</span>}</td>
-                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
-                  {r.status === "pending" && (
-                    <div style={{ display: "inline-flex", gap: 6 }}>
-                      <button
-                        type="button"
-                        onClick={() => void persistDoc({ ...r, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${r.code}`)}
-                        style={{ padding: "3px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #0284c7", background: "#f0f9ff", color: "#0369a1", cursor: "pointer" }}
-                      >
-                        Duyệt
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void persistDoc({ ...r, status: "rejected" }, `Đã từ chối đề nghị chi ${r.code}`)}
-                        style={{ padding: "3px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}
-                      >
-                        Từ chối
-                      </button>
+                <td style={{ whiteSpace: "normal", lineHeight: 1.45, color: "#1e293b", padding: "9px 10px" }}>
+                  <div>{r.purpose}</div>
+                  {r.beneficiary && (
+                    <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>
+                      Đơn vị nhận: <strong style={{ fontWeight: 600, color: "#475569" }}>{r.beneficiary}</strong> · {r.paymentMethod || "Tiền mặt"}
                     </div>
                   )}
-                  {r.status === "approved" && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const autoVoucher = r.paymentMethod === "Chuyển khoản" ? `UNC-${r.code.replace(/[^0-9]/g, "").slice(-4) || "001"}` : `PC-${r.code.replace(/[^0-9]/g, "").slice(-4) || "001"}`;
-                        void persistDoc(
-                          { ...r, status: "paid", voucherCode: autoVoucher },
-                          `✓ Đã sinh chứng từ chi ${autoVoucher} từ đề nghị ${r.code}`,
-                        );
-                        onOpenCreatePayment();
-                      }}
-                      style={{ padding: "3px 10px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
-                    >
-                      Lập phiếu chi
-                    </button>
+                </td>
+                <td className="numeric" style={{ whiteSpace: "nowrap" }}><strong>{formatVND(r.amount)} đ</strong></td>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                  {r.status === "paid" ? (
+                    <span style={{ display: "inline-block", background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã chi tiền</span>
+                  ) : r.status === "approved" ? (
+                    <span style={{ display: "inline-block", background: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã duyệt</span>
+                  ) : r.status === "rejected" ? (
+                    <span style={{ display: "inline-block", background: "#fee2e2", color: "#b91c1c", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Từ chối</span>
+                  ) : (
+                    <span style={{ display: "inline-block", background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
                   )}
-                  {(r.status === "paid" || r.status === "rejected") && (
+                </td>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  {r.voucherCode ? (
+                    <strong
+                      style={{ color: "#0284c7", cursor: "pointer" }}
+                      onClick={() => {
+                        setEditingDoc({ ...r });
+                        setModalMode("view");
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      {r.voucherCode}
+                    </strong>
+                  ) : (
+                    <span style={{ color: "#94a3b8" }}>-</span>
+                  )}
+                </td>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    {r.status === "pending" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => void persistDoc({ ...r, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${r.code}`)}
+                          style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #0284c7", background: "#f0f9ff", color: "#0369a1", cursor: "pointer" }}
+                        >
+                          Duyệt
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void persistDoc({ ...r, status: "rejected" }, `Đã từ chối đề nghị chi ${r.code}`)}
+                          style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}
+                        >
+                          Từ chối
+                        </button>
+                      </>
+                    )}
+                    {r.status === "approved" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const autoVoucher = r.paymentMethod === "Chuyển khoản" ? `UNC-${r.code.replace(/[^0-9]/g, "").slice(-4) || "001"}` : `PC-${r.code.replace(/[^0-9]/g, "").slice(-4) || "001"}`;
+                          void persistDoc(
+                            { ...r, status: "paid", voucherCode: autoVoucher },
+                            `✓ Đã sinh chứng từ chi ${autoVoucher} từ đề nghị ${r.code}`,
+                          );
+                          onOpenCreatePayment();
+                        }}
+                        style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
+                      >
+                        Lập phiếu chi
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
                         setEditingDoc({ ...r });
+                        setModalMode("view");
                         setIsModalOpen(true);
                       }}
-                      style={{ padding: "3px 10px", fontSize: 11.5, fontWeight: 500, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
+                      style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
                     >
                       Xem chi tiết
                     </button>
-                  )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -7611,7 +7637,7 @@ export function PaymentRequestsTab({
         </table>
       </div>
 
-      {/* Modal Thêm / Sửa Giấy Đề Nghị Chi Tiền */}
+      {/* Modal Xem chi tiết / Thêm / Sửa Giấy Đề Nghị Chi Tiền */}
       {isModalOpen && editingDoc && (
         <div
           style={{
@@ -7628,20 +7654,31 @@ export function PaymentRequestsTab({
           <div
             style={{
               width: "100%",
-              maxWidth: 640,
+              maxWidth: 740,
               background: "#ffffff",
               borderRadius: 12,
               boxShadow: "0 20px 50px rgba(15,23,42,0.22)",
               overflow: "hidden",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                  Giấy đề nghị chi tiền ({editingDoc.code})
-                </h3>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                  Biểu mẫu đề nghị thanh toán nội bộ &amp; phê duyệt hạn mức chi
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0f172a" }}>
+                    Giấy đề nghị chi tiền — {editingDoc.code}
+                  </h3>
+                  {editingDoc.status === "paid" ? (
+                    <span style={{ background: "#dcfce7", color: "#15803d", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Đã chi tiền</span>
+                  ) : editingDoc.status === "approved" ? (
+                    <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Đã phê duyệt</span>
+                  ) : editingDoc.status === "rejected" ? (
+                    <span style={{ background: "#fee2e2", color: "#b91c1c", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Từ chối</span>
+                  ) : (
+                    <span style={{ background: "#fef3c7", color: "#b45309", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Chờ phê duyệt</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>
+                  Biểu mẫu đề nghị thanh toán nội bộ &amp; kiểm soát hạn mức chi quỹ (Thông tư 99/2025/TT-BTC)
                 </div>
               </div>
               <button
@@ -7653,127 +7690,276 @@ export function PaymentRequestsTab({
               </button>
             </div>
 
-            <div style={{ padding: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Số đề nghị *</label>
-                <input
-                  type="text"
-                  value={editingDoc.code}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, code: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Ngày đề nghị *</label>
-                <input
-                  type="text"
-                  value={editingDoc.date}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, date: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Người đề nghị *</label>
-                <input
-                  type="text"
-                  value={editingDoc.requester}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, requester: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Bộ phận / Phòng ban *</label>
-                <input
-                  type="text"
-                  value={editingDoc.dept}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, dept: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Đơn vị / Người nhận tiền</label>
-                <input
-                  type="text"
-                  value={editingDoc.beneficiary || ""}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, beneficiary: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Hình thức thanh toán</label>
-                <select
-                  value={editingDoc.paymentMethod || "Tiền mặt"}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, paymentMethod: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, background: "#ffffff" }}
-                >
-                  <option value="Tiền mặt">Tiền mặt (Phiếu chi)</option>
-                  <option value="Chuyển khoản">Chuyển khoản (Ủy nhiệm chi)</option>
-                </select>
-              </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Nội dung đề nghị chi *</label>
-                <input
-                  type="text"
-                  value={editingDoc.purpose}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, purpose: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Số tiền đề nghị (VND) *</label>
-                <input
-                  type="number"
-                  value={editingDoc.amount}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, amount: Number(e.target.value) || 0 })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, fontWeight: 700 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Trạng thái phê duyệt</label>
-                <select
-                  value={editingDoc.status}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, status: e.target.value as PaymentRequestDoc["status"] })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, background: "#ffffff" }}
-                >
-                  <option value="pending">Chờ duyệt</option>
-                  <option value="approved">Đã duyệt (Chờ chi)</option>
-                  <option value="paid">Đã chi tiền</option>
-                  <option value="rejected">Từ chối</option>
-                </select>
-              </div>
-            </div>
+            {modalMode === "view" ? (
+              <div style={{ padding: "18px 22px" }}>
+                {/* Tiến trình phê duyệt 3 bước */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
+                  <div style={{ padding: "10px 12px", borderRadius: 8, background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#15803d", textTransform: "uppercase" }}>Bước 1 · Đã lập đề nghị</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", marginTop: 2 }}>{editingDoc.requester}</div>
+                    <div style={{ fontSize: 11.5, color: "#64748b" }}>{editingDoc.dept} · {editingDoc.date}</div>
+                  </div>
+                  <div style={{ padding: "10px 12px", borderRadius: 8, background: editingDoc.status === "pending" ? "#fffbeb" : editingDoc.status === "rejected" ? "#fef2f2" : "#f0f9ff", border: `1px solid ${editingDoc.status === "pending" ? "#fde68a" : editingDoc.status === "rejected" ? "#fecaca" : "#bae6fd"}` }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: editingDoc.status === "pending" ? "#b45309" : editingDoc.status === "rejected" ? "#dc2626" : "#0369a1", textTransform: "uppercase" }}>
+                      Bước 2 · {editingDoc.status === "pending" ? "Đang chờ phê duyệt" : editingDoc.status === "rejected" ? "Đã từ chối" : "Kế toán trưởng đã duyệt"}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", marginTop: 2 }}>
+                      {editingDoc.status === "pending" ? "Chờ Kế toán trưởng / Giám đốc" : "Đỗ Đức Tùng (Kế toán trưởng)"}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: "#64748b" }}>Kiểm soát ngân sách &amp; chứng từ gốc</div>
+                  </div>
+                  <div style={{ padding: "10px 12px", borderRadius: 8, background: editingDoc.status === "paid" ? "#f0fdf4" : "#f8fafc", border: `1px solid ${editingDoc.status === "paid" ? "#bbf7d0" : "#e2e8f0"}` }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: editingDoc.status === "paid" ? "#15803d" : "#64748b", textTransform: "uppercase" }}>
+                      Bước 3 · {editingDoc.status === "paid" ? "Đã lập chứng từ chi" : "Chưa giải ngân"}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", marginTop: 2 }}>
+                      {editingDoc.voucherCode ? `Chứng từ: ${editingDoc.voucherCode}` : "Chờ Thủ quỹ / Ngân hàng chi"}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: "#64748b" }}>Hình thức: {editingDoc.paymentMethod || "Tiền mặt"}</div>
+                  </div>
+                </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
-              <button
-                type="button"
-                className="misa-btn-secondary"
-                style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
-                onClick={() => setIsModalOpen(false)}
-              >
-                Đóng
-              </button>
-              <button
-                type="button"
-                className="misa-btn-secondary"
-                style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
-                onClick={() => {
-                  void persistDoc(editingDoc, `✓ Đã lưu giấy đề nghị chi ${editingDoc.code}`);
-                  setIsModalOpen(false);
-                }}
-              >
-                Lưu đề nghị
-              </button>
-              <button
-                type="button"
-                className="misa-btn-primary"
-                style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
-                onClick={() => {
-                  void persistDoc({ ...editingDoc, status: "approved" }, `✓ Đã lưu và phê duyệt đề nghị chi ${editingDoc.code}`);
-                  setIsModalOpen(false);
-                }}
-              >
-                Lưu &amp; Phê duyệt ngay
-              </button>
+                {/* Thông tin chi tiết đầy đủ */}
+                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 24px", fontSize: 13 }}>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Số giấy đề nghị chi</span>
+                      <strong style={{ color: "#0f172a", fontSize: 14 }}>{editingDoc.code}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Ngày lập đề nghị</span>
+                      <strong style={{ color: "#0f172a", fontSize: 14 }}>{editingDoc.date}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Người đề nghị thanh toán</span>
+                      <strong style={{ color: "#0f172a" }}>{editingDoc.requester}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Bộ phận / Đơn vị công tác</span>
+                      <strong style={{ color: "#0f172a" }}>{editingDoc.dept}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Đơn vị / Cá nhân nhận tiền</span>
+                      <strong style={{ color: "#0f172a" }}>{editingDoc.beneficiary || editingDoc.requester}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Phương thức chi trả &amp; Chứng từ</span>
+                      <strong style={{ color: "#0284c7" }}>
+                        {editingDoc.paymentMethod || "Tiền mặt"} {editingDoc.voucherCode ? `· Mã CT: ${editingDoc.voucherCode}` : ""}
+                      </strong>
+                    </div>
+                    <div style={{ gridColumn: "1 / -1", paddingTop: 6, borderTop: "1px dashed #cbd5e1" }}>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5, marginBottom: 3 }}>Nội dung chi tiết khoản đề nghị thanh toán</span>
+                      <div style={{ color: "#0f172a", fontWeight: 600, fontSize: 13.5, lineHeight: 1.5 }}>{editingDoc.purpose}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bảng định khoản & chi tiết số tiền */}
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+                  <table className="misa-tax-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: 42, textAlign: "center" }}>STT</th>
+                        <th>Diễn giải chi tiết khoản chi</th>
+                        <th style={{ width: 85, textAlign: "center" }}>TK Nợ</th>
+                        <th style={{ width: 85, textAlign: "center" }}>TK Có</th>
+                        <th className="numeric" style={{ width: 150 }}>Số tiền (VND)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={{ textAlign: "center" }}>1</td>
+                        <td style={{ whiteSpace: "normal", lineHeight: 1.45 }}>{editingDoc.purpose}</td>
+                        <td style={{ textAlign: "center", fontWeight: 600 }}>6422</td>
+                        <td style={{ textAlign: "center", fontWeight: 600 }}>{editingDoc.paymentMethod === "Chuyển khoản" ? "1121" : "1111"}</td>
+                        <td className="numeric" style={{ fontWeight: 700, color: "#0f172a" }}>{formatVND(editingDoc.amount)} đ</td>
+                      </tr>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={4} style={{ textAlign: "right", fontWeight: 700 }}>Tổng số tiền đề nghị thanh toán:</td>
+                        <td className="numeric" style={{ fontWeight: 800, color: "#00a862", fontSize: 14 }}>{formatVND(editingDoc.amount)} đ</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Số đề nghị *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.code}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, code: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Ngày đề nghị *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.date}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, date: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Người đề nghị *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.requester}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, requester: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Bộ phận / Phòng ban *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.dept}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, dept: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Đơn vị / Người nhận tiền</label>
+                  <input
+                    type="text"
+                    value={editingDoc.beneficiary || ""}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, beneficiary: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Hình thức thanh toán</label>
+                  <select
+                    value={editingDoc.paymentMethod || "Tiền mặt"}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, paymentMethod: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, background: "#ffffff" }}
+                  >
+                    <option value="Tiền mặt">Tiền mặt (Phiếu chi)</option>
+                    <option value="Chuyển khoản">Chuyển khoản (Ủy nhiệm chi)</option>
+                  </select>
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Nội dung đề nghị chi *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.purpose}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, purpose: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Số tiền đề nghị (VND) *</label>
+                  <input
+                    type="number"
+                    value={editingDoc.amount}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, amount: Number(e.target.value) || 0 })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, fontWeight: 700 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Trạng thái phê duyệt</label>
+                  <select
+                    value={editingDoc.status}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, status: e.target.value as PaymentRequestDoc["status"] })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, background: "#ffffff" }}
+                  >
+                    <option value="pending">Chờ duyệt</option>
+                    <option value="approved">Đã duyệt (Chờ chi)</option>
+                    <option value="paid">Đã chi tiền</option>
+                    <option value="rejected">Từ chối</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div>
+                {modalMode === "view" && (
+                  <button
+                    type="button"
+                    className="misa-btn-secondary"
+                    style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0284c7", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
+                    onClick={() => setModalMode("edit")}
+                  >
+                    ✎ Chỉnh sửa thông tin
+                  </button>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="button"
+                  className="misa-btn-secondary"
+                  style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Đóng
+                </button>
+                {modalMode === "edit" ? (
+                  <>
+                    <button
+                      type="button"
+                      className="misa-btn-secondary"
+                      style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => {
+                        void persistDoc(editingDoc, `✓ Đã lưu giấy đề nghị chi ${editingDoc.code}`);
+                        setIsModalOpen(false);
+                      }}
+                    >
+                      Lưu đề nghị
+                    </button>
+                    <button
+                      type="button"
+                      className="misa-btn-primary"
+                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => {
+                        void persistDoc({ ...editingDoc, status: "approved" }, `✓ Đã lưu và phê duyệt đề nghị chi ${editingDoc.code}`);
+                        setIsModalOpen(false);
+                      }}
+                    >
+                      Lưu &amp; Phê duyệt ngay
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {editingDoc.status === "pending" && (
+                      <button
+                        type="button"
+                        className="misa-btn-primary"
+                        style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#0284c7", color: "#ffffff", border: "1px solid #0284c7", borderRadius: 6, cursor: "pointer" }}
+                        onClick={() => {
+                          void persistDoc({ ...editingDoc, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${editingDoc.code}`);
+                          setIsModalOpen(false);
+                        }}
+                      >
+                        Phê duyệt đề nghị
+                      </button>
+                    )}
+                    {editingDoc.status === "approved" && (
+                      <button
+                        type="button"
+                        className="misa-btn-primary"
+                        style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                        onClick={() => {
+                          const autoVoucher = editingDoc.paymentMethod === "Chuyển khoản" ? `UNC-${editingDoc.code.replace(/[^0-9]/g, "").slice(-4) || "001"}` : `PC-${editingDoc.code.replace(/[^0-9]/g, "").slice(-4) || "001"}`;
+                          void persistDoc(
+                            { ...editingDoc, status: "paid", voucherCode: autoVoucher },
+                            `✓ Đã sinh chứng từ chi ${autoVoucher} từ đề nghị ${editingDoc.code}`,
+                          );
+                          setIsModalOpen(false);
+                          onOpenCreatePayment();
+                        }}
+                      >
+                        Lập phiếu chi ngay
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -7854,6 +8040,7 @@ export function AdvanceSettlementTab({
 
   const [editingDoc, setEditingDoc] = useState<AdvanceSettlementDoc | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"view" | "edit">("view");
 
   const effectiveCompanyId = useMemo(() => {
     try {
@@ -7941,6 +8128,7 @@ export function AdvanceSettlementTab({
       receiptCode: "",
       branchId: branchScope !== "all" ? branchScope : undefined,
     });
+    setModalMode("edit");
     setIsModalOpen(true);
   };
 
@@ -8022,78 +8210,97 @@ export function AdvanceSettlementTab({
 
       {/* Table */}
       <div style={{ flex: 1, overflowX: "auto", overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-        <table className="misa-tax-table" style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", tableLayout: "fixed" }}>
+        <table className="misa-tax-table" style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
           <thead>
             <tr>
-              <th style={{ width: 34, textAlign: "center" }}><input type="checkbox" aria-label="Chọn tất cả" /></th>
-              <th style={{ width: 95 }}>Số quyết toán</th>
-              <th style={{ width: 88 }}>Ngày QT</th>
-              <th style={{ width: 120 }}>Người tạm ứng</th>
+              <th style={{ width: 32, textAlign: "center" }}><input type="checkbox" aria-label="Chọn tất cả" /></th>
+              <th style={{ whiteSpace: "nowrap" }}>Số / Ngày QT</th>
+              <th style={{ whiteSpace: "nowrap" }}>Người tạm ứng</th>
               <th>Nội dung thanh toán tạm ứng</th>
-              <th className="numeric" style={{ width: 112 }}>Số tạm ứng</th>
-              <th className="numeric" style={{ width: 112 }}>Số chi thực tế</th>
-              <th className="numeric" style={{ width: 115 }}>Hoàn ứng</th>
-              <th style={{ width: 96, textAlign: "center" }}>Trạng thái</th>
-              <th style={{ width: 88 }}>Phiếu thu</th>
-              <th style={{ width: 132, textAlign: "center" }}>Thao tác</th>
+              <th className="numeric" style={{ whiteSpace: "nowrap" }}>Số tạm ứng</th>
+              <th className="numeric" style={{ whiteSpace: "nowrap" }}>Chi thực tế</th>
+              <th className="numeric" style={{ whiteSpace: "nowrap" }}>Hoàn ứng</th>
+              <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái / Phiếu thu</th>
+              <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((s) => (
               <tr key={s.id}>
                 <td style={{ textAlign: "center" }}><input type="checkbox" aria-label={`Chọn ${s.code}`} /></td>
-                <td>
+                <td style={{ whiteSpace: "nowrap" }}>
                   <strong
-                    style={{ color: "#00b06b", cursor: "pointer" }}
+                    style={{ color: "#00b06b", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
                     onClick={() => {
                       setEditingDoc({ ...s });
+                      setModalMode("view");
                       setIsModalOpen(true);
                     }}
                   >
                     {s.code}
                   </strong>
+                  <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 1 }}>{s.date}</div>
                 </td>
-                <td>{s.date}</td>
-                <td><strong>{s.person}</strong></td>
-                <td>{s.reason}</td>
-                <td className="numeric">{formatVND(s.advanceAmount)} đ</td>
-                <td className="numeric" style={{ color: "#ea580c", fontWeight: 600 }}>{formatVND(s.spentAmount)} đ</td>
-                <td className="numeric" style={{ color: "#00b06b", fontWeight: 700 }}>{formatVND(s.refundAmount)} đ</td>
-                <td style={{ textAlign: "center" }}>
-                  {s.status === "settled" ? (
-                    <span style={{ background: "#dcfce7", color: "#15803d", padding: "3px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>Đã quyết toán</span>
-                  ) : (
-                    <span style={{ background: "#fef3c7", color: "#b45309", padding: "3px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  <strong>{s.person}</strong>
+                  {s.dept && <div style={{ fontSize: 11.5, color: "#64748b" }}>{s.dept}</div>}
+                </td>
+                <td style={{ whiteSpace: "normal", lineHeight: 1.45, color: "#1e293b", padding: "9px 10px" }}>{s.reason}</td>
+                <td className="numeric" style={{ whiteSpace: "nowrap" }}>{formatVND(s.advanceAmount)} đ</td>
+                <td className="numeric" style={{ color: "#ea580c", fontWeight: 600, whiteSpace: "nowrap" }}>{formatVND(s.spentAmount)} đ</td>
+                <td className="numeric" style={{ color: "#00b06b", fontWeight: 700, whiteSpace: "nowrap" }}>{formatVND(s.refundAmount)} đ</td>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                  <div>
+                    {s.status === "settled" ? (
+                      <span style={{ display: "inline-block", background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã quyết toán</span>
+                    ) : (
+                      <span style={{ display: "inline-block", background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
+                    )}
+                  </div>
+                  {s.receiptCode && s.receiptCode !== "-" && (
+                    <div style={{ marginTop: 3 }}>
+                      <strong
+                        style={{ color: "#0284c7", cursor: "pointer", fontSize: 11.5 }}
+                        onClick={() => {
+                          setEditingDoc({ ...s });
+                          setModalMode("view");
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        PT: {s.receiptCode}
+                      </strong>
+                    </div>
                   )}
                 </td>
-                <td>{s.receiptCode && s.receiptCode !== "-" ? <strong style={{ color: "#0284c7" }}>{s.receiptCode}</strong> : <span style={{ color: "#94a3b8" }}>-</span>}</td>
                 <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
-                  {s.status === "pending" ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const autoReceipt = s.refundAmount > 0 ? `PT-HU-${s.code.replace(/[^0-9]/g, "").slice(-3) || "001"}` : "-";
-                        void persistSettlement(
-                          { ...s, status: "settled", receiptCode: autoReceipt },
-                          `✓ Đã duyệt quyết toán ${s.code}${autoReceipt !== "-" ? ` & lập phiếu thu hoàn ứng ${autoReceipt}` : ""}`,
-                        );
-                      }}
-                      style={{ padding: "3px 10px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
-                    >
-                      Duyệt &amp; Hoàn ứng
-                    </button>
-                  ) : (
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    {s.status === "pending" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const autoReceipt = s.refundAmount > 0 ? `PT-HU-${s.code.replace(/[^0-9]/g, "").slice(-3) || "001"}` : "-";
+                          void persistSettlement(
+                            { ...s, status: "settled", receiptCode: autoReceipt },
+                            `✓ Đã duyệt quyết toán ${s.code}${autoReceipt !== "-" ? ` & lập phiếu thu hoàn ứng ${autoReceipt}` : ""}`,
+                          );
+                        }}
+                        style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
+                      >
+                        Duyệt
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
                         setEditingDoc({ ...s });
+                        setModalMode("view");
                         setIsModalOpen(true);
                       }}
-                      style={{ padding: "3px 10px", fontSize: 11.5, fontWeight: 500, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
+                      style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
                     >
                       Xem chi tiết
                     </button>
-                  )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -8101,7 +8308,7 @@ export function AdvanceSettlementTab({
         </table>
       </div>
 
-      {/* Modal Lập Bảng Quyết Toán Tạm Ứng (Mẫu 04-TT) */}
+      {/* Modal Xem chi tiết / Lập Bảng Quyết Toán Tạm Ứng (Mẫu 04-TT) */}
       {isModalOpen && editingDoc && (
         <div
           style={{
@@ -8118,20 +8325,27 @@ export function AdvanceSettlementTab({
           <div
             style={{
               width: "100%",
-              maxWidth: 640,
+              maxWidth: 740,
               background: "#ffffff",
               borderRadius: 12,
               boxShadow: "0 20px 50px rgba(15,23,42,0.22)",
               overflow: "hidden",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                  Bảng thanh toán tiền tạm ứng ({editingDoc.code})
-                </h3>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                  Mẫu số 04-TT (Ban hành theo Thông tư 99/2025/TT-BTC)
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0f172a" }}>
+                    Bảng thanh toán tiền tạm ứng — {editingDoc.code}
+                  </h3>
+                  {editingDoc.status === "settled" ? (
+                    <span style={{ background: "#dcfce7", color: "#15803d", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Đã quyết toán</span>
+                  ) : (
+                    <span style={{ background: "#fef3c7", color: "#b45309", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Chờ phê duyệt</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>
+                  Mẫu số 04-TT (Ban hành theo Thông tư 99/2025/TT-BTC) · Đối chiếu TK 141
                 </div>
               </div>
               <button
@@ -8143,130 +8357,232 @@ export function AdvanceSettlementTab({
               </button>
             </div>
 
-            <div style={{ padding: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Số quyết toán *</label>
-                <input
-                  type="text"
-                  value={editingDoc.code}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, code: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Ngày quyết toán *</label>
-                <input
-                  type="text"
-                  value={editingDoc.date}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, date: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Người tạm ứng *</label>
-                <input
-                  type="text"
-                  value={editingDoc.person}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, person: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Bộ phận / Phòng ban</label>
-                <input
-                  type="text"
-                  value={editingDoc.dept || ""}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, dept: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Nội dung thanh toán tạm ứng *</label>
-                <input
-                  type="text"
-                  value={editingDoc.reason}
-                  onChange={(e) => setEditingDoc({ ...editingDoc, reason: e.target.value })}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>I. Số tiền đã tạm ứng (VND) *</label>
-                <input
-                  type="number"
-                  value={editingDoc.advanceAmount}
-                  onChange={(e) => {
-                    const adv = Number(e.target.value) || 0;
-                    setEditingDoc({
-                      ...editingDoc,
-                      advanceAmount: adv,
-                      refundAmount: Math.max(0, adv - (Number(editingDoc.spentAmount) || 0)),
-                    });
-                  }}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, fontWeight: 700 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>II. Số tiền đã chi theo CT (VND) *</label>
-                <input
-                  type="number"
-                  value={editingDoc.spentAmount}
-                  onChange={(e) => {
-                    const spent = Number(e.target.value) || 0;
-                    setEditingDoc({
-                      ...editingDoc,
-                      spentAmount: spent,
-                      refundAmount: Math.max(0, (Number(editingDoc.advanceAmount) || 0) - spent),
-                    });
-                  }}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, fontWeight: 700, color: "#ea580c" }}
-                />
-              </div>
-              <div style={{ gridColumn: "1 / -1", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: "#166534" }}>
-                  III. Chênh lệch tạm ứng thu hồi hoàn quỹ (I - II):
-                </span>
-                <strong style={{ fontSize: 15, color: "#15803d" }}>
-                  {formatVND(Math.max(0, (Number(editingDoc.advanceAmount) || 0) - (Number(editingDoc.spentAmount) || 0)))} đ
-                </strong>
-              </div>
-            </div>
+            {modalMode === "view" ? (
+              <div style={{ padding: "18px 22px" }}>
+                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 24px", fontSize: 13 }}>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Số chứng từ quyết toán</span>
+                      <strong style={{ color: "#0f172a", fontSize: 14 }}>{editingDoc.code}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Ngày lập quyết toán</span>
+                      <strong style={{ color: "#0f172a", fontSize: 14 }}>{editingDoc.date}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Họ và tên người thanh toán tạm ứng</span>
+                      <strong style={{ color: "#0f172a" }}>{editingDoc.person}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Bộ phận / Phòng ban</span>
+                      <strong style={{ color: "#0f172a" }}>{editingDoc.dept || "Phòng Kinh doanh"}</strong>
+                    </div>
+                    <div style={{ gridColumn: "1 / -1", paddingTop: 6, borderTop: "1px dashed #cbd5e1" }}>
+                      <span style={{ color: "#64748b", display: "block", fontSize: 11.5, marginBottom: 3 }}>Nội dung thanh toán tạm ứng</span>
+                      <div style={{ color: "#0f172a", fontWeight: 600, fontSize: 13.5, lineHeight: 1.5 }}>{editingDoc.reason}</div>
+                    </div>
+                  </div>
+                </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
-              <button
-                type="button"
-                className="misa-btn-secondary"
-                style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
-                onClick={() => setIsModalOpen(false)}
-              >
-                Đóng
-              </button>
-              <button
-                type="button"
-                className="misa-btn-secondary"
-                style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
-                onClick={() => {
-                  void persistSettlement(editingDoc, `✓ Đã lưu bảng quyết toán tạm ứng ${editingDoc.code}`);
-                  setIsModalOpen(false);
-                }}
-              >
-                Lưu nháp
-              </button>
-              <button
-                type="button"
-                className="misa-btn-primary"
-                style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
-                onClick={() => {
-                  const refund = Math.max(0, (Number(editingDoc.advanceAmount) || 0) - (Number(editingDoc.spentAmount) || 0));
-                  const autoReceipt = refund > 0 ? (editingDoc.receiptCode || `PT-HU-${editingDoc.code.replace(/[^0-9]/g, "").slice(-3) || "006"}`) : "-";
-                  void persistSettlement(
-                    { ...editingDoc, status: "settled", receiptCode: autoReceipt },
-                    `✓ Đã ghi nhận quyết toán ${editingDoc.code}`,
-                  );
-                  setIsModalOpen(false);
-                }}
-              >
-                Lưu &amp; Ghi nhận quyết toán
-              </button>
+                {/* Bảng đối chiếu I - II - III chuẩn Mẫu 04-TT */}
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+                  <table className="misa-tax-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: 55, textAlign: "center" }}>Mục</th>
+                        <th>Chỉ tiêu thanh toán tạm ứng (Mẫu 04-TT)</th>
+                        <th style={{ width: 95, textAlign: "center" }}>Định khoản</th>
+                        <th className="numeric" style={{ width: 160 }}>Số tiền (VND)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={{ textAlign: "center", fontWeight: 700 }}>I</td>
+                        <td>Số tiền tạm ứng đã nhận (dư Nợ TK 141)</td>
+                        <td style={{ textAlign: "center", color: "#475569" }}>Nợ 141 / Có 111</td>
+                        <td className="numeric" style={{ fontWeight: 700 }}>{formatVND(editingDoc.advanceAmount)} đ</td>
+                      </tr>
+                      <tr>
+                        <td style={{ textAlign: "center", fontWeight: 700 }}>II</td>
+                        <td style={{ whiteSpace: "normal", lineHeight: 1.45 }}>Số tiền đã chi theo chứng từ gốc đính kèm ({editingDoc.reason})</td>
+                        <td style={{ textAlign: "center", color: "#ea580c", fontWeight: 600 }}>Nợ 642 / Có 141</td>
+                        <td className="numeric" style={{ fontWeight: 700, color: "#ea580c" }}>{formatVND(editingDoc.spentAmount)} đ</td>
+                      </tr>
+                      <tr style={{ background: "#f0fdf4" }}>
+                        <td style={{ textAlign: "center", fontWeight: 700, color: "#15803d" }}>III</td>
+                        <td style={{ fontWeight: 700, color: "#166534" }}>
+                          Chênh lệch tạm ứng thu hồi nhập lại quỹ (I - II) {editingDoc.receiptCode && editingDoc.receiptCode !== "-" ? `· Phiếu thu: ${editingDoc.receiptCode}` : ""}
+                        </td>
+                        <td style={{ textAlign: "center", color: "#15803d", fontWeight: 700 }}>Nợ 1111 / Có 141</td>
+                        <td className="numeric" style={{ fontWeight: 800, color: "#15803d", fontSize: 14 }}>{formatVND(editingDoc.refundAmount)} đ</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Số quyết toán *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.code}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, code: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Ngày quyết toán *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.date}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, date: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Người tạm ứng *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.person}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, person: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Bộ phận / Phòng ban</label>
+                  <input
+                    type="text"
+                    value={editingDoc.dept || ""}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, dept: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>Nội dung thanh toán tạm ứng *</label>
+                  <input
+                    type="text"
+                    value={editingDoc.reason}
+                    onChange={(e) => setEditingDoc({ ...editingDoc, reason: e.target.value })}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>I. Số tiền đã tạm ứng (VND) *</label>
+                  <input
+                    type="number"
+                    value={editingDoc.advanceAmount}
+                    onChange={(e) => {
+                      const adv = Number(e.target.value) || 0;
+                      setEditingDoc({
+                        ...editingDoc,
+                        advanceAmount: adv,
+                        refundAmount: Math.max(0, adv - (Number(editingDoc.spentAmount) || 0)),
+                      });
+                    }}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, fontWeight: 700 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 4 }}>II. Số tiền đã chi theo CT (VND) *</label>
+                  <input
+                    type="number"
+                    value={editingDoc.spentAmount}
+                    onChange={(e) => {
+                      const spent = Number(e.target.value) || 0;
+                      setEditingDoc({
+                        ...editingDoc,
+                        spentAmount: spent,
+                        refundAmount: Math.max(0, (Number(editingDoc.advanceAmount) || 0) - spent),
+                      });
+                    }}
+                    style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, fontWeight: 700, color: "#ea580c" }}
+                  />
+                </div>
+                <div style={{ gridColumn: "1 / -1", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "#166534" }}>
+                    III. Chênh lệch tạm ứng thu hồi hoàn quỹ (I - II):
+                  </span>
+                  <strong style={{ fontSize: 15, color: "#15803d" }}>
+                    {formatVND(Math.max(0, (Number(editingDoc.advanceAmount) || 0) - (Number(editingDoc.spentAmount) || 0)))} đ
+                  </strong>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
+              <div>
+                {modalMode === "view" && (
+                  <button
+                    type="button"
+                    className="misa-btn-secondary"
+                    style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0284c7", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
+                    onClick={() => setModalMode("edit")}
+                  >
+                    ✎ Chỉnh sửa bảng quyết toán
+                  </button>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="button"
+                  className="misa-btn-secondary"
+                  style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Đóng
+                </button>
+                {modalMode === "edit" ? (
+                  <>
+                    <button
+                      type="button"
+                      className="misa-btn-secondary"
+                      style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0f172a", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => {
+                        void persistSettlement(editingDoc, `✓ Đã lưu bảng quyết toán tạm ứng ${editingDoc.code}`);
+                        setIsModalOpen(false);
+                      }}
+                    >
+                      Lưu nháp
+                    </button>
+                    <button
+                      type="button"
+                      className="misa-btn-primary"
+                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => {
+                        const refund = Math.max(0, (Number(editingDoc.advanceAmount) || 0) - (Number(editingDoc.spentAmount) || 0));
+                        const autoReceipt = refund > 0 ? (editingDoc.receiptCode || `PT-HU-${editingDoc.code.replace(/[^0-9]/g, "").slice(-3) || "006"}`) : "-";
+                        void persistSettlement(
+                          { ...editingDoc, status: "settled", receiptCode: autoReceipt },
+                          `✓ Đã ghi nhận quyết toán ${editingDoc.code}`,
+                        );
+                        setIsModalOpen(false);
+                      }}
+                    >
+                      Lưu &amp; Ghi nhận quyết toán
+                    </button>
+                  </>
+                ) : (
+                  editingDoc.status === "pending" && (
+                    <button
+                      type="button"
+                      className="misa-btn-primary"
+                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => {
+                        const refund = Math.max(0, (Number(editingDoc.advanceAmount) || 0) - (Number(editingDoc.spentAmount) || 0));
+                        const autoReceipt = refund > 0 ? (editingDoc.receiptCode || `PT-HU-${editingDoc.code.replace(/[^0-9]/g, "").slice(-3) || "006"}`) : "-";
+                        void persistSettlement(
+                          { ...editingDoc, status: "settled", receiptCode: autoReceipt },
+                          `✓ Đã duyệt quyết toán ${editingDoc.code}${autoReceipt !== "-" ? ` & lập phiếu thu hoàn ứng ${autoReceipt}` : ""}`,
+                        );
+                        setIsModalOpen(false);
+                      }}
+                    >
+                      Duyệt &amp; Hoàn ứng ngay
+                    </button>
+                  )
+                )}
+              </div>
             </div>
           </div>
         </div>
