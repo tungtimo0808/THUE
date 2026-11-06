@@ -1843,8 +1843,8 @@ html {
 }
 .ref-process-reports {
   background: white;
-  grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-column: auto;
+  grid-row: auto;
   display: flex;
   flex-direction: column;
 }
@@ -4153,8 +4153,9 @@ body.ref-process-scroll-lock {
   flex: 1 1 0 !important;
   min-height: 0 !important;
   max-height: 100% !important;
-  overflow: hidden !important;
-  padding: 18px 24px 16px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 14px 18px 16px !important;
   box-sizing: border-box !important;
 }
 
@@ -4171,9 +4172,63 @@ body.ref-process-scroll-lock {
   flex: 1 1 0 !important;
   min-height: 0 !important;
   max-height: 100% !important;
-  overflow: hidden !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   padding: 8px 16px !important;
   box-sizing: border-box !important;
 }
+
+/* ==========================================================================
+   RESPONSIVE PROCESS DIAGRAM & WORKSPACE ADAPTATION FOR ALL VIEWPORT SIZES
+   ========================================================================== */
+.ref-process-panel {
+  min-width: 0 !important;
+}
+
+.ref-process-canvas {
+  width: calc(100% - 20px) !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 1180px) {
+  .ref-process-layout {
+    grid-template-columns: minmax(0, 2fr) minmax(210px, 0.95fr) !important;
+    gap: 12px !important;
+  }
+  .ref-main.ref-process-fixed .ref-process-wrapper {
+    padding: 10px 12px 14px !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .ref-process-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+  }
+  .ref-process-panel,
+  .ref-process-reports,
+  .ref-shortcuts {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+  .ref-shortcuts {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  .ref-shortcuts > button {
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .ref-shortcuts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .ref-process-canvas {
+    margin: 0 4px !important;
+    width: calc(100% - 8px) !important;
+  }
+}
+
 
 

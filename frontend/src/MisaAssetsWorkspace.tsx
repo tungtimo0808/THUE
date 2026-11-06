@@ -14368,8 +14368,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
   // =========================================================================
   if (tab === "process") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9" }}>
-        <div style={{ flex: 1, padding: "16px 20px", display: "grid", gridTemplateColumns: "1fr 340px", gap: 16, overflowY: "auto" }}>
+      <div className="ref-process-wrapper" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", overflowY: "auto", overflowX: "hidden" }}>
+        <div className="ref-process-layout" style={{ flex: 1, padding: "16px 20px", display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px", gap: 16 }}>
           <div
             style={{
               background: "#ffffff",

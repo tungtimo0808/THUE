@@ -1437,8 +1437,8 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
   // =========================================================================
   if (tab === "process") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", padding: "16px", boxSizing: "border-box", overflow: "auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.2fr) minmax(320px, 1fr)", gap: 16 }}>
+      <div className="ref-process-wrapper" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", padding: "16px", boxSizing: "border-box", overflowY: "auto", overflowX: "hidden" }}>
+        <div className="ref-process-layout" style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.2fr) minmax(280px, 1fr)", gap: 16 }}>
           {/* LEFT CARD: NGHIỆP VỤ KHO */}
           <div
             style={{

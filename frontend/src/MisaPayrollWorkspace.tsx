@@ -2755,9 +2755,9 @@ export default function MisaPayrollWorkspace({
   // =========================================================================
   if (tab === "process") {
     return (
-      <div className="ref-process-wrapper" style={{ background: "#edf1f5", height: "100%", padding: "10px 16px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 10, overflow: "hidden" }}>
+      <div className="ref-process-wrapper" style={{ background: "#edf1f5", height: "100%", padding: "10px 16px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", overflowX: "hidden" }}>
         {/* Row 1: 2 Main Cards (Quy trình + Báo cáo) */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 16, alignItems: "stretch" }}>
+        <div className="ref-process-layout" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 16, alignItems: "stretch" }}>
           
           {/* Card Trái: NGHIỆP VỤ TIỀN LƯƠNG */}
           <div

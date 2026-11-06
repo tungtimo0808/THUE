@@ -5769,9 +5769,10 @@ export default function MisaLedgerWorkspace({
             </div>
             {/* Top Row: Two main cards (Left: Nghiệp vụ tổng hợp, Right: Báo cáo) */}
             <div
+              className="ref-process-layout"
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 340px",
+                gridTemplateColumns: "minmax(0, 1fr) 320px",
                 gap: 16,
                 alignItems: "stretch",
               }}

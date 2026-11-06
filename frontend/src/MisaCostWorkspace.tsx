@@ -1395,7 +1395,8 @@ if (apiConnected) {
         height: currentTab === "process" ? "100%" : undefined,
         minHeight: currentTab === "process" ? undefined : "100%",
         padding: currentTab === "process" ? "10px 16px" : 16,
-        overflow: currentTab === "process" ? "hidden" : undefined,
+        overflowY: currentTab === "process" ? "auto" : undefined,
+        overflowX: currentTab === "process" ? "hidden" : undefined,
       }}
     >
       {/* ==================================================================== */}
@@ -1450,9 +1451,10 @@ if (apiConnected) {
 
           {/* Main 2-column Grid: Left = S-curve Flowchart, Right = Video Guide & Reports */}
           <div
+            className="ref-process-layout"
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 340px",
+              gridTemplateColumns: "minmax(0, 1fr) 320px",
               gap: 16,
               alignItems: "stretch",
             }}

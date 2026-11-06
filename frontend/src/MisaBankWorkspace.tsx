@@ -2838,7 +2838,8 @@ export default function MisaBankWorkspace({
         background: "#f1f5f9",
         height: "100%",
         padding: "10px 16px",
-        overflow: "hidden",
+        overflowY: "auto",
+        overflowX: "hidden",
       }}
     >
       <div
@@ -2891,15 +2892,15 @@ export default function MisaBankWorkspace({
             {/* SVG Connecting Flow Lines with Arrows (Image 2 & 3) */}
             <svg
               className="ref-flow-lines"
-              viewBox="0 0 600 300"
+              viewBox="0 0 650 300"
               preserveAspectRatio="none"
               aria-hidden="true"
               style={{
                 position: "absolute",
                 top: 0,
                 left: 0,
-                width: 660,
-                height: 280,
+                width: "100%",
+                height: 300,
                 pointerEvents: "none",
                 overflow: "visible",
               }}
@@ -2917,9 +2918,9 @@ export default function MisaBankWorkspace({
                 </marker>
               </defs>
 
-              {/* 1. Horizontal arrow from Đề nghị chi tiền to Chi tiền */}
+              {/* 1. Horizontal arrow from Đề nghị chi tiền (13% = 85) to Chi tiền (38% = 247) */}
               <path
-                d="M 125 188 L 195 188"
+                d="M 125 188 L 200 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
@@ -2928,30 +2929,30 @@ export default function MisaBankWorkspace({
 
               {/* 2. Vertical T-junction line between Thu tiền and Chi tiền */}
               <path
-                d="M 295 75 L 295 188"
+                d="M 305 75 L 305 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
               />
               <path
-                d="M 285 75 L 295 75 M 285 188 L 295 188"
+                d="M 290 75 L 305 75 M 290 188 L 305 188"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
               />
 
-              {/* 3. Horizontal branch from midpoint between Thu and Chi to Đối chiếu ngân hàng */}
+              {/* 3. Horizontal branch from midpoint between Thu and Chi to Đối chiếu ngân hàng (63% = 410) */}
               <path
-                d="M 295 136 L 365 136"
+                d="M 305 136 L 365 136"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
                 markerEnd="url(#ref-arrow-bank)"
               />
 
-              {/* 4. Horizontal arrow going right from Đối chiếu ngân hàng to Dự báo dòng tiền */}
+              {/* 4. Horizontal arrow going right from Đối chiếu ngân hàng to Dự báo dòng tiền (87% = 566) */}
               <path
-                d="M 460 136 L 535 136"
+                d="M 455 136 L 520 136"
                 stroke="#cbd5e1"
                 strokeWidth="1.5"
                 fill="none"
@@ -2971,7 +2972,8 @@ export default function MisaBankWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 30,
+                left: "13%",
+                transform: "translateX(-50%)",
                 top: 145,
                 width: 100,
                 display: "flex",
@@ -3013,7 +3015,8 @@ export default function MisaBankWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 195,
+                left: "38%",
+                transform: "translateX(-50%)",
                 top: 25,
                 width: 100,
                 display: "flex",
@@ -3115,7 +3118,8 @@ export default function MisaBankWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 195,
+                left: "38%",
+                transform: "translateX(-50%)",
                 top: 145,
                 width: 100,
                 display: "flex",
@@ -3236,7 +3240,8 @@ export default function MisaBankWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 365,
+                left: "63%",
+                transform: "translateX(-50%)",
                 top: 96,
                 width: 100,
                 display: "flex",
@@ -3282,7 +3287,8 @@ export default function MisaBankWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 535,
+                left: "87%",
+                transform: "translateX(-50%)",
                 top: 96,
                 width: 110,
                 display: "flex",

@@ -1484,15 +1484,17 @@ export default function MisaSalesWorkspace({
           background: "#f4f5f8",
           padding: "10px 16px",
           boxSizing: "border-box",
-          overflow: "hidden",
+          overflowY: "auto",
+          overflowX: "hidden",
           fontFamily: "Inter, system-ui, -apple-system, sans-serif",
         }}
       >
         {/* Main Grid: Flowchart Left (2.4fr) + Reports Right (1fr) */}
         <div
+          className="ref-process-layout"
           style={{
             display: "grid",
-            gridTemplateColumns: "2.4fr 1fr",
+            gridTemplateColumns: "minmax(0, 2.4fr) minmax(250px, 1fr)",
             gap: 14,
             marginBottom: 14,
             alignItems: "stretch",

@@ -4674,7 +4674,8 @@ export default function MisaPurchaseWorkspace({
         background: "#f1f5f9",
         height: "100%",
         padding: "10px 16px",
-        overflow: "hidden",
+        overflowY: "auto",
+        overflowX: "hidden",
       }}
     >
       <div
@@ -4731,9 +4732,10 @@ export default function MisaPurchaseWorkspace({
               aria-hidden="true"
               style={{
                 position: "absolute",
-                inset: 0,
+                top: 0,
+                left: 0,
                 width: "100%",
-                height: "100%",
+                height: 300,
                 pointerEvents: "none",
                 overflow: "visible",
               }}
@@ -4773,7 +4775,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 20,
+                left: "11.36%",
+                transform: "translateX(-50%)",
                 top: 20,
                 width: 110,
                 display: "flex",
@@ -4813,7 +4816,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 20,
+                left: "11.36%",
+                transform: "translateX(-50%)",
                 top: 185,
                 width: 110,
                 display: "flex",
@@ -4853,7 +4857,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 175,
+                left: "36.06%",
+                transform: "translateX(-50%)",
                 top: 20,
                 width: 125,
                 display: "flex",
@@ -5014,7 +5019,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 175,
+                left: "36.06%",
+                transform: "translateX(-50%)",
                 top: 185,
                 width: 125,
                 display: "flex",
@@ -5060,7 +5066,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 345,
+                left: "61.82%",
+                transform: "translateX(-50%)",
                 top: 20,
                 width: 125,
                 display: "flex",
@@ -5100,7 +5107,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 345,
+                left: "61.82%",
+                transform: "translateX(-50%)",
                 top: 185,
                 width: 125,
                 display: "flex",
@@ -5140,7 +5148,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 515,
+                left: "87.58%",
+                transform: "translateX(-50%)",
                 top: 20,
                 width: 125,
                 display: "flex",
@@ -5180,7 +5189,8 @@ export default function MisaPurchaseWorkspace({
             <div
               style={{
                 position: "absolute",
-                left: 515,
+                left: "87.58%",
+                transform: "translateX(-50%)",
                 top: 185,
                 width: 125,
                 display: "flex",
@@ -5281,6 +5291,7 @@ export default function MisaPurchaseWorkspace({
 
         {/* Panel 3: Quick Action Buttons (Bottom Bar spanning full width) */}
         <div
+          className="ref-shortcuts"
           style={{
             gridColumn: "1 / -1",
             background: "#ffffff",
