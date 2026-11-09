@@ -79,40 +79,6 @@
   line-height: 14px;
 }
 
-/* Right Announcement Banner */
-.misa-reports-banner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  color: #334155;
-  background: #fff7ed;
-  border: 1px solid #ffedd5;
-  padding: 4px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.misa-reports-banner:hover {
-  background: #ffedd5;
-  border-color: #fed7aa;
-}
-
-.misa-reports-banner-tag {
-  background: #ea580c;
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-
-.misa-reports-banner-link {
-  color: #0284c7;
-  font-weight: 600;
-}
-
 /* Toolbar */
 .misa-reports-toolbar {
   display: flex;

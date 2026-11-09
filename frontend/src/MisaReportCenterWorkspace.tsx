@@ -1046,9 +1046,6 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
     }
   };
 
-  // Print Announcement Modal
-  const [isPrintBannerModalOpen, setIsPrintBannerModalOpen] = useState<boolean>(false);
-
   // Set of collapsed groups:
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(embedded?{bank_borrow:true,bank_lend:true}:{});
 
@@ -2034,17 +2031,6 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
 
           </button>
         </div>
-
-        {/* Right Announcement Banner matching screenshot */}
-        <div
-          className="misa-reports-banner"
-          onClick={() => setIsPrintBannerModalOpen(true)}
-          title="Trình in mới của Sổ Việt ERP"
-        >
-
-          <span>In nhanh hơn - Ổn định hơn - In dữ liệu lớn với trình in mới của Sổ Việt ERP.</span>
-          <span className="misa-reports-banner-link">Xem ngay &gt;</span>
-        </div>
       </div>}
 
       {/* 2. Toolbar */}
@@ -2689,76 +2675,6 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
         </div>
       )}
 
-      {/* 5. Modal: AMIS Print Engine Announcement */}
-      {isPrintBannerModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15, 23, 42, 0.45)",
-            backdropFilter: "blur(2px)",
-            zIndex: 99999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-          }}
-          onClick={() => setIsPrintBannerModalOpen(false)}
-        >
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: 8,
-              boxShadow: "0 20px 45px rgba(0, 0, 0, 0.2)",
-              width: "100%",
-              maxWidth: 540,
-              padding: 24,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Trình in thông minh mới của Sổ Việt ERP</h3>
-              </div>
-              <button
-                type="button"
-                style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer" }}
-                onClick={() => setIsPrintBannerModalOpen(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <p style={{ fontSize: 13.5, color: "#334155", lineHeight: 1.6 }}>
-              Phiên bản trình in mới được tối ưu hóa cho các báo cáo khối lượng lớn hàng chục ngàn dòng:
-            </p>
-            <ul style={{ fontSize: 13, color: "#475569", lineHeight: 1.8, paddingLeft: 20 }}>
-              <li>Tốc độ render nhanh hơn gấp <strong>3 lần</strong>.</li>
-              <li>Hỗ trợ xuất PDF và in hàng loạt mà không gây treo trình duyệt.</li>
-              <li>Tự động căn lề và định dạng trang in chuẩn khổ giấy A4, A3.</li>
-            </ul>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
-              <button
-                type="button"
-                style={{
-                  height: 34,
-                  padding: "0 22px",
-                  background: "#00a862",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: 4,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-                onClick={() => setIsPrintBannerModalOpen(false)}
-              >
-                Đã hiểu
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {selectedReport === "Báo cáo chi tiết tình hình thực hiện đơn đặt hàng" && orderDetailParametersOpen && <SalesOrderDetailParameters onClose={()=>setOrderDetailParametersOpen(false)}/>}
       {catalogueParameterDefinition && orderDetailParametersOpen && <CatalogueReportParameters key={catalogueParameterDefinition.name} definition={catalogueParameterDefinition} onClose={()=>setOrderDetailParametersOpen(false)}/>}
       {scheduleDialogOpen && <ReportScheduleDialog onClose={()=>setScheduleDialogOpen(false)} />}

@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useApiSession } from "./ApiSession";
 import { ApiError, request } from "./live-api";
 import { createApiWriter, errorText, FormDataError, type ApiWriter } from "./misa-api-writes";
-import { resolveActiveDatasetBookType, resolveActiveDatasetYear } from "./transaction-period";
+import {
+  resolveActiveDatasetBookType,
+  resolveActiveDatasetYear,
+  resolveActivePeriodRange,
+} from "./transaction-period";
 
 type ApiRow = Record<string, any>;
 type ApiList = ApiRow[] | { results: ApiRow[]; next?: string | null };
@@ -109,6 +113,27 @@ const ROW_DATE_FIELDS = [
   "contract_date",
 ];
 
+function extractRowYearMonth(row: ApiRow): { year: number; month: number | null } | null {
+  for (const field of ROW_DATE_FIELDS) {
+    const val = row[field];
+    if (typeof val === "string" && val.length >= 4) {
+      const isoMatch = val.match(/^(20\d{2})-(\d{2})/);
+      if (isoMatch) {
+        return { year: Number(isoMatch[1]), month: Number(isoMatch[2]) };
+      }
+      const dmyMatch = val.match(/^\d{2}\/(\d{2})\/(20\d{2})$/);
+      if (dmyMatch) {
+        return { year: Number(dmyMatch[2]), month: Number(dmyMatch[1]) };
+      }
+      const yrOnly = val.match(/^(20\d{2})/) || val.match(/\/(20\d{2})$/);
+      if (yrOnly) {
+        return { year: Number(yrOnly[1]), month: null };
+      }
+    }
+  }
+  return null;
+}
+
 function filterRowsForDataset(path: string, rawRows: ApiRow[], branchScope: string): ApiRow[] {
   if (!Array.isArray(rawRows) || rawRows.length === 0) return rawRows;
   if (CATALOG_PATH_PATTERNS.some((p) => path.includes(p))) {
@@ -116,8 +141,9 @@ function filterRowsForDataset(path: string, rawRows: ApiRow[], branchScope: stri
   }
   const activeYear = resolveActiveDatasetYear();
   const bookType = resolveActiveDatasetBookType();
+  const periodRange = resolveActivePeriodRange(activeYear);
 
-  return rawRows.filter((row) => {
+  const yearMatched = rawRows.filter((row) => {
     if (!row || typeof row !== "object") return true;
 
     // 0. Check branch scope if row explicitly embeds branch UUID
@@ -140,14 +166,9 @@ function filterRowsForDataset(path: string, rawRows: ApiRow[], branchScope: stri
     }
 
     // 3. Check date fields
-    for (const field of ROW_DATE_FIELDS) {
-      const val = row[field];
-      if (typeof val === "string" && val.length >= 4) {
-        const yrMatch = val.match(/^(20\d{2})/) || val.match(/\/(20\d{2})$/);
-        if (yrMatch) {
-          return Number(yrMatch[1]) === activeYear;
-        }
-      }
+    const ym = extractRowYearMonth(row);
+    if (ym) {
+      return ym.year === activeYear;
     }
 
     // 4. Fallback: check if document number embeds a year like BH-2025-001 or GL-2024-001
@@ -158,6 +179,36 @@ function filterRowsForDataset(path: string, rawRows: ApiRow[], branchScope: stri
 
     return true;
   });
+
+  if (periodRange.month !== null || periodRange.quarter !== null) {
+    const exactPeriodRows = yearMatched.filter((row) => {
+      const ym = extractRowYearMonth(row);
+      if (!ym || ym.month === null) return true;
+      if (periodRange.month !== null) {
+        return ym.month === periodRange.month;
+      }
+      if (periodRange.quarter !== null) {
+        return Math.floor((ym.month - 1) / 3) + 1 === periodRange.quarter;
+      }
+      return true;
+    });
+    const hasDatedMatch = exactPeriodRows.some((r) => extractRowYearMonth(r)?.month != null);
+    if (hasDatedMatch) {
+      return exactPeriodRows;
+    }
+    // Fallback to cumulative up to target month/quarter if no exact-month voucher exists in this sub-resource
+    const maxMonth = periodRange.month ?? (periodRange.quarter ? periodRange.quarter * 3 : 12);
+    const cumulativeRows = yearMatched.filter((row) => {
+      const ym = extractRowYearMonth(row);
+      if (!ym || ym.month === null) return true;
+      return ym.month <= maxMonth;
+    });
+    if (cumulativeRows.some((r) => extractRowYearMonth(r)?.month != null)) {
+      return cumulativeRows;
+    }
+  }
+
+  return yearMatched;
 }
 
 function getInitialRows(companyId: string, branchScope: string, resources: Record<string, string>): Record<string, ApiRow[]> {

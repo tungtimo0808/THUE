@@ -34,7 +34,14 @@ import MisaCashReportView from './MisaCashReportView';
 import MisaCashInventoryWorkspace from './MisaCashInventoryWorkspace';
 import MisaCashForecastWorkspace from './MisaCashForecastWorkspace';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
-import {matchesTransactionPeriod, resolveActiveBranchScope, resolveActiveDatasetYear} from './transaction-period';
+import {
+  matchesTransactionPeriod,
+  resolveActiveBranchScope,
+  resolveActiveDatasetBookType,
+  resolveActiveDatasetYear,
+  resolveActiveHeaderPeriod,
+  resolveActivePeriodRange,
+} from './transaction-period';
 import {
   Filter,
   Plus,
@@ -8705,6 +8712,7 @@ const cashDataCache = new Map<string, {
 export default function MisaCashWorkspace({
   tab = "transactions",
   company,
+  period,
   href,
   notify,
 }: {
@@ -8908,10 +8916,14 @@ export default function MisaCashWorkspace({
 
   // Filtered list
   const [activeDatasetYear, setActiveDatasetYear] = useState<number>(() => resolveActiveDatasetYear());
+  const [activeBookType, setActiveBookType] = useState<"accounting" | "management">(() => resolveActiveDatasetBookType());
+  const [activeHeaderPeriod, setActiveHeaderPeriod] = useState<string>(() => resolveActiveHeaderPeriod());
   useEffect(() => {
     const syncCtx = () => {
       setActiveDatasetYear(resolveActiveDatasetYear());
       setActiveBranchScope(resolveActiveBranchScope());
+      setActiveBookType(resolveActiveDatasetBookType());
+      setActiveHeaderPeriod(resolveActiveHeaderPeriod());
     };
     window.addEventListener("erp_context_changed", syncCtx);
     window.addEventListener("popstate", syncCtx);
@@ -8920,9 +8932,27 @@ export default function MisaCashWorkspace({
       window.removeEventListener("popstate", syncCtx);
     };
   }, []);
+  useEffect(() => {
+    if (period) {
+      setActiveHeaderPeriod(period);
+      setActiveDatasetYear(resolveActiveDatasetYear());
+    }
+  }, [period]);
+  const bookFilteredTransactions = useMemo(
+    () =>
+      transactions.filter((item) => {
+        const codeStr = String(item.code || "").trim().toUpperCase();
+        if (activeBookType === "accounting" && codeStr.startsWith("QT-")) {
+          return false;
+        }
+        return true;
+      }),
+    [transactions, activeBookType],
+  );
   const filteredList = useMemo(() => {
     const refToday = new Date(activeDatasetYear, 11, 31);
-    return transactions.filter((item) => {
+    const periodRange = resolveActivePeriodRange(activeDatasetYear);
+    const baseMatches = bookFilteredTransactions.filter((item) => {
       const matchQuery =
         !searchQuery ||
         item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -8933,10 +8963,21 @@ export default function MisaCashWorkspace({
       const matchKind =
         voucherTypeFilter === "all" || item.kind === voucherTypeFilter;
       const matchReason=cashFilter.reason==='all'||(item.reasonLabel||cashReason(item.kind,item.description)).replace(/^\d+\.\s*/,'')===cashFilter.reason;
-      const matchDate=filterPeriod==='custom'?isCashDateInRange(item.date,cashFilter.from,cashFilter.to):matchesTransactionPeriod(item.date,filterPeriod,refToday);
-      return matchQuery && matchStatus && matchKind && matchReason && matchDate;
-    }).sort((a,b)=>(cashDateValue(a.date)-cashDateValue(b.date))*(cashSortAscending?1:-1));
-  }, [transactions, searchQuery, statusFilter, voucherTypeFilter,filterPeriod,cashFilter,cashSortAscending,activeDatasetYear]);
+      return matchQuery && matchStatus && matchKind && matchReason;
+    });
+    let dateMatched = baseMatches.filter((item) =>
+      filterPeriod === "custom"
+        ? isCashDateInRange(item.date, cashFilter.from, cashFilter.to)
+        : matchesTransactionPeriod(item.date, filterPeriod, refToday),
+    );
+    if (dateMatched.length === 0 && filterPeriod === "ytd" && (periodRange.month !== null || periodRange.quarter !== null)) {
+      dateMatched = baseMatches.filter((item) => {
+        const iso = parseReportDate(item.date);
+        return iso >= `${activeDatasetYear}-01-01` && iso <= periodRange.toDate;
+      });
+    }
+    return dateMatched.sort((a,b)=>(cashDateValue(a.date)-cashDateValue(b.date))*(cashSortAscending?1:-1));
+  }, [bookFilteredTransactions, searchQuery, statusFilter, voucherTypeFilter, filterPeriod, cashFilter, cashSortAscending, activeDatasetYear, activeHeaderPeriod]);
   const cashPageCount = Math.max(1, Math.ceil(filteredList.length / cashPageSize));
   const visibleCashPage = Math.min(cashPage, cashPageCount);
   const selectedTransaction = useMemo(
@@ -8946,7 +8987,15 @@ export default function MisaCashWorkspace({
   const cashDetailRows:VoucherDetailRow[]=selectedTransaction?.rows?.length ? selectedTransaction.rows : selectedTransaction ? [{id:selectedTransaction.id,description:selectedTransaction.description,debit:selectedTransaction.debit||"1111",credit:selectedTransaction.credit||"141",amount:selectedTransaction.amount,partnerCode:selectedTransaction.partnerCode||selectedTransaction.partner,partnerName:selectedTransaction.partner}] : [];
   const cashDetailPages=Math.max(1,Math.ceil(cashDetailRows.length/cashDetailSize));
   const cashDetailVisiblePage=Math.min(cashDetailPage,cashDetailPages);
-  const cashCurrentLedger=useMemo(()=>cashLedger(transactions.map(row=>({...row,date:parseReportDate(row.date)})),`${activeDatasetYear}-01-01`,`${activeDatasetYear}-12-31`),[transactions, activeDatasetYear]);
+  const cashCurrentLedger=useMemo(()=>{
+    const periodRange = resolveActivePeriodRange(activeDatasetYear);
+    const mapped = bookFilteredTransactions.map(row=>({...row,date:parseReportDate(row.date)}));
+    const exact = cashLedger(mapped, periodRange.fromDate, periodRange.toDate);
+    if (exact.receipt === 0 && exact.payment === 0 && (periodRange.month !== null || periodRange.quarter !== null)) {
+      return cashLedger(mapped, `${activeDatasetYear}-01-01`, periodRange.toDate);
+    }
+    return exact;
+  },[bookFilteredTransactions, activeDatasetYear, activeHeaderPeriod]);
   useEffect(()=>{setCheckedCashRows(ids=>ids.filter(id=>filteredList.some(row=>row.id===id)));},[filteredList]);
   useEffect(() => {
     if (!viewingCashVoucher) return;

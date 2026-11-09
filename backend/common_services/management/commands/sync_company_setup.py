@@ -18,3 +18,8 @@ class Command(BaseCommand):
                 continue
             complete_company_setup(company, actor)
             self.stdout.write(f"Đã đồng bộ thiết lập cho {company.name}.")
+        try:
+            from seed_context_matrix import seed_matrix
+            seed_matrix()
+        except Exception as exc:
+            self.stdout.write(f"Lưu ý khi đồng bộ dữ liệu đa kỳ/đa sổ: {exc}")
