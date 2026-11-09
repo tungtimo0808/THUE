@@ -708,6 +708,7 @@ def _calculate_revenue_for_range(ctx: DashboardContext, start_date: date, end_da
         p for m in mappings if m.line_code == "REVENUE_DEDUCTIONS" for p in (m.account_prefixes or ["521"])
     ) or ("521",)
 
+    is_mgmt_book = getattr(ctx, "revenue_basis", "GL") == "SAL"
     goods_qs = _filter_branches(
         GoodsSale.objects.filter(company=ctx.company, status="POSTED", posting_date__range=(start_date, end_date)),
         "branch_id",
@@ -728,6 +729,11 @@ def _calculate_revenue_for_range(ctx: DashboardContext, start_date: date, end_da
         "branch_id",
         ctx.effective_branch_ids,
     ).select_related("customer", "currency", "branch")
+    if not is_mgmt_book:
+        goods_qs = goods_qs.exclude(number__startswith="QT-")
+        service_qs = service_qs.exclude(number__startswith="QT-")
+        return_qs = return_qs.exclude(number__startswith="QT-")
+        allowance_qs = allowance_qs.exclude(number__startswith="QT-")
 
     gross_rev = ZERO
     deduction = ZERO
@@ -944,6 +950,7 @@ def _calculate_purchase_for_range(ctx: DashboardContext, start_date: date, end_d
             "documents": [],
         }
 
+    is_mgmt_book = getattr(ctx, "revenue_basis", "GL") == "SAL"
     gp_qs = _filter_branches(
         GoodsPurchase.objects.filter(company=ctx.company, status="POSTED", posting_date__range=(start_date, end_date)),
         "branch_id",
@@ -964,6 +971,11 @@ def _calculate_purchase_for_range(ctx: DashboardContext, start_date: date, end_d
         "branch_id",
         ctx.effective_branch_ids,
     ).select_related("supplier")
+    if not is_mgmt_book:
+        gp_qs = gp_qs.exclude(number__startswith="QT-")
+        pc_qs = pc_qs.exclude(number__startswith="QT-")
+        pr_qs = pr_qs.exclude(number__startswith="QT-")
+        pd_qs = pd_qs.exclude(number__startswith="QT-")
 
     goods_service_amt = ZERO
     fixed_asset_amt = ZERO
@@ -1113,12 +1125,15 @@ def _calculate_purchase_for_range(ctx: DashboardContext, start_date: date, end_d
         })
 
     # Also check unlinked GL JournalEntries that record purchases (debiting 151/152/153/156/211/213/241/242/641/642 against 331 or with source_module in PUR/AP)
+    base_je_qs = JournalEntry.objects.filter(
+        company=ctx.company,
+        status="POSTED",
+        posting_date__range=(start_date, end_date),
+    ).exclude(entry_type="OPENING").exclude(id__in=linked_je_ids)
+    if not is_mgmt_book:
+        base_je_qs = base_je_qs.exclude(number__startswith="QT-")
     je_qs = _filter_branches(
-        JournalEntry.objects.filter(
-            company=ctx.company,
-            status="POSTED",
-            posting_date__range=(start_date, end_date),
-        ).exclude(entry_type="OPENING").exclude(id__in=linked_je_ids),
+        base_je_qs,
         "branch_id",
         ctx.effective_branch_ids,
     ).prefetch_related("lines__account")
@@ -1245,6 +1260,7 @@ def _calculate_cash_collected_for_range(ctx: DashboardContext, start_date: date,
             "documents": [],
         }
 
+    is_mgmt_book = getattr(ctx, "revenue_basis", "GL") == "SAL"
     cash_qs = _filter_branches(
         CashTransaction.objects.filter(
             company=ctx.company,
@@ -1262,6 +1278,9 @@ def _calculate_cash_collected_for_range(ctx: DashboardContext, start_date: date,
         transaction_date__range=(start_date, end_date),
         transaction_type__in=("RECEIPT", "INTEREST", "OTHER_IN"),
     ).select_related("account__account", "currency", "party")
+    if not is_mgmt_book:
+        cash_qs = cash_qs.exclude(number__startswith="QT-")
+        bank_qs = bank_qs.exclude(number__startswith="QT-")
     if ctx.effective_branch_ids is not None:
         bank_qs = bank_qs.filter(
             Q(account__account__branch_id__in=ctx.effective_branch_ids) | Q(account__account__branch_id__isnull=True)
@@ -1340,7 +1359,7 @@ def _calculate_cash_collected_for_range(ctx: DashboardContext, start_date: date,
 
     # Fallback to General Ledger (JournalLine on 111*/112*) when no CashTransaction/BankTransaction exists in period
     if not docs and JournalEntry.objects.filter(company=ctx.company, entry_type="OPENING", posting_date__month=1, posting_date__day=1).exists():
-        gl_cash_lines = _filter_branches(
+        gl_cash_base = (
             JournalLine.objects.filter(
                 entry__company=ctx.company,
                 entry__status="POSTED",
@@ -1349,7 +1368,11 @@ def _calculate_cash_collected_for_range(ctx: DashboardContext, start_date: date,
             )
             .exclude(entry__entry_type__in=("OPENING", "CLOSING"))
             .filter(Q(account__code__startswith="111") | Q(account__code__startswith="112"))
-            .select_related("entry", "account", "party"),
+        )
+        if not is_mgmt_book:
+            gl_cash_base = gl_cash_base.exclude(entry__number__startswith="QT-")
+        gl_cash_lines = _filter_branches(
+            gl_cash_base.select_related("entry", "account", "party"),
             "entry__branch_id",
             ctx.effective_branch_ids,
         )
@@ -1816,6 +1839,7 @@ def compute_dash_05_cash_flow(ctx: DashboardContext, bucket_override: str | None
     def _bucket_key_for(d: date) -> str:
         return d.isoformat() if bucket_mode == "DAY" else f"{d.year:04d}-{d.month:02d}"
 
+    is_mgmt_book = getattr(ctx, "revenue_basis", "GL") == "SAL"
     cash_qs = _filter_branches(
         CashTransaction.objects.filter(
             company=ctx.company,
@@ -1830,6 +1854,9 @@ def compute_dash_05_cash_flow(ctx: DashboardContext, bucket_override: str | None
         status="POSTED",
         transaction_date__range=(ctx.from_date, ctx.to_date),
     )
+    if not is_mgmt_book:
+        cash_qs = cash_qs.exclude(number__startswith="QT-")
+        bank_qs = bank_qs.exclude(number__startswith="QT-")
     if ctx.effective_branch_ids is not None:
         bank_qs = bank_qs.filter(
             Q(account__account__branch_id__in=ctx.effective_branch_ids) | Q(account__account__branch_id__isnull=True)
@@ -1878,7 +1905,7 @@ def compute_dash_05_cash_flow(ctx: DashboardContext, bucket_override: str | None
                     buckets[bkey]["outflow"] += amt
 
         if tx_count == 0 and JournalEntry.objects.filter(company=ctx.company, entry_type="OPENING", posting_date__month=1, posting_date__day=1).exists():
-            gl_cf_lines = _filter_branches(
+            gl_cf_base = (
                 JournalLine.objects.filter(
                     entry__company=ctx.company,
                     entry__status="POSTED",
@@ -1890,7 +1917,11 @@ def compute_dash_05_cash_flow(ctx: DashboardContext, bucket_override: str | None
                     | Q(account__code__startswith="112")
                     | Q(account__code__startswith="113")
                 )
-                .select_related("entry", "account"),
+            )
+            if not is_mgmt_book:
+                gl_cf_base = gl_cf_base.exclude(entry__number__startswith="QT-")
+            gl_cf_lines = _filter_branches(
+                gl_cf_base.select_related("entry", "account"),
                 "entry__branch_id",
                 ctx.effective_branch_ids,
             )

@@ -147,13 +147,15 @@ export function MisaDashboardOverview({
       ? "Tổng hợp từ Sổ cái TK loại 5, 6 (632, 641, 642), 7, 8 theo Thông tư 200/2014/TT-BTC"
       : "Tổng hợp từ Sổ cái TK loại 5, 6 (632, 641, 642), 7, 8 theo Thông tư 99/2025/TT-BTC";
 
-  const urlPeriod = searchParams.get("period") || propPeriod || "2026-12";
+  const urlPeriod = propPeriod || searchParams.get("period") || "2026-12";
   const [selectedPeriod, setSelectedPeriod] = useState<string>(urlPeriod);
   const [selectedBranchId, setSelectedBranchId] = useState<string>(() => {
+    if (propBranchId) {
+      if (propBranchId === "all" || propBranchId === "head-office") return "";
+      return propBranchId;
+    }
     const fromUrl = searchParams.get("branch_id") || "";
-    if (fromUrl) return fromUrl;
-    if (propBranchId && propBranchId !== "all" && propBranchId !== "head-office") return propBranchId;
-    return "";
+    return fromUrl;
   });
   const [comparisonMode, setComparisonMode] = useState<string>("PREVIOUS_PERIOD");
   const isManagementBook = String(propDataset || "").startsWith("management");
@@ -182,11 +184,34 @@ export function MisaDashboardOverview({
   // Race condition guard for rapid period/filter switching (EF-29)
   const requestIdRef = useRef<number>(0);
 
-  useEffect(() => {
-    if (urlPeriod && urlPeriod !== selectedPeriod) {
+  const prevUrlPeriodRef = useRef<string>(urlPeriod);
+  if (urlPeriod && urlPeriod !== prevUrlPeriodRef.current) {
+    prevUrlPeriodRef.current = urlPeriod;
+    if (selectedPeriod !== urlPeriod) {
       setSelectedPeriod(urlPeriod);
     }
-  }, [urlPeriod]);
+  }
+
+  const prevPropDatasetRef = useRef<string | undefined>(propDataset);
+  if (propDataset !== prevPropDatasetRef.current) {
+    prevPropDatasetRef.current = propDataset;
+    if (propDataset) {
+      const targetBasis = String(propDataset).startsWith("management") ? "SAL" : "GL";
+      if (revenueBasis !== targetBasis) {
+        setRevenueBasis(targetBasis);
+      }
+    }
+  }
+
+  const prevPropBranchRef = useRef<string | undefined>(propBranchId);
+  if (propBranchId !== prevPropBranchRef.current) {
+    prevPropBranchRef.current = propBranchId;
+    if (!propBranchId || propBranchId === "all") {
+      if (selectedBranchId !== "") setSelectedBranchId("");
+    } else if (propBranchId !== "head-office") {
+      if (selectedBranchId !== propBranchId) setSelectedBranchId(propBranchId);
+    }
+  }
 
   useEffect(() => {
     if (!propBranchId || propBranchId === "all") {
@@ -200,14 +225,6 @@ export function MisaDashboardOverview({
       setSelectedBranchId(propBranchId);
     }
   }, [propBranchId, configData]);
-
-  useEffect(() => {
-    if (!propDataset) return;
-    const targetBasis = String(propDataset).startsWith("management") ? "SAL" : "GL";
-    if (revenueBasis !== targetBasis) {
-      setRevenueBasis(targetBasis);
-    }
-  }, [propDataset]);
 
   const writer = useMemo(() => {
     if (!effectiveToken || !effectiveCompanyId) return null;

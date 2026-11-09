@@ -541,14 +541,15 @@ function ReferenceWorkspace() {
   });
   const rawUrlPeriod = params.get("period") || "";
   const defaultYearFromDataset = dataset.match(/(20\d{2})/)?.[1] || "2026";
-  const period = /^(20\d{2}(-\d{2})?|20\d{2}-Q[1-4])$/.test(rawUrlPeriod)
-    ? rawUrlPeriod
-    : `${defaultYearFromDataset}-12`;
+  const normalizedUrlPeriod = /^(20\d{2}(-\d{2})?|20\d{2}-Q[1-4])$/i.test(rawUrlPeriod)
+    ? rawUrlPeriod.replace(/^20\d{2}/, defaultYearFromDataset)
+    : "";
+  const period = normalizedUrlPeriod || `${defaultYearFromDataset}-12`;
   const [branch, setBranch] = useState(() => {
     try {
-      return localStorage.getItem("ref_branch") || "head-office";
+      return localStorage.getItem("ref_branch") || "all";
     } catch {
-      return "head-office";
+      return "all";
     }
   });
   const [recentlyChangedCluster, setRecentlyChangedCluster] = useState<string | null>(null);
@@ -799,7 +800,7 @@ function ReferenceWorkspace() {
       const hq = companyBranches.find((b) => b.is_head_office) || companyBranches[0];
       return hq ? hq.id : "all";
     }
-    return branch;
+    return "all";
   }, [branch, companyBranches]);
 
   const branchLabel = useMemo(() => {
@@ -1833,6 +1834,11 @@ function ReferenceWorkspace() {
                         type="button"
                         className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
                         onClick={() => {
+                          setCompanyBranches([]);
+                          setBranch("all");
+                          try {
+                            localStorage.setItem("ref_branch", "all");
+                          } catch {}
                           if (apiCompanies.some((ac) => ac.id === c.id)) {
                             apiSelectCompany(c.id);
                             if (apiToken) {
@@ -1850,7 +1856,7 @@ function ReferenceWorkspace() {
                             subTitle: `Đang khởi tạo hệ thống tài khoản, danh mục và sổ kế toán của ${c.name} theo chế độ ${cReg}...`,
                             companyName: c.name,
                             datasetName: datasetLabel,
-                            branchName: "Trụ sở chính",
+                            branchName: "Toàn doanh nghiệp",
                             periodName: periodLabel,
                           });
                         }}
