@@ -9184,6 +9184,7 @@ export default function MisaCashWorkspace({
   // Total summary
   const totalReceipt = cashCurrentLedger.receipt;
   const totalPayment = cashCurrentLedger.payment;
+  const effectiveCashBalance = transactions.length > 0 ? cashCurrentLedger.closing : cashBalance;
 
   // Handler for Tax payment submission
   const handleTaxPayment = async (taxData: any) => {
@@ -9567,7 +9568,7 @@ export default function MisaCashWorkspace({
                   Tồn quỹ đến ngày {currentCashDate()}
                 </div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#dc2626" }}>
-                  {cashBalance<0?`(${formatVND(Math.abs(cashBalance))})`:formatVND(cashBalance)}
+                  {effectiveCashBalance<0?`(${formatVND(Math.abs(effectiveCashBalance))})`:formatVND(effectiveCashBalance)}
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11.5, color: "#94a3b8" }}>
@@ -9699,26 +9700,6 @@ export default function MisaCashWorkspace({
             />
 
             {/* Icon buttons group */}
-            <button
-              type="button"
-              className="misa-tax-icon-btn"
-              title="Gợi ý & Kiểm tra nhanh"
-              onClick={() => setShowAIModal(true)}
-              style={{
-                width: 32,
-                height: 32,
-                border: "1px solid #d1d5db",
-                borderRadius: 6,
-                background: "#ffffff",
-                display: "grid",
-                placeItems: "center",
-                color: "#8b5cf6",
-                cursor: "pointer",
-              }}
-            >
-              <Sparkles size={15} />
-            </button>
-
             <button
               type="button"
               className="misa-tax-icon-btn"
@@ -9885,43 +9866,8 @@ export default function MisaCashWorkspace({
             </button>
           </div>
 
-          {/* Right Buttons: Nhập nhanh, Thêm thu tiền, Thêm chi tiền (Screenshot 3 & 4) */}
+          {/* Right Buttons: Thêm thu tiền, Thêm chi tiền */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            {/* Nhập nhanh Button */}
-            <button
-              type="button"
-              onClick={() => setShowAIModal(true)}
-              style={{
-                height: 34,
-                padding: "0 14px",
-                background: "linear-gradient(90deg, #0084ff 0%, #a855f7 100%)",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: 6,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                boxShadow: "0 2px 4px rgba(0, 132, 255, 0.25)",
-              }}
-            >
-              <img
-                src="/ava_avatar.jpg"
-                alt="Biểu tượng"
-                style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: "50%",
-                  border: "1.5px solid #ffffff",
-                  objectFit: "cover",
-                  flexShrink: 0,
-                }}
-              />
-              <span className="misa-hidden-ai-marker" />
-            </button>
-
             {/* Thêm thu tiền Dropdown Button (Screenshot 3) */}
             <div style={{ position: "relative" }}>
               <button

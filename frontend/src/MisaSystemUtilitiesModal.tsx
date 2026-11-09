@@ -85,6 +85,72 @@ export function MisaSystemUtilitiesModal({
   const [newPartnerName, setNewPartnerName] = useState("");
   const [newPartnerAddress, setNewPartnerAddress] = useState("");
 
+  // Module setup state ("Thiết lập phân hệ")
+  const MODULE_CATALOG = [
+    { id: "overview", label: "Tổng quan", desc: "Bảng điều khiển chỉ số tài chính & dòng tiền tức thời", core: true },
+    { id: "invoices", label: "Quản lý hóa đơn", desc: "Đồng bộ, phát hành và xử lý hóa đơn điện tử đầu vào/đầu ra", core: false },
+    { id: "cash", label: "Tiền mặt", desc: "Phiếu thu, Phiếu chi, Đề nghị chi, Tạm ứng & Kiểm kê quỹ", core: true },
+    { id: "bank", label: "Tiền gửi", desc: "Báo có, Ủy nhiệm chi, Đối chiếu sổ phụ & Ngân hàng điện tử", core: true },
+    { id: "purchases", label: "Mua hàng", desc: "Đơn mua hàng, Nhận hàng/dịch vụ, Trả lại hàng mua & Công nợ phải trả", core: false },
+    { id: "sales", label: "Bán hàng", desc: "Báo giá, Đơn đặt hàng, Ghi nhận doanh thu & Công nợ phải thu", core: false },
+    { id: "inventory", label: "Kho", desc: "Nhập kho, Xuất kho, Chuyển kho, Kiểm kê & Tính giá xuất kho", core: false },
+    { id: "tools", label: "Công cụ dụng cụ", desc: "Ghi tăng, Phân bổ chi phí trả trước (TK 242) & Điều chuyển CCDC", core: false },
+    { id: "assets", label: "Tài sản cố định", desc: "Ghi tăng, Tính khấu hao định kỳ, Đánh giá lại & Thanh lý TSCĐ", core: false },
+    { id: "payroll", label: "Tiền lương", desc: "Chấm công, Bảng tính lương, Thuế TNCN & Hạch toán chi phí lương", core: false },
+    { id: "insurance", label: "Kết nối bảo hiểm", desc: "Theo dõi trích nộp BHXH, BHYT, BHTN và đối chiếu cơ quan BHXH", core: false },
+    { id: "tax", label: "Thuế", desc: "Tờ khai GTGT (01/GTGT), Thuế TNDN, TNCN & Xuất XML HTKK", core: true },
+    { id: "cost", label: "Giá thành", desc: "Tập hợp chi phí 154, Phân bổ chi phí chung & Tính giá thành sản xuất", core: false },
+    { id: "ledger", label: "Tổng hợp", desc: "Chứng từ nghiệp vụ khác, Kết chuyển lãi lỗ, Khóa sổ & Sổ cái", core: true },
+    { id: "budget", label: "Ngân sách", desc: "Dự toán thu chi theo đơn vị và kiểm soát hạn mức chi tiêu", core: false },
+    { id: "reports", label: "Báo cáo", desc: "Bộ Báo cáo Tài chính (B01, B02, B03, B09) & Báo cáo quản trị", core: true },
+    { id: "analysis", label: "Phân tích tài chính", desc: "Phân tích chỉ số thanh khoản, sinh lời, hiệu quả & xu hướng", core: false },
+    { id: "directory", label: "Danh mục", desc: "Hệ thống tài khoản, Khách hàng, Nhà cung cấp, Vật tư, Kho, Phòng ban", core: true },
+    { id: "opening", label: "Số dư ban đầu", desc: "Khai báo số dư đầu kỳ Tài khoản, Công nợ, Tồn kho & Tài sản", core: true },
+    { id: "connections", label: "Kết nối vay vốn", desc: "Hồ sơ tín dụng doanh nghiệp & kết nối hạn mức ngân hàng", core: false },
+  ];
+
+  const [enabledMods, setEnabledMods] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(`sv_enabled_modules_${companyId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return MODULE_CATALOG.map((m) => m.id);
+  });
+
+  const handleToggleModuleItem = (modId: string, isCore: boolean) => {
+    if (isCore) return;
+    setEnabledMods((prev) =>
+      prev.includes(modId) ? prev.filter((id) => id !== modId) : [...prev, modId]
+    );
+  };
+
+  const handleApplyModulePreset = (preset: "all" | "commerce" | "manufacturing" | "micro") => {
+    if (preset === "all" || preset === "manufacturing") {
+      setEnabledMods(MODULE_CATALOG.map((m) => m.id));
+    } else if (preset === "commerce") {
+      setEnabledMods(
+        MODULE_CATALOG.map((m) => m.id).filter((id) => !["cost", "budget", "connections"].includes(id))
+      );
+    } else if (preset === "micro") {
+      setEnabledMods([
+        "overview", "invoices", "cash", "bank", "purchases", "sales",
+        "tax", "ledger", "reports", "directory", "opening",
+      ]);
+    }
+  };
+
+  const handleSaveModuleSetup = () => {
+    try {
+      localStorage.setItem(`sv_enabled_modules_${companyId}`, JSON.stringify(enabledMods));
+      window.dispatchEvent(new Event("sv_modules_updated"));
+    } catch {}
+    notify(`Đã lưu thiết lập phân hệ thành công (${enabledMods.length}/${MODULE_CATALOG.length} phân hệ đang hiển thị trên thanh điều hướng)!`);
+    onClose();
+  };
+
   const apiGet = async (path: string) => {
     const sep = path.includes("?") ? "&" : "?";
     const fullUrl = `/api/v1${path}${sep}company_id=${encodeURIComponent(companyId)}`;
@@ -216,10 +282,12 @@ export function MisaSystemUtilitiesModal({
         ]);
         setCompanyMembers(unwrapList(memRes));
         setAuditLogs(unwrapList(audRes));
+      } else if (utilityName === "Thiết lập phân hệ") {
+        // Module setup uses localStorage & /common/modules/
       } else {
         const [eRes, bRes] = await Promise.all([
-          apiGet("/einvoice/connections/?page_size=20"),
-          apiGet("/cash-bank/bank-connections/?page_size=20"),
+          apiGet("/common/modules/?page_size=20"),
+          apiGet("/bank/accounts/?page_size=20"),
         ]);
         setEinvoiceConns(unwrapList(eRes));
         setBankConns(unwrapList(bRes));
@@ -1654,8 +1722,204 @@ export function MisaSystemUtilitiesModal({
             </div>
           )}
 
+          {/* 8.5 THIẾT LẬP PHÂN HỆ (CHỌN / BỎ CHỌN PHÂN HỆ NGHIỆP VỤ) */}
+          {utilityName === "Thiết lập phân hệ" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 10,
+                  padding: 18,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 14,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>
+                      Thiết lập Phân hệ Nghiệp vụ hiển thị trên Bàn làm việc ({enabledMods.length}/{MODULE_CATALOG.length} phân hệ)
+                    </div>
+                    <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 4 }}>
+                      Tích chọn các phân hệ phù hợp với lĩnh vực hoạt động của <strong>{companyName}</strong>. Bỏ chọn các phân hệ không sử dụng để thanh điều hướng bên trái gọn gàng hơn.
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyModulePreset("micro")}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 6,
+                        border: "1px solid #cbd5e1",
+                        background: "#f8fafc",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#334155",
+                        cursor: "pointer",
+                      }}
+                    >
+                      DN Siêu nhỏ / Tinh gọn (11)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyModulePreset("commerce")}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 6,
+                        border: "1px solid #cbd5e1",
+                        background: "#f8fafc",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#0284c7",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Thương mại & Dịch vụ (17)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyModulePreset("all")}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 6,
+                        border: "1px solid #86efac",
+                        background: "#f0fdf4",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#15803d",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Chọn tất cả ({MODULE_CATALOG.length})
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))",
+                    gap: 10,
+                    marginTop: 4,
+                  }}
+                >
+                  {MODULE_CATALOG.map((mod) => {
+                    const checked = enabledMods.includes(mod.id);
+                    return (
+                      <div
+                        key={mod.id}
+                        onClick={() => handleToggleModuleItem(mod.id, mod.core)}
+                        style={{
+                          padding: "12px 14px",
+                          borderRadius: 8,
+                          border: checked ? "1.5px solid #22c55e" : "1px solid #e2e8f0",
+                          background: checked ? "#f0fdf4" : "#f8fafc",
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 10,
+                          cursor: mod.core ? "default" : "pointer",
+                          opacity: checked ? 1 : 0.72,
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={mod.core}
+                          onChange={() => handleToggleModuleItem(mod.id, mod.core)}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            width: 16,
+                            height: 16,
+                            marginTop: 2,
+                            accentColor: "#16a34a",
+                            cursor: mod.core ? "not-allowed" : "pointer",
+                          }}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                            <span style={{ fontWeight: 700, fontSize: 13.2, color: checked ? "#0f172a" : "#64748b" }}>
+                              {mod.label}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 10.5,
+                                fontWeight: 700,
+                                padding: "2px 7px",
+                                borderRadius: 999,
+                                background: mod.core ? "#dbeafe" : checked ? "#dcfce7" : "#e2e8f0",
+                                color: mod.core ? "#1d4ed8" : checked ? "#15803d" : "#64748b",
+                              }}
+                            >
+                              {mod.core ? "Cốt lõi" : checked ? "Đang bật" : "Đã ẩn"}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: 11.8, color: "#64748b", marginTop: 3, lineHeight: 1.35 }}>
+                            {mod.desc}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingTop: 12,
+                    borderTop: "1px solid #e2e8f0",
+                    marginTop: 4,
+                  }}
+                >
+                  <span style={{ fontSize: 12.5, color: "#475569" }}>
+                    Đang chọn hiển thị: <strong>{enabledMods.length}</strong> / {MODULE_CATALOG.length} phân hệ
+                  </span>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: 6,
+                        border: "1px solid #cbd5e1",
+                        background: "#ffffff",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#334155",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Đóng
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveModuleSetup}
+                      style={{
+                        padding: "8px 20px",
+                        borderRadius: 6,
+                        border: "none",
+                        background: "#00a862",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "#ffffff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Lưu thiết lập phân hệ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 9. KẾT NỐI ỨNG DỤNG / SÀN TMĐT / EMAIL / NGÔN NGỮ */}
           {![
+            "Thiết lập phân hệ",
             "Ghi sổ/Bỏ ghi theo lô",
             "Phục hồi chứng từ đã xóa nhầm",
             "Lấy chứng từ từ dữ liệu khác",

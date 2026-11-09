@@ -836,6 +836,31 @@ class Command(BaseCommand):
                 created_tx += 1
             self.stdout.write(f"- Da ghi nhan {created_tx} nghiep vu kinh te thang 12 vao So Cai GL.")
 
+        # 18. Seed Realistic System & Accounting Notifications
+        from common_services.models import Notification
+        sample_notifs = [
+            ("Đề nghị chi tiền chờ phê duyệt", f"Có đề nghị chi tiền tại {company.name} đang chờ Kế toán trưởng / Giám đốc kiểm tra và phê duyệt chi quỹ.", "IMPORTANT", "CASH", "/cash/payment-requests", "PaymentRequest"),
+            ("Quyết toán tạm ứng chờ kiểm tra", f"Hồ sơ quyết toán tạm ứng của nhân viên tại {company.name} đã đính kèm chứng từ gốc, chờ kế toán thanh toán duyệt.", "WARNING", "CASH", "/cash/advance-settlement-request", "AdvanceSettlement"),
+            ("Nhắc lịch kê khai & nộp Thuế GTGT", f"Sắp đến hạn rà soát bảng kê hóa đơn đầu vào/đầu ra và lập Tờ khai thuế GTGT kỳ hiện hành cho {company.name}.", "WARNING", "TAX", "/tax", "TaxDeclaration"),
+            ("Đối chiếu sổ phụ ngân hàng định kỳ", f"Hệ thống đã sẵn sàng dữ liệu sổ tiền gửi ngân hàng (TK 1121) tại {company.name} để đối chiếu sao kê cuối kỳ.", "INFO", "BANK", "/bank", "BankReconciliation"),
+            ("Đồng bộ hệ thống tài khoản & BCTC chuẩn Thông tư", f"Dữ liệu sổ kế toán của {company.name} đã được kiểm tra cân đối phát sinh Nợ - Có hợp lệ.", "SUCCESS", "GL", "/reports", "FinancialReport"),
+        ]
+        for u in UserAccount.objects.filter(status="ACTIVE"):
+            for title, msg, level, mod, link, ent in sample_notifs:
+                Notification.objects.get_or_create(
+                    company=company,
+                    recipient=u,
+                    title=title,
+                    defaults={
+                        "message": msg,
+                        "level": level,
+                        "source_module": mod,
+                        "link": link,
+                        "entity_type": ent,
+                        "status": "UNREAD",
+                    },
+                )
+
         self.stdout.write(self.style.SUCCESS(
             f"Da khoi tao thanh cong du lieu Master Data & 32 nghiep vu bai tap TMDV cho {company.name}!"
         ))

@@ -1047,7 +1047,45 @@ function ReferenceWorkspace() {
     };
   }, [apiToken, company?.id, apiSession?.user?.email]);
 
-  const activeRoleSpec = useMemo(() => getRoleWorkspaceSpec(workMode), [workMode]);
+  const [moduleSyncTick, setModuleSyncTick] = useState(0);
+  useEffect(() => {
+    const onSync = () => setModuleSyncTick((t) => t + 1);
+    window.addEventListener("sv_modules_updated", onSync);
+    window.addEventListener("sv_rbac_updated", onSync);
+    window.addEventListener("storage", onSync);
+    return () => {
+      window.removeEventListener("sv_modules_updated", onSync);
+      window.removeEventListener("sv_rbac_updated", onSync);
+      window.removeEventListener("storage", onSync);
+    };
+  }, []);
+
+  const activeRoleSpec = useMemo(() => {
+    const baseSpec = getRoleWorkspaceSpec(workMode);
+    let roleModules = baseSpec.allowedModules;
+    try {
+      const roleMapRaw = localStorage.getItem(`sv_role_modules_${company?.id}`);
+      if (roleMapRaw) {
+        const roleMap = JSON.parse(roleMapRaw);
+        if (roleMap && Array.isArray(roleMap[baseSpec.code]) && roleMap[baseSpec.code].length > 0) {
+          roleModules = roleMap[baseSpec.code];
+        }
+      }
+    } catch {}
+    try {
+      const enabledRaw = localStorage.getItem(`sv_enabled_modules_${company?.id}`);
+      if (enabledRaw) {
+        const enabledList: string[] = JSON.parse(enabledRaw);
+        if (Array.isArray(enabledList) && enabledList.length > 0) {
+          roleModules = roleModules.filter((m) => enabledList.includes(m));
+        }
+      }
+    } catch {}
+    return {
+      ...baseSpec,
+      allowedModules: roleModules,
+    };
+  }, [workMode, company?.id, moduleSyncTick]);
   const setNotice = useCallback((msg: string) => {
     const cleaned = msg ? humanizeErrorMessage(msg) : "";
     setRawNotice(cleaned);
@@ -1067,8 +1105,99 @@ function ReferenceWorkspace() {
 
   const [notifFilter, setNotifFilter] = useState<"all" | "pending" | "system">("all");
   const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set());
+  const [liveApiNotifs, setLiveApiNotifs] = useState<any[]>([]);
   const [payrollOptionOpen, setPayrollOptionOpen] = useState(false);
   const [payrollOption, setPayrollOption] = useState("Tiền lương Sổ Việt ERP");
+
+  useEffect(() => {
+    if (!apiToken || !company?.id) return;
+    let active = true;
+    const branchParam = effectiveBranchId && effectiveBranchId !== "all" ? `&branch_id=${encodeURIComponent(effectiveBranchId)}` : "";
+    Promise.allSettled([
+      request<any>(`/api/v1/common/notifications/?company_id=${encodeURIComponent(company.id)}`, apiToken),
+      request<any>(`/api/v1/cash/payment-requests/?company_id=${encodeURIComponent(company.id)}${branchParam}`, apiToken),
+      request<any>(`/api/v1/cash/advance-settlement-docs/?company_id=${encodeURIComponent(company.id)}${branchParam}`, apiToken),
+    ]).then(([notifRes, prRes, asRes]) => {
+      if (!active) return;
+      const merged: any[] = [];
+      const readSet = new Set<string>();
+
+      if (prRes.status === "fulfilled") {
+        const prList = Array.isArray(prRes.value) ? prRes.value : prRes.value?.docs || prRes.value?.results || [];
+        for (const pr of prList) {
+          if (String(pr.status || "").toLowerCase() === "pending" || String(pr.status || "").toUpperCase() === "PENDING_APPROVAL") {
+            merged.push({
+              id: `pr-${pr.id}`,
+              category: "pending" as const,
+              code: pr.code || pr.request_number || "ĐNC",
+              kindLabel: "Đề nghị chi tiền",
+              kind: "payment" as const,
+              description: pr.purpose || pr.reason || pr.description || "Đề nghị chi tiền đang chờ phê duyệt",
+              partner: `${pr.requester || pr.requester_name || "Nhân viên"} · ${pr.dept || pr.department || "Bộ phận"}`,
+              amount: Number(pr.amount || 0),
+              date: pr.date || (pr.request_date ? String(pr.request_date).split("-").reverse().join("/") : "Hôm nay"),
+              actionUrl: "/cash/payment-requests",
+              isVoucher: false,
+            });
+          }
+        }
+      }
+
+      if (asRes.status === "fulfilled") {
+        const asList = Array.isArray(asRes.value) ? asRes.value : asRes.value?.docs || asRes.value?.results || [];
+        for (const st of asList) {
+          if (String(st.status || "").toLowerCase() === "pending" || String(st.status || "").toUpperCase() === "PENDING_APPROVAL") {
+            merged.push({
+              id: `as-${st.id}`,
+              category: "pending" as const,
+              code: st.code || st.settlement_number || "QT",
+              kindLabel: "Quyết toán tạm ứng",
+              kind: "receipt" as const,
+              description: st.reason || st.description || "Đề nghị quyết toán tạm ứng chờ kiểm tra chứng từ gốc",
+              partner: `${st.person || st.employee_name || "Nhân viên"} · ${st.dept || st.department || "Bộ phận"}`,
+              amount: Number(st.spentAmount || st.spent_amount || st.advanceAmount || 0),
+              date: st.date || (st.settlement_date ? String(st.settlement_date).split("-").reverse().join("/") : "Hôm nay"),
+              actionUrl: "/cash/advance-settlement-request",
+              isVoucher: false,
+            });
+          }
+        }
+      }
+
+      if (notifRes.status === "fulfilled") {
+        const nList = Array.isArray(notifRes.value) ? notifRes.value : notifRes.value?.results || [];
+        for (const n of nList) {
+          const nid = `db-${n.id}`;
+          if (n.status === "READ" || n.read_at) {
+            readSet.add(nid);
+          }
+          const isPendingType = String(n.entity_type || "").includes("Request") || String(n.entity_type || "").includes("Settlement");
+          merged.push({
+            id: nid,
+            dbId: n.id,
+            category: (isPendingType ? "pending" : "system") as "pending" | "system",
+            code: n.source_module === "TAX" ? "Thuế & Tờ khai" : n.source_module === "BANK" ? "Ngân hàng" : n.source_module === "CASH" ? "Ngân quỹ" : "Hệ thống",
+            kindLabel: n.level === "IMPORTANT" ? "Quan trọng" : n.level === "WARNING" ? "Cảnh báo" : "Thông báo",
+            kind: (n.source_module === "TAX" ? "tax" : n.source_module === "BANK" ? "bank" : n.level === "WARNING" || n.level === "IMPORTANT" ? "alert" : "info") as any,
+            description: `${n.title}: ${n.message}`,
+            partner: n.company_name || company.name,
+            amount: 0,
+            date: n.created_at ? new Date(n.created_at).toLocaleString("vi-VN") : "Hôm nay",
+            actionUrl: n.link || "/overview",
+            isVoucher: false,
+          });
+        }
+      }
+
+      setLiveApiNotifs(merged);
+      if (readSet.size > 0) {
+        setReadNotifIds((prev) => new Set([...prev, ...readSet]));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [apiToken, company?.id, company?.name, effectiveBranchId, dataset]);
 
   const systemAlerts = [
     {
@@ -1123,26 +1252,34 @@ function ReferenceWorkspace() {
     },
   ];
 
-  const voucherNotifs = pending.map((t) => ({
-    id: t.id,
-    category: "pending" as const,
-    code: t.code,
-    kindLabel: kinds[t.kind] || "Chứng từ",
-    kind: t.kind,
-    description: t.description,
-    partner: t.partner,
-    amount: t.amount,
-    date: `${t.date.split("-").reverse().join("/")} 09:30`,
-    actionUrl: "",
-    isVoucher: true,
-  }));
+  const voucherNotifs = [
+    ...liveApiNotifs.filter((n) => n.category === "pending"),
+    ...pending.map((t) => ({
+      id: t.id,
+      category: "pending" as const,
+      code: t.code,
+      kindLabel: kinds[t.kind] || "Chứng từ",
+      kind: t.kind,
+      description: t.description,
+      partner: t.partner,
+      amount: t.amount,
+      date: `${t.date.split("-").reverse().join("/")} 09:30`,
+      actionUrl: "",
+      isVoucher: true,
+    })),
+  ];
 
-  const allNotifs = [...voucherNotifs, ...systemAlerts];
+  const combinedSystemAlerts = [
+    ...liveApiNotifs.filter((n) => n.category === "system"),
+    ...systemAlerts,
+  ];
+
+  const allNotifs = [...voucherNotifs, ...combinedSystemAlerts];
   const displayedNotifs =
     notifFilter === "pending"
       ? voucherNotifs
       : notifFilter === "system"
-        ? systemAlerts
+        ? combinedSystemAlerts
         : allNotifs;
   const unreadCount = allNotifs.filter((n) => !readNotifIds.has(n.id)).length;
 
@@ -2211,12 +2348,37 @@ function ReferenceWorkspace() {
             <Settings size={18} />
           </button>
           <button
-            className="ref-icon ref-bell"
+            className={`ref-icon ref-bell ${panel === "notifications" ? "active" : ""}`}
             aria-label="Thông báo"
-            title="Thông báo"
-            onClick={() => navigate("/common")}
+            title={`Thông báo & Nhắc việc (${unreadCount} chưa đọc)`}
+            onClick={() => setPanel(panel === "notifications" ? null : "notifications")}
+            style={{ position: "relative" }}
           >
             <Bell size={18} />
+            {unreadCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: 3,
+                  right: 3,
+                  minWidth: 16,
+                  height: 16,
+                  padding: "0 4px",
+                  borderRadius: 999,
+                  background: "#ef4444",
+                  color: "#ffffff",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: 1,
+                  border: "1.5px solid #ffffff",
+                }}
+              >
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </button>
           <button
             className="ref-icon secondary-tool"
@@ -3023,7 +3185,7 @@ function ReferenceWorkspace() {
                       onClick={() => setNotifFilter("system")}
                     >
                       <span>Cảnh báo & Nhắc việc</span>
-                      <span className="misa-notif-badge-pill">{systemAlerts.length}</span>
+                      <span className="misa-notif-badge-pill">{combinedSystemAlerts.length}</span>
                     </button>
                   </div>
 
@@ -3032,6 +3194,12 @@ function ReferenceWorkspace() {
                     className="misa-notif-mark-read"
                     onClick={() => {
                       setReadNotifIds(new Set(allNotifs.map((n) => n.id)));
+                      if (apiToken) {
+                        void request(`/api/v1/common/notifications/read-all/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
+                          method: "POST",
+                          body: "{}",
+                        }).catch(() => {});
+                      }
                       setNotice("Đã đánh dấu đọc tất cả thông báo.");
                     }}
                   >
@@ -3199,14 +3367,27 @@ function ReferenceWorkspace() {
                       ? `Còn ${unreadCount} thông báo chưa đọc`
                       : "Đã đọc tất cả thông báo"}
                   </span>
-                  <button
-                    type="button"
-                    className="misa-btn-secondary"
-                    style={{ height: 30, fontSize: 12.5, padding: "0 14px" }}
-                    onClick={() => setPanel(null)}
-                  >
-                    Đóng
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button
+                      type="button"
+                      className="misa-btn-secondary"
+                      style={{ height: 30, fontSize: 12.5, padding: "0 12px", color: "#0284c7", borderColor: "#bae6fd", background: "#f0f9ff" }}
+                      onClick={() => {
+                        setPanel(null);
+                        navigate("/common");
+                      }}
+                    >
+                      Mở Trung tâm Thông báo & Việc cần xử lý →
+                    </button>
+                    <button
+                      type="button"
+                      className="misa-btn-secondary"
+                      style={{ height: 30, fontSize: 12.5, padding: "0 14px" }}
+                      onClick={() => setPanel(null)}
+                    >
+                      Đóng
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -3370,7 +3551,7 @@ function AppRoute() {
   if (location.pathname === "/profile") return <LiveProfile />;
   if (location.pathname === "/scope") return <LiveScope />;
   if (location.pathname === "/session" || location.pathname === "/session/") return <LiveSession />;
-  if (location.pathname === "/common") return <LiveCommonHub />;
+  if (location.pathname === "/common" || location.pathname === "/common/") return <LiveCommonHub />;
   if (location.pathname === "/company-setup") return <LiveCompanyBootstrap />;
   if (location.pathname === "/company-profile") return <LiveCompanyProfile />;
   if (location.pathname === "/organization-structure") return <LiveOrgStructure />;

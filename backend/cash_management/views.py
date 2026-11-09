@@ -61,6 +61,7 @@ class TransactionViewSet(BaseViewSet):
     def perform_destroy(self, instance):
         if instance.status == models.TransactionStatus.POSTED:
             raise ValidationError("Chứng từ đã ghi sổ không thể xóa. Vui lòng Bỏ ghi sổ trước khi xóa.")
+        models.ApprovalDecision.objects.filter(transaction=instance).delete()
         instance.delete()
     @action(detail=True,methods=("post",))
     def submit(self,r,pk=None):return Response(self.get_serializer(services.submit(self.get_object(),r)).data)
