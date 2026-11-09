@@ -7583,7 +7583,18 @@ export function PaymentRequestsTab({
                   )}
                 </td>
                 <td style={{ textAlign: "center", whiteSpace: "nowrap", width: 224 }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 6, width: 210 }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-start", gap: 6, width: 210 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDoc({ ...r });
+                        setModalMode("view");
+                        setIsModalOpen(true);
+                      }}
+                      style={{ width: 92, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
+                    >
+                      Xem chi tiết
+                    </button>
                     {r.status === "pending" && (
                       <>
                         <button
@@ -7618,17 +7629,6 @@ export function PaymentRequestsTab({
                         Lập phiếu chi
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingDoc({ ...r });
-                        setModalMode("view");
-                        setIsModalOpen(true);
-                      }}
-                      style={{ width: 92, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
-                    >
-                      Xem chi tiết
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -8273,7 +8273,18 @@ export function AdvanceSettlementTab({
                   )}
                 </td>
                 <td style={{ textAlign: "center", whiteSpace: "nowrap", width: 172 }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 6, width: 158 }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-start", gap: 6, width: 158 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDoc({ ...s });
+                        setModalMode("view");
+                        setIsModalOpen(true);
+                      }}
+                      style={{ width: 92, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
+                    >
+                      Xem chi tiết
+                    </button>
                     {s.status === "pending" && (
                       <button
                         type="button"
@@ -8289,17 +8300,6 @@ export function AdvanceSettlementTab({
                         Duyệt
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingDoc({ ...s });
-                        setModalMode("view");
-                        setIsModalOpen(true);
-                      }}
-                      style={{ width: 92, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
-                    >
-                      Xem chi tiết
-                    </button>
                   </div>
                 </td>
               </tr>
