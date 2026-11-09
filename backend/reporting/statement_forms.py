@@ -179,18 +179,29 @@ def _font_files():
                 style: directory / f"LiberationSerif-{name}.ttf"
                 for style, name in (("regular", "Regular"), ("bold", "Bold"), ("italic", "Italic"), ("boldItalic", "BoldItalic"))
             }
+    dejavu_dir = Path("/usr/share/fonts/truetype/dejavu")
+    if (dejavu_dir / "DejaVuSans.ttf").exists():
+        bold_ttf = dejavu_dir / ("DejaVuSans-Bold.ttf" if (dejavu_dir / "DejaVuSans-Bold.ttf").exists() else "DejaVuSans.ttf")
+        return {
+            "regular": dejavu_dir / "DejaVuSans.ttf",
+            "bold": bold_ttf,
+            "italic": dejavu_dir / "DejaVuSans.ttf",
+            "boldItalic": bold_ttf,
+        }
     if (WINDOWS_FONTS / "times.ttf").exists():
         return {
             style: WINDOWS_FONTS / name
             for style, name in (("regular", "times.ttf"), ("bold", "timesbd.ttf"), ("italic", "timesi.ttf"), ("boldItalic", "timesbi.ttf"))
         }
-    raise ValidationError({"export_format": "Máy chủ chưa cài font tiếng Việt để xuất PDF."})
+    return None
 
 
 def _register_fonts():
     if "StatementSerif" in pdfmetrics.getRegisteredFontNames():
-        return
+        return True
     files = _font_files()
+    if not files:
+        return False
     for name, style in (
         ("StatementSerif", "regular"), ("StatementSerif-Bold", "bold"),
         ("StatementSerif-Italic", "italic"), ("StatementSerif-BoldItalic", "boldItalic"),
@@ -200,6 +211,7 @@ def _register_fonts():
         "StatementSerif", normal="StatementSerif", bold="StatementSerif-Bold",
         italic="StatementSerif-Italic", boldItalic="StatementSerif-BoldItalic",
     )
+    return True
 
 
 def _escape(value):
@@ -207,7 +219,10 @@ def _escape(value):
 
 
 def build_pdf(statement):
-    _register_fonts()
+    has_custom_font = _register_fonts()
+    base_font = "StatementSerif" if has_custom_font else "Times-Roman"
+    bold_font = "StatementSerif-Bold" if has_custom_font else "Times-Bold"
+    italic_font = "StatementSerif-Italic" if has_custom_font else "Times-Italic"
     page = landscape(A4) if statement.landscape else A4
     output = io.BytesIO()
     document = SimpleDocTemplate(
@@ -217,19 +232,19 @@ def build_pdf(statement):
     usable = page[0] - 27 * mm
 
     def style(**options):
-        return ParagraphStyle("statement", fontName=options.pop("fontName", "StatementSerif"), fontSize=options.pop("fontSize", 10), leading=options.pop("leading", 12.5), **options)
+        return ParagraphStyle("statement", fontName=options.pop("fontName", base_font), fontSize=options.pop("fontSize", 10), leading=options.pop("leading", 12.5), **options)
 
-    body, bold = style(), style(fontName="StatementSerif-Bold")
+    body, bold = style(), style(fontName=bold_font)
     centered = style(alignment=TA_CENTER)
-    title = style(fontName="StatementSerif-Bold", fontSize=15, leading=19, alignment=TA_CENTER, spaceBefore=6)
-    italic_center = style(fontName="StatementSerif-Italic", alignment=TA_CENTER)
-    right_italic = style(fontName="StatementSerif-Italic", alignment=TA_RIGHT, fontSize=9)
+    title = style(fontName=bold_font, fontSize=15, leading=19, alignment=TA_CENTER, spaceBefore=6)
+    italic_center = style(fontName=italic_font, alignment=TA_CENTER)
+    right_italic = style(fontName=italic_font, alignment=TA_RIGHT, fontSize=9)
 
     heading = Table([[
         [Paragraph(_escape(statement.company_name), bold), Paragraph(_escape(statement.company_address), body),
          Paragraph(f"Mã số thuế: {_escape(statement.tax_code)}", body)],
-        [Paragraph(f"Mẫu số {_escape(statement.form_code)}", style(fontName="StatementSerif-Bold", alignment=TA_CENTER)),
-         Paragraph(_escape(statement.legal_basis), style(fontName="StatementSerif-Italic", alignment=TA_CENTER, fontSize=9))],
+        [Paragraph(f"Mẫu số {_escape(statement.form_code)}", style(fontName=bold_font, alignment=TA_CENTER)),
+         Paragraph(_escape(statement.legal_basis), style(fontName=italic_font, alignment=TA_CENTER, fontSize=9))],
     ]], colWidths=[usable * 0.55, usable * 0.45])
     story = [
         heading, Spacer(1, 6), Paragraph(_escape(statement.title), title), Paragraph(_escape(statement.period), italic_center),
@@ -238,16 +253,16 @@ def build_pdf(statement):
 
     total_width = sum(column.width for column in statement.columns)
     widths = [usable * column.width / total_width for column in statement.columns]
-    data = [[Paragraph(_escape(column.label), style(fontName="StatementSerif-Bold", alignment=TA_CENTER)) for column in statement.columns]]
+    data = [[Paragraph(_escape(column.label), style(fontName=bold_font, alignment=TA_CENTER)) for column in statement.columns]]
     number_style = style(alignment=TA_RIGHT)
-    number_bold = style(alignment=TA_RIGHT, fontName="StatementSerif-Bold")
+    number_bold = style(alignment=TA_RIGHT, fontName=bold_font)
     for row in statement.rows:
         cells = []
         for index, (column, value) in enumerate(zip(statement.columns, row.cells)):
             if column.numeric:
                 cells.append(Paragraph(_display(value), number_bold if row.bold else number_style))
             elif index == 0:
-                cells.append(Paragraph(_escape(value), style(leftIndent=row.indent * 8, fontName="StatementSerif-Bold" if row.bold else "StatementSerif")))
+                cells.append(Paragraph(_escape(value), style(leftIndent=row.indent * 8, fontName=bold_font if row.bold else base_font)))
             else:
                 cells.append(Paragraph(_escape(value), centered))
         data.append(cells)
@@ -261,10 +276,10 @@ def build_pdf(statement):
     story.append(table)
 
     signers = _signers(statement.signature)
-    story += [Spacer(1, 12), Paragraph(_signed_on(statement.signature), style(fontName="StatementSerif-Italic", alignment=TA_RIGHT))]
+    story += [Spacer(1, 12), Paragraph(_signed_on(statement.signature), style(fontName=italic_font, alignment=TA_RIGHT))]
     block = Table(
         [
-            [Paragraph(_escape(item[0]), style(fontName="StatementSerif-Bold", alignment=TA_CENTER)) for item in signers],
+            [Paragraph(_escape(item[0]), style(fontName=bold_font, alignment=TA_CENTER)) for item in signers],
             [Paragraph("(Ký, họ tên)", italic_center) for _ in signers],
             ["", "", ""],
             [Paragraph(_escape(item[1]), centered) for item in signers],

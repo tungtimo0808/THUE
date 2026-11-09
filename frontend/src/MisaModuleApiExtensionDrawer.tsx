@@ -1167,13 +1167,13 @@ export function MisaModuleApiExtensionPanel({
           </div>
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
-              <span>Nghiệp vụ & Dữ liệu API Chuyên sâu</span>
+              <span>Nghiệp vụ & Dữ liệu Chuyên sâu</span>
               <span style={{ fontSize: 11, fontWeight: 600, color: "#15803d", background: "#dcfce7", padding: "2px 8px", borderRadius: 999 }}>
-                {endpoints.length} API đã kết nối
+                {endpoints.length} nghiệp vụ
               </span>
             </div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
-              Đầu cuối hiện tại: <code style={{ color: "#0284c7", fontWeight: 600 }}>{activeEndpoint.path}</code>
+              Đang chọn: <strong style={{ color: "#0284c7" }}>{activeEndpoint.label}</strong>
             </div>
           </div>
         </div>
@@ -1251,7 +1251,7 @@ export function MisaModuleApiExtensionPanel({
                 type="button"
                 onClick={() => void loadEndpointData(activeEndpoint)}
                 style={{ height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "#334155" }}
-                title="Làm mới dữ liệu từ API"
+                title="Làm mới dữ liệu"
               >
                 <RefreshCw size={14} />
                 <span>Nạp lại</span>
@@ -1315,7 +1315,7 @@ export function MisaModuleApiExtensionPanel({
           <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: "#64748b" }}>
             <span>Tổng số: <strong>{filteredRows.length}</strong> bản ghi</span>
             <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#15803d", fontWeight: 600 }}>
-              <CheckCircle2 size={13} /> Đã đồng bộ trực tiếp với Backend API
+              <CheckCircle2 size={13} /> Đã đồng bộ dữ liệu hệ thống
             </span>
           </div>
         </div>

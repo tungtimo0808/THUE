@@ -6933,7 +6933,7 @@ class FixedAssetApiTests(TestCase):
         )
         self.assertEqual(resp.status_code, 200, resp.data)
         self.assertTrue(resp.data["ai_assisted"])
-        self.assertIn("Sổ Việt AI", resp.data["ai_summary"])
+        self.assertIn("Hệ thống đã đề xuất", resp.data["ai_summary"])
         self.assertEqual(resp.data["period_nature"], "FUTURE")
         self.assertFalse(resp.data["can_post_immediately"])
         # Only CCDC-AF10 is included (AF12 & AF13 excluded)
