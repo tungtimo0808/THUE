@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -87,7 +87,7 @@ export default function LiveNumberingRules() {
           body: JSON.stringify({ company: companyId, document_type: rule.document_type, document_number: generated.document_number }),
         }).catch(() => {});
       }
-      setMessage(`Đã cấp số thử nghiệm: ${generated?.document_number || rule.prefix}`);
+      setMessage(`Đã cấp số chứng từ: ${generated?.document_number || rule.prefix}`);
       setReload(value => value + 1);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không cấp được số chứng từ."); }
     finally { setBusy(false); }

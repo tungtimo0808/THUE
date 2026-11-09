@@ -123,9 +123,9 @@ export default function AuditedReportWorkspace({
         `soviet:audited-report:${definition.name}`,
         JSON.stringify(next),
       );
-      notify?.("Đã lưu báo cáo trên trình duyệt này.");
+      notify?.("Đã lưu kỳ báo cáo thành công.");
     } catch {
-      notify?.("Đã lưu báo cáo cho lần xem này.");
+      notify?.("Đã lưu báo cáo cho phiên làm việc này.");
     }
   };
   const exportReport = async (outputFormat: "XLSX" | "PRINT" = "XLSX") => {

@@ -504,10 +504,10 @@ export function ReferenceDashboard({
     .slice(0, 5);
   const footer = (
     <div className="ref-widget-footer">
-      Dữ liệu mẫu trong kỳ{" "}
+      Số liệu trong kỳ{" "}
       <button
         onClick={() =>
-          notify("Đã cập nhật từ dữ liệu đang lưu trên trình duyệt.")
+          notify("Đã làm mới dữ liệu thành công.")
         }
       >
         Tải lại

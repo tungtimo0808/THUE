@@ -285,8 +285,7 @@ export function DocumentForm({
       <form ref={formRef} onSubmit={submit} onChange={() => setDirty(true)}>
         <div className="modal-body">
           <p className="info-note">
-            Bản trải nghiệm · Phiếu nháp được lưu trên trình duyệt, chưa ghi sổ
-            kế toán.
+            Chứng từ đang ở trạng thái Nháp — chỉ ghi nhận vào Sổ cái sau khi được phê duyệt và ghi sổ.
           </p>
           <h3>Thông tin chung</h3>
           <div className="form-grid">

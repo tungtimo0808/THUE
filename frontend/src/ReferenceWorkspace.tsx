@@ -75,7 +75,6 @@ import {
 import {
   SmartSearchResults,
   TabSettingsModal,
-  WorkModeModal,
   getRoleWorkspaceSpec,
 } from "./GlobalShellPanels";
 import { SidebarNavigation } from "./SidebarNavigation";
@@ -1008,7 +1007,6 @@ function ReferenceWorkspace() {
     | "notifications"
     | "help"
     | "module"
-    | "mode"
     | "tabs"
     | null
   >(null);
@@ -1022,6 +1020,9 @@ function ReferenceWorkspace() {
     [assignedRoleCodes, setAssignedRoleCodes] = useState<string[]>([]);
 
   useEffect(() => {
+    try {
+      localStorage.removeItem("ref_work_mode");
+    } catch {}
     if (!apiToken || !company?.id) return;
     let active = true;
     request<any>(`/api/v1/iam/memberships/?company_id=${encodeURIComponent(company.id)}`, apiToken)
@@ -1039,6 +1040,7 @@ function ReferenceWorkspace() {
           }
         } else {
           setAssignedRoleCodes(["ROLE_CHIEF_ACCOUNTANT"]);
+          setWorkMode("ROLE_CHIEF_ACCOUNTANT");
         }
       })
       .catch(() => {});
@@ -1062,16 +1064,27 @@ function ReferenceWorkspace() {
 
   const activeRoleSpec = useMemo(() => {
     const baseSpec = getRoleWorkspaceSpec(workMode);
-    let roleModules = baseSpec.allowedModules;
+    const effectiveCodes = assignedRoleCodes.length > 0 ? assignedRoleCodes : [baseSpec.code];
+    let roleModules: string[] = [];
+    let roleMap: Record<string, string[]> | null = null;
     try {
       const roleMapRaw = localStorage.getItem(`sv_role_modules_${company?.id}`);
       if (roleMapRaw) {
-        const roleMap = JSON.parse(roleMapRaw);
-        if (roleMap && Array.isArray(roleMap[baseSpec.code]) && roleMap[baseSpec.code].length > 0) {
-          roleModules = roleMap[baseSpec.code];
-        }
+        roleMap = JSON.parse(roleMapRaw);
       }
     } catch {}
+    for (const code of effectiveCodes) {
+      const spec = getRoleWorkspaceSpec(code);
+      const customMods = roleMap && Array.isArray(roleMap[spec.code]) && roleMap[spec.code].length > 0
+        ? roleMap[spec.code]
+        : spec.allowedModules;
+      for (const m of customMods) {
+        if (!roleModules.includes(m)) roleModules.push(m);
+      }
+    }
+    if (roleModules.length === 0) {
+      roleModules = baseSpec.allowedModules;
+    }
     try {
       const enabledRaw = localStorage.getItem(`sv_enabled_modules_${company?.id}`);
       if (enabledRaw) {
@@ -1085,7 +1098,7 @@ function ReferenceWorkspace() {
       ...baseSpec,
       allowedModules: roleModules,
     };
-  }, [workMode, company?.id, moduleSyncTick]);
+  }, [workMode, assignedRoleCodes, company?.id, moduleSyncTick]);
   const setNotice = useCallback((msg: string) => {
     const cleaned = msg ? humanizeErrorMessage(msg) : "";
     setRawNotice(cleaned);
@@ -1325,7 +1338,7 @@ function ReferenceWorkspace() {
       persistTransactions(next);
       setItems(next);
       if (!another) setCreateKind(null);
-      setNotice(`Đã lưu ${item.code} trên trình duyệt.`);
+      setNotice(`Đã lưu chứng từ ${item.code} thành công.`);
       return true;
     } catch {
       return false;
@@ -1340,9 +1353,9 @@ function ReferenceWorkspace() {
     try {
       persistTransactions(next);
       setItems(next);
-      setNotice("Đã chuyển sang chờ duyệt trong bản trải nghiệm.");
+      setNotice("Đã chuyển chứng từ sang trạng thái chờ phê duyệt.");
     } catch {
-      setNotice("Không thể lưu. Vui lòng kiểm tra dung lượng trình duyệt.");
+      setNotice("Không thể lưu chứng từ. Vui lòng thử lại.");
     }
   };
   const quickAccessRoutes: Record<string, string> = {
@@ -1376,7 +1389,7 @@ function ReferenceWorkspace() {
   const infoAction = (name: string) => {
     setPanel(null);
     if (name === "Thiết lập màu sắc và hiển thị") {
-      setPanel("mode");
+      navigate("/admin?tab=config");
       return;
     }
     if (name === "Gợi ý, nhắc nhở thông minh") {
@@ -2320,14 +2333,6 @@ function ReferenceWorkspace() {
             />}
           </div>
           <button
-            className="ref-work-mode"
-            aria-label={`Chế độ làm việc: ${activeRoleSpec.shortLabel}`}
-            title={`${activeRoleSpec.name} (${activeRoleSpec.code}): ${activeRoleSpec.capabilitiesSummary}`}
-            onClick={() => setPanel("mode")}
-          >
-            {activeRoleSpec.shortLabel} <ChevronDown size={13} />
-          </button>
-          <button
             className="ref-icon secondary-tool"
             aria-label="Tải dữ liệu"
             title="Tải báo cáo, dữ liệu"
@@ -2423,7 +2428,7 @@ function ReferenceWorkspace() {
                         </span>
                       ) : (
                         <span style={{ background: "#0284c7", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
-                          👤 NHÂN SỰ
+                          👤 {activeRoleSpec.shortLabel.toUpperCase()}
                         </span>
                       )}
                     </div>
@@ -3007,22 +3012,6 @@ function ReferenceWorkspace() {
             })}
           </div>
         </Modal>
-      )}
-      {panel === "mode" && (
-        <WorkModeModal
-          current={workMode}
-          activeRegime={activeCompanyRegime}
-          assignedRoleCodes={assignedRoleCodes}
-          onChange={(nextRoleCode) => {
-            const spec = getRoleWorkspaceSpec(nextRoleCode);
-            setWorkMode(spec.code);
-            setNotice(`✓ Đã chuyển sang Vai trò làm việc: ${spec.name} (Mở ${spec.allowedModules.length} phân hệ)`);
-            if (!spec.allowedModules.includes(moduleId)) {
-              navigate(href(`/${spec.allowedModules[0] || "overview"}`));
-            }
-          }}
-          onClose={() => setPanel(null)}
-        />
       )}
       {panel === "tabs" && (
         <TabSettingsModal

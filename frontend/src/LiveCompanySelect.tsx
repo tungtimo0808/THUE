@@ -418,21 +418,6 @@ export default function LiveCompanySelect() {
               <span>Thêm doanh nghiệp mới</span>
             </button>
 
-            <button
-              type="button"
-              className="company-action-card-btn btn-demo-quick"
-              style={{ height: 42, padding: "0 16px" }}
-              onClick={handleCreateDemoCompany}
-              disabled={creatingCompany}
-            >
-              {creatingCompany ? (
-                <span className="auth-spinner" />
-              ) : (
-                <Sparkles size={16} />
-              )}
-              <span>Tạo công ty mẫu (1-Click)</span>
-            </button>
-
             <Link
               to="/join?manual=1"
               className="company-action-card-btn btn-create-new"
@@ -947,8 +932,7 @@ export default function LiveCompanySelect() {
               Tài khoản chưa có doanh nghiệp nào
             </h3>
             <p className="company-empty-desc">
-              Để bắt đầu hạch toán và xuất hóa đơn, bạn có thể khởi tạo doanh nghiệp
-              mẫu ngay tức thì hoặc tự nhập thông tin công ty theo MST.
+              Để bắt đầu hạch toán và xuất hóa đơn, vui lòng đăng ký doanh nghiệp mới theo Mã số thuế hoặc gửi yêu cầu gia nhập doanh nghiệp hiện có.
             </p>
 
             <div className="company-actions-grid" style={{ maxWidth: 540, width: "100%" }}>
@@ -956,26 +940,20 @@ export default function LiveCompanySelect() {
                 type="button"
                 className="company-action-card-btn btn-demo-quick"
                 style={{ whiteSpace: "nowrap" }}
-                onClick={handleCreateDemoCompany}
-                disabled={creatingCompany}
-              >
-                {creatingCompany ? (
-                  <span className="auth-spinner" />
-                ) : (
-                  <Sparkles size={16} />
-                )}
-                <span>Tạo Doanh nghiệp mẫu ngay (1-Click)</span>
-              </button>
-
-              <button
-                type="button"
-                className="company-action-card-btn btn-create-new"
-                style={{ whiteSpace: "nowrap" }}
                 onClick={() => setShowCreateForm(true)}
               >
                 <Plus size={16} />
-                <span>Tạo mới theo MST</span>
+                <span>Đăng ký doanh nghiệp mới theo MST</span>
               </button>
+
+              <Link
+                to="/join?manual=1"
+                className="company-action-card-btn btn-create-new"
+                style={{ whiteSpace: "nowrap" }}
+              >
+                <Briefcase size={16} />
+                <span>Xin gia nhập doanh nghiệp</span>
+              </Link>
             </div>
           </div>
         )}

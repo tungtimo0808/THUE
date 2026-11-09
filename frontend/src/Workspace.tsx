@@ -101,11 +101,11 @@ function Workspace() {
       persistTransactions(next);
       setTransactions(next);
       if (!another) setCreateKind(null);
-      setToast(`Đã lưu ${item.code} trên trình duyệt.`);
+      setToast(`Đã lưu chứng từ ${item.code} thành công.`);
       return true;
     } catch {
       setToast(
-        "Không thể lưu trên trình duyệt. Hãy kiểm tra dung lượng hoặc quyền lưu trữ.",
+        "Không thể lưu chứng từ. Vui lòng thử lại.",
       );
       return false;
     }
@@ -119,9 +119,9 @@ function Workspace() {
     try {
       persistTransactions(next);
       setTransactions(next);
-      setToast("Đã chuyển sang Chờ duyệt trong bản trải nghiệm.");
+      setToast("Đã chuyển chứng từ sang trạng thái Chờ phê duyệt.");
     } catch {
-      setToast("Không thể lưu thay đổi. Vui lòng kiểm tra bộ nhớ trình duyệt.");
+      setToast("Không thể lưu thay đổi. Vui lòng thử lại.");
     }
   }
   function create(kind: Kind) {
@@ -290,7 +290,6 @@ function Workspace() {
             Không gian làm việc
             <ChevronRight size={13} />
             <span>{module?.label || "Không tìm thấy"}</span>
-            <span className="demo-tag">Dữ liệu mẫu</span>
           </div>
           <div className="page-heading">
             <div>
@@ -473,7 +472,7 @@ function Workspace() {
                   <div>
                     <h3>{company.name}</h3>
                     <p className="muted">
-                      Không gian trải nghiệm · {periodLabel}
+                      Kỳ kế toán · {periodLabel}
                     </p>
                   </div>
                 </div>

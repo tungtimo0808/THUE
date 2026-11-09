@@ -411,8 +411,8 @@ export default function MisaPurchaseContractReports({
               setSaved(next);
               notify?.(
                 writeReportPresets(title, next)
-                  ? "Đã lưu báo cáo trên trình duyệt này."
-                  : "Đã lưu báo cáo cho lần xem này.",
+                  ? "Đã lưu kỳ báo cáo thành công."
+                  : "Đã lưu báo cáo cho phiên làm việc này.",
               );
             }}
           >

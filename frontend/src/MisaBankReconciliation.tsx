@@ -409,7 +409,7 @@ export default function MisaBankReconciliation({
                   "soviet:bank-reconciliation",
                   JSON.stringify({ loaded, selected, statement }),
                 );
-                notify("Đã cất tạm đối chiếu trên trình duyệt.");
+                notify("Đã lưu tạm bảng đối chiếu ngân hàng.");
               }}
             >
               Cất tạm
