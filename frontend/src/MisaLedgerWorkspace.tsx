@@ -7342,18 +7342,24 @@ export default function MisaLedgerWorkspace({
                                   </div>
                                 )}
                               </td>
-                              <td style={{ padding: "10px 14px", textAlign: "center" }}>
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+                              <td style={{ padding: "10px 14px", textAlign: "left", whiteSpace: "nowrap" }}>
+                                <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-start", gap: 6, flexWrap: "nowrap" }}>
                                   <button
                                     type="button"
                                     onClick={() => setViewingAdvReq(item)}
                                     style={{
-                                      background: "transparent",
-                                      border: "none",
-                                      color: "#0284c7",
+                                      minWidth: 48,
+                                      height: 26,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      background: "#ffffff",
+                                      border: "1px solid #cbd5e1",
+                                      borderRadius: 5,
+                                      color: "#334155",
                                       fontWeight: 600,
                                       cursor: "pointer",
-                                      fontSize: 12.5,
+                                      fontSize: 11.5,
                                     }}
                                   >
                                     Xem
@@ -8288,18 +8294,24 @@ export default function MisaLedgerWorkspace({
                               })()}
                             </span>
                           </td>
-                          <td style={{ padding: "10px 14px", textAlign: "center" }}>
-                            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                          <td style={{ padding: "10px 14px", textAlign: "left", whiteSpace: "nowrap" }}>
+                            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-start", gap: 6, flexWrap: "nowrap" }}>
                               <button
                                 type="button"
                                 onClick={() => notify(`Xem chi tiết chứng từ ${item.id}`)}
                                 style={{
-                                  background: "transparent",
-                                  border: "none",
-                                  color: "#0284c7",
-                                  fontWeight: 500,
+                                  minWidth: 48,
+                                  height: 26,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  background: "#ffffff",
+                                  border: "1px solid #cbd5e1",
+                                  borderRadius: 5,
+                                  color: "#334155",
+                                  fontWeight: 600,
                                   cursor: "pointer",
-                                  fontSize: 12.5,
+                                  fontSize: 11.5,
                                 }}
                               >
                                 Xem

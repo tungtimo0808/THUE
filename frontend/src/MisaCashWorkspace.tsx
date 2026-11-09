@@ -7557,13 +7557,13 @@ export function PaymentRequestsTab({
                 <td className="numeric" style={{ whiteSpace: "nowrap" }}><strong>{formatVND(r.amount)} đ</strong></td>
                 <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                   {r.status === "paid" ? (
-                    <span style={{ display: "inline-block", background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã chi tiền</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã chi tiền</span>
                   ) : r.status === "approved" ? (
-                    <span style={{ display: "inline-block", background: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã duyệt</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã duyệt</span>
                   ) : r.status === "rejected" ? (
-                    <span style={{ display: "inline-block", background: "#fee2e2", color: "#b91c1c", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Từ chối</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#fee2e2", color: "#b91c1c", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Từ chối</span>
                   ) : (
-                    <span style={{ display: "inline-block", background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
                   )}
                 </td>
                 <td style={{ whiteSpace: "nowrap" }}>
@@ -7582,21 +7582,21 @@ export function PaymentRequestsTab({
                     <span style={{ color: "#94a3b8" }}>-</span>
                   )}
                 </td>
-                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap", width: 224 }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 6, width: 210 }}>
                     {r.status === "pending" && (
                       <>
                         <button
                           type="button"
                           onClick={() => void persistDoc({ ...r, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${r.code}`)}
-                          style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #0284c7", background: "#f0f9ff", color: "#0369a1", cursor: "pointer" }}
+                          style={{ width: 53, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #0284c7", background: "#f0f9ff", color: "#0369a1", cursor: "pointer" }}
                         >
                           Duyệt
                         </button>
                         <button
                           type="button"
                           onClick={() => void persistDoc({ ...r, status: "rejected" }, `Đã từ chối đề nghị chi ${r.code}`)}
-                          style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}
+                          style={{ width: 53, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}
                         >
                           Từ chối
                         </button>
@@ -7613,7 +7613,7 @@ export function PaymentRequestsTab({
                           );
                           onOpenCreatePayment();
                         }}
-                        style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
+                        style={{ width: 112, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
                       >
                         Lập phiếu chi
                       </button>
@@ -7625,7 +7625,7 @@ export function PaymentRequestsTab({
                         setModalMode("view");
                         setIsModalOpen(true);
                       }}
-                      style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
+                      style={{ width: 92, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
                     >
                       Xem chi tiết
                     </button>
@@ -8252,9 +8252,9 @@ export function AdvanceSettlementTab({
                 <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                   <div>
                     {s.status === "settled" ? (
-                      <span style={{ display: "inline-block", background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã quyết toán</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã quyết toán</span>
                     ) : (
-                      <span style={{ display: "inline-block", background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
                     )}
                   </div>
                   {s.receiptCode && s.receiptCode !== "-" && (
@@ -8272,8 +8272,8 @@ export function AdvanceSettlementTab({
                     </div>
                   )}
                 </td>
-                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap", width: 172 }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 6, width: 158 }}>
                     {s.status === "pending" && (
                       <button
                         type="button"
@@ -8284,7 +8284,7 @@ export function AdvanceSettlementTab({
                             `✓ Đã duyệt quyết toán ${s.code}${autoReceipt !== "-" ? ` & lập phiếu thu hoàn ứng ${autoReceipt}` : ""}`,
                           );
                         }}
-                        style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
+                        style={{ width: 60, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
                       >
                         Duyệt
                       </button>
@@ -8296,7 +8296,7 @@ export function AdvanceSettlementTab({
                         setModalMode("view");
                         setIsModalOpen(true);
                       }}
-                      style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
+                      style={{ width: 92, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
                     >
                       Xem chi tiết
                     </button>

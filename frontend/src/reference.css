@@ -4437,6 +4437,42 @@ body.ref-process-scroll-lock {
   color: #0284c7;
 }
 
+/* Global alignment for table action columns and status badges across all modules */
+table td > span[style*="border-radius: 12px"],
+table td > div > span[style*="border-radius: 12px"],
+.admin-table td .admin-badge {
+  min-width: 96px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+table td:last-child button {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.misa-row-action-cell {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: 100%;
+}
+
+.misa-row-action-cell .misa-row-action-link {
+  min-width: 34px;
+  text-align: center;
+  justify-content: center;
+}
+
 /* Hide legacy AI / AVA buttons and triggers across all workspaces */
 button:has(.misa-hidden-ai-marker),
 button:has(img[src*="ava_avatar"]),
