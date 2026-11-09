@@ -159,7 +159,7 @@ export function cleanBundleDisplayName(name?: string | null): string {
     .trim();
 }
 
-export function formatSavedBundleOptionLabel(b: any): string {
+export function formatSavedBundleOptionLabel(b: any, _idx?: number): string {
   if (!b) return "";
   const typeMap: Record<string, string> = {
     ANNUAL_GOING_CONCERN: "BCTC năm (Hoạt động liên tục)",
@@ -959,16 +959,21 @@ export function isoToDmyDate(iso: string): string {
 export function MisaBranchTagSelector({
   branches = [],
   selectedScope,
-  selectedBranchId = "",
+  selectedBranchId: propSelectedBranchId,
+  branchId,
+  branchLabel: _branchLabel,
   onChange,
   companyLabel,
 }: {
   branches?: Array<{ id: string; code?: string; name: string }>;
   selectedScope?: string;
   selectedBranchId?: string;
+  branchId?: string;
+  branchLabel?: string;
   onChange?: (...args: any[]) => void;
   companyLabel?: string;
 }) {
+  const selectedBranchId = propSelectedBranchId ?? branchId ?? "";
   const [open, setOpen] = useState(false);
   const [tagCleared, setTagCleared] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);

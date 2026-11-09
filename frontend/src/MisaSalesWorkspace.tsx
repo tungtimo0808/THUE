@@ -550,6 +550,7 @@ export default function MisaSalesWorkspace({
           taxCode: c.taxCode,
           address: c.address,
           phone: c.phone,
+          contact: "",
           type: "Tổ chức",
         })));
       }
@@ -1155,7 +1156,7 @@ export default function MisaSalesWorkspace({
                 name: newCust.name,
                 party_type: newCust.customerType === "individual" ? "INDIVIDUAL" : "ORGANIZATION",
                 legal_name: newCust.name,
-                ...(validTax ? { tax_code: validTax } : {}),
+                tax_code: validTax || "",
               });
               reloadApi();
               if (!andAddNew) setShowCustomerModal(false);

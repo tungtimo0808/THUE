@@ -47,7 +47,7 @@ const modeNames: Record<Mode, string> = {
 const money = (value: string) => `${Number(value || 0).toLocaleString("vi-VN")} đ`;
 const displayDate = (value: string) => value ? value.slice(0, 10).split("-").reverse().join("/") : "—";
 
-export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; href: (path: string) => string }) {
+export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; href: (path: string, extra?: Record<string, string>) => string }) {
   const { token, companyId } = useApiSession();
   const [params, setParams] = useSearchParams();
   const [result, setResult] = useState<Result | null>(null);

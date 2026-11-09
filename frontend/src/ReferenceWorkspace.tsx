@@ -933,7 +933,7 @@ function ReferenceWorkspace() {
         toLabel: item.label,
         subTitle: isMgmt
           ? `Đang nạp Sổ Quản trị nội bộ (Năm tài chính ${targetYear}) — Tách biệt hoàn toàn với Sổ Thuế...`
-          : `Đang nạp Sổ Tài chính & Thuế chính thức (Năm tài chính ${targetYear}) theo chuẩn ${item.regime || activeCompanyRegime}...`,
+          : `Đang nạp Sổ Tài chính & Thuế chính thức (Năm tài chính ${targetYear}) theo chuẩn ${(item as any).regime || activeCompanyRegime}...`,
         companyName: company?.name,
         datasetName: item.label,
         branchName: branchLabel,
@@ -1453,22 +1453,6 @@ function ReferenceWorkspace() {
                 }}
               >
                 Mở phân hệ {fallbackModInfo?.label || "Tổng quan"} →
-              </button>
-              <button
-                type="button"
-                onClick={() => setPanel("mode")}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: 6,
-                  border: "1px solid #cbd5e1",
-                  background: "#ffffff",
-                  color: "#1e293b",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
-              >
-                Chuyển đổi Vai trò làm việc (21 Role)
               </button>
             </div>
           </div>
@@ -3023,7 +3007,7 @@ function ReferenceWorkspace() {
           onClose={() => setPanel(null)}
         />
       )}
-      {panel && !["settings", "mode", "tabs"].includes(panel) && (
+      {panel && !["settings", "tabs"].includes(panel) && (
         <Modal
           title={
             panel === "quick"
