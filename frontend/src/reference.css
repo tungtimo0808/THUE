@@ -4309,233 +4309,56 @@ body.ref-process-scroll-lock {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(15, 23, 42, 0.52);
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
-  animation: ref-overlay-fade-in 0.18s ease-out forwards;
+  background: rgba(248, 250, 252, 0.42);
+  backdrop-filter: blur(2.5px);
+  -webkit-backdrop-filter: blur(2.5px);
+  animation: ref-overlay-fade-in 0.14s ease-out forwards;
   pointer-events: none;
+  transition: opacity 0.18s ease;
 }
 
-.ref-context-transition-card {
-  width: min(600px, 94vw);
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 16px;
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  box-shadow:
-    0 25px 65px -12px rgba(15, 23, 42, 0.42),
-    0 0 0 1px rgba(255, 255, 255, 0.9) inset;
-  overflow: hidden;
-  animation: ref-card-pop-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.ref-context-transition-overlay.is-done {
+  opacity: 0;
 }
 
-.ref-context-transition-top-bar {
-  height: 5px;
-  width: 100%;
-  background: linear-gradient(90deg, #00a862 0%, #0284c7 50%, #10b981 100%);
-}
-
-.ref-context-transition-body {
-  padding: 22px 26px 20px;
+.ref-context-spinner-box {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-}
-
-.ref-context-transition-header {
-  display: flex;
   align-items: center;
-  gap: 15px;
-}
-
-.ref-context-transition-icon-ring {
-  width: 48px;
-  height: 48px;
-  border-radius: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: #ffffff;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  box-shadow: 0 8px 18px rgba(2, 132, 199, 0.28);
-  transition: all 0.25s ease;
-}
-
-.ref-context-transition-icon-ring.type-branch {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-}
-
-.ref-context-transition-icon-ring.type-dataset {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-  box-shadow: 0 8px 18px rgba(109, 40, 217, 0.28);
-}
-
-.ref-context-transition-icon-ring.type-company {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  box-shadow: 0 8px 18px rgba(217, 119, 6, 0.28);
-}
-
-.ref-context-transition-icon-ring.done {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35) !important;
-  transform: scale(1.06);
-}
-
-.ref-context-transition-titles {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.ref-context-transition-kicker {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  color: #0f172a;
-  text-transform: uppercase;
-}
-
-.ref-context-transition-overlay.is-done .ref-context-transition-kicker {
-  color: #047857;
-}
-
-.ref-context-transition-sub {
-  margin: 0;
-  font-size: 12.5px;
-  color: #475569;
-  line-height: 1.45;
-}
-
-.ref-context-transition-flow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.15fr);
-  align-items: center;
-  gap: 12px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  gap: 10px;
+  padding: 16px 24px;
   border-radius: 12px;
-  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
 }
 
-.ref-context-flow-box {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 13px;
-  border-radius: 9px;
-  min-width: 0;
-}
-
-.ref-context-flow-box.from {
-  background: #ffffff;
-  border: 1px dashed #cbd5e1;
-  opacity: 0.82;
-}
-
-.ref-context-flow-box.to {
-  background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%);
-  border: 1.5px solid #10b981;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);
-}
-
-.ref-context-flow-tag {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #64748b;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.ref-context-flow-box.to .ref-context-flow-tag {
-  color: #047857;
-}
-
-.live-pulse-dot {
-  width: 7px;
-  height: 7px;
+.ref-context-spinner-ring {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+  border: 3px solid #e2e8f0;
+  border-top-color: #0284c7;
+  border-right-color: #00a862;
+  animation: ref-context-spin 0.6s linear infinite;
 }
 
-.ref-context-flow-val {
-  font-size: 13.5px;
-  font-weight: 700;
+@keyframes ref-context-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ref-context-spinner-text {
+  font-size: 12.5px;
   color: #334155;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ref-context-flow-box.to .ref-context-flow-val {
-  color: #065f46;
-  font-size: 14px;
-}
-
-.ref-context-flow-arrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  color: #0284c7;
-  animation: ref-arrow-pulse 0.7s ease-in-out infinite;
-}
-
-.ref-context-flow-arrow .arrow-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #38bdf8;
-}
-
-.ref-context-transition-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 2px;
-}
-
-.ref-context-meta-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  font-size: 11.5px;
   font-weight: 500;
-  color: #475569;
-  max-width: 100%;
-}
-
-.ref-context-meta-chip span {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 190px;
 }
 
-.ref-context-meta-chip.active {
-  background: #eff6ff;
-  border-color: #93c5fd;
-  color: #1d4ed8;
+.ref-context-spinner-text strong {
+  color: #0f172a;
   font-weight: 700;
-}
-
-.ref-context-transition-progress {
-  height: 5px;
-  width: 100%;
-  background: #e2e8f0;
-  overflow: hidden;
-}
-
-.ref-context-transition-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #0284c7 0%, #10b981 100%);
-  animation: ref-progress-sweep 0.88s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 /* Hide legacy AI / AVA buttons and triggers across all workspaces */

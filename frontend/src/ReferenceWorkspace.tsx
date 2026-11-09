@@ -654,14 +654,14 @@ function ReferenceWorkspace() {
 
       const t1 = window.setTimeout(() => {
         setContextTransition((prev) => (prev ? { ...prev, phase: "done" } : null));
-      }, 420);
+      }, 380);
       const t2 = window.setTimeout(() => {
         setContextTransition(null);
         setIsSwitchingContext(false);
-      }, 950);
+      }, 580);
       const t3 = window.setTimeout(() => {
         setRecentlyChangedCluster(null);
-      }, 1800);
+      }, 1400);
 
       transitionTimersRef.current = [t1, t2, t3];
     },
@@ -3391,74 +3391,11 @@ function ReferenceWorkspace() {
           aria-live="polite"
           data-testid="context-switch-overlay"
         >
-          <div className="ref-context-transition-card">
-            <div className="ref-context-transition-top-bar" />
-            <div className="ref-context-transition-body">
-              <div className="ref-context-transition-header">
-                <div className={`ref-context-transition-icon-ring type-${contextTransition.type} ${contextTransition.phase === "done" ? "done" : ""}`}>
-                  {contextTransition.phase === "done" ? (
-                    <Check size={24} strokeWidth={3} />
-                  ) : contextTransition.type === "branch" ? (
-                    <MapPin size={22} />
-                  ) : contextTransition.type === "dataset" ? (
-                    <Database size={22} />
-                  ) : contextTransition.type === "company" ? (
-                    <Building2 size={22} />
-                  ) : (
-                    <Calendar size={22} />
-                  )}
-                </div>
-                <div className="ref-context-transition-titles">
-                  <span className="ref-context-transition-kicker">
-                    {contextTransition.phase === "done" ? "✓ ĐÃ CHUYỂN ĐỔI THÀNH CÔNG" : contextTransition.title}
-                  </span>
-                  <p className="ref-context-transition-sub">{contextTransition.subTitle}</p>
-                </div>
-              </div>
-
-              <div className="ref-context-transition-flow">
-                <div className="ref-context-flow-box from">
-                  <span className="ref-context-flow-tag">TRƯỚC ĐÓ</span>
-                  <strong className="ref-context-flow-val">{contextTransition.fromLabel}</strong>
-                </div>
-
-                <div className="ref-context-flow-arrow" aria-hidden="true">
-                  <span className="arrow-dot" />
-                  <span className="arrow-dot" />
-                  <ChevronRight size={20} strokeWidth={2.5} />
-                </div>
-
-                <div className="ref-context-flow-box to">
-                  <span className="ref-context-flow-tag">
-                    <span className="live-pulse-dot" /> ĐANG MỞ DỮ LIỆU
-                  </span>
-                  <strong className="ref-context-flow-val">{contextTransition.toLabel}</strong>
-                </div>
-              </div>
-
-              <div className="ref-context-transition-meta">
-                <div className={`ref-context-meta-chip ${contextTransition.type === "company" ? "active" : ""}`}>
-                  <Building2 size={12} />
-                  <span>{contextTransition.companyName}</span>
-                </div>
-                <div className={`ref-context-meta-chip ${contextTransition.type === "dataset" ? "active" : ""}`}>
-                  <Database size={12} />
-                  <span>{contextTransition.datasetName}</span>
-                </div>
-                <div className={`ref-context-meta-chip ${contextTransition.type === "branch" ? "active" : ""}`}>
-                  <MapPin size={12} />
-                  <span>{contextTransition.branchName}</span>
-                </div>
-                <div className={`ref-context-meta-chip ${contextTransition.type === "period" ? "active" : ""}`}>
-                  <Calendar size={12} />
-                  <span>{contextTransition.periodName}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="ref-context-transition-progress">
-              <div className="ref-context-transition-progress-fill" />
-            </div>
+          <div className="ref-context-spinner-box">
+            <div className="ref-context-spinner-ring" />
+            <span className="ref-context-spinner-text">
+              Đang chuyển sang <strong>{contextTransition.toLabel}</strong>...
+            </span>
           </div>
         </div>
       )}
