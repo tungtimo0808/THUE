@@ -1359,7 +1359,11 @@ function ReferenceWorkspace() {
     "Quản lý dữ liệu": "/fiscal-periods",
     "Tùy chọn": "/admin?tab=config",
     "Ngày hạch toán": "/fiscal-periods",
+    "Kết nối ứng dụng": href("/invoices/sync"),
+    "Thiết lập kết nối sàn TMĐT (Shopee, TikTok Shop)": href("/sales/orders"),
     "Thiết lập kết nối Ngân hàng điện tử": href("/bank/ebanking"),
+    "Ngôn ngữ": "/admin?tab=config",
+    "Thiết lập cấu hình gửi email": "/admin?tab=config",
     "Thiết lập chữ ký số (USB Token / SmartCA)": href("/invoices/sync"),
     "Nhập kho": href("/inventory/receipts"),
     "Xuất kho": href("/inventory/issues"),
@@ -2330,14 +2334,6 @@ function ReferenceWorkspace() {
             onClick={() => navigate(href("/reports"))}
           >
             <Download size={18} />
-          </button>
-          <button
-            className="ref-icon secondary-tool"
-            aria-label="Tính năng mới"
-            title="Tính năng mới"
-            onClick={() => infoAction("Tính năng mới")}
-          >
-            <Megaphone size={18} />
           </button>
           <button
             className="ref-icon"
