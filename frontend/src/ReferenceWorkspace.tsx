@@ -75,7 +75,6 @@ import {
 import {
   SmartSearchResults,
   TabSettingsModal,
-  WorkModeModal,
   getRoleWorkspaceSpec,
 } from "./GlobalShellPanels";
 import { SidebarNavigation } from "./SidebarNavigation";
@@ -654,14 +653,14 @@ function ReferenceWorkspace() {
 
       const t1 = window.setTimeout(() => {
         setContextTransition((prev) => (prev ? { ...prev, phase: "done" } : null));
-      }, 420);
+      }, 520);
       const t2 = window.setTimeout(() => {
         setContextTransition(null);
         setIsSwitchingContext(false);
       }, 950);
       const t3 = window.setTimeout(() => {
         setRecentlyChangedCluster(null);
-      }, 1800);
+      }, 1600);
 
       transitionTimersRef.current = [t1, t2, t3];
     },
@@ -934,7 +933,7 @@ function ReferenceWorkspace() {
         toLabel: item.label,
         subTitle: isMgmt
           ? `Đang nạp Sổ Quản trị nội bộ (Năm tài chính ${targetYear}) — Tách biệt hoàn toàn với Sổ Thuế...`
-          : `Đang nạp Sổ Tài chính & Thuế chính thức (Năm tài chính ${targetYear}) theo chuẩn ${item.regime || activeCompanyRegime}...`,
+          : `Đang nạp Sổ Tài chính & Thuế chính thức (Năm tài chính ${targetYear}) theo chuẩn ${(item as any).regime || activeCompanyRegime}...`,
         companyName: company?.name,
         datasetName: item.label,
         branchName: branchLabel,
@@ -1008,7 +1007,6 @@ function ReferenceWorkspace() {
     | "notifications"
     | "help"
     | "module"
-    | "mode"
     | "tabs"
     | null
   >(null);
@@ -1022,6 +1020,9 @@ function ReferenceWorkspace() {
     [assignedRoleCodes, setAssignedRoleCodes] = useState<string[]>([]);
 
   useEffect(() => {
+    try {
+      localStorage.removeItem("ref_work_mode");
+    } catch {}
     if (!apiToken || !company?.id) return;
     let active = true;
     request<any>(`/api/v1/iam/memberships/?company_id=${encodeURIComponent(company.id)}`, apiToken)
@@ -1039,6 +1040,7 @@ function ReferenceWorkspace() {
           }
         } else {
           setAssignedRoleCodes(["ROLE_CHIEF_ACCOUNTANT"]);
+          setWorkMode("ROLE_CHIEF_ACCOUNTANT");
         }
       })
       .catch(() => {});
@@ -1062,16 +1064,27 @@ function ReferenceWorkspace() {
 
   const activeRoleSpec = useMemo(() => {
     const baseSpec = getRoleWorkspaceSpec(workMode);
-    let roleModules = baseSpec.allowedModules;
+    const effectiveCodes = assignedRoleCodes.length > 0 ? assignedRoleCodes : [baseSpec.code];
+    let roleModules: string[] = [];
+    let roleMap: Record<string, string[]> | null = null;
     try {
       const roleMapRaw = localStorage.getItem(`sv_role_modules_${company?.id}`);
       if (roleMapRaw) {
-        const roleMap = JSON.parse(roleMapRaw);
-        if (roleMap && Array.isArray(roleMap[baseSpec.code]) && roleMap[baseSpec.code].length > 0) {
-          roleModules = roleMap[baseSpec.code];
-        }
+        roleMap = JSON.parse(roleMapRaw);
       }
     } catch {}
+    for (const code of effectiveCodes) {
+      const spec = getRoleWorkspaceSpec(code);
+      const customMods = roleMap && Array.isArray(roleMap[spec.code]) && roleMap[spec.code].length > 0
+        ? roleMap[spec.code]
+        : spec.allowedModules;
+      for (const m of customMods) {
+        if (!roleModules.includes(m)) roleModules.push(m);
+      }
+    }
+    if (roleModules.length === 0) {
+      roleModules = baseSpec.allowedModules;
+    }
     try {
       const enabledRaw = localStorage.getItem(`sv_enabled_modules_${company?.id}`);
       if (enabledRaw) {
@@ -1085,7 +1098,7 @@ function ReferenceWorkspace() {
       ...baseSpec,
       allowedModules: roleModules,
     };
-  }, [workMode, company?.id, moduleSyncTick]);
+  }, [workMode, assignedRoleCodes, company?.id, moduleSyncTick]);
   const setNotice = useCallback((msg: string) => {
     const cleaned = msg ? humanizeErrorMessage(msg) : "";
     setRawNotice(cleaned);
@@ -1325,7 +1338,7 @@ function ReferenceWorkspace() {
       persistTransactions(next);
       setItems(next);
       if (!another) setCreateKind(null);
-      setNotice(`Đã lưu ${item.code} trên trình duyệt.`);
+      setNotice(`Đã lưu chứng từ ${item.code} thành công.`);
       return true;
     } catch {
       return false;
@@ -1340,9 +1353,9 @@ function ReferenceWorkspace() {
     try {
       persistTransactions(next);
       setItems(next);
-      setNotice("Đã chuyển sang chờ duyệt trong bản trải nghiệm.");
+      setNotice("Đã chuyển chứng từ sang trạng thái chờ phê duyệt.");
     } catch {
-      setNotice("Không thể lưu. Vui lòng kiểm tra dung lượng trình duyệt.");
+      setNotice("Không thể lưu chứng từ. Vui lòng thử lại.");
     }
   };
   const quickAccessRoutes: Record<string, string> = {
@@ -1359,7 +1372,11 @@ function ReferenceWorkspace() {
     "Quản lý dữ liệu": "/fiscal-periods",
     "Tùy chọn": "/admin?tab=config",
     "Ngày hạch toán": "/fiscal-periods",
+    "Kết nối ứng dụng": href("/invoices/sync"),
+    "Thiết lập kết nối sàn TMĐT (Shopee, TikTok Shop)": href("/sales/orders"),
     "Thiết lập kết nối Ngân hàng điện tử": href("/bank/ebanking"),
+    "Ngôn ngữ": "/admin?tab=config",
+    "Thiết lập cấu hình gửi email": "/admin?tab=config",
     "Thiết lập chữ ký số (USB Token / SmartCA)": href("/invoices/sync"),
     "Nhập kho": href("/inventory/receipts"),
     "Xuất kho": href("/inventory/issues"),
@@ -1372,7 +1389,7 @@ function ReferenceWorkspace() {
   const infoAction = (name: string) => {
     setPanel(null);
     if (name === "Thiết lập màu sắc và hiển thị") {
-      setPanel("mode");
+      navigate("/admin?tab=config");
       return;
     }
     if (name === "Gợi ý, nhắc nhở thông minh") {
@@ -1436,22 +1453,6 @@ function ReferenceWorkspace() {
                 }}
               >
                 Mở phân hệ {fallbackModInfo?.label || "Tổng quan"} →
-              </button>
-              <button
-                type="button"
-                onClick={() => setPanel("mode")}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: 6,
-                  border: "1px solid #cbd5e1",
-                  background: "#ffffff",
-                  color: "#1e293b",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
-              >
-                Chuyển đổi Vai trò làm việc (21 Role)
               </button>
             </div>
           </div>
@@ -2316,28 +2317,12 @@ function ReferenceWorkspace() {
             />}
           </div>
           <button
-            className="ref-work-mode"
-            aria-label={`Chế độ làm việc: ${activeRoleSpec.shortLabel}`}
-            title={`${activeRoleSpec.name} (${activeRoleSpec.code}): ${activeRoleSpec.capabilitiesSummary}`}
-            onClick={() => setPanel("mode")}
-          >
-            {activeRoleSpec.shortLabel} <ChevronDown size={13} />
-          </button>
-          <button
             className="ref-icon secondary-tool"
             aria-label="Tải dữ liệu"
             title="Tải báo cáo, dữ liệu"
             onClick={() => navigate(href("/reports"))}
           >
             <Download size={18} />
-          </button>
-          <button
-            className="ref-icon secondary-tool"
-            aria-label="Tính năng mới"
-            title="Tính năng mới"
-            onClick={() => infoAction("Tính năng mới")}
-          >
-            <Megaphone size={18} />
           </button>
           <button
             className="ref-icon"
@@ -2427,7 +2412,7 @@ function ReferenceWorkspace() {
                         </span>
                       ) : (
                         <span style={{ background: "#0284c7", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
-                          👤 NHÂN SỰ
+                          👤 {activeRoleSpec.shortLabel.toUpperCase()}
                         </span>
                       )}
                     </div>
@@ -3012,22 +2997,6 @@ function ReferenceWorkspace() {
           </div>
         </Modal>
       )}
-      {panel === "mode" && (
-        <WorkModeModal
-          current={workMode}
-          activeRegime={activeCompanyRegime}
-          assignedRoleCodes={assignedRoleCodes}
-          onChange={(nextRoleCode) => {
-            const spec = getRoleWorkspaceSpec(nextRoleCode);
-            setWorkMode(spec.code);
-            setNotice(`✓ Đã chuyển sang Vai trò làm việc: ${spec.name} (Mở ${spec.allowedModules.length} phân hệ)`);
-            if (!spec.allowedModules.includes(moduleId)) {
-              navigate(href(`/${spec.allowedModules[0] || "overview"}`));
-            }
-          }}
-          onClose={() => setPanel(null)}
-        />
-      )}
       {panel === "tabs" && (
         <TabSettingsModal
           moduleName={module?.label || "Kế toán"}
@@ -3038,7 +3007,7 @@ function ReferenceWorkspace() {
           onClose={() => setPanel(null)}
         />
       )}
-      {panel && !["settings", "mode", "tabs"].includes(panel) && (
+      {panel && !["settings", "tabs"].includes(panel) && (
         <Modal
           title={
             panel === "quick"
@@ -3396,25 +3365,14 @@ function ReferenceWorkspace() {
           data-testid="context-switch-overlay"
         >
           <div className="ref-context-transition-card">
-            <div className="ref-context-transition-top-bar" />
             <div className="ref-context-transition-body">
               <div className="ref-context-transition-header">
-                <div className={`ref-context-transition-icon-ring type-${contextTransition.type} ${contextTransition.phase === "done" ? "done" : ""}`}>
-                  {contextTransition.phase === "done" ? (
-                    <Check size={24} strokeWidth={3} />
-                  ) : contextTransition.type === "branch" ? (
-                    <MapPin size={22} />
-                  ) : contextTransition.type === "dataset" ? (
-                    <Database size={22} />
-                  ) : contextTransition.type === "company" ? (
-                    <Building2 size={22} />
-                  ) : (
-                    <Calendar size={22} />
-                  )}
+                <div className="ref-context-spinner-wrap">
+                  <div className="ref-context-spinner-ring" />
                 </div>
                 <div className="ref-context-transition-titles">
                   <span className="ref-context-transition-kicker">
-                    {contextTransition.phase === "done" ? "✓ ĐÃ CHUYỂN ĐỔI THÀNH CÔNG" : contextTransition.title}
+                    {contextTransition.title}
                   </span>
                   <p className="ref-context-transition-sub">{contextTransition.subTitle}</p>
                 </div>
@@ -3422,46 +3380,19 @@ function ReferenceWorkspace() {
 
               <div className="ref-context-transition-flow">
                 <div className="ref-context-flow-box from">
-                  <span className="ref-context-flow-tag">TRƯỚC ĐÓ</span>
+                  <span className="ref-context-flow-tag">CHUYỂN TỪ</span>
                   <strong className="ref-context-flow-val">{contextTransition.fromLabel}</strong>
                 </div>
 
                 <div className="ref-context-flow-arrow" aria-hidden="true">
-                  <span className="arrow-dot" />
-                  <span className="arrow-dot" />
                   <ChevronRight size={20} strokeWidth={2.5} />
                 </div>
 
                 <div className="ref-context-flow-box to">
-                  <span className="ref-context-flow-tag">
-                    <span className="live-pulse-dot" /> ĐANG MỞ DỮ LIỆU
-                  </span>
+                  <span className="ref-context-flow-tag">SANG DỮ LIỆU</span>
                   <strong className="ref-context-flow-val">{contextTransition.toLabel}</strong>
                 </div>
               </div>
-
-              <div className="ref-context-transition-meta">
-                <div className={`ref-context-meta-chip ${contextTransition.type === "company" ? "active" : ""}`}>
-                  <Building2 size={12} />
-                  <span>{contextTransition.companyName}</span>
-                </div>
-                <div className={`ref-context-meta-chip ${contextTransition.type === "dataset" ? "active" : ""}`}>
-                  <Database size={12} />
-                  <span>{contextTransition.datasetName}</span>
-                </div>
-                <div className={`ref-context-meta-chip ${contextTransition.type === "branch" ? "active" : ""}`}>
-                  <MapPin size={12} />
-                  <span>{contextTransition.branchName}</span>
-                </div>
-                <div className={`ref-context-meta-chip ${contextTransition.type === "period" ? "active" : ""}`}>
-                  <Calendar size={12} />
-                  <span>{contextTransition.periodName}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="ref-context-transition-progress">
-              <div className="ref-context-transition-progress-fill" />
             </div>
           </div>
         </div>

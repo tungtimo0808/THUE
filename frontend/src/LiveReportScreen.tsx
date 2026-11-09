@@ -414,9 +414,10 @@ export default function LiveReportScreen({
             }),
           )
         : [["Không có dữ liệu phát sinh trong kỳ đã chọn."]];
+    const activeCompany = session.companies?.find((c) => c.id === session.companyId) || session.companies?.[0];
     const sheet = XLSX.utils.aoa_to_sheet([
-      [session.company?.name || "Công ty TNHH Tùng Timo"],
-      [(session.company as any)?.address || "198 Trần Quang Khải, P. Hoàn Kiếm, Hà Nội - Việt Nam"],
+      [activeCompany?.name || "Công ty TNHH Tùng Timo"],
+      [(activeCompany as any)?.address || "198 Trần Quang Khải, P. Hoàn Kiếm, Hà Nội - Việt Nam"],
       [title.toUpperCase()],
       [`Từ ngày ${formatVNDate(fromDate)} đến ngày ${formatVNDate(toDate)}`],
       [],
@@ -432,8 +433,9 @@ export default function LiveReportScreen({
     if (!report) return;
     setExporting(format);
     setError("");
+    const activeCompany = session.companies?.find((c) => c.id === session.companyId) || session.companies?.[0];
     const exportPayload = {
-      company_id: getSelectedCompanyId() || session.company?.id || "",
+      company_id: getSelectedCompanyId() || activeCompany?.id || "",
       report_code: report.reportCode || ("code" in target ? target.code : "RPT-STANDARD"),
       title,
       period_str: `Từ ngày ${formatVNDate(fromDate)} đến ngày ${formatVNDate(toDate)}`,
@@ -465,9 +467,9 @@ export default function LiveReportScreen({
       options: {
         orientation: columns.length > 6 ? "LANDSCAPE" : "PORTRAIT",
         paper_size: "A4",
-        company_name: session.company?.name || "Công ty TNHH XYZ",
+        company_name: activeCompany?.name || "Công ty TNHH XYZ",
         company_address:
-          (session.company as any)?.address ||
+          (activeCompany as any)?.address ||
           "Tầng 9 Technosoft, Duy Tân, Cầu Giấy, Hà Nội - Việt Nam",
       },
     };

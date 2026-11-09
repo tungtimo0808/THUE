@@ -325,7 +325,13 @@ CATALOG_IMPORT_MAX_ROWS = int(os.getenv('CATALOG_IMPORT_MAX_ROWS', '5000'))
 CATALOG_IMPORT_BACKGROUND_ROWS = int(os.getenv('CATALOG_IMPORT_BACKGROUND_ROWS', '1000'))
 
 if 'test' in sys.argv:
+    TEST_RUNNER = 'config.test_runner.FastTestRunner'
     PASSWORD_HASHERS = [
         'django.contrib.auth.hashers.MD5PasswordHasher',
     ]
+    SPECTACULAR_SETTINGS = {
+        **globals().get('SPECTACULAR_SETTINGS', {}),
+        'DISABLE_ERRORS_AND_WARNINGS': True,
+    }
+
 

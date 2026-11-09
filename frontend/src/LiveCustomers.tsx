@@ -135,7 +135,7 @@ export default function LiveCustomers({ onBack }: { onBack: () => void }) {
   }
 
   async function remove(customer: Customer) {
-    if (!window.confirm(`Xóa khách hàng ${customer.code}? BE sẽ từ chối nếu đã có chứng từ.`)) return;
+    if (!window.confirm(`Xóa khách hàng ${customer.code}? Hệ thống sẽ từ chối nếu khách hàng đã có chứng từ phát sinh.`)) return;
     setError("");
     try { await deleteCustomer(token, companyId, customer.id); setReload(value => value + 1); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "Không xóa được khách hàng."); }
@@ -178,17 +178,17 @@ export default function LiveCustomers({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <section className="live-customers" aria-label="Khách hàng từ BE">
+    <section className="live-customers" aria-label="Danh mục khách hàng">
       <header className="live-customers-header">
         <button type="button" onClick={onBack}>← Danh mục</button>
-        <div><h1>Khách hàng</h1><p>Dữ liệu trực tiếp từ backend</p></div>
+        <div><h1>Khách hàng</h1><p>Quản lý danh mục khách hàng doanh nghiệp</p></div>
         {token && <button type="button" onClick={() => {
           signOut(); setCustomers([]); setError("");
         }}>Đăng xuất</button>}
       </header>
       {!token ? (
         <form className="live-login" onSubmit={signIn}>
-          <h2>Đăng nhập BE</h2>
+          <h2>Đăng nhập hệ thống</h2>
           <p>Chưa có tài khoản? <Link to="/account">Đăng ký và xác thực email</Link></p>
           <p><Link to="/login">Đăng nhập ở trang tài khoản</Link></p>
           <label>Email hoặc tên đăng nhập<input autoComplete="username" value={email} onChange={event => setEmail(event.target.value)} required /></label>
@@ -199,7 +199,7 @@ export default function LiveCustomers({ onBack }: { onBack: () => void }) {
         <>
           <div className="live-customers-toolbar">
             <label>Doanh nghiệp
-              <select aria-label="Doanh nghiệp BE" value={companyId} onChange={event => selectCompany(event.target.value)}>
+              <select aria-label="Doanh nghiệp" value={companyId} onChange={event => selectCompany(event.target.value)}>
                 {companies.map(company => <option key={company.id} value={company.id}>{company.name} ({company.code})</option>)}
               </select>
             </label>
@@ -227,7 +227,7 @@ export default function LiveCustomers({ onBack }: { onBack: () => void }) {
               <div className="live-import">
                 <label>Nhập khách hàng từ CSV<input type="file" accept=".csv,text/csv" onChange={event => { setImportFile(event.target.files?.[0] ?? null); setImportResult(null); }} /></label>
                 <button type="button" disabled={!importFile || saving} onClick={() => uploadCsv(true)}>Xem trước</button>
-                <button type="button" disabled={!importFile || saving} onClick={() => uploadCsv(false)}>Nhập vào BE</button>
+                <button type="button" disabled={!importFile || saving} onClick={() => uploadCsv(false)}>Nhập dữ liệu</button>
                 <small>CSV UTF-8 cần các cột: code,name,party_type.</small>
                 {importResult && <p role="status">{importResult.preview ? "Xem trước" : "Đã nhập"}: {importResult.results.filter(row => !row.error).length} dòng hợp lệ, {importResult.results.filter(row => row.error).length} dòng lỗi.</p>}
               </div>
@@ -237,14 +237,14 @@ export default function LiveCustomers({ onBack }: { onBack: () => void }) {
       )}
       {editing && <form className="live-editor" onSubmit={saveCustomer} aria-label="Biểu mẫu khách hàng">
         <h2>{editing === "new" ? "Thêm khách hàng" : `Sửa ${editing.code}`}</h2>
-        <label>Mã khách hàng<input value={draft.code} onChange={event => setDraft(value => ({ ...value, code: event.target.value }))} placeholder="Để trống để BE tự tạo mã" /></label>
+        <label>Mã khách hàng<input value={draft.code} onChange={event => setDraft(value => ({ ...value, code: event.target.value }))} placeholder="Để trống để hệ thống tự cấp mã" /></label>
         <label>Tên khách hàng<input required value={draft.name} onChange={event => setDraft(value => ({ ...value, name: event.target.value }))} /></label>
         <label>Loại<select value={draft.party_type} onChange={event => setDraft(value => ({ ...value, party_type: event.target.value }))}>
           <option value="ORGANIZATION">Tổ chức</option><option value="INDIVIDUAL">Cá nhân</option><option value="HOUSEHOLD_BUSINESS">Hộ kinh doanh</option>
         </select></label>
         <label>Tên pháp lý<input value={draft.legal_name} onChange={event => setDraft(value => ({ ...value, legal_name: event.target.value }))} required={draft.party_type === "ORGANIZATION"} /></label>
         <label>Mã số thuế<input value={draft.tax_code} onChange={event => setDraft(value => ({ ...value, tax_code: event.target.value }))} /></label>
-        <div><button type="button" onClick={findDuplicates}>Kiểm tra trùng</button>{" "}<button type="button" onClick={lookupTax} disabled={!draft.tax_code}>Tra mã số thuế</button>{" "}<button type="submit" disabled={saving}>{saving ? "Đang lưu…" : "Lưu vào BE"}</button>{" "}<button type="button" onClick={() => { setEditing(null); setError(""); }}>Hủy</button></div>
+        <div><button type="button" onClick={findDuplicates}>Kiểm tra trùng</button>{" "}<button type="button" onClick={lookupTax} disabled={!draft.tax_code}>Tra mã số thuế</button>{" "}<button type="submit" disabled={saving}>{saving ? "Đang lưu…" : "Lưu khách hàng"}</button>{" "}<button type="button" onClick={() => { setEditing(null); setError(""); }}>Hủy</button></div>
         {taxSuggestion && <div role="status"><p>Thông tin gợi ý từ {taxSuggestion.lookup_source}: {taxSuggestion.legal_name}</p><p>{taxSuggestion.address}</p><button type="button" onClick={() => setDraft(value => ({ ...value, name: taxSuggestion.name, legal_name: taxSuggestion.legal_name }))}>Dùng tên gợi ý</button></div>}
         {duplicates && <div role="status">{duplicates.length ? duplicates.map(item => <p key={item.id}>{item.code} · {item.name} · {item.match_reasons.join(", ")}</p>) : <p>Không thấy khách hàng trùng.</p>}</div>}
       </form>}
@@ -268,7 +268,7 @@ export default function LiveCustomers({ onBack }: { onBack: () => void }) {
             <option key={customer.id} value={customer.id}>{customer.code} · {customer.name}</option>) }
         </select></label>
         <label>Lý do<input value={mergeReason} required onChange={event => setMergeReason(event.target.value)} /></label>
-        <div><button type="submit" disabled={saving}>Hợp nhất trong BE</button>{" "}<button type="button" onClick={() => { setMergeTarget(null); setError(""); }}>Hủy</button></div>
+        <div><button type="submit" disabled={saving}>Xác nhận hợp nhất</button>{" "}<button type="button" onClick={() => { setMergeTarget(null); setError(""); }}>Hủy</button></div>
       </form>}
       {error && <p className="live-customers-error" role="alert">{error}</p>}
     </section>

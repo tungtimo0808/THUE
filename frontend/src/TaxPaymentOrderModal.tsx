@@ -67,7 +67,7 @@ export default function TaxPaymentOrderModal({ companyId, token, obligations, in
         <label>Kho bạc Nhà nước hạch toán<input aria-label="Kho bạc Nhà nước hạch toán" value={treasury} onChange={(e) => setTreasury(e.target.value)} style={{ display: "block", width: "100%", height: 32 }} /></label>
         <label>Tài khoản thu NSNN<input aria-label="Tài khoản thu NSNN" value={account} onChange={(e) => setAccount(e.target.value)} style={{ display: "block", width: "100%", height: 32 }} /></label>
       </div>
-      <p style={{ color: "#64748b" }}>Nhập Kho bạc, tài khoản thu và tiểu mục theo thông tin đã xác minh. Không có mã demo được tự điền.</p>
+      <p style={{ color: "#64748b" }}>Nhập Kho bạc Nhà nước, tài khoản thu và tiểu mục NSNN theo thông tin cơ quan thuế quản lý.</p>
       <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead><tr style={{ background: "#e2ede6", height: 36 }}><th>Chọn</th><th>Nghĩa vụ</th><th>Nội dung nộp NSNN</th><th>Tiểu mục</th><th>Số tiền</th></tr></thead>
         <tbody>{obligations.map((row) => <tr key={row.id} style={{ borderTop: "1px solid #e2e8f0", height: 42 }}>

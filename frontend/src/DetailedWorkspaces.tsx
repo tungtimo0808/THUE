@@ -54,7 +54,7 @@ function WorkspaceHeader({
         <p>{description}</p>
       </div>
       <div className="erp3-header-actions">
-        <button onClick={() => notify("Dữ liệu mẫu đã được làm mới.")}>
+        <button onClick={() => notify("Đã làm mới dữ liệu thành công.")}>
           <RefreshCw size={15} /> Làm mới
         </button>
         <button
@@ -99,7 +99,7 @@ function ListToolbar({ title, notify }: { title: string; notify: Notify }) {
       </button>
       <button
         aria-label="Xuất dữ liệu"
-        onClick={() => notify("Đã chuẩn bị bản xuất dữ liệu mẫu.")}
+        onClick={() => notify("Đã chuẩn bị tệp xuất dữ liệu.")}
       >
         <ArrowDownToLine size={15} />
       </button>
@@ -2054,7 +2054,7 @@ export function ReportCenterWorkspace({ notify }: { notify: Notify }) {
             {group.items.map((item, index) => (
               <button
                 key={item}
-                onClick={() => notify(`Đang mở ${item} với dữ liệu mẫu.`)}
+                onClick={() => notify(`Đang mở ${item}.`)}
               >
                 <span className="erp3-report-icon">{index + 1}</span>
                 <span>
@@ -2202,7 +2202,7 @@ export function OpeningBalanceWorkspace({ notify }: { notify: Notify }) {
             <Filter size={14} /> Chỉ hiện có số dư
           </button>
           <span className="erp3-toolbar-spacer" />
-          <button onClick={() => notify("Đã kiểm tra cân đối dữ liệu mẫu.")}>
+          <button onClick={() => notify("Đã kiểm tra cân đối số liệu thành công.")}>
             Kiểm tra cân đối
           </button>
           <button

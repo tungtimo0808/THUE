@@ -123,9 +123,9 @@ export default function AuditedReportWorkspace({
         `soviet:audited-report:${definition.name}`,
         JSON.stringify(next),
       );
-      notify?.("Đã lưu báo cáo trên trình duyệt này.");
+      notify?.("Đã lưu kỳ báo cáo thành công.");
     } catch {
-      notify?.("Đã lưu báo cáo cho lần xem này.");
+      notify?.("Đã lưu báo cáo cho phiên làm việc này.");
     }
   };
   const exportReport = async (outputFormat: "XLSX" | "PRINT" = "XLSX") => {
@@ -385,7 +385,7 @@ export default function AuditedReportWorkspace({
         <section className="pc-preview" aria-label="Nội dung báo cáo">
           <h1>{definition.name.toLocaleUpperCase("vi")}</h1>
           <p>{subtitle}</p>
-          <small>Dữ liệu mẫu · Đơn vị tính: Đồng</small>
+          <small>Đơn vị tính: Đồng (VND)</small>
           <AuditedReportTable
             name={definition.name}
             headers={definition.headers}

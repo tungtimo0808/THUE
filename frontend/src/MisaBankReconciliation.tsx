@@ -409,7 +409,7 @@ export default function MisaBankReconciliation({
                   "soviet:bank-reconciliation",
                   JSON.stringify({ loaded, selected, statement }),
                 );
-                notify("Đã cất tạm đối chiếu trên trình duyệt.");
+                notify("Đã lưu tạm bảng đối chiếu ngân hàng.");
               }}
             >
               Cất tạm
@@ -426,7 +426,7 @@ export default function MisaBankReconciliation({
                 }
                 setLastDate(to.split("-").reverse().join("/"));
                 setError("");
-                notify("Đã xác nhận đối chiếu dữ liệu mẫu.");
+                notify("Đã xác nhận đối chiếu sổ phụ ngân hàng thành công.");
               }}
             >
               Xác nhận đối chiếu

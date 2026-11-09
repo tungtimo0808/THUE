@@ -213,8 +213,8 @@ export default function MisaSalesSummaryReports({
               setSaved(next);
               notify?.(
                 writeReportPresets(title, next)
-                  ? "Đã lưu báo cáo trên trình duyệt này."
-                  : "Đã lưu báo cáo cho lần xem này.",
+                  ? "Đã lưu kỳ báo cáo thành công."
+                  : "Đã lưu báo cáo cho phiên làm việc này.",
               );
             }}
           >
@@ -310,7 +310,7 @@ export default function MisaSalesSummaryReports({
         <p>
           Từ {dateText(applied.from)} đến {dateText(applied.to)}
         </p>
-        <small>Dữ liệu mẫu · Đơn vị tính: Đồng</small>
+        <small>Đơn vị tính: Đồng (VND)</small>
         <div className="pc-report-scroll">
           <table aria-label={title}>
             <thead>
@@ -573,7 +573,7 @@ export default function MisaSalesSummaryReports({
                       cells: [
                         row.customer,
                         row.customerName,
-                        "Dữ liệu mẫu",
+                        "Tổng hợp kỳ báo cáo",
                         "",
                       ],
                     }))}

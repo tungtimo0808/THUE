@@ -97,9 +97,11 @@ function cleanSingleMessage(rawText: string, fieldKey?: string): string {
   text = text.replace(/;\s*code\s*:\s*[A-Z0-9_.-]+/gi, "").trim();
   text = text.replace(/\bcode\s*:\s*[A-Z0-9_.-]+/gi, "").trim();
 
-  // Strip internal specification codes like `(EF-05)`, `(BR-COM-REG-01)`, `(BR04)`
-  text = text.replace(/\s*\((?:EF|BR|AF|UC)-[A-Z0-9_-]+\)/gi, "").trim();
+  // Strip internal specification codes like `(EF-05)`, `(BR-COM-REG-01)`, `(BR04)`, `(UC-GL-10)`
+  text = text.replace(/\s*\((?:EF|BR|AF|UC)-[A-Z0-9_.,\s/→-]+\)/gi, "").trim();
   text = text.replace(/\s*\((?:EF|BR|AF)\d+\)/gi, "").trim();
+  text = text.replace(/^Lỗi\s+(?:EF|BR|AF|UC)-[A-Z0-9_.\s/-]+:\s*/i, "").trim();
+  text = text.replace(/\s*-\s*(?:EF|BR|AF|UC)-[A-Z0-9_.-]+(?=\))/gi, "").trim();
 
   // Strip leading technical field prefix if already present in string, e.g. `tax_code: Mã số thuế...`
   const prefixMatch = text.match(/^([a-z_][a-z0-9_.]*)\s*:\s*(.+)$/i);

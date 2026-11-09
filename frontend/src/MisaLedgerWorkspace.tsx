@@ -283,7 +283,7 @@ export default function MisaLedgerWorkspace({
     { code: "PURCHASE_JOURNAL", label: "S03a3-DN: Sổ nhật ký mua hàng", isOfficial: true },
     { code: "SALES_JOURNAL", label: "S03a4-DN: Sổ nhật ký bán hàng", isOfficial: true },
     { code: "FOREIGN_CURRENCY_LEDGER", label: "S39-DN: Sổ theo dõi thanh toán bằng ngoại tệ", isOfficial: true },
-    { code: "GL_ENTRY_INQUIRY", label: "GL-INQ-01: Tra cứu bút toán GL (Gồm cả Chưa ghi sổ)", isOfficial: false },
+    { code: "GL_ENTRY_INQUIRY", label: "Tra cứu bút toán Sổ cái (Gồm cả Chưa ghi sổ)", isOfficial: false },
     { code: "VOUCHER_TRACE", label: "GL-TRACE-01: Truy vết chứng từ & Chuỗi Đảo/Điều chỉnh 2 chiều", isOfficial: false },
   ];
 
@@ -373,7 +373,7 @@ export default function MisaLedgerWorkspace({
         source_document_id: "DOC-CASH-1001",
         source_document_number: "PT-2026-1001",
         trace_status: "TRACEABLE",
-        trace_message: "Truy vết đầy đủ tới Phiếu thu tiền mặt tại phân hệ Quỹ (TRACEABLE).",
+        trace_message: "Truy vết đầy đủ tới Phiếu thu tiền mặt tại phân hệ Quỹ.",
         is_reversed_or_adjusted: false,
         original_entry_number: "",
         related_entry_numbers: [],
@@ -449,7 +449,7 @@ export default function MisaLedgerWorkspace({
         source_document_id: "DOC-BANK-USD-01",
         source_document_number: "BC-USD-2026-01",
         trace_status: "TRACEABLE",
-        trace_message: "Truy vết đầy đủ tới Báo Có ngân hàng ngoại tệ USD (TRACEABLE).",
+        trace_message: "Truy vết đầy đủ tới Báo Có ngân hàng ngoại tệ USD.",
         is_reversed_or_adjusted: false,
         original_entry_number: "",
         related_entry_numbers: [],
@@ -487,7 +487,7 @@ export default function MisaLedgerWorkspace({
         source_document_id: "DOC-BANK-EUR-02",
         source_document_number: "BC-EUR-2026-02",
         trace_status: "ACCESS_RESTRICTED",
-        trace_message: "Bạn có quyền xem bút toán GL nhưng không có quyền mở chứng từ nguồn tại phân hệ BANK_VIP (AF-19, EF-19).",
+        trace_message: "Bạn có quyền xem bút toán GL nhưng không có quyền mở chứng từ nguồn tại phân hệ BANK_VIP.",
         is_reversed_or_adjusted: false,
         original_entry_number: "",
         related_entry_numbers: [],
@@ -525,7 +525,7 @@ export default function MisaLedgerWorkspace({
         source_document_id: "",
         source_document_number: "PKT00001",
         trace_status: "NO_SOURCE",
-        trace_message: "Bút toán được lập trực tiếp tại phân hệ Kế toán tổng hợp (GL), không qua chứng từ phân hệ nguồn (AF-17, BR-GL-TRACE-48).",
+        trace_message: "Bút toán được lập trực tiếp tại phân hệ Kế toán tổng hợp (GL), không qua chứng từ phân hệ nguồn.",
         is_reversed_or_adjusted: false,
         original_entry_number: "",
         related_entry_numbers: [],
@@ -563,7 +563,7 @@ export default function MisaLedgerWorkspace({
         source_document_id: "MISSING-UUID-999",
         source_document_number: "HDBH-MISSING-09",
         trace_status: "BROKEN_LINK",
-        trace_message: "Bút toán có khai báo liên kết chứng từ nguồn SAL nhưng bản ghi nguồn không tồn tại. Hệ thống tuyệt đối không tự tạo chứng từ giả (EF-17, BR-GL-TRACE-49, 50).",
+        trace_message: "Bút toán có khai báo liên kết chứng từ nguồn SAL nhưng bản ghi nguồn không tồn tại. Hệ thống tuyệt đối không tự tạo chứng từ giả.",
         is_reversed_or_adjusted: false,
         original_entry_number: "",
         related_entry_numbers: [],
@@ -607,21 +607,21 @@ export default function MisaLedgerWorkspace({
         closing_credit: "748000000",
         is_balanced: true,
         foreign_currency_note:
-          "Cộng phát sinh ngoại tệ được tách riêng theo từng loại ngoại tệ (USD, EUR...), tuyệt đối không cộng ngang nguyên tệ khác loại tiền (BR-GL-TRACE-72).",
+          "Cộng phát sinh ngoại tệ được tách riêng theo từng loại ngoại tệ (USD, EUR...), tuyệt đối không cộng ngang nguyên tệ khác loại tiền.",
       },
       consistency_with_uc_gl_10: {
         status: balAggStatus === "STALE" ? "STALE_WARNING" : "MATCHED",
         message:
           balAggStatus === "STALE"
-            ? "Bảng tổng hợp số dư tại UC-GL-10 đang ở trạng thái STALE; Sổ cái UC-GL-14 đã tự động tính trực tiếp trên nguồn POSTED mới nhất (EF-13)."
-            : "Số dư đầu kỳ, phát sinh trong kỳ và số dư cuối kỳ khớp 100% với Bảng tổng hợp số dư tài khoản (UC-GL-10).",
+            ? "Sổ cái đã tự động tổng hợp trực tiếp trên nguồn bút toán đã ghi sổ mới nhất."
+            : "Số dư đầu kỳ, phát sinh trong kỳ và số dư cuối kỳ khớp 100% với Bảng tổng hợp số dư tài khoản.",
       },
       pagination: { page: 1, page_size: 200, total_rows: filtered.length, total_pages: 1 },
       rows: filtered,
       account_summaries: [
         {
           account_code: "111",
-          account_name: "Tiền mặt (Tổng hợp từ TK con - không cộng trùng BR-GL-TRACE-28)",
+          account_name: "Tiền mặt (Tổng hợp từ TK con - không cộng trùng)",
           account_level: 1,
           is_parent: true,
           is_bilateral: false,
@@ -660,7 +660,7 @@ export default function MisaLedgerWorkspace({
         },
         {
           account_code: "131",
-          account_name: "Phải thu của khách hàng (Lưỡng tính - tách Dư Nợ / Dư Có theo đối tượng AF-16)",
+          account_name: "Phải thu của khách hàng (Lưỡng tính - tách Dư Nợ / Dư Có theo đối tượng)",
           account_level: 1,
           is_parent: false,
           is_bilateral: true,
@@ -673,7 +673,7 @@ export default function MisaLedgerWorkspace({
         },
         {
           account_code: "331",
-          account_name: "Phải trả cho người bán (Lưỡng tính - tách Dư Nợ / Dư Có theo đối tượng AF-16)",
+          account_name: "Phải trả cho người bán (Lưỡng tính - tách Dư Nợ / Dư Có theo đối tượng)",
           account_level: 1,
           is_parent: false,
           is_bilateral: true,
@@ -780,7 +780,7 @@ export default function MisaLedgerWorkspace({
         },
       ],
       multi_period_groups: [],
-      empty_result_message: filtered.length === 0 ? "Không có dữ liệu phát sinh thỏa điều kiện lọc trong kỳ đã chọn (AF-27)." : "",
+      empty_result_message: filtered.length === 0 ? "Không có dữ liệu phát sinh thỏa điều kiện lọc trong kỳ đã chọn." : "",
     };
   };
 
@@ -793,20 +793,20 @@ export default function MisaLedgerWorkspace({
 
     // EF-09, BR-GL-TRACE-10, 11, 100: Sổ chính thức chỉ cho phép bút toán POSTED
     if (foundMeta.isOfficial && reqStatus !== "POSTED") {
-      const msg = `Sổ kế toán chính thức (${foundMeta.label}) chỉ được phép phản ánh các bút toán đã ghi sổ (POSTED). Không được trộn bút toán chưa ghi sổ (${reqStatus}) vào Sổ cái / Nhật ký chính thức (EF-09, BR-GL-TRACE-10, 11). Vui lòng chọn chế độ 'GL-INQ-01: Tra cứu bút toán GL' để tra cứu chứng từ chưa ghi sổ.`;
+      const msg = `Sổ kế toán chính thức (${foundMeta.label}) chỉ được phép phản ánh các bút toán đã ghi sổ. Không được trộn bút toán chưa ghi sổ (${reqStatus}) vào Sổ cái / Nhật ký chính thức. Vui lòng chọn chế độ 'Tra cứu bút toán Sổ cái' để tra cứu chứng từ chưa ghi sổ.`;
       setUc14Error(msg);
       notify(msg);
       return;
     }
     // EF-14: Sổ ngoại tệ không cho lọc VND
     if (bType === "FOREIGN_CURRENCY_LEDGER" && reqCcy === "VND") {
-      const msg = "Sổ theo dõi thanh toán bằng ngoại tệ yêu cầu chọn mã ngoại tệ (USD, EUR...) hoặc Tất cả ngoại tệ khác VND (EF-14, BR-GL-TRACE-71).";
+      const msg = "Sổ theo dõi thanh toán bằng ngoại tệ yêu cầu chọn mã ngoại tệ (USD, EUR...) hoặc Tất cả ngoại tệ khác VND.";
       setUc14Error(msg);
       notify(msg);
       return;
     }
     if (uc14FromDate && uc14ToDate && uc14FromDate > uc14ToDate) {
-      const msg = `Khoảng thời gian tra cứu không hợp lệ: Từ ngày (${uc14FromDate}) lớn hơn Đến ngày (${uc14ToDate}) (EF-02).`;
+      const msg = `Khoảng thời gian tra cứu không hợp lệ: Từ ngày (${uc14FromDate}) lớn hơn Đến ngày (${uc14ToDate}).`;
       setUc14Error(msg);
       notify(msg);
       return;
@@ -882,11 +882,11 @@ export default function MisaLedgerWorkspace({
     };
 
     const statusMessages: Record<string, string> = {
-      TRACEABLE: "Truy vết đầy đủ 2 chiều tới chứng từ nghiệp vụ nguồn (TRACEABLE — AF-18, BR-GL-TRACE-108).",
-      PARTIAL_TRACE: "Truy vết thành công tới chứng từ nguồn nhưng thiếu một số tài liệu tham chiếu phụ (PARTIAL_TRACE — BR-GL-TRACE-108).",
-      NO_SOURCE: "Bút toán được lập trực tiếp tại phân hệ Kế toán tổng hợp (GL), không qua chứng từ phân hệ nguồn (NO_SOURCE — AF-17, BR-GL-TRACE-48, 109).",
-      BROKEN_LINK: "Bút toán có khai báo liên kết chứng từ nguồn nhưng không tìm thấy bản ghi nguồn. Hệ thống cảnh báo rõ và tuyệt đối không tự tạo chứng từ giả (BROKEN_LINK — EF-17, BR-GL-TRACE-49, 50, 110).",
-      ACCESS_RESTRICTED: "Chứng từ nguồn tồn tại nhưng người dùng không có quyền mở phân hệ nguồn. Vẫn cho phép xem đầy đủ bút toán GL trong phạm vi được phép (ACCESS_RESTRICTED — AF-19, EF-19, BR-GL-TRACE-52, 53, 111).",
+      TRACEABLE: "Truy vết đầy đủ 2 chiều tới chứng từ nghiệp vụ nguồn.",
+      PARTIAL_TRACE: "Truy vết thành công tới chứng từ nguồn nhưng thiếu một số tài liệu tham chiếu phụ (PARTIAL_TRACE).",
+      NO_SOURCE: "Bút toán được lập trực tiếp tại phân hệ Kế toán tổng hợp (GL), không qua chứng từ phân hệ nguồn.",
+      BROKEN_LINK: "Bút toán có khai báo liên kết chứng từ nguồn nhưng không tìm thấy bản ghi nguồn. Hệ thống cảnh báo rõ và tuyệt đối không tự tạo chứng từ giả.",
+      ACCESS_RESTRICTED: "Chứng từ nguồn tồn tại nhưng người dùng không có quyền mở phân hệ nguồn. Vẫn cho phép xem đầy đủ bút toán GL trong phạm vi được phép (ACCESS_RESTRICTED).",
     };
 
     setUc14TraceDetail({
@@ -895,11 +895,11 @@ export default function MisaLedgerWorkspace({
       trace_chain_breadcrumb: [
         `Sổ kế toán (${uc14BookResult?.form_code || "S03b-DN"})`,
         `Dòng phát sinh TK ${r.account_code || "1111"}`,
-        `Bút toán GL [${voucherNo}] (POSTED)`,
+        `Bút toán GL [${voucherNo}]`,
         traceStatus === "NO_SOURCE"
-          ? "Bút toán gốc tại GL (NO_SOURCE)"
+          ? "Bút toán gốc tại GL"
           : traceStatus === "BROKEN_LINK"
-            ? "Đứt liên kết chứng từ nguồn (BROKEN_LINK)"
+            ? "Đứt liên kết chứng từ nguồn"
             : `Chứng từ nguồn [${r.source_document_number || voucherNo}] (${r.source_module || "GL"})`,
       ],
       gl_entry: {
@@ -970,7 +970,7 @@ export default function MisaLedgerWorkspace({
                   posting_date: "2026-10-14",
                   status: "POSTED",
                   total_debit: "5000000",
-                  correction_reason: "Điều chỉnh chi phí bốc xếp lô thiết bị mạng (UC-GL-06 / AF-20, AF-21)",
+                  correction_reason: "Điều chỉnh chi phí bốc xếp lô thiết bị mạng",
                   relationship: "ADJUSTED_BY",
                 },
               ]
@@ -1025,7 +1025,7 @@ export default function MisaLedgerWorkspace({
           action: "POST",
           status_before: "DRAFT",
           status_after: "POSTED",
-          reason: "Ghi sổ chứng từ vào Sổ cái chính thức (UC-GL-05)",
+          reason: "Ghi sổ chứng từ vào Sổ cái chính thức",
           actor: "ketoantruong@thue.vn",
           occurred_at: "2026-10-05T09:30:00+07:00",
         },
@@ -1061,13 +1061,13 @@ export default function MisaLedgerWorkspace({
           keyword: uc14Keyword,
           format,
         });
-        notify(`Đã xuất ${expRes.book_title} (${expRes.file_name} — ${expRes.row_count} dòng) thành công! Không làm thay đổi dữ liệu kế toán (BR-GL-TRACE-01, 64).`);
+        notify(`Đã xuất ${expRes.book_title} (${expRes.file_name} — ${expRes.row_count} dòng) thành công! Không làm thay đổi dữ liệu kế toán.`);
         return;
       }
       notify(
         format === "PRINT"
           ? `Đã mở bản in chuẩn ${uc14BookResult?.form_code || "S03b-DN"} (${previewReportName}) theo Thông tư 99/2025/TT-BTC.`
-          : `Đã xuất file ${uc14BookResult?.form_code || "S03b-DN"}_${uc14BookType}_${uc14Period}.${format.toLowerCase()} khớp 100% với bộ lọc hiện tại (AF-26, BR-GL-TRACE-64).`,
+          : `Đã xuất file ${uc14BookResult?.form_code || "S03b-DN"}_${uc14BookType}_${uc14Period}.${format.toLowerCase()} khớp 100% với bộ lọc hiện tại.`,
       );
     } catch (error) {
       notify(errorText(error));
@@ -1715,7 +1715,7 @@ export default function MisaLedgerWorkspace({
 
   const handlePostVoucherItem = async (item: any) => {
     if (item.posted) {
-      notify(`Chứng từ ${item.id} đã được ghi sổ (POSTED), không được ghi sổ lặp lại.`);
+      notify(`Chứng từ ${item.id} đã được ghi sổ, không được ghi sổ lặp lại.`);
       return;
     }
     if (apiConnected) {
@@ -1845,7 +1845,7 @@ export default function MisaLedgerWorkspace({
     );
   };
 
-  // UC-GL-06 – Điều chỉnh / Đảo bút toán đã ghi sổ (POSTED)
+  // UC-GL-06 – Điều chỉnh / Đảo bút toán đã ghi sổ
   const [correctionModal, setCorrectionModal] = useState<{
     open: boolean;
     mode: "ADJUSTMENT" | "REVERSAL";
@@ -1882,7 +1882,7 @@ export default function MisaLedgerWorkspace({
 
   const openCorrectionModal = (item: any, mode: "ADJUSTMENT" | "REVERSAL") => {
     if (!item?.posted) {
-      notify("Chỉ bút toán đang ở trạng thái Đã ghi sổ (POSTED) mới được phép Điều chỉnh hoặc Đảo bút toán.");
+      notify("Chỉ bút toán đang ở trạng thái Đã ghi sổ mới được phép Điều chỉnh hoặc Đảo bút toán.");
       return;
     }
     const prefix = mode === "ADJUSTMENT" ? "DC" : "REV";
@@ -1913,7 +1913,7 @@ export default function MisaLedgerWorkspace({
     if (!src) return;
     const reason = correctionModal.reason.trim();
     if (!reason) {
-      notify("Vui lòng nhập Lý do điều chỉnh/đảo bút toán (BR-GL-ADJ-14).");
+      notify("Vui lòng nhập Lý do điều chỉnh/đảo bút toán.");
       return;
     }
 
@@ -2125,22 +2125,22 @@ export default function MisaLedgerWorkspace({
   const handleCalculateExpenseAllocation = () => {
     const amountToAlloc = Number(allocSourcePool.amountToAllocate || 0);
     if (amountToAlloc <= 0) {
-      notify("Không có số liệu chi phí nguồn khả dụng để phân bổ (EF-09).");
+      notify("Không có số liệu chi phí nguồn khả dụng để phân bổ.");
       return;
     }
     if (amountToAlloc > allocSourcePool.remainingAllocatableAmount) {
-      notify("Số tiền đưa vào phân bổ vượt quá phần chi phí nguồn còn lại được phép phân bổ (EF-20).");
+      notify("Số tiền đưa vào phân bổ vượt quá phần chi phí nguồn còn lại được phép phân bổ.");
       return;
     }
     if (allocDestinations.length === 0) {
-      notify("Chưa khai báo danh sách đối tượng nhận phân bổ (EF-11).");
+      notify("Chưa khai báo danh sách đối tượng nhận phân bổ.");
       return;
     }
 
     if (allocMethod === "FIXED_PERCENT") {
       const sumPct = allocDestinations.reduce((s, r) => s + Number(r.percentage || 0), 0);
       if (Math.abs(sumPct - 100) > 0.001) {
-        notify(`Tổng tỷ lệ phân bổ phải bằng 100% (hiện tại: ${sumPct}%) (EF-17).`);
+        notify(`Tổng tỷ lệ phân bổ phải bằng 100% (hiện tại: ${sumPct}%).`);
         return;
       }
     }
@@ -2153,7 +2153,7 @@ export default function MisaLedgerWorkspace({
     }, 0);
 
     if (totalWeight <= 0) {
-      notify("Tổng tiêu thức/hệ số phân bổ bằng 0, không thể thực hiện phép chia tỷ lệ (EF-19).");
+      notify("Tổng tiêu thức/hệ số phân bổ bằng 0, không thể thực hiện phép chia tỷ lệ.");
       return;
     }
 
@@ -2294,12 +2294,12 @@ export default function MisaLedgerWorkspace({
     }));
     notify(
       autoPost
-        ? `Đã tạo và Ghi sổ chứng từ phân bổ ${newVoucherNo} (${totalAllocated.toLocaleString("vi-VN")} ₫) vào Sổ cái (AF-14).`
-        : `Đã tạo chứng từ phân bổ ${newVoucherNo} ở trạng thái Chưa ghi sổ (UNPOSTED - AF-15).`,
+        ? `Đã tạo và Ghi sổ chứng từ phân bổ ${newVoucherNo} (${totalAllocated.toLocaleString("vi-VN")} ₫) vào Sổ cái.`
+        : `Đã tạo chứng từ phân bổ ${newVoucherNo} ở trạng thái Chưa ghi sổ.`,
     );
   };
 
-  // --- UC-GL-08: Đánh giá lại tài khoản ngoại tệ (Foreign Currency Account Revaluation) ---
+  // --- UC-GL-08: Đánh giá lại tài khoản ngoại tệ ---
   const [fxRevaluationModalOpen, setFxRevaluationModalOpen] = useState(false);
   const [fxRevalActiveTab, setFxRevalActiveTab] = useState<"evaluate" | "history" | "rules">("evaluate");
   const [fxRevalPeriod, setFxRevalPeriod] = useState("2026-10");
@@ -2398,7 +2398,7 @@ export default function MisaLedgerWorkspace({
     {
       accountPrefix: "156 / 211 / 242",
       accountName: "Hàng tồn kho / TSCĐ / Chi phí trả trước (Khoản mục phi tiền tệ)",
-      itemCategory: "Phi tiền tệ (Loại trừ BR-GL-FX-06)",
+      itemCategory: "Phi tiền tệ (Loại trừ)",
       nature: "ASSET",
       fxHandlingAccount: "Không đánh giá lại",
       gainDebit: "-",
@@ -2698,7 +2698,7 @@ export default function MisaLedgerWorkspace({
     );
     setFxRevalCalculated(true);
     notify(
-      `Đã lấy tỷ giá đánh giá cuối kỳ ${chosen.rate.toLocaleString("vi-VN")} VND/${currencyCode} từ bảng tỷ giá hệ thống (AF-01).`,
+      `Đã lấy tỷ giá đánh giá cuối kỳ ${chosen.rate.toLocaleString("vi-VN")} VND/${currencyCode} từ bảng tỷ giá hệ thống.`,
     );
   };
 
@@ -2726,14 +2726,14 @@ export default function MisaLedgerWorkspace({
     );
     setFxRevalCalculated(true);
     notify(
-      `Đã lấy số dư nguyên tệ (${fxRevalCurrency}) và giá trị ghi sổ trên Sổ cái kỳ ${fxRevalPeriod}. Các TK phi tiền tệ (156, 211, 242) đã tự động loại trừ (BR-GL-FX-06).`,
+      `Đã lấy số dư nguyên tệ (${fxRevalCurrency}) và giá trị ghi sổ trên Sổ cái kỳ ${fxRevalPeriod}. Các TK phi tiền tệ (156, 211, 242) đã tự động loại trừ.`,
     );
   };
 
   const handleCalculateFxRevaluation = async () => {
     if (!fxRevalExchangeRate || fxRevalExchangeRate <= 0 || Number.isNaN(fxRevalExchangeRate)) {
       notify(
-        "Lỗi EF-06 / EF-07: Tỷ giá đánh giá cuối kỳ phải là số dương hợp lệ (> 0). Vui lòng kiểm tra lại!",
+        "Tỷ giá đánh giá cuối kỳ phải là số dương hợp lệ (> 0). Vui lòng kiểm tra lại!",
       );
       return;
     }
@@ -2752,13 +2752,13 @@ export default function MisaLedgerWorkspace({
     );
     setFxRevalCalculated(true);
     notify(
-      `Đã tính lại giá trị quy đổi và chênh lệch tỷ giá theo tỷ giá ${fxRevalExchangeRate.toLocaleString("vi-VN")} VND/${fxRevalCurrency} (Bước 5-8).`,
+      `Đã tính lại giá trị quy đổi và chênh lệch tỷ giá theo tỷ giá ${fxRevalExchangeRate.toLocaleString("vi-VN")} VND/${fxRevalCurrency}.`,
     );
   };
 
   const handleConfirmFxRevaluation = async (autoPost: boolean) => {
     if (!fxRevalExchangeRate || fxRevalExchangeRate <= 0) {
-      notify("Lỗi EF-07: Tỷ giá đánh giá cuối kỳ phải lớn hơn 0 (BR-GL-FX-23).");
+      notify("Tỷ giá đánh giá cuối kỳ phải lớn hơn 0.");
       return;
     }
     if (!fxRevalCalculated) {
@@ -2776,20 +2776,20 @@ export default function MisaLedgerWorkspace({
     );
     if (activeDuplicate) {
       notify(
-        `Lỗi EF-20 (BR-GL-FX-53): Đã tồn tại đợt đánh giá lại ${activeDuplicate.voucherNo} (${activeDuplicate.status}) cho kỳ ${fxRevalPeriod} - ${fxRevalCurrency}. Vui lòng Hủy hoặc Đảo đợt cũ trước khi chạy lại!`,
+        `Đã tồn tại đợt đánh giá lại ${activeDuplicate.voucherNo} (${activeDuplicate.status}) cho kỳ ${fxRevalPeriod} - ${fxRevalCurrency}. Vui lòng Hủy hoặc Đảo đợt cũ trước khi chạy lại!`,
       );
       return;
     }
 
     const selectedLines = fxRevalItems.filter((it) => it.selected);
     if (selectedLines.length === 0) {
-      notify("Lỗi EF-09: Không có khoản mục tiền tệ ngoại tệ nào được chọn trong phạm vi đánh giá.");
+      notify("Không có khoản mục tiền tệ ngoại tệ nào được chọn trong phạm vi đánh giá.");
       return;
     }
     const nonZeroLines = selectedLines.filter((it) => Math.abs(it.differenceAmount) > 0);
     if (nonZeroLines.length === 0) {
       notify(
-        "Lỗi EF-19 (AF-08): Tất cả các khoản mục ngoại tệ được chọn đều có chênh lệch tỷ giá = 0. Hệ thống không tạo bút toán rỗng!",
+        "Tất cả các khoản mục ngoại tệ được chọn đều có chênh lệch tỷ giá = 0. Hệ thống không tạo bút toán rỗng!",
       );
       return;
     }
@@ -2895,8 +2895,8 @@ export default function MisaLedgerWorkspace({
     setFxRevalActiveTab("history");
     notify(
       autoPost
-        ? `Đã tạo và Ghi sổ chứng từ đánh giá lại ngoại tệ ${voucherNo} (Lãi: ${totalGain.toLocaleString("vi-VN")} ₫ / Lỗ: ${totalLoss.toLocaleString("vi-VN")} ₫). Số dư nguyên tệ giữ nguyên tuyệt đối (BR-GL-FX-60).`
-        : `Đã tạo chứng từ đánh giá lại ngoại tệ ${voucherNo} ở trạng thái Chưa ghi sổ (UNPOSTED - AF-15).`,
+        ? `Đã tạo và Ghi sổ chứng từ đánh giá lại ngoại tệ ${voucherNo} (Lãi: ${totalGain.toLocaleString("vi-VN")} ₫ / Lỗ: ${totalLoss.toLocaleString("vi-VN")} ₫). Số dư nguyên tệ giữ nguyên tuyệt đối.`
+        : `Đã tạo chứng từ đánh giá lại ngoại tệ ${voucherNo} ở trạng thái Chưa ghi sổ.`,
     );
   };
 
@@ -2923,10 +2923,10 @@ export default function MisaLedgerWorkspace({
       }),
     );
     const labelMap = {
-      POST: "Đã Ghi sổ chứng từ đánh giá lại ngoại tệ vào Sổ cái (UC-GL-05).",
-      UNPOST: "Đã Bỏ ghi sổ chứng từ đánh giá lại ngoại tệ về trạng thái UNPOSTED (AF-16).",
-      REVERSE: "Đã tạo Bút toán đảo (REVERSED) để vô hiệu hóa đợt đánh giá cũ và cho phép chạy lại (AF-17).",
-      CANCEL: "Đã Hủy chứng từ đánh giá lại ngoại tệ chưa ghi sổ (AF-12).",
+      POST: "Đã Ghi sổ chứng từ đánh giá lại ngoại tệ vào Sổ cái.",
+      UNPOST: "Đã Bỏ ghi sổ chứng từ đánh giá lại ngoại tệ về trạng thái Chưa ghi sổ.",
+      REVERSE: "Đã tạo Bút toán đảo (REVERSED) để vô hiệu hóa đợt đánh giá cũ và cho phép chạy lại.",
+      CANCEL: "Đã Hủy chứng từ đánh giá lại ngoại tệ chưa ghi sổ.",
     };
     notify(labelMap[action]);
   };
@@ -3494,7 +3494,7 @@ export default function MisaLedgerWorkspace({
       periodCredit: 140000000,
       closingDebit: 123200000,
       closingCredit: 15000000,
-      bilateralNote: "Dư Nợ KH01: 123.200.000 ₫ | Dư Có KH02 (Ứng trước): 15.000.000 ₫ (Không bù trừ trái quy tắc BR-GL-BAL-29)",
+      bilateralNote: "Dư Nợ KH01: 123.200.000 ₫ | Dư Có KH02 (Ứng trước): 15.000.000 ₫ (Không bù trừ trái quy tắc)",
     },
     {
       accountCode: "331",
@@ -3567,7 +3567,7 @@ export default function MisaLedgerWorkspace({
     setBalAggWatermark(`WM-${balAggPeriodCode.replace("-", "")}-${Math.random().toString(16).slice(2, 10).toUpperCase()}`);
     setBalAggLastRunAt(new Date().toLocaleString("vi-VN"));
     notify(
-      `Đã tổng hợp phát sinh Nợ/Có, số dư đầu kỳ/cuối kỳ và kiểm tra cân đối kỳ ${balAggPeriodCode} thành công (Trạng thái: VALID - UC-GL-10).`,
+      `Đã tổng hợp phát sinh Nợ/Có, số dư đầu kỳ/cuối kỳ và kiểm tra cân đối kỳ ${balAggPeriodCode} thành công (Trạng thái: VALID).`,
     );
   };
 
@@ -3577,7 +3577,7 @@ export default function MisaLedgerWorkspace({
       return;
     }
     notify(
-      `Kiểm tra cân đối kỳ ${balAggPeriodCode}: Tổng phát sinh Nợ = Tổng phát sinh Có, Tổng dư đầu kỳ/cuối kỳ cân bằng, số dư liên tục với kỳ trước và khớp TK tổng hợp - chi tiết (BR-GL-BAL-18..35).`,
+      `Kiểm tra cân đối kỳ ${balAggPeriodCode}: Tổng phát sinh Nợ = Tổng phát sinh Có, Tổng dư đầu kỳ/cuối kỳ cân bằng, số dư liên tục với kỳ trước và khớp TK tổng hợp - chi tiết.`,
     );
   };
 
@@ -3861,7 +3861,7 @@ export default function MisaLedgerWorkspace({
           } else {
             recomputeClosingSummaryFromRows(mapped);
           }
-          notify(`Đã lấy ${mapped.length} dòng kết chuyển lãi lỗ theo cấu hình quy tắc (UC-GL-09).`);
+          notify(`Đã lấy ${mapped.length} dòng kết chuyển lãi lỗ theo cấu hình quy tắc.`);
           return;
         }
       } catch {
@@ -3962,7 +3962,7 @@ export default function MisaLedgerWorkspace({
     setClosingRows(defaultRows);
     recomputeClosingSummaryFromRows(defaultRows);
     setClosingSourceFingerprint(`FP-CLOSING-${closingToDate.replace(/\//g, "")}`);
-    notify("Đã lấy dữ liệu số phát sinh POSTED và tính các dòng kết chuyển doanh thu, chi phí, lãi/lỗ theo đúng Sequence (UC-GL-09)!");
+    notify("Đã lấy dữ liệu số phát sinh đã ghi sổ và tính các dòng kết chuyển doanh thu, chi phí, lãi/lỗ theo đúng thứ tự!");
   };
 
   const handleAddClosingRow = () => {
@@ -3993,7 +3993,7 @@ export default function MisaLedgerWorkspace({
 
   const handleSaveClosingVoucher = async (autoPost = false) => {
     if (closingRows.length === 0) {
-      notify("Lỗi EF-21 (AF-03): Không có dòng kết chuyển hợp lệ để lưu. Vui lòng nhấn 'Lấy dữ liệu' trước!");
+      notify("Không có dòng kết chuyển hợp lệ để lưu. Vui lòng nhấn 'Lấy dữ liệu' trước!");
       return;
     }
     for (let i = 0; i < closingRows.length; i++) {
@@ -4002,15 +4002,15 @@ export default function MisaLedgerWorkspace({
       const c = String(r.creditAcc || "").trim();
       const amt = Number(r.amount) || 0;
       if (!d || !c) {
-        notify(`Lỗi EF-21: Dòng ${i + 1} thiếu Tài khoản Nợ hoặc Tài khoản Có.`);
+        notify(`Dòng ${i + 1} thiếu Tài khoản Nợ hoặc Tài khoản Có.`);
         return;
       }
       if (d === c) {
-        notify(`Lỗi EF-15 (BR-GL-PL-40): Dòng ${i + 1} có Tài khoản Nợ (${d}) trùng với Tài khoản Có (${c}).`);
+        notify(`Dòng ${i + 1} có Tài khoản Nợ (${d}) trùng với Tài khoản Có (${c}).`);
         return;
       }
       if (amt <= 0) {
-        notify(`Lỗi EF-16 (BR-GL-PL-38): Dòng ${i + 1} có số tiền phải lớn hơn 0.`);
+        notify(`Dòng ${i + 1} có số tiền phải lớn hơn 0.`);
         return;
       }
     }
@@ -4070,8 +4070,8 @@ export default function MisaLedgerWorkspace({
     setShowClosingTable(true);
     notify(
       autoPost
-        ? `Đã Cất và Ghi sổ chứng từ kết chuyển lãi lỗ ${closingVoucherNo} (Trạng thái: COMPLETED - UC-GL-09).`
-        : `Đã Cất chứng từ kết chuyển lãi lỗ ${closingVoucherNo} ở trạng thái Chưa ghi sổ (UNPOSTED - UC-GL-09).`,
+        ? `Đã Cất và Ghi sổ chứng từ kết chuyển lãi lỗ ${closingVoucherNo}.`
+        : `Đã Cất chứng từ kết chuyển lãi lỗ ${closingVoucherNo} ở trạng thái Chưa ghi sổ.`,
     );
   };
 
@@ -4118,10 +4118,10 @@ export default function MisaLedgerWorkspace({
     unposted_count: number;
   }>({
     status: "READY",
-    gl_aggregation: "VALID (Cân đối Nợ/Có UC-GL-10)",
-    reconciliation: "MATCHED (Khớp 7 phân hệ UC-GL-11)",
-    pl_closing: "POSTED (Đã kết chuyển 511..821 → 911 → 4212 UC-GL-09)",
-    period_lock: "CLOSED (Đã khóa kỳ kế toán UC-GL-12)",
+    gl_aggregation: "Đã cân đối Nợ/Có",
+    reconciliation: "Đã khớp 7 phân hệ",
+    pl_closing: "Đã kết chuyển lãi lỗ (511..821 → 911 → 4212)",
+    period_lock: "Đã khóa kỳ kế toán",
     unposted_count: 0,
   });
 
@@ -4165,7 +4165,7 @@ export default function MisaLedgerWorkspace({
           left_amount: 760000000,
           right_amount: 760000000,
           difference: 0,
-          rule_ref: "EF-19, BR-GL-FS-27, 28, 85 (Không tự động plug chênh lệch vào TK 421)",
+          rule_ref: "Thông tư 99/2025/TT-BTC (Không tự động bù trừ chênh lệch vào TK 421)",
         },
         {
           code: "BILATERAL_131_331",
@@ -4174,7 +4174,7 @@ export default function MisaLedgerWorkspace({
           left_amount: 175000000,
           right_amount: 100000000,
           difference: 0,
-          rule_ref: "BR-GL-FS-54..56 (Dư Nợ 131 → Mã 131: 150tr | Dư Có 131 → Mã 312: 40tr | Dư Nợ 331 → Mã 132: 25tr | Dư Có 331 → Mã 311: 60tr)",
+          rule_ref: "Dư Nợ 131 → Mã 131: 150tr | Dư Có 131 → Mã 312: 40tr | Dư Nợ 331 → Mã 132: 25tr | Dư Có 331 → Mã 311: 60tr",
         },
         {
           code: "B01_B02_PROFIT_TIEOUT",
@@ -4183,7 +4183,7 @@ export default function MisaLedgerWorkspace({
           left_amount: 60000000,
           right_amount: 60000000,
           difference: 0,
-          rule_ref: "EF-21, BR-GL-FS-29..32",
+          rule_ref: "Đối chiếu chéo B01-DN ↔ B02-DN",
         },
         {
           code: "B03_CASH_TIEOUT",
@@ -4192,7 +4192,7 @@ export default function MisaLedgerWorkspace({
           left_amount: 495000000,
           right_amount: 495000000,
           difference: 0,
-          rule_ref: "EF-22, BR-GL-FS-33, 34",
+          rule_ref: "Đối chiếu chéo B01-DN ↔ B03-DN",
         },
         {
           code: "B09_NOTES_TIEOUT",
@@ -4201,7 +4201,7 @@ export default function MisaLedgerWorkspace({
           left_amount: 495000000,
           right_amount: 495000000,
           difference: 0,
-          rule_ref: "EF-24, BR-GL-FS-40",
+          rule_ref: "Đối chiếu chéo B01/B02 ↔ B09-DN",
         },
       ],
       reports: [
@@ -4219,13 +4219,13 @@ export default function MisaLedgerWorkspace({
             { code: "110", name: "I. Tiền và các khoản tương đương tiền", note: "V.01", closing: 495000000, opening: 500000000, isTotal: true, formula: "111 + 112" },
             { code: "111", name: "1. Tiền (TK 111, 112, 113)", note: "V.01", closing: 495000000, opening: 500000000, isTotal: false, formula: "Dư Nợ TK 1111 (180tr) + TK 1121 (315tr)" },
             { code: "130", name: "III. Các khoản phải thu ngắn hạn", note: "", closing: 175000000, opening: 0, isTotal: true, formula: "131 + 132 + 136 + 137" },
-            { code: "131", name: "1. Phải thu ngắn hạn của khách hàng (Chi tiết Dư Nợ TK 131)", note: "V.03", closing: 150000000, opening: 0, isTotal: false, formula: "Dư Nợ TK 131 theo đối tượng (KH-A: 150tr) - BR-GL-FS-54" },
-            { code: "132", name: "2. Trả trước cho người bán ngắn hạn (Chi tiết Dư Nợ TK 331)", note: "V.04", closing: 25000000, opening: 0, isTotal: false, formula: "Dư Nợ TK 331 theo đối tượng (NCC-Y: 25tr) - BR-GL-FS-55" },
+            { code: "131", name: "1. Phải thu ngắn hạn của khách hàng (Chi tiết Dư Nợ TK 131)", note: "V.03", closing: 150000000, opening: 0, isTotal: false, formula: "Dư Nợ TK 131 theo đối tượng (KH-A: 150tr)" },
+            { code: "132", name: "2. Trả trước cho người bán ngắn hạn (Chi tiết Dư Nợ TK 331)", note: "V.04", closing: 25000000, opening: 0, isTotal: false, formula: "Dư Nợ TK 331 theo đối tượng (NCC-Y: 25tr)" },
             { code: "140", name: "IV. Hàng tồn kho", note: "V.07", closing: 90000000, opening: 100000000, isTotal: true, formula: "Dư Nợ TK 1561 (90tr)" },
             { code: "270", name: "TỔNG CỘNG TÀI SẢN (270 = 100 + 200)", note: "", closing: 760000000, opening: 600000000, isTotal: true, formula: "100 + 200" },
             { code: "300", name: "C - NỢ PHẢI TRẢ (300 = 310 + 330)", note: "", closing: 100000000, opening: 0, isTotal: true, formula: "310 + 330" },
-            { code: "311", name: "1. Phải trả người bán ngắn hạn (Chi tiết Dư Có TK 331)", note: "V.12", closing: 60000000, opening: 0, isTotal: false, formula: "Dư Có TK 331 theo đối tượng (NCC-X: 60tr) - BR-GL-FS-55" },
-            { code: "312", name: "2. Người mua trả tiền trước ngắn hạn (Chi tiết Dư Có TK 131)", note: "V.13", closing: 40000000, opening: 0, isTotal: false, formula: "Dư Có TK 131 theo đối tượng (KH-B: 40tr) - BR-GL-FS-54" },
+            { code: "311", name: "1. Phải trả người bán ngắn hạn (Chi tiết Dư Có TK 331)", note: "V.12", closing: 60000000, opening: 0, isTotal: false, formula: "Dư Có TK 331 theo đối tượng (NCC-X: 60tr)" },
+            { code: "312", name: "2. Người mua trả tiền trước ngắn hạn (Chi tiết Dư Có TK 131)", note: "V.13", closing: 40000000, opening: 0, isTotal: false, formula: "Dư Có TK 131 theo đối tượng (KH-B: 40tr)" },
             { code: "400", name: "D - VỐN CHỦ SỞ HỮU (400 = 410 + 430)", note: "V.19", closing: 660000000, opening: 600000000, isTotal: true, formula: "411 (500tr) + 4211 (100tr) + 4212 (60tr)" },
             { code: "421", name: "11. Lợi nhuận sau thuế chưa phân phối (421 = 421a + 421b)", note: "V.19b", closing: 160000000, opening: 100000000, isTotal: true, formula: "421a (100tr) + 421b (60tr)" },
             { code: "440", name: "TỔNG CỘNG NGUỒN VỐN (440 = 300 + 400)", note: "", closing: 760000000, opening: 600000000, isTotal: true, formula: "300 + 400" },
@@ -4325,7 +4325,7 @@ export default function MisaLedgerWorkspace({
           left_amount: 690000000,
           right_amount: 690000000,
           difference: 0,
-          rule_ref: "EF-19, BR-GL-FS-27, 28",
+          rule_ref: "Thông tư 99/2025/TT-BTC",
         },
       ],
       reports: [
@@ -4471,7 +4471,7 @@ export default function MisaLedgerWorkspace({
     }
 
     if (!selected.length) {
-      notify("Không thể lập Báo cáo tài chính: Vui lòng chọn ít nhất một biểu mẫu báo cáo (EF-04, BR-GL-FS-12).");
+      notify("Không thể lập Báo cáo tài chính: Vui lòng chọn ít nhất một biểu mẫu báo cáo.");
       return;
     }
 
@@ -4599,15 +4599,15 @@ export default function MisaLedgerWorkspace({
       notes_general_info: latestNotesSource
         ? {
             ...latestNotesSource.notes_general_info,
-            inherited_notice: `Đã kế thừa thông tin chung từ ${latestNotesSource.batch_number} (AF-13, BR-GL-FS-38, 39: Không sao chép số liệu kỳ trước).`,
+            inherited_notice: `Đã kế thừa thông tin chung từ ${latestNotesSource.batch_number} (Không sao chép số liệu kỳ trước).`,
           }
         : {
             accounting_regime: "Thông tư 99/2025/TT-BTC",
             business_sector: "Sản xuất, thương mại và dịch vụ công nghệ thông tin",
             going_concern_statement:
               goingConcernCode === "NON_CONTINUOUS"
-                ? "Doanh nghiệp trình bày BCTC theo cơ sở KHÔNG đáp ứng giả định hoạt động liên tục (Bộ mẫu DNKLT - AF-03, BR-GL-FS-08, 09)."
-                : "Doanh nghiệp đáp ứng giả định hoạt động liên tục (Bộ mẫu DN - AF-02).",
+                ? "Doanh nghiệp trình bày BCTC theo cơ sở KHÔNG đáp ứng giả định hoạt động liên tục (Bộ mẫu DNKLT)."
+                : "Doanh nghiệp đáp ứng giả định hoạt động liên tục (Bộ mẫu DN).",
             auditor_firm: "Công ty TNHH Kiểm toán & Tư vấn Chuẩn Việt",
           },
       notes_explanations: latestNotesSource ? { ...latestNotesSource.notes_explanations } : { ...(statementBatches[0]?.notes_explanations || {}) },
@@ -4630,13 +4630,13 @@ export default function MisaLedgerWorkspace({
     if (!target) return;
     if (target.status === "OUTDATED") {
       notify(
-        `Chặn chốt BCTC (EF-28, BR-GL-FS-76, 77): Phiên bản ${target.batch_number} đang ở trạng thái OUTDATED do số liệu GL hoặc trạng thái khóa kỳ đã thay đổi. Vui lòng bấm 'Lập lại phiên bản mới'.`
+        `Chặn chốt BCTC: Phiên bản ${target.batch_number} cần được lập lại do số liệu Sổ cái hoặc trạng thái khóa kỳ đã thay đổi. Vui lòng bấm 'Lập lại phiên bản mới'.`
       );
       return;
     }
     if (!target.is_balanced || target.blocker_count > 0) {
       notify(
-        `Chặn chốt BCTC (EF-19..24, BR-GL-FS-28, 85): Phiên bản ${target.batch_number} còn lỗi kiểm tra chéo hoặc mất cân đối. Hệ thống tuyệt đối không tự động plug số chênh lệch.`
+        `Chặn chốt BCTC: Phiên bản ${target.batch_number} còn lỗi kiểm tra chéo hoặc mất cân đối. Hệ thống tuyệt đối không tự động bù trừ số chênh lệch.`
       );
       return;
     }
@@ -4677,7 +4677,7 @@ export default function MisaLedgerWorkspace({
       )
     );
     notify(
-      `Đã chốt chính thức (FINALIZED) phiên bản ${target.batch_number}. Mọi thao tác sửa trực tiếp trên phiên bản này đã bị khóa (AF-21, BR-GL-FS-75).`
+      `Đã chốt chính thức phiên bản ${target.batch_number}. Mọi thao tác sửa trực tiếp trên phiên bản này đã bị khóa.`
     );
   };
 
@@ -4723,7 +4723,7 @@ export default function MisaLedgerWorkspace({
             { account_code: "331", party_code: "NCC-13-X", party_name: "Nhà cung cấp X", side: "CREDIT_PARTNER (Dư Có đối tượng)", amount: 60000000 },
           ]
         : [
-            { account_code: line.code === "110" || line.code === "111" ? "1111, 1121" : "GL-MAP", party_code: "-", party_name: "Số dư tổng hợp Sổ cái (UC-GL-10)", side: "CLOSING_BALANCE", amount: line.closing },
+            { account_code: line.code === "110" || line.code === "111" ? "1111, 1121" : "GL-MAP", party_code: "-", party_name: "Số dư tổng hợp Sổ cái", side: "CLOSING_BALANCE", amount: line.closing },
           ];
 
     setStatementDrilldownModal({
@@ -4768,45 +4768,45 @@ export default function MisaLedgerWorkspace({
   >([
     {
       code: "UNPOSTED_GL_ENTRIES",
-      name: "1. Kiểm tra bút toán GL chưa ghi sổ (DRAFT / PENDING / APPROVED / UNPOSTED)",
+      name: "1. Kiểm tra bút toán Sổ cái chưa ghi sổ",
       severity: "BLOCKER",
       status: "PASSED",
-      message: "Tất cả bút toán phát sinh trong kỳ đều đã ở trạng thái POSTED (BR-GL-LOCK-10).",
+      message: "Tất cả bút toán phát sinh trong kỳ đều đã được ghi sổ.",
     },
     {
       code: "SUBLEDGER_PENDING_SYNC",
-      name: "2. Kiểm tra chứng từ phân hệ chưa đồng bộ sang GL (UC-GL-04)",
+      name: "2. Kiểm tra chứng từ phân hệ chưa đồng bộ sang GL",
       severity: "BLOCKER",
       status: "PASSED",
-      message: "Không còn sự kiện hạch toán từ phân hệ đang chờ hoặc lỗi đồng bộ (BR-GL-LOCK-13).",
+      message: "Không còn sự kiện hạch toán từ phân hệ đang chờ hoặc lỗi đồng bộ.",
     },
     {
       code: "GL_BALANCE_RELIABILITY",
-      name: "3. Kiểm tra bảng tổng hợp số dư & cân đối Nợ/Có toàn kỳ (UC-GL-10)",
+      name: "3. Kiểm tra bảng tổng hợp số dư & cân đối Nợ/Có toàn kỳ",
       severity: "BLOCKER",
       status: "PASSED",
-      message: "Tổng phát sinh Nợ = Tổng phát sinh Có, số dư đầu kỳ/cuối kỳ cân bằng và trạng thái VALID (BR-GL-LOCK-15, 16).",
+      message: "Tổng phát sinh Nợ = Tổng phát sinh Có, số dư đầu kỳ và cuối kỳ cân bằng hợp lệ.",
     },
     {
       code: "SUBLEDGER_RECONCILIATION",
-      name: "4. Kiểm tra kết quả đối chiếu số liệu GL ↔ Phân hệ (UC-GL-11)",
+      name: "4. Kiểm tra kết quả đối chiếu số liệu GL ↔ Phân hệ",
       severity: "BLOCKER",
       status: "PASSED",
-      message: "Không còn dòng chênh lệch trọng yếu giữa Sổ cái GL và các phân hệ AP, AR, CASH, BANK, INV, FA, TAX (BR-GL-LOCK-18).",
+      message: "Không còn dòng chênh lệch trọng yếu giữa Sổ cái GL và các phân hệ AP, AR, CASH, BANK, INV, FA, TAX.",
     },
     {
       code: "MANDATORY_PERIOD_END_JOBS",
-      name: "5. Kiểm tra bút toán cuối kỳ bắt buộc (Phân bổ CP, CLTG, Kết chuyển lãi lỗ - UC-GL-07, 08, 09)",
+      name: "5. Kiểm tra bút toán cuối kỳ bắt buộc (Phân bổ CP, CLTG, Kết chuyển lãi lỗ)",
       severity: "BLOCKER",
       status: "PASSED",
-      message: "Đã hoàn tất phân bổ chi phí, đánh giá lại ngoại tệ và kết chuyển lãi lỗ cuối kỳ (TK 5..9 về 0 - BR-GL-LOCK-21).",
+      message: "Đã hoàn tất phân bổ chi phí, đánh giá lại ngoại tệ và kết chuyển lãi lỗ cuối kỳ (TK 5..9 về 0).",
     },
     {
       code: "PREVIOUS_PERIOD_STATUS",
       name: "6. Kiểm tra trạng thái khóa của kỳ kế toán liền trước",
       severity: "WARNING",
       status: "PASSED",
-      message: "Kỳ kế toán trước liền kề (2026-09) đã được khóa sổ hợp lệ (BR-GL-LOCK-23).",
+      message: "Kỳ kế toán trước liền kề (2026-09) đã được khóa sổ hợp lệ.",
     },
   ]);
 
@@ -4878,7 +4878,7 @@ export default function MisaLedgerWorkspace({
           notify(
             `Đã kiểm tra Checklist trước khóa kỳ ${targetPeriod.code || lockDate}: ${
               chk?.blocker_count || 0
-            } lỗi chặn, ${chk?.warning_count || 0} cảnh báo (UC-GL-12).`,
+            } lỗi chặn, ${chk?.warning_count || 0} cảnh báo.`,
           );
           return;
         }
@@ -4911,7 +4911,7 @@ export default function MisaLedgerWorkspace({
       }),
     );
     notify(
-      `Đã chạy kiểm tra điều kiện trước khóa (Checklist UC-GL-12 - Bước 5..28). Watermark: ${newWm}.`,
+      `Đã chạy kiểm tra điều kiện trước khóa. Mã kiểm soát: ${newWm}.`,
     );
   };
 
@@ -4921,14 +4921,14 @@ export default function MisaLedgerWorkspace({
     );
     if (blockerItems.length > 0) {
       notify(
-        `Lỗi chặn (EF-05..EF-11): Không thể khóa sổ vì còn ${blockerItems.length} điều kiện bắt buộc chưa đạt (${blockerItems[0].name}).`,
+        `Lỗi chặn: Không thể khóa sổ vì còn ${blockerItems.length} điều kiện bắt buộc chưa đạt (${blockerItems[0].name}).`,
       );
       return;
     }
     const warningItems = periodChecklistItems.filter((i) => i.status === "WARNING");
     if (warningItems.length > 0 && !acknowledgeLockWarnings) {
       notify(
-        "Cảnh báo (BR-GL-LOCK-31): Vui lòng tích chọn 'Xác nhận tiếp tục khóa sổ khi có Cảnh báo (WARNING)' trước khi thực hiện!",
+        "Cảnh báo: Vui lòng tích chọn 'Xác nhận tiếp tục khóa sổ khi có Cảnh báo (WARNING)' trước khi thực hiện!",
       );
       return;
     }
@@ -4983,8 +4983,8 @@ export default function MisaLedgerWorkspace({
     setLockPeriodModalOpen(false);
     notify(
       nextStatus === "CLOSED"
-        ? `Đã khóa sổ toàn bộ kỳ kế toán đến ngày ${lockDate} (Trạng thái: CLOSED - UC-GL-12). Mọi thao tác tạo/sửa/xóa/Post/Unpost trong kỳ đã bị chặn!`
-        : `Đã khóa sổ một phần theo loại chứng từ đến ngày ${lockDate} (Trạng thái: PARTIALLY_LOCKED - AF-02).`,
+        ? `Đã khóa sổ toàn bộ kỳ kế toán đến ngày ${lockDate}. Mọi thao tác tạo, sửa, xóa, ghi sổ hoặc bỏ ghi sổ trong kỳ đã bị chặn!`
+        : `Đã khóa sổ một phần theo loại chứng từ đến ngày ${lockDate}.`,
     );
   };
 
@@ -4992,7 +4992,7 @@ export default function MisaLedgerWorkspace({
     const cleanReason = String(reopenReason || "").trim();
     if (!cleanReason) {
       notify(
-        "Lỗi EF-17 (BR-GL-LOCK-46): Bắt buộc nhập Lý do mở lại kỳ kế toán để ghi nhận Audit Log!",
+        "Bắt buộc nhập Lý do mở lại kỳ kế toán để ghi nhận Audit Log!",
       );
       return;
     }
@@ -5049,7 +5049,7 @@ export default function MisaLedgerWorkspace({
         ...prev,
       ]);
       notify(
-        "Đã gửi yêu cầu Bỏ khóa kỳ kế toán sang Workflow phê duyệt (Trạng thái: REOPENING / PENDING_APPROVAL - AF-21).",
+        "Đã gửi yêu cầu Bỏ khóa kỳ kế toán sang Workflow phê duyệt.",
       );
       return;
     }
@@ -5076,13 +5076,13 @@ export default function MisaLedgerWorkspace({
       prev.map((b) => ({
         ...b,
         status: "OUTDATED",
-        outdated_reason: `Kỳ kế toán đã được mở khóa lại (UC-GL-12 - Lý do: "${cleanReason}"). Cần lập lại phiên bản BCTC mới (AF-23, EF-28, BR-GL-FS-76, 77).`,
+        outdated_reason: `Kỳ kế toán đã được mở khóa lại (Lý do: "${cleanReason}"). Cần lập lại phiên bản BCTC mới.`,
         reports: (b.reports || []).map((r: any) => ({ ...r, status: "OUTDATED" })),
       })),
     );
     setUnlockPeriodModalOpen(false);
     notify(
-      `Đã bỏ khóa sổ kỳ kế toán thành công (Trạng thái: OPEN - Lý do: "${cleanReason}"). Kết quả tổng hợp UC-GL-10 đã đánh dấu STALE và các phiên bản BCTC UC-GL-13 đã chuyển sang OUTDATED (BR-GL-LOCK-52, BR-GL-FS-76).`,
+      `Đã bỏ khóa sổ kỳ kế toán thành công (Trạng thái: OPEN - Lý do: "${cleanReason}"). Vui lòng tổng hợp lại số dư và cập nhật lại Báo cáo tài chính sau khi điều chỉnh.`,
     );
   };
 
@@ -5122,7 +5122,7 @@ export default function MisaLedgerWorkspace({
         ...prev,
       ]);
       setUnlockPeriodModalOpen(false);
-      notify("Đã phê duyệt yêu cầu mở lại kỳ kế toán (Trạng thái kỳ chuyển về OPEN - AF-21).");
+      notify("Đã phê duyệt yêu cầu mở lại kỳ kế toán (Trạng thái kỳ chuyển về OPEN).");
     } else {
       setReopenWorkflowStatus("REJECTED");
       setPeriodLockStatus("CLOSED");
@@ -5141,7 +5141,7 @@ export default function MisaLedgerWorkspace({
         },
         ...prev,
       ]);
-      notify("Đã từ chối yêu cầu mở lại kỳ kế toán. Kỳ giữ nguyên trạng thái CLOSED (EF-18).");
+      notify("Đã từ chối yêu cầu mở lại kỳ kế toán. Kỳ giữ nguyên trạng thái CLOSED.");
     }
   };
 
@@ -7342,18 +7342,24 @@ export default function MisaLedgerWorkspace({
                                   </div>
                                 )}
                               </td>
-                              <td style={{ padding: "10px 14px", textAlign: "center" }}>
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+                              <td style={{ padding: "10px 14px", textAlign: "left", whiteSpace: "nowrap" }}>
+                                <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-start", gap: 6, flexWrap: "nowrap" }}>
                                   <button
                                     type="button"
                                     onClick={() => setViewingAdvReq(item)}
                                     style={{
-                                      background: "transparent",
-                                      border: "none",
-                                      color: "#0284c7",
+                                      minWidth: 48,
+                                      height: 26,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      background: "#ffffff",
+                                      border: "1px solid #cbd5e1",
+                                      borderRadius: 5,
+                                      color: "#334155",
                                       fontWeight: 600,
                                       cursor: "pointer",
-                                      fontSize: 12.5,
+                                      fontSize: 11.5,
                                     }}
                                   >
                                     Xem
@@ -8288,18 +8294,24 @@ export default function MisaLedgerWorkspace({
                               })()}
                             </span>
                           </td>
-                          <td style={{ padding: "10px 14px", textAlign: "center" }}>
-                            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                          <td style={{ padding: "10px 14px", textAlign: "left", whiteSpace: "nowrap" }}>
+                            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-start", gap: 6, flexWrap: "nowrap" }}>
                               <button
                                 type="button"
                                 onClick={() => notify(`Xem chi tiết chứng từ ${item.id}`)}
                                 style={{
-                                  background: "transparent",
-                                  border: "none",
-                                  color: "#0284c7",
-                                  fontWeight: 500,
+                                  minWidth: 48,
+                                  height: 26,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  background: "#ffffff",
+                                  border: "1px solid #cbd5e1",
+                                  borderRadius: 5,
+                                  color: "#334155",
+                                  fontWeight: 600,
                                   cursor: "pointer",
-                                  fontSize: 12.5,
+                                  fontSize: 11.5,
                                 }}
                               >
                                 Xem
@@ -8795,7 +8807,7 @@ export default function MisaLedgerWorkspace({
                     }}
                   >
                     <RefreshCw size={14} />
-                    <span>Tổng hợp & Kiểm tra cân đối kỳ (UC-GL-10)</span>
+                    <span>Tổng hợp & Kiểm tra cân đối kỳ</span>
                   </button>
                 </div>
 
@@ -9441,11 +9453,11 @@ export default function MisaLedgerWorkspace({
                     statementBatches.find((b) => String(b.id) === String(activeStatementBatchId)) ||
                     statementBatches[0];
                   const batchStatusMap: Record<string, { label: string; bg: string; color: string }> = {
-                    GENERATED: { label: "Đã lập (GENERATED)", bg: "#ecfdf5", color: "#059669" },
-                    REVIEW_REQUIRED: { label: "Cần rà soát (REVIEW_REQUIRED)", bg: "#fef2f2", color: "#dc2626" },
-                    FINALIZED: { label: "Đã chốt chính thức (FINALIZED)", bg: "#eff6ff", color: "#1d4ed8" },
-                    OUTDATED: { label: "Cần lập lại (OUTDATED)", bg: "#fff7ed", color: "#c2410c" },
-                    DRAFT: { label: "Nháp (DRAFT)", bg: "#f1f5f9", color: "#475569" },
+                    GENERATED: { label: "Đã lập", bg: "#ecfdf5", color: "#059669" },
+                    REVIEW_REQUIRED: { label: "Cần rà soát", bg: "#fef2f2", color: "#dc2626" },
+                    FINALIZED: { label: "Đã chốt chính thức", bg: "#eff6ff", color: "#1d4ed8" },
+                    OUTDATED: { label: "Cần lập lại", bg: "#fff7ed", color: "#c2410c" },
+                    DRAFT: { label: "Bản nháp", bg: "#f1f5f9", color: "#475569" },
                   };
                   const stBadge = batchStatusMap[activeBatch?.status || "GENERATED"] || batchStatusMap.GENERATED;
                   const allReportRows = statementBatches.flatMap((batch) =>
@@ -9526,7 +9538,7 @@ export default function MisaLedgerWorkspace({
                             </strong>
                           </span>
                           <span style={{ fontSize: 12, color: "#64748b" }}>
-                            Watermark GL: <code>{activeBatch?.source_watermark}</code>
+                            Mã kiểm soát GL: <code>{activeBatch?.source_watermark}</code>
                           </span>
                         </div>
 
@@ -9603,7 +9615,7 @@ export default function MisaLedgerWorkspace({
                           }}
                         >
                           <div>
-                            <strong>Cảnh báo phiên bản lỗi thời (OUTDATED):</strong>{" "}
+                            <strong>Cảnh báo phiên bản cần cập nhật lại:</strong>{" "}
                             {activeBatch.outdated_reason ||
                               "Số liệu Sổ cái hoặc trạng thái Khóa sổ kỳ kế toán đã thay đổi sau thời điểm lập phiên bản này. Hệ thống chặn chốt chính thức phiên bản cũ."}
                           </div>
@@ -9759,9 +9771,9 @@ export default function MisaLedgerWorkspace({
                                         }}
                                       >
                                         {row.batchStatus === "FINALIZED"
-                                          ? "Đã chốt (FINALIZED)"
+                                          ? "Đã chốt chính thức"
                                           : row.batchStatus === "OUTDATED"
-                                          ? "Cần lập lại (OUTDATED)"
+                                          ? "Cần lập lại"
                                           : "Đã lập (GENERATED)"}
                                       </span>
                                     </td>
@@ -9980,7 +9992,7 @@ export default function MisaLedgerWorkspace({
                           Hiển thị {allReportRows.length} báo cáo tài chính thuộc {statementBatches.length} phiên bản
                         </span>
                         <div style={{ fontWeight: 500, color: "#1e293b" }}>
-                          Chế độ kế toán áp dụng: {activeCircularLabel} (Không tự động plug số chênh lệch BR-GL-FS-85)
+                          Chế độ kế toán áp dụng: {activeCircularLabel} (Không tự động bù trừ số chênh lệch)
                         </div>
                       </div>
                     </>
@@ -10874,7 +10886,7 @@ export default function MisaLedgerWorkspace({
                   </span>
                 </div>
                 <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
-                  Ngăn phát sinh hoặc sửa đổi chứng từ làm ảnh hưởng số liệu đã chốt; bảo vệ bằng Watermark chống lệch dữ liệu sau khi kiểm tra:{" "}
+                  Ngăn phát sinh hoặc sửa đổi chứng từ làm ảnh hưởng số liệu đã chốt; mã đối soát toàn vẹn dữ liệu trước khi khóa sổ:{" "}
                   <code>{periodChecklistWatermark}</code>
                 </div>
               </div>
@@ -10923,8 +10935,8 @@ export default function MisaLedgerWorkspace({
                       fontSize: 13,
                     }}
                   >
-                    <option value="FULL_PERIOD">FULL_PERIOD — Khóa toàn bộ kỳ kế toán (CLOSED)</option>
-                    <option value="DOCUMENT_TYPE">DOCUMENT_TYPE — Khóa theo loại chứng từ (PARTIALLY_LOCKED)</option>
+                    <option value="FULL_PERIOD">Khóa toàn bộ kỳ kế toán</option>
+                    <option value="DOCUMENT_TYPE">Khóa theo từng loại chứng từ</option>
                   </select>
                 </div>
                 <div>
@@ -11133,7 +11145,7 @@ export default function MisaLedgerWorkspace({
                   lineHeight: 1.4,
                 }}
               >
-                Lưu ý: Sau khi khóa sổ, hệ thống chặn tạo mới, sửa, xóa, Ghi sổ (Post), Bỏ ghi sổ (Unpost), Điều chỉnh hoặc Đảo bút toán có Ngày hạch toán thuộc phạm vi đã khóa; dữ liệu đã POSTED chỉ được phép xem báo cáo và truy vết kiểm toán.
+                Lưu ý: Sau khi khóa sổ, hệ thống chặn tạo mới, sửa, xóa, Ghi sổ, Bỏ ghi sổ, Điều chỉnh hoặc Đảo bút toán có Ngày hạch toán thuộc phạm vi đã khóa; dữ liệu đã POSTED chỉ được phép xem báo cáo và truy vết kiểm toán.
               </div>
             </div>
 
@@ -11297,8 +11309,8 @@ export default function MisaLedgerWorkspace({
                       fontSize: 13,
                     }}
                   >
-                    <option value="FULL_PERIOD">FULL_PERIOD — Mở lại toàn bộ kỳ kế toán</option>
-                    <option value="DOCUMENT_TYPE">DOCUMENT_TYPE — Chỉ mở khóa một số loại chứng từ</option>
+                    <option value="FULL_PERIOD">Mở lại toàn bộ kỳ kế toán</option>
+                    <option value="DOCUMENT_TYPE">Chỉ mở khóa một số loại chứng từ</option>
                   </select>
                 </div>
               </div>
@@ -12144,7 +12156,7 @@ export default function MisaLedgerWorkspace({
                       onChange={(e) => setStatementReuseLatest(e.target.checked)}
                       style={{ accentColor: "#00a862", width: 16, height: 16 }}
                     />
-                    Lấy thông tin chung từ lần nhập gần nhất (AF-13, BR-GL-FS-38, 39: Không sao chép số liệu kỳ trước)
+                    Lấy thông tin chung từ lần nhập gần nhất (Không sao chép số liệu kỳ trước)
                   </label>
                 </div>
               )}
@@ -12278,7 +12290,7 @@ export default function MisaLedgerWorkspace({
                       onChange={(e) => setStatementReuseLatest(e.target.checked)}
                       style={{ accentColor: "#00a862", width: 16, height: 16 }}
                     />
-                    Lấy thông tin chung từ lần nhập gần nhất (AF-13, BR-GL-FS-38, 39: Không sao chép số liệu kỳ trước)
+                    Lấy thông tin chung từ lần nhập gần nhất (Không sao chép số liệu kỳ trước)
                   </label>
                 </div>
               )}
@@ -12297,7 +12309,7 @@ export default function MisaLedgerWorkspace({
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "center" }}>
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>
-                      Đơn vị trình bày tiền tệ (AF-19, BR-GL-FS-60)
+                      Đơn vị trình bày tiền tệ
                     </label>
                     <select
                       value={statementUnitScale}
@@ -12319,7 +12331,7 @@ export default function MisaLedgerWorkspace({
                     </select>
                   </div>
                   <div style={{ fontSize: 11.5, color: "#64748b", lineHeight: 1.4 }}>
-                    Chỉ quy đổi số hiển thị trên BCTC; giữ nguyên toàn bộ số dư gốc <code>raw_amount</code> và bút toán Sổ cái GL (BR-GL-FS-61, 83, 84).
+                    Chỉ quy đổi số hiển thị trên BCTC; giữ nguyên toàn bộ số dư gốc số liệu gốc và bút toán Sổ cái GL.
                   </div>
                 </div>
 
@@ -12336,10 +12348,10 @@ export default function MisaLedgerWorkspace({
                     Kiểm tra điều kiện nguồn Sổ cái trước khi lập BCTC (Pre-generation Check):
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, color: "#334155" }}>
-                    <div>• Tổng hợp GL (UC-GL-10): <strong style={{ color: "#059669" }}>{statementPrecheckSummary.gl_aggregation}</strong></div>
-                    <div>• Đối chiếu phân hệ (UC-GL-11): <strong style={{ color: "#059669" }}>{statementPrecheckSummary.reconciliation}</strong></div>
-                    <div>• Kết chuyển lãi lỗ (UC-GL-09): <strong style={{ color: "#059669" }}>{statementPrecheckSummary.pl_closing}</strong></div>
-                    <div>• Khóa kỳ kế toán (UC-GL-12): <strong style={{ color: "#0284c7" }}>{periodLockStatus}</strong></div>
+                    <div>• Tổng hợp GL: <strong style={{ color: "#059669" }}>{statementPrecheckSummary.gl_aggregation}</strong></div>
+                    <div>• Đối chiếu phân hệ: <strong style={{ color: "#059669" }}>{statementPrecheckSummary.reconciliation}</strong></div>
+                    <div>• Kết chuyển lãi lỗ: <strong style={{ color: "#059669" }}>{statementPrecheckSummary.pl_closing}</strong></div>
+                    <div>• Khóa kỳ kế toán: <strong style={{ color: "#0284c7" }}>{periodLockStatus}</strong></div>
                   </div>
                 </div>
               </div>
@@ -12432,7 +12444,7 @@ export default function MisaLedgerWorkspace({
             >
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700 }}>
-                  Truy vết chỉ tiêu BCTC (Drill-down): Mã số [{statementDrilldownModal.indicator_code}] —{" "}
+                  Truy vết chỉ tiêu BCTC: Mã số [{statementDrilldownModal.indicator_code}] —{" "}
                   {statementDrilldownModal.indicator_name}
                 </div>
                 <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
@@ -12466,7 +12478,7 @@ export default function MisaLedgerWorkspace({
               </div>
 
               <h4 style={{ fontSize: 13.5, fontWeight: 700, color: "#0f172a", margin: "0 0 8px 0" }}>
-                1. Phân rã theo Tài khoản Sổ cái & Đối tượng công nợ lưỡng tính (BR-GL-FS-54..56)
+                1. Phân rã theo Tài khoản Sổ cái & Đối tượng công nợ lưỡng tính
               </h4>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, marginBottom: 18 }}>
                 <thead>
@@ -12494,7 +12506,7 @@ export default function MisaLedgerWorkspace({
               </table>
 
               <h4 style={{ fontSize: 13.5, fontWeight: 700, color: "#0f172a", margin: "0 0 8px 0" }}>
-                2. Danh sách Bút toán Sổ cái (POSTED) cấu thành chỉ tiêu (BR-GL-FS-02, 112)
+                2. Danh sách Bút toán Sổ cái cấu thành chỉ tiêu
               </h4>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                 <thead>
@@ -12592,7 +12604,7 @@ export default function MisaLedgerWorkspace({
                     color: "#1e40af",
                   }}
                 >
-                  <strong>Chế độ chỉ đọc (BR-GL-FS-75):</strong> Phiên bản {statementNotesModalBatch.batch_number} đã chốt chính thức (FINALIZED). Không được sửa trực tiếp trên phiên bản đã chốt.
+                  <strong>Chế độ chỉ đọc:</strong> Phiên bản {statementNotesModalBatch.batch_number} đã chốt chính thức. Không được sửa trực tiếp trên phiên bản đã chốt.
                 </div>
               )}
 
@@ -12724,7 +12736,7 @@ export default function MisaLedgerWorkspace({
                     );
                     setStatementNotesModalBatch(null);
                     notify(
-                      `Đã lưu nội dung Thuyết minh BCTC cho phiên bản ${statementNotesModalBatch.batch_number} (AF-12, BR-GL-FS-41, 42).`,
+                      `Đã lưu nội dung Thuyết minh BCTC cho phiên bản ${statementNotesModalBatch.batch_number}.`,
                     );
                   }}
                   style={{
@@ -16067,7 +16079,7 @@ export default function MisaLedgerWorkspace({
               </div>
               {viewingAdvReq.settlementVoucherNo && (
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "#64748b" }}>Chứng từ quyết toán liên kết (UC-GL-02):</span>
+                  <span style={{ color: "#64748b" }}>Chứng từ quyết toán liên kết:</span>
                   <strong style={{ color: "#0284c7" }}>{viewingAdvReq.settlementVoucherNo}</strong>
                 </div>
               )}
@@ -16086,7 +16098,7 @@ export default function MisaLedgerWorkspace({
                   color: "#475569",
                 }}
               >
-                Ghi chú kiểm soát (BR-GL-ADV-29..32): Đề nghị quyết toán tạm ứng không sinh bút toán Nợ/Có và không làm thay đổi số dư Sổ cái cho đến khi kế toán lập và ghi sổ Chứng từ quyết toán tạm ứng (UC-GL-02).
+                Ghi chú kiểm soát: Đề nghị quyết toán tạm ứng không sinh bút toán Nợ/Có và không làm thay đổi số dư Sổ cái cho đến khi kế toán lập và ghi sổ Chứng từ quyết toán tạm ứng.
               </div>
             </div>
             <div
@@ -16164,7 +16176,7 @@ export default function MisaLedgerWorkspace({
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <FileSpreadsheet size={19} color="#00a862" />
                 <span style={{ fontSize: 15, fontWeight: 800, color: "#0f172a" }}>
-                  UC-GL-14: {uc14BookResult?.book_title || previewReportName}
+                  {uc14BookResult?.book_title || previewReportName}
                 </span>
                 <span
                   style={{
@@ -16177,7 +16189,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   {uc14BookResult?.is_official_book !== false
-                    ? `${uc14BookResult?.form_code || "S03b-DN"} • Sổ chính thức (Chỉ POSTED)`
+                    ? `${uc14BookResult?.form_code || "S03b-DN"} • Sổ chính thức (Chỉ bút toán đã ghi sổ)`
                     : "Chế độ Tra cứu / Truy vết mở rộng"}
                 </span>
                 <span
@@ -16190,7 +16202,7 @@ export default function MisaLedgerWorkspace({
                     color: periodLockStatus === "CLOSED" ? "#92400e" : "#334155",
                   }}
                 >
-                  Kỳ {uc14Period}: {periodLockStatus} (AF-24: Cho phép tra cứu 100%)
+                  Kỳ {uc14Period}: {periodLockStatus} (Cho phép tra cứu 100%)
                 </span>
                 <span
                   style={{
@@ -16203,7 +16215,7 @@ export default function MisaLedgerWorkspace({
                     border: "1px solid #bbf7d0",
                   }}
                 >
-                  Zero GL Mutation (BR-GL-TRACE-01)
+                  Chế độ tra cứu an toàn (Chỉ đọc)
                 </span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -16362,7 +16374,7 @@ export default function MisaLedgerWorkspace({
 
                 <div>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 3 }}>
-                    Loại tiền (AF-10)
+                    Loại tiền
                   </label>
                   <select
                     value={uc14CurrencyCode}
@@ -16378,16 +16390,16 @@ export default function MisaLedgerWorkspace({
 
                 <div>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 3 }}>
-                    Trạng thái (EF-09)
+                    Trạng thái
                   </label>
                   <select
                     value={uc14EntryStatus}
                     onChange={(e) => setUc14EntryStatus(e.target.value)}
                     style={{ width: "100%", height: 32, borderRadius: 5, border: "1px solid #cbd5e1", padding: "0 8px", fontSize: 12.5 }}
                   >
-                    <option value="POSTED">POSTED (Đã ghi sổ)</option>
-                    <option value="UNPOSTED">UNPOSTED (Chưa ghi sổ)</option>
-                    <option value="ALL">ALL (Tất cả - chỉ Tra cứu)</option>
+                    <option value="POSTED">Đã ghi sổ</option>
+                    <option value="UNPOSTED">Chưa ghi sổ</option>
+                    <option value="ALL">Tất cả (Chỉ tra cứu)</option>
                   </select>
                 </div>
 
@@ -16422,7 +16434,7 @@ export default function MisaLedgerWorkspace({
                       checked={uc14IncludeChildAccounts}
                       onChange={(e) => setUc14IncludeChildAccounts(e.target.checked)}
                     />
-                    <span>Bao gồm TK con (AF-11: Không cộng trùng cha + con)</span>
+                    <span>Bao gồm TK con (Không cộng trùng cha + con)</span>
                   </label>
                   <input
                     type="text"
@@ -16537,8 +16549,8 @@ export default function MisaLedgerWorkspace({
                   title={uc14BookResult?.consistency_with_uc_gl_10?.message}
                 >
                   {uc14BookResult?.consistency_with_uc_gl_10?.status === "STALE_WARNING"
-                    ? "⚠️ UC-GL-10 đang STALE (Đã tính trực tiếp từ POSTED - EF-13)"
-                    : "✓ Khớp 100% với Bảng tổng hợp số dư UC-GL-10"}
+                    ? "⚠️ Đã tự động cập nhật trực tiếp từ các bút toán đã ghi sổ"
+                    : "✓ Khớp 100% với Bảng tổng hợp số dư"}
                 </span>
               </div>
             </div>
@@ -16562,7 +16574,7 @@ export default function MisaLedgerWorkspace({
                     <thead>
                       <tr style={{ background: "#f1f5f9", border: "1px solid #cbd5e1" }}>
                         <th style={{ border: "1px solid #cbd5e1", padding: "7px 8px", textAlign: "center" }}>Ngày HT</th>
-                        <th style={{ border: "1px solid #cbd5e1", padding: "7px 8px", textAlign: "left" }}>Số CT (Drill-down)</th>
+                        <th style={{ border: "1px solid #cbd5e1", padding: "7px 8px", textAlign: "left" }}>Số CT</th>
                         <th style={{ border: "1px solid #cbd5e1", padding: "7px 8px", textAlign: "left" }}>Diễn giải</th>
                         <th style={{ border: "1px solid #cbd5e1", padding: "7px 8px", textAlign: "center" }}>TK</th>
                         <th style={{ border: "1px solid #cbd5e1", padding: "7px 8px", textAlign: "center" }}>TK ĐƯ</th>
@@ -16668,7 +16680,7 @@ export default function MisaLedgerWorkspace({
                   <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                     <div>
                       <h4 style={{ margin: "0 0 8px 0", fontSize: 13.5, color: "#0f172a" }}>
-                        Bảng tổng hợp Số dư Đầu kỳ – Phát sinh – Cuối kỳ theo Tài khoản (AF-11, BR-GL-TRACE-28..30: Không cộng trùng TK cha + con)
+                        Bảng tổng hợp Số dư Đầu kỳ – Phát sinh – Cuối kỳ theo Tài khoản (Không cộng trùng TK cha + con)
                       </h4>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                         <thead>
@@ -16691,7 +16703,7 @@ export default function MisaLedgerWorkspace({
                                 {a.account_name}
                                 {a.is_bilateral && (
                                   <span style={{ marginLeft: 6, fontSize: 10.5, padding: "1px 6px", borderRadius: 4, background: "#e0f2fe", color: "#0369a1", fontWeight: 700 }}>
-                                    Lưỡng tính (AF-16)
+                                    Lưỡng tính
                                   </span>
                                 )}
                               </td>
@@ -16709,7 +16721,7 @@ export default function MisaLedgerWorkspace({
 
                     <div>
                       <h4 style={{ margin: "0 0 8px 0", fontSize: 13.5, color: "#0f172a" }}>
-                        Chi tiết Công nợ Tài khoản Lưỡng tính 131 / 331 theo từng Đối tượng (AF-16, BR-GL-TRACE-31, 32: Tuyệt đối không bù trừ chéo)
+                        Chi tiết Công nợ Tài khoản Lưỡng tính 131 / 331 theo từng Đối tượng (Tuyệt đối không bù trừ chéo)
                       </h4>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                         <thead>
@@ -16749,7 +16761,7 @@ export default function MisaLedgerWorkspace({
                   <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                     <div>
                       <h4 style={{ margin: "0 0 8px 0", fontSize: 13.5, color: "#0f172a" }}>
-                        Tổng hợp phát sinh theo từng loại Ngoại tệ (AF-10, BR-GL-TRACE-71, 72: Tách riêng USD, EUR — Không cộng ngang nguyên tệ khác loại tiền)
+                        Tổng hợp phát sinh theo từng loại Ngoại tệ (Tách riêng USD, EUR — Không cộng ngang nguyên tệ khác loại tiền)
                       </h4>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                         <thead>
@@ -16779,7 +16791,7 @@ export default function MisaLedgerWorkspace({
 
                     <div>
                       <h4 style={{ margin: "0 0 8px 0", fontSize: 13.5, color: "#0f172a" }}>
-                        Bảng tổng hợp phát sinh Tài khoản chữ T theo TK đối ứng (AF-05 — S06T-DN)
+                        Bảng tổng hợp phát sinh Tài khoản chữ T theo TK đối ứng
                       </h4>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                         <thead>
@@ -16841,7 +16853,7 @@ export default function MisaLedgerWorkspace({
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontWeight: 800, fontSize: 14, color: "#0f172a" }}>
-                      🔍 Chuỗi Truy vết Chứng từ 2 chiều (UC-GL-14)
+                      🔍 Chuỗi Truy vết Chứng từ 2 chiều
                     </div>
                     <button
                       type="button"
@@ -16909,7 +16921,7 @@ export default function MisaLedgerWorkspace({
                   {/* GL Journal Entry Detail */}
                   <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #e2e8f0", padding: 12 }}>
                     <div style={{ fontWeight: 700, fontSize: 12.5, color: "#0f172a", marginBottom: 6 }}>
-                      1. Bút toán Sổ cái (GL Entry): {uc14TraceDetail.gl_entry?.number} ({uc14TraceDetail.gl_entry?.status})
+                      1. Bút toán Sổ cái: {uc14TraceDetail.gl_entry?.number} ({uc14TraceDetail.gl_entry?.status})
                     </div>
                     <div style={{ fontSize: 11.5, color: "#475569", marginBottom: 8 }}>
                       Ngày HT: {uc14TraceDetail.gl_entry?.posting_date} • Ngày CT: {uc14TraceDetail.gl_entry?.document_date} • Loại: {uc14TraceDetail.gl_entry?.entry_type} • Phân hệ: {uc14TraceDetail.gl_entry?.source_module}
@@ -16940,7 +16952,7 @@ export default function MisaLedgerWorkspace({
                   {uc14TraceDetail.adjustment_reversal_chain?.has_chain && (
                     <div style={{ background: "#fffbeb", borderRadius: 6, border: "1px solid #fde68a", padding: 12 }}>
                       <div style={{ fontWeight: 700, fontSize: 12.5, color: "#92400e", marginBottom: 4 }}>
-                        2. Chuỗi Bút toán Đảo / Điều chỉnh (UC-GL-06 / AF-20, AF-21)
+                        2. Chuỗi Bút toán Đảo / Điều chỉnh
                       </div>
                       {(uc14TraceDetail.adjustment_reversal_chain?.related_entries || []).map((rel: any, i: number) => (
                         <div key={i} style={{ fontSize: 11.5, color: "#78350f", marginTop: 4 }}>
@@ -16953,7 +16965,7 @@ export default function MisaLedgerWorkspace({
                   {/* Source Business Voucher Card */}
                   <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #e2e8f0", padding: 12 }}>
                     <div style={{ fontWeight: 700, fontSize: 12.5, color: "#0f172a", marginBottom: 6 }}>
-                      3. Chứng từ nghiệp vụ nguồn (Source Voucher)
+                      3. Chứng từ nghiệp vụ nguồn
                     </div>
                     {uc14TraceDetail.source_voucher ? (
                       uc14TraceDetail.source_voucher.access_restricted ? (
@@ -16972,8 +16984,8 @@ export default function MisaLedgerWorkspace({
                     ) : (
                       <div style={{ fontSize: 12, color: "#64748b", fontStyle: "italic" }}>
                         {uc14TraceDetail.trace_status === "NO_SOURCE"
-                          ? "Bút toán tổng hợp trực tiếp tại GL — không có chứng từ phân hệ nguồn riêng (AF-17)."
-                          : "Không tồn tại bản ghi chứng từ nguồn (BROKEN_LINK — EF-17, BR-GL-TRACE-50: Không tự tạo chứng từ giả)."}
+                          ? "Bút toán tổng hợp trực tiếp tại GL — không có chứng từ phân hệ nguồn riêng."
+                          : "Không tồn tại bản ghi chứng từ nguồn liên kết."}
                       </div>
                     )}
                   </div>
@@ -17468,7 +17480,7 @@ export default function MisaLedgerWorkspace({
             >
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                  Tiếp nhận bút toán từ các phân hệ nghiệp vụ (UC-GL-04)
+                  Tiếp nhận bút toán từ các phân hệ nghiệp vụ
                 </div>
                 <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 2 }}>
                   Hỗ trợ các phân hệ PUR, AP, SAL, AR, CASH, BANK, INV, FA, TOOLS, PAYROLL, TAX, COST — Kiểm tra định khoản, cân đối Nợ/Có, chống trùng Idempotency & truy vết hai chiều
@@ -17685,9 +17697,9 @@ export default function MisaLedgerWorkspace({
                         background: "#ffffff",
                       }}
                     >
-                      <option value="AUTO_POST">AUTO_POST - Tự động ghi sổ ngay</option>
-                      <option value="UNPOSTED">UNPOSTED - Lưu chưa ghi sổ</option>
-                      <option value="WORKFLOW">WORKFLOW - Chuyển phê duyệt</option>
+                      <option value="AUTO_POST">Tự động ghi sổ ngay</option>
+                      <option value="UNPOSTED">Lưu chưa ghi sổ</option>
+                      <option value="WORKFLOW">Chuyển phê duyệt</option>
                     </select>
                   </div>
                 </div>
@@ -17788,10 +17800,10 @@ export default function MisaLedgerWorkspace({
                               }}
                             >
                               {ing.status === "POSTED"
-                                ? "Đã ghi sổ (POSTED)"
+                                ? "Đã ghi sổ"
                                 : ing.status === "ERROR"
                                   ? "Lỗi (ERROR)"
-                                  : "Chưa ghi sổ (UNPOSTED)"}
+                                  : "Chưa ghi sổ"}
                             </span>
                             {ing.errorMessage && (
                               <div style={{ fontSize: 11, color: "#dc2626", marginTop: 3 }}>
@@ -17944,7 +17956,7 @@ export default function MisaLedgerWorkspace({
                   Phân bổ chi phí bán hàng, quản lý doanh nghiệp và chi phí khác
                 </h3>
                 <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 4 }}>
-                  Tập hợp chi phí nguồn đã ghi sổ (POSTED), phân bổ theo tiêu thức và tạo chứng từ phân bổ có truy vết hai chiều
+                  Tập hợp chi phí nguồn đã ghi sổ, phân bổ theo tiêu thức và tạo chứng từ phân bổ có truy vết hai chiều
                 </div>
               </div>
               <button
@@ -18158,7 +18170,7 @@ export default function MisaLedgerWorkspace({
               >
                 <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
                   <div>
-                    <div style={{ fontSize: 11.5, color: "#475569" }}>Tổng CP nguồn phát sinh (POSTED):</div>
+                    <div style={{ fontSize: 11.5, color: "#475569" }}>Tổng CP nguồn phát sinh:</div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
                       {allocSourcePool.totalSourceAmount.toLocaleString("vi-VN")} ₫
                     </div>
@@ -18176,7 +18188,7 @@ export default function MisaLedgerWorkspace({
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: 11.5, color: "#475569" }}>Fingerprint nguồn (AF-13):</div>
+                    <div style={{ fontSize: 11.5, color: "#475569" }}>Mã định danh nguồn:</div>
                     <div style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
                       {allocSourcePool.sourceFingerprint} ({allocSourcePool.sourceEntriesCount} bút toán)
                     </div>
@@ -18288,7 +18300,7 @@ export default function MisaLedgerWorkspace({
                         <th style={{ padding: "9px 10px" }}>Phương pháp</th>
                         <th style={{ padding: "9px 10px", textAlign: "right" }}>Tổng tiền phân bổ</th>
                         <th style={{ padding: "9px 10px" }}>Trạng thái</th>
-                        <th style={{ padding: "9px 10px", textAlign: "center" }}>Thao tác (UC-GL-05 / 06 / 07)</th>
+                        <th style={{ padding: "9px 10px", textAlign: "center" }}>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -18337,7 +18349,7 @@ export default function MisaLedgerWorkspace({
                                       setAllocRunsHistory((prev) =>
                                         prev.map((r) => (r.id === run.id ? { ...r, status: "POSTED" } : r)),
                                       );
-                                      notify(`Đã ghi sổ chứng từ phân bổ ${run.number} vào Sổ cái (UC-GL-05).`);
+                                      notify(`Đã ghi sổ chứng từ phân bổ ${run.number} vào Sổ cái.`);
                                     }}
                                     style={{
                                       padding: "3px 8px",
@@ -18358,7 +18370,7 @@ export default function MisaLedgerWorkspace({
                                       setAllocRunsHistory((prev) =>
                                         prev.map((r) => (r.id === run.id ? { ...r, status: "CANCELLED" } : r)),
                                       );
-                                      notify(`Đã hủy chứng từ phân bổ ${run.number} và giải phóng nguồn chi phí (AF-16).`);
+                                      notify(`Đã hủy chứng từ phân bổ ${run.number} và giải phóng nguồn chi phí.`);
                                     }}
                                     style={{
                                       padding: "3px 8px",
@@ -18383,7 +18395,7 @@ export default function MisaLedgerWorkspace({
                                       setAllocRunsHistory((prev) =>
                                         prev.map((r) => (r.id === run.id ? { ...r, status: "UNPOSTED" } : r)),
                                       );
-                                      notify(`Đã bỏ ghi sổ chứng từ phân bổ ${run.number} về UNPOSTED (AF-16).`);
+                                      notify(`Đã bỏ ghi sổ chứng từ phân bổ ${run.number} về trạng thái Chưa ghi sổ.`);
                                     }}
                                     style={{
                                       padding: "3px 8px",
@@ -18405,7 +18417,7 @@ export default function MisaLedgerWorkspace({
                                         prev.map((r) => (r.id === run.id ? { ...r, status: "REVERSED" } : r)),
                                       );
                                       notify(
-                                        `Đã tạo bút toán đảo cho chứng từ phân bổ ${run.number} và giải phóng nguồn chi phí (AF-17).`,
+                                        `Đã tạo bút toán đảo cho chứng từ phân bổ ${run.number} và giải phóng nguồn chi phí.`,
                                       );
                                     }}
                                     style={{
@@ -18467,7 +18479,7 @@ export default function MisaLedgerWorkspace({
               }}
             >
               <div style={{ fontSize: 12, color: "#64748b" }}>
-                Trạng thái hiện tại: <strong>{allocSourcePool.status}</strong> — Bút toán chỉ ảnh hưởng số liệu GL chính thức sau khi Ghi sổ (UC-GL-05)
+                Trạng thái hiện tại: <strong>{allocSourcePool.status}</strong> — Bút toán chỉ ảnh hưởng số liệu GL chính thức sau khi Ghi sổ
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button
@@ -18499,7 +18511,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  3. Tạo chứng từ (Chưa ghi sổ - AF-15)
+                  3. Tạo chứng từ (Chưa ghi sổ)
                 </button>
                 <button
                   type="button"
@@ -18515,7 +18527,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  Tạo chứng từ & Ghi sổ ngay (AF-14)
+                  Tạo chứng từ & Ghi sổ ngay
                 </button>
               </div>
             </div>
@@ -18563,10 +18575,10 @@ export default function MisaLedgerWorkspace({
             >
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700 }}>
-                  UC-GL-08: Đánh giá lại tài khoản ngoại tệ cuối kỳ (Foreign Currency Account Revaluation)
+                  Đánh giá lại tài khoản ngoại tệ cuối kỳ
                 </div>
                 <div style={{ fontSize: 12, color: "#bfdbfe", marginTop: 2 }}>
-                  Xác định lại giá trị quy đổi các khoản mục tiền tệ có gốc ngoại tệ (TK 1112, 1122, 131, 331, 3411), tự động định khoản Lãi/Lỗ tỷ giá qua TK 4131 và bảo toàn số dư nguyên tệ (BR-GL-FX-01..83)
+                  Xác định lại giá trị quy đổi các khoản mục tiền tệ có gốc ngoại tệ (TK 1112, 1122, 131, 331, 3411), tự động định khoản Lãi/Lỗ tỷ giá qua TK 4131 và bảo toàn số dư nguyên tệ
                 </div>
               </div>
               <button
@@ -18653,7 +18665,7 @@ export default function MisaLedgerWorkspace({
                     >
                       <span>A. Thông tin chung của lần đánh giá ngoại tệ (Mục 1.1.A)</span>
                       <span style={{ fontSize: 11, color: "#1d4ed8", fontWeight: 600 }}>
-                        Fingerprint nguồn: {fxRevalSourceFingerprint}
+                        Mã định danh nguồn: {fxRevalSourceFingerprint}
                       </span>
                     </div>
                     <div
@@ -18682,14 +18694,14 @@ export default function MisaLedgerWorkspace({
                             marginTop: 3,
                           }}
                         >
-                          <option value="2026-10">Tháng 10/2026 (OPEN)</option>
-                          <option value="2026-09">Tháng 09/2026 (OPEN)</option>
-                          <option value="2026-11">Tháng 11/2026 (OPEN)</option>
+                          <option value="2026-10">Tháng 10/2026 (Đang mở)</option>
+                          <option value="2026-09">Tháng 09/2026 (Đang mở)</option>
+                          <option value="2026-11">Tháng 11/2026 (Đang mở)</option>
                         </select>
                       </div>
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 600, color: "#475569" }}>
-                          Loại ngoại tệ * (AF-03)
+                          Loại ngoại tệ *
                         </label>
                         <select
                           value={fxRevalCurrency}
@@ -18737,7 +18749,7 @@ export default function MisaLedgerWorkspace({
                       </div>
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 600, color: "#475569" }}>
-                          Phạm vi tài khoản * (AF-04..06)
+                          Phạm vi tài khoản *
                         </label>
                         <select
                           value={fxRevalAccountScope}
@@ -18769,7 +18781,7 @@ export default function MisaLedgerWorkspace({
                       </div>
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 600, color: "#475569" }}>
-                          Số chứng từ * (BR-GL-FX-48)
+                          Số chứng từ *
                         </label>
                         <input
                           type="text"
@@ -18838,7 +18850,7 @@ export default function MisaLedgerWorkspace({
                       </div>
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 600, color: "#475569" }}>
-                          Nguồn tỷ giá (AF-01 / AF-02)
+                          Nguồn tỷ giá
                         </label>
                         <input
                           type="text"
@@ -18887,7 +18899,7 @@ export default function MisaLedgerWorkspace({
                             cursor: "pointer",
                           }}
                         >
-                          Lấy tỷ giá hệ thống (AF-01)
+                          Lấy tỷ giá hệ thống
                         </button>
                       </div>
                     </div>
@@ -19056,7 +19068,7 @@ export default function MisaLedgerWorkspace({
                                 color: "#0f172a",
                               }}
                         >
-                          {it.revaluedValueAfter.toLocaleString("vi-VN")} ₫
+                          {it.revaluedValue.toLocaleString("vi-VN")} ₫
                         </td>
                         <td
                           style={{
@@ -19064,9 +19076,9 @@ export default function MisaLedgerWorkspace({
                             textAlign: "right",
                             fontWeight: 700,
                             color:
-                              it.differenceNature === "GAIN"
+                              it.fxImpactType === "GAIN"
                                 ? "#15803d"
-                                : it.differenceNature === "LOSS"
+                                : it.fxImpactType === "LOSS"
                                   ? "#b91c1c"
                                   : "#64748b",
                           }}
@@ -19082,28 +19094,28 @@ export default function MisaLedgerWorkspace({
                               fontSize: "0.7rem",
                               fontWeight: 700,
                               background:
-                                it.differenceNature === "GAIN"
+                                it.fxImpactType === "GAIN"
                                   ? "#dcfce7"
-                                  : it.differenceNature === "LOSS"
+                                  : it.fxImpactType === "LOSS"
                                     ? "#fee2e2"
                                     : "#f1f5f9",
                               color:
-                                it.differenceNature === "GAIN"
+                                it.fxImpactType === "GAIN"
                                   ? "#166534"
-                                  : it.differenceNature === "LOSS"
+                                  : it.fxImpactType === "LOSS"
                                     ? "#991b1b"
                                     : "#475569",
                             }}
                           >
-                            {it.differenceNature === "GAIN"
+                            {it.fxImpactType === "GAIN"
                               ? "Lãi tỷ giá"
-                              : it.differenceNature === "LOSS"
+                              : it.fxImpactType === "LOSS"
                                 ? "Lỗ tỷ giá"
                                 : "Không chênh lệch"}
                           </span>
                         </td>
                         <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 600, color: "#1d4ed8" }}>
-                          Nợ {it.debitAcc} / Có {it.creditAcc}
+                          Nợ {it.debitAccountCode} / Có {it.creditAccountCode}
                         </td>
                       </tr>
                     ))}
@@ -19114,10 +19126,10 @@ export default function MisaLedgerWorkspace({
               {(() => {
                 const selectedItems = fxRevalItems.filter((i) => i.selected);
                 const totalGain = selectedItems
-                  .filter((i) => i.differenceNature === "GAIN")
+                  .filter((i) => i.fxImpactType === "GAIN")
                   .reduce((sum, i) => sum + Math.abs(i.differenceAmount), 0);
                 const totalLoss = selectedItems
-                  .filter((i) => i.differenceNature === "LOSS")
+                  .filter((i) => i.fxImpactType === "LOSS")
                   .reduce((sum, i) => sum + Math.abs(i.differenceAmount), 0);
                 const netDiff = totalGain - totalLoss;
                 const totalAccounting = totalGain + totalLoss;
@@ -19178,7 +19190,7 @@ export default function MisaLedgerWorkspace({
                           }}
                         >
                           <div style={{ fontSize: 11, color: "#334155", fontWeight: 600 }}>
-                            Kiểm tra cân đối Nợ / Có (BR-GL-FX-50)
+                            Kiểm tra cân đối Nợ / Có
                           </div>
                           <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a", marginTop: 4 }}>
                             Nợ: {totalAccounting.toLocaleString("vi-VN")} ₫ = Có:{" "}
@@ -19204,7 +19216,7 @@ export default function MisaLedgerWorkspace({
                         <th style={{ padding: "8px 10px", textAlign: "right" }}>Tổng Lỗ TG</th>
                         <th style={{ padding: "8px 10px", textAlign: "right" }}>Chênh lệch thuần</th>
                         <th style={{ padding: "8px 10px" }}>Trạng thái</th>
-                        <th style={{ padding: "8px 10px" }}>Thao tác vòng đời (AF-12..17)</th>
+                        <th style={{ padding: "8px 10px" }}>Thao tác vòng đời</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -19296,7 +19308,7 @@ export default function MisaLedgerWorkspace({
                                     cursor: "pointer",
                                   }}
                                 >
-                                  Hủy (AF-12)
+                                  Hủy
                                 </button>
                               </>
                             )}
@@ -19315,7 +19327,7 @@ export default function MisaLedgerWorkspace({
                                     cursor: "pointer",
                                   }}
                                 >
-                                  Bỏ ghi sổ (AF-16)
+                                  Bỏ ghi sổ
                                 </button>
                                 <button
                                   type="button"
@@ -19330,7 +19342,7 @@ export default function MisaLedgerWorkspace({
                                     cursor: "pointer",
                                   }}
                                 >
-                                  Đảo bút toán (AF-17)
+                                  Đảo bút toán
                                 </button>
                               </>
                             )}
@@ -19351,8 +19363,8 @@ export default function MisaLedgerWorkspace({
                       }}
                     >
                       <div style={{ fontWeight: 700, color: "#1e3a8a", marginBottom: 6 }}>
-                        Truy vết 2 chiều đợt đánh giá {fxRevalTraceRun.voucherNo} (Fingerprint:{" "}
-                        {fxRevalTraceRun.sourceFingerprint} - BR-GL-FX-82):
+                        Truy vết 2 chiều đợt đánh giá {fxRevalTraceRun.voucherNo} (Mã truy vết:{" "}
+                        {fxRevalTraceRun.sourceFingerprint}):
                       </div>
                       <div>
                         Kỳ: {fxRevalTraceRun.period} | Ngoại tệ: {fxRevalTraceRun.currency} | Tỷ giá:{" "}
@@ -19400,7 +19412,7 @@ export default function MisaLedgerWorkspace({
                               </span>
                             ) : (
                               <span style={{ color: "#b91c1c", fontWeight: 700 }}>
-                                Khoản mục phi tiền tệ (Chặn EF-11)
+                                Khoản mục phi tiền tệ (Chặn)
                               </span>
                             )}
                           </td>
@@ -19424,7 +19436,7 @@ export default function MisaLedgerWorkspace({
               }}
             >
               <div style={{ fontSize: 12, color: "#475569" }}>
-                Quy tắc cốt lõi: Không làm thay đổi số dư nguyên tệ (BR-GL-FX-60); Chứng từ UNPOSTED chưa tác động Sổ cái (BR-GL-FX-63).
+                Quy tắc cốt lõi: Không làm thay đổi số dư nguyên tệ; Chứng từ chưa ghi sổ không làm thay đổi số liệu Sổ cái.
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button
@@ -19441,7 +19453,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  1. Lấy số dư ngoại tệ (Bước 3)
+                  1. Lấy số dư ngoại tệ
                 </button>
                 <button
                   type="button"
@@ -19457,7 +19469,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  2. Tính đánh giá lại (Bước 5-8)
+                  2. Tính đánh giá lại
                 </button>
                 <button
                   type="button"
@@ -19473,7 +19485,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  3. Tạo chứng từ (Chưa ghi sổ - AF-15)
+                  3. Tạo chứng từ (Chưa ghi sổ)
                 </button>
                 <button
                   type="button"
@@ -19489,7 +19501,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  Tạo chứng từ & Ghi sổ ngay (AF-14)
+                  Tạo chứng từ & Ghi sổ ngay
                 </button>
               </div>
             </div>
@@ -19540,7 +19552,7 @@ export default function MisaLedgerWorkspace({
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                    Tổng hợp phát sinh, số dư và Kiểm tra cân đối Sổ cái (UC-GL-10)
+                    Tổng hợp phát sinh, số dư và Kiểm tra cân đối Sổ cái
                   </h3>
                   <span
                     style={{
@@ -19563,14 +19575,14 @@ export default function MisaLedgerWorkspace({
                     }}
                   >
                     {balAggStatus === "VALID"
-                      ? "VALID — Đã tổng hợp & Cân đối"
+                      ? "Hợp lệ — Đã tổng hợp & Cân đối"
                       : balAggStatus === "STALE"
-                      ? "STALE — Cần tổng hợp lại"
-                      : "INVALID — Mất cân đối"}
+                      ? "Cần tổng hợp lại số dư"
+                      : "Không hợp lệ — Mất cân đối"}
                   </span>
                 </div>
                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                  Chỉ tổng hợp từ bút toán <strong>POSTED</strong> (BR-GL-BAL-01) | Watermark nguồn:{" "}
+                  Chỉ tổng hợp từ bút toán <strong>Đã ghi sổ</strong> | Mã phiên dữ liệu:{" "}
                   <code>{balAggWatermark}</code> | Cập nhật lúc: {balAggLastRunAt}
                 </div>
               </div>
@@ -19658,7 +19670,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  Kiểm tra 4 nguyên tắc cân đối (Bước 5-8)
+                  Kiểm tra 4 nguyên tắc cân đối
                 </button>
                 <button
                   type="button"
@@ -19680,7 +19692,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   <RefreshCw size={14} />
-                  <span>Tổng hợp lại số dư (AF-05)</span>
+                  <span>Tổng hợp lại số dư</span>
                 </button>
               </div>
             </div>
@@ -19698,25 +19710,25 @@ export default function MisaLedgerWorkspace({
               }}
             >
               <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>1. Tổng PS Nợ = Tổng PS Có (BR-18)</div>
+                <div style={{ color: "#64748b" }}>1. Tổng PS Nợ = Tổng PS Có</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   588.200.000 ₫ = 588.200.000 ₫ (Cân bằng)
                 </div>
               </div>
               <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>2. Tổng Dư ĐK & Dư CK (BR-19..20)</div>
+                <div style={{ color: "#64748b" }}>2. Tổng Dư ĐK & Dư CK</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   ĐK: 240.000.000 ₫ | CK: 408.200.000 ₫
                 </div>
               </div>
               <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>3. Liên tục số dư kỳ trước (BR-21..22)</div>
+                <div style={{ color: "#64748b" }}>3. Liên tục số dư kỳ trước</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   Khớp 100% Dư CK trước = Dư ĐK này
                 </div>
               </div>
               <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>4. Khớp TK Cha-Con & Lưỡng tính (BR-23..29)</div>
+                <div style={{ color: "#64748b" }}>4. Khớp TK Cha-Con & Lưỡng tính</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   131 / 331 tách Dư Nợ - Dư Có theo đối tượng
                 </div>
@@ -19831,7 +19843,7 @@ export default function MisaLedgerWorkspace({
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                     <strong style={{ fontSize: 13, color: "#0f172a" }}>
-                      Truy vết ngược dòng bút toán POSTED cấu thành số tổng hợp — TK {balAggDrilldownAccount} (BR-GL-BAL-39)
+                      Truy vết ngược dòng bút toán đã ghi sổ cấu thành số tổng hợp — TK {balAggDrilldownAccount}
                     </strong>
                     <button
                       type="button"
@@ -20343,7 +20355,7 @@ export default function MisaLedgerWorkspace({
                     {/* Left: GL Entries */}
                     <div style={{ background: "#ffffff", padding: 10, borderRadius: 6, border: "1px solid #e2e8f0" }}>
                       <div style={{ fontWeight: 700, fontSize: 12, color: "#0f766e", marginBottom: 6 }}>
-                        Danh sách Bút toán Sổ cái GL (POSTED)
+                        Danh sách Bút toán Sổ cái GL
                       </div>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5 }}>
                         <thead>
@@ -20413,7 +20425,7 @@ export default function MisaLedgerWorkspace({
                   <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center" }}>
                     <input
                       type="text"
-                      placeholder="Ghi chú nguyên nhân / hướng xử lý tại chứng từ nguồn (Bước 44, BR-GL-REC-56)..."
+                      placeholder="Ghi chú nguyên nhân / hướng xử lý tại chứng từ nguồn..."
                       value={glRecNoteInput}
                       onChange={(e) => setGlRecNoteInput(e.target.value)}
                       style={{
@@ -20475,7 +20487,7 @@ export default function MisaLedgerWorkspace({
                   marginRight: 8,
                 }}
               >
-                Chuyển sang Khóa / Bỏ khóa sổ kỳ kế toán (UC-GL-12)
+                Chuyển sang Khóa / Bỏ khóa sổ kỳ kế toán
               </button>
               <button
                 type="button"
