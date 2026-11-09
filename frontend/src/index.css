@@ -39,6 +39,11 @@ input,
 select {
   font: inherit;
 }
+input[type="checkbox"],
+input[type="radio"] {
+  flex-shrink: 0 !important;
+  box-sizing: border-box;
+}
 button,
 a,
 input,

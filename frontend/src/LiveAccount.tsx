@@ -121,6 +121,7 @@ export default function LiveAccount() {
                 type="button"
                 onClick={() => setLegalTab("terms")}
                 style={{
+                  display: "inline",
                   background: "none",
                   border: "none",
                   padding: 0,
@@ -130,11 +131,11 @@ export default function LiveAccount() {
                   cursor: "pointer",
                   fontFamily: "inherit",
                   fontSize: "inherit",
+                  textAlign: "left",
                 }}
               >
                 Điều khoản sử dụng hệ thống
-              </button>
-              .
+              </button>.
             </span>
           </label>
           <label className="auth-checkbox-label">
@@ -145,6 +146,7 @@ export default function LiveAccount() {
                 type="button"
                 onClick={() => setLegalTab("privacy")}
                 style={{
+                  display: "inline",
                   background: "none",
                   border: "none",
                   padding: 0,
@@ -154,11 +156,11 @@ export default function LiveAccount() {
                   cursor: "pointer",
                   fontFamily: "inherit",
                   fontSize: "inherit",
+                  textAlign: "left",
                 }}
               >
                 Chính sách bảo vệ dữ liệu cá nhân (Luật 91/2025/QH15 & NĐ 356/2025/NĐ-CP)
-              </button>
-              .
+              </button>.
             </span>
           </label>
           <AuthSubmit busy={busy} busyLabel="Đang tạo tài khoản…">Tạo tài khoản</AuthSubmit>
