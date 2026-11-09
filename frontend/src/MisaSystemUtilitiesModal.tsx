@@ -16,7 +16,6 @@ import {
   RotateCcw,
   Search,
   ShieldCheck,
-  Sparkles,
   Users,
   X,
 } from "lucide-react";
@@ -456,7 +455,7 @@ export function MisaSystemUtilitiesModal({
                 placeItems: "center",
               }}
             >
-              <Sparkles size={18} />
+              <Layers size={18} />
             </span>
             <div>
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#fff" }}>
@@ -1909,150 +1908,6 @@ export function MisaSystemUtilitiesModal({
                       }}
                     >
                       Lưu thiết lập phân hệ
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 9. KẾT NỐI ỨNG DỤNG / SÀN TMĐT / EMAIL / NGÔN NGỮ */}
-          {![
-            "Thiết lập phân hệ",
-            "Ghi sổ/Bỏ ghi theo lô",
-            "Phục hồi chứng từ đã xóa nhầm",
-            "Lấy chứng từ từ dữ liệu khác",
-            "Đánh lại số chứng từ",
-            "Bảo trì dữ liệu",
-            "Kiểm tra đối chiếu chứng từ, sổ sách",
-            "Mã QR thanh toán",
-            "Tra cứu thông tin doanh nghiệp",
-            "Chuyển đổi dữ liệu sang Thông tư 99/2025/TT-BTC",
-            "Hướng dẫn chuyển đổi từ SME",
-            "Chuyển đổi từ Sổ Việt ERP bản cũ",
-            "Danh sách lệnh tính giá, bảo trì… đang thực hiện",
-            "Danh sách người dùng đang truy cập",
-          ].includes(utilityName) && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div
-                style={{
-                  background: "#ffffff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 8,
-                  padding: 18,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 14,
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>
-                       Trung tâm Tích hợp & Thiết lập Hệ thống ({utilityName})
-                    </div>
-                    <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 2 }}>
-                      Đang kết nối {einvoiceConns.length} cấu hình Hóa đơn điện tử &{" "}
-                      {bankConns.length} kết nối Ngân hàng điện tử.
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      notify(`Đã lưu cấu hình "${utilityName}" thành công!`);
-                    }}
-                    style={{
-                      padding: "8px 16px",
-                      borderRadius: 6,
-                      background: "#00a862",
-                      color: "#ffffff",
-                      border: "none",
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Lưu thiết lập
-                  </button>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div
-                    style={{
-                      padding: 14,
-                      borderRadius: 8,
-                      border: "1px solid #e2e8f0",
-                      background: "#f8fafc",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>
-                        Kết nối Hóa đơn điện tử & Tổng cục Thuế
-                      </div>
-                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                        Đồng bộ hóa đơn điện tử đầu vào/đầu ra và ký số
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onNavigate("/invoices/sync");
-                      }}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: 6,
-                        border: "1px solid #cbd5e1",
-                        background: "#ffffff",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#0284c7",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Mở kết nối →
-                    </button>
-                  </div>
-
-                  <div
-                    style={{
-                      padding: 14,
-                      borderRadius: 8,
-                      border: "1px solid #e2e8f0",
-                      background: "#f8fafc",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>
-                        Kết nối Ngân hàng điện tử (JetPay / OpenBanking)
-                      </div>
-                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                        Tự động lấy sổ phụ và đối chiếu giao dịch ngân hàng
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onNavigate("/bank/ebanking");
-                      }}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: 6,
-                        border: "1px solid #cbd5e1",
-                        background: "#ffffff",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#0284c7",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Mở Ngân hàng điện tử →
                     </button>
                   </div>
                 </div>

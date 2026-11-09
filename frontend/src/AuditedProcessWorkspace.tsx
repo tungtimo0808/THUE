@@ -102,7 +102,7 @@ export function AuditedProcessWorkspace({
                   <button
                     key={item.label}
                     onClick={() =>
-                      notify(`${item.label} đang dùng dữ liệu mẫu frontend.`)
+                      notify(`Đã mở nghiệp vụ ${item.label}.`)
                     }
                   >
                     {group.id === "control" ? (

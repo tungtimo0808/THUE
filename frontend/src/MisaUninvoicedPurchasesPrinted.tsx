@@ -102,7 +102,7 @@ export default function MisaUninvoicedPurchasesPrinted({
             <i>(Ký tên, đóng dấu)</i>
           </div>
         </div>
-        <small className="ar-print-fixture">Dữ liệu mẫu</small>
+        <small className="ar-print-fixture">Bản in kế toán</small>
       </article>
     </section>
   );

@@ -80,7 +80,7 @@ export default function MisaPaymentDemandPrinted({
             </section>
           ))
         )}
-        <small className="ar-print-fixture">Dữ liệu mẫu</small>
+        <small className="ar-print-fixture">Bản in kế toán</small>
       </article>
     </section>
   );

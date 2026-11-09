@@ -332,7 +332,7 @@ export async function login(email: string, password: string): Promise<{ access: 
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
-  if (!result.access) throw new ApiError("BE không trả về access token.", 200);
+  if (!result.access) throw new ApiError("Hệ thống không trả về mã phiên đăng nhập.", 200);
   return result;
 }
 

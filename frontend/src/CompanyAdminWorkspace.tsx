@@ -2441,7 +2441,7 @@ export default function CompanyAdminWorkspace() {
                               <div style={{ display: "inline-flex", gap: "0.45rem", alignItems: "center", justifyContent: "center", flexWrap: "nowrap" }}>
                                 <button
                                   className="admin-btn admin-btn-primary admin-btn-sm"
-                                  style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+                                  style={{ whiteSpace: "nowrap", flexShrink: 0, minWidth: 98, justifyContent: "center" }}
                                   onClick={() => {
                                     setAssignModalMember(m);
                                     setTargetRoleCode(m.role_assignments[0]?.role_code || "ROLE_CHIEF_ACCOUNTANT");
@@ -2457,7 +2457,7 @@ export default function CompanyAdminWorkspace() {
                                 </button>
                                 <button
                                   className="admin-btn admin-btn-secondary admin-btn-sm"
-                                  style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+                                  style={{ whiteSpace: "nowrap", flexShrink: 0, minWidth: 96, justifyContent: "center" }}
                                   onClick={() => {
                                     setViewingPermsMember(m);
                                     setViewingPermSearch("");

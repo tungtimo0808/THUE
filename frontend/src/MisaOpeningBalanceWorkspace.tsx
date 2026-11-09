@@ -874,7 +874,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       const totalD = accountRows.reduce((s, r) => s + (Number(r.debit) || 0), 0);
       const totalC = accountRows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
       if (totalD !== totalC) {
-        notify?.(`Lưu số dư tài khoản thành công. Cảnh báo BR09: Tổng Dư Nợ và Tổng Dư Có đang lệch ${formatOpeningMoney(Math.abs(totalD - totalC))} đ.`);
+        notify?.(`Lưu số dư tài khoản thành công. Cảnh báo: Tổng Dư Nợ và Tổng Dư Có đang lệch ${formatOpeningMoney(Math.abs(totalD - totalC))} đ.`);
       } else {
         notify?.("Lưu số dư tài khoản thành công.");
       }
@@ -1796,7 +1796,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               <div style={{ padding: "12px 20px" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Kho lưu trữ</span>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7", marginTop: 4 }}>
-                  Kho 156 - Hàng hóa (BR20: Không sinh PNK trong kỳ)
+                  Kho 156 - Hàng hóa (Không sinh PNK trong kỳ)
                 </div>
               </div>
             </div>

@@ -3558,7 +3558,7 @@ export async function unpostSubledgerJournalIngestion(w: ApiWriter, ingestionId:
 export async function adjustJournalEntry(w: ApiWriter, entryId: string, d: Row) {
   const reason = String(d.reason || d.correction_reason || "").trim();
   if (!reason) {
-    throw new FormDataError("Vui lòng nhập Lý do điều chỉnh bút toán (BR-GL-ADJ-14).");
+    throw new FormDataError("Vui lòng nhập Lý do điều chỉnh bút toán.");
   }
   const rawRows = Array.isArray(d.accounting_lines)
     ? d.accounting_lines
@@ -3604,7 +3604,7 @@ export async function adjustJournalEntry(w: ApiWriter, entryId: string, d: Row) 
 export async function reverseJournalEntry(w: ApiWriter, entryId: string, d: Row) {
   const reason = String(d.reason || d.correction_reason || "").trim();
   if (!reason) {
-    throw new FormDataError("Vui lòng nhập Lý do đảo bút toán (BR-GL-ADJ-14).");
+    throw new FormDataError("Vui lòng nhập Lý do đảo bút toán.");
   }
   const payload: Row = {
     reason,
@@ -4661,7 +4661,7 @@ export async function confirmExpenseAllocation(w: ApiWriter, d: Row) {
     record,
     message: record?.status === "POSTED"
       ? `Đã tạo và ghi sổ chứng từ phân bổ ${record?.number || ""}.`
-      : `Đã tạo chứng từ phân bổ ${record?.number || ""} ở trạng thái Chưa ghi sổ (UNPOSTED).`,
+      : `Đã tạo chứng từ phân bổ ${record?.number || ""} ở trạng thái Chưa ghi sổ.`,
   };
 }
 
@@ -4818,7 +4818,7 @@ export async function confirmFxRevaluation(w: ApiWriter, d: Row) {
     record,
     message: record?.status === "POSTED"
       ? `Đã tạo và ghi sổ chứng từ đánh giá lại ngoại tệ ${record?.number || ""}.`
-      : `Đã tạo chứng từ đánh giá lại ngoại tệ ${record?.number || ""} ở trạng thái Chưa ghi sổ (UNPOSTED).`,
+      : `Đã tạo chứng từ đánh giá lại ngoại tệ ${record?.number || ""} ở trạng thái Chưa ghi sổ.`,
   };
 }
 
@@ -4948,7 +4948,7 @@ export async function confirmProfitLossClosing(w: ApiWriter, d: Row) {
     message:
       record?.status === "COMPLETED" || record?.entry_status === "POSTED"
         ? `Đã tạo và ghi sổ chứng từ kết chuyển lãi lỗ ${record?.number || ""}.`
-        : `Đã cất chứng từ kết chuyển lãi lỗ ${record?.number || ""} ở trạng thái Chưa ghi sổ (UNPOSTED).`,
+        : `Đã cất chứng từ kết chuyển lãi lỗ ${record?.number || ""} ở trạng thái Chưa ghi sổ.`,
   };
 }
 
@@ -5125,7 +5125,7 @@ export async function annotateGlReconciliationNote(w: ApiWriter, id: string, d: 
   w.invalidate();
   return {
     record,
-    message: "Đã lưu ghi chú xử lý chênh lệch (BR-GL-REC-56: Cần chạy 'Đối chiếu lại' sau khi xử lý chứng từ nguồn để chuyển sang MATCHED).",
+    message: "Đã lưu ghi chú xử lý chênh lệch (Cần chạy 'Đối chiếu lại' sau khi xử lý chứng từ nguồn để chuyển sang trạng thái Khớp số liệu).",
   };
 }
 
@@ -5334,7 +5334,7 @@ export async function updateFinancialStatementNotes(w: ApiWriter, batchId: strin
   };
 }
 
-/** UC-GL-13 (AF-21, EF-29, BR-GL-FS-68..75): Chốt chính thức (FINALIZED) phiên bản Báo cáo tài chính để khóa sửa trực tiếp. */
+/** UC-GL-13 (AF-21, EF-29, BR-GL-FS-68..75): Chốt chính thức phiên bản Báo cáo tài chính để khóa sửa trực tiếp. */
 export async function finalizeFinancialStatementBatch(w: ApiWriter, batchId: string, d: Row = {}) {
   const record = await w.action(GL_FINANCIAL_STATEMENTS, batchId, "finalize", {
     company: w.companyId,
@@ -5346,7 +5346,7 @@ export async function finalizeFinancialStatementBatch(w: ApiWriter, batchId: str
   w.invalidate();
   return {
     record,
-    message: `Đã chốt chính thức (FINALIZED) bộ Báo cáo tài chính ${record?.batch_number || batchId}.`,
+    message: `Đã chốt chính thức bộ Báo cáo tài chính ${record?.batch_number || batchId}.`,
   };
 }
 

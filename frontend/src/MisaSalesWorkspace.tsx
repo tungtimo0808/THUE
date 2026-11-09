@@ -550,6 +550,7 @@ export default function MisaSalesWorkspace({
           taxCode: c.taxCode,
           address: c.address,
           phone: c.phone,
+          contact: "",
           type: "Tổ chức",
         })));
       }
@@ -653,7 +654,7 @@ export default function MisaSalesWorkspace({
   const handleSaveInvoice = async (data: any) => {
     if (apiConnected) return apiSave(async (writer) => {
       if (data.invoiceFormType !== "Hóa đơn bán hàng hóa, dịch vụ trong nước")
-        throw new Error("MVP hiện hỗ trợ hóa đơn đầu ra trong nước.");
+        throw new Error("Hệ thống hiện hỗ trợ phát hành hóa đơn đầu ra trong nước.");
       const original = data.isReplacementInvoice && apiRows.taxInvoices?.find((row) => row.id === data.originalInvoiceId);
       if (data.isReplacementInvoice && (!original || !["ISSUED", "ADJUSTED"].includes(original.status) ||
         !String(data.replacementReason || "").trim()))
@@ -1155,7 +1156,7 @@ export default function MisaSalesWorkspace({
                 name: newCust.name,
                 party_type: newCust.customerType === "individual" ? "INDIVIDUAL" : "ORGANIZATION",
                 legal_name: newCust.name,
-                ...(validTax ? { tax_code: validTax } : {}),
+                tax_code: validTax || "",
               });
               reloadApi();
               if (!andAddNew) setShowCustomerModal(false);

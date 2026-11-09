@@ -34,7 +34,14 @@ import MisaCashReportView from './MisaCashReportView';
 import MisaCashInventoryWorkspace from './MisaCashInventoryWorkspace';
 import MisaCashForecastWorkspace from './MisaCashForecastWorkspace';
 import MisaPaymentWorkflow from './MisaPaymentWorkflow';
-import {matchesTransactionPeriod, resolveActiveBranchScope, resolveActiveDatasetYear} from './transaction-period';
+import {
+  matchesTransactionPeriod,
+  resolveActiveBranchScope,
+  resolveActiveDatasetBookType,
+  resolveActiveDatasetYear,
+  resolveActiveHeaderPeriod,
+  resolveActivePeriodRange,
+} from './transaction-period';
 import {
   Filter,
   Plus,
@@ -7557,13 +7564,13 @@ export function PaymentRequestsTab({
                 <td className="numeric" style={{ whiteSpace: "nowrap" }}><strong>{formatVND(r.amount)} đ</strong></td>
                 <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                   {r.status === "paid" ? (
-                    <span style={{ display: "inline-block", background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã chi tiền</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã chi tiền</span>
                   ) : r.status === "approved" ? (
-                    <span style={{ display: "inline-block", background: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã duyệt</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã duyệt</span>
                   ) : r.status === "rejected" ? (
-                    <span style={{ display: "inline-block", background: "#fee2e2", color: "#b91c1c", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Từ chối</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#fee2e2", color: "#b91c1c", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Từ chối</span>
                   ) : (
-                    <span style={{ display: "inline-block", background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
                   )}
                 </td>
                 <td style={{ whiteSpace: "nowrap" }}>
@@ -7582,21 +7589,32 @@ export function PaymentRequestsTab({
                     <span style={{ color: "#94a3b8" }}>-</span>
                   )}
                 </td>
-                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap", width: 224 }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-start", gap: 6, width: 210 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDoc({ ...r });
+                        setModalMode("view");
+                        setIsModalOpen(true);
+                      }}
+                      style={{ width: 92, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
+                    >
+                      Xem chi tiết
+                    </button>
                     {r.status === "pending" && (
                       <>
                         <button
                           type="button"
                           onClick={() => void persistDoc({ ...r, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${r.code}`)}
-                          style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #0284c7", background: "#f0f9ff", color: "#0369a1", cursor: "pointer" }}
+                          style={{ width: 53, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #0284c7", background: "#f0f9ff", color: "#0369a1", cursor: "pointer" }}
                         >
                           Duyệt
                         </button>
                         <button
                           type="button"
                           onClick={() => void persistDoc({ ...r, status: "rejected" }, `Đã từ chối đề nghị chi ${r.code}`)}
-                          style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}
+                          style={{ width: 53, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}
                         >
                           Từ chối
                         </button>
@@ -7613,22 +7631,11 @@ export function PaymentRequestsTab({
                           );
                           onOpenCreatePayment();
                         }}
-                        style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
+                        style={{ width: 112, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
                       >
                         Lập phiếu chi
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingDoc({ ...r });
-                        setModalMode("view");
-                        setIsModalOpen(true);
-                      }}
-                      style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
-                    >
-                      Xem chi tiết
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -8252,9 +8259,9 @@ export function AdvanceSettlementTab({
                 <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                   <div>
                     {s.status === "settled" ? (
-                      <span style={{ display: "inline-block", background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã quyết toán</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã quyết toán</span>
                     ) : (
-                      <span style={{ display: "inline-block", background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Chờ duyệt</span>
                     )}
                   </div>
                   {s.receiptCode && s.receiptCode !== "-" && (
@@ -8272,8 +8279,19 @@ export function AdvanceSettlementTab({
                     </div>
                   )}
                 </td>
-                <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                <td style={{ textAlign: "center", whiteSpace: "nowrap", width: 172 }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-start", gap: 6, width: 158 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDoc({ ...s });
+                        setModalMode("view");
+                        setIsModalOpen(true);
+                      }}
+                      style={{ width: 92, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
+                    >
+                      Xem chi tiết
+                    </button>
                     {s.status === "pending" && (
                       <button
                         type="button"
@@ -8284,22 +8302,11 @@ export function AdvanceSettlementTab({
                             `✓ Đã duyệt quyết toán ${s.code}${autoReceipt !== "-" ? ` & lập phiếu thu hoàn ứng ${autoReceipt}` : ""}`,
                           );
                         }}
-                        style={{ padding: "4px 8px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
+                        style={{ width: 60, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #16a34a", background: "#f0fdf4", color: "#15803d", cursor: "pointer" }}
                       >
                         Duyệt
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingDoc({ ...s });
-                        setModalMode("view");
-                        setIsModalOpen(true);
-                      }}
-                      style={{ padding: "4px 9px", fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #cbd5e1", background: "#ffffff", color: "#334155", cursor: "pointer" }}
-                    >
-                      Xem chi tiết
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -8705,6 +8712,7 @@ const cashDataCache = new Map<string, {
 export default function MisaCashWorkspace({
   tab = "transactions",
   company,
+  period,
   href,
   notify,
 }: {
@@ -8908,10 +8916,14 @@ export default function MisaCashWorkspace({
 
   // Filtered list
   const [activeDatasetYear, setActiveDatasetYear] = useState<number>(() => resolveActiveDatasetYear());
+  const [activeBookType, setActiveBookType] = useState<"accounting" | "management">(() => resolveActiveDatasetBookType());
+  const [activeHeaderPeriod, setActiveHeaderPeriod] = useState<string>(() => resolveActiveHeaderPeriod());
   useEffect(() => {
     const syncCtx = () => {
       setActiveDatasetYear(resolveActiveDatasetYear());
       setActiveBranchScope(resolveActiveBranchScope());
+      setActiveBookType(resolveActiveDatasetBookType());
+      setActiveHeaderPeriod(resolveActiveHeaderPeriod());
     };
     window.addEventListener("erp_context_changed", syncCtx);
     window.addEventListener("popstate", syncCtx);
@@ -8920,9 +8932,27 @@ export default function MisaCashWorkspace({
       window.removeEventListener("popstate", syncCtx);
     };
   }, []);
+  useEffect(() => {
+    if (period) {
+      setActiveHeaderPeriod(period);
+      setActiveDatasetYear(resolveActiveDatasetYear());
+    }
+  }, [period]);
+  const bookFilteredTransactions = useMemo(
+    () =>
+      transactions.filter((item) => {
+        const codeStr = String(item.code || "").trim().toUpperCase();
+        if (activeBookType === "accounting" && codeStr.startsWith("QT-")) {
+          return false;
+        }
+        return true;
+      }),
+    [transactions, activeBookType],
+  );
   const filteredList = useMemo(() => {
     const refToday = new Date(activeDatasetYear, 11, 31);
-    return transactions.filter((item) => {
+    const periodRange = resolveActivePeriodRange(activeDatasetYear);
+    const baseMatches = bookFilteredTransactions.filter((item) => {
       const matchQuery =
         !searchQuery ||
         item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -8933,10 +8963,21 @@ export default function MisaCashWorkspace({
       const matchKind =
         voucherTypeFilter === "all" || item.kind === voucherTypeFilter;
       const matchReason=cashFilter.reason==='all'||(item.reasonLabel||cashReason(item.kind,item.description)).replace(/^\d+\.\s*/,'')===cashFilter.reason;
-      const matchDate=filterPeriod==='custom'?isCashDateInRange(item.date,cashFilter.from,cashFilter.to):matchesTransactionPeriod(item.date,filterPeriod,refToday);
-      return matchQuery && matchStatus && matchKind && matchReason && matchDate;
-    }).sort((a,b)=>(cashDateValue(a.date)-cashDateValue(b.date))*(cashSortAscending?1:-1));
-  }, [transactions, searchQuery, statusFilter, voucherTypeFilter,filterPeriod,cashFilter,cashSortAscending,activeDatasetYear]);
+      return matchQuery && matchStatus && matchKind && matchReason;
+    });
+    let dateMatched = baseMatches.filter((item) =>
+      filterPeriod === "custom"
+        ? isCashDateInRange(item.date, cashFilter.from, cashFilter.to)
+        : matchesTransactionPeriod(item.date, filterPeriod, refToday),
+    );
+    if (dateMatched.length === 0 && filterPeriod === "ytd" && (periodRange.month !== null || periodRange.quarter !== null)) {
+      dateMatched = baseMatches.filter((item) => {
+        const iso = parseReportDate(item.date);
+        return iso >= `${activeDatasetYear}-01-01` && iso <= periodRange.toDate;
+      });
+    }
+    return dateMatched.sort((a,b)=>(cashDateValue(a.date)-cashDateValue(b.date))*(cashSortAscending?1:-1));
+  }, [bookFilteredTransactions, searchQuery, statusFilter, voucherTypeFilter, filterPeriod, cashFilter, cashSortAscending, activeDatasetYear, activeHeaderPeriod]);
   const cashPageCount = Math.max(1, Math.ceil(filteredList.length / cashPageSize));
   const visibleCashPage = Math.min(cashPage, cashPageCount);
   const selectedTransaction = useMemo(
@@ -8946,7 +8987,15 @@ export default function MisaCashWorkspace({
   const cashDetailRows:VoucherDetailRow[]=selectedTransaction?.rows?.length ? selectedTransaction.rows : selectedTransaction ? [{id:selectedTransaction.id,description:selectedTransaction.description,debit:selectedTransaction.debit||"1111",credit:selectedTransaction.credit||"141",amount:selectedTransaction.amount,partnerCode:selectedTransaction.partnerCode||selectedTransaction.partner,partnerName:selectedTransaction.partner}] : [];
   const cashDetailPages=Math.max(1,Math.ceil(cashDetailRows.length/cashDetailSize));
   const cashDetailVisiblePage=Math.min(cashDetailPage,cashDetailPages);
-  const cashCurrentLedger=useMemo(()=>cashLedger(transactions.map(row=>({...row,date:parseReportDate(row.date)})),`${activeDatasetYear}-01-01`,`${activeDatasetYear}-12-31`),[transactions, activeDatasetYear]);
+  const cashCurrentLedger=useMemo(()=>{
+    const periodRange = resolveActivePeriodRange(activeDatasetYear);
+    const mapped = bookFilteredTransactions.map(row=>({...row,date:parseReportDate(row.date)}));
+    const exact = cashLedger(mapped, periodRange.fromDate, periodRange.toDate);
+    if (exact.receipt === 0 && exact.payment === 0 && (periodRange.month !== null || periodRange.quarter !== null)) {
+      return cashLedger(mapped, `${activeDatasetYear}-01-01`, periodRange.toDate);
+    }
+    return exact;
+  },[bookFilteredTransactions, activeDatasetYear, activeHeaderPeriod]);
   useEffect(()=>{setCheckedCashRows(ids=>ids.filter(id=>filteredList.some(row=>row.id===id)));},[filteredList]);
   useEffect(() => {
     if (!viewingCashVoucher) return;

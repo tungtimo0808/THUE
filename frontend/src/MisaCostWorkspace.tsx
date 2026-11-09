@@ -2898,7 +2898,7 @@ if (apiConnected) {
                                   }}
                                 >
                                   <Sparkles size={14} color="#2563eb" />
-                                  <span>Nạp dữ liệu mẫu tháng 01 & 02</span>
+                                  <span>Tổng hợp chi phí phát sinh trong kỳ</span>
                                 </button>
                               </>
                             )}

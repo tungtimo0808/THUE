@@ -191,7 +191,8 @@ export default function MisaTrialBalanceManagementReport({
     return `Từ ngày ${fromDate} đến ngày ${toDate}`;
   }, [fromDate, toDate]);
 
-  const { token, companyId, company } = useApiSession();
+  const { token, companyId, companies } = useApiSession();
+  const company = companies.find((c) => c.id === companyId) || companies[0];
   const [liveRows, setLiveRows] = useState<TrialBalanceAccountItem[] | null>(null);
   const [liveLeafRows, setLiveLeafRows] = useState<TrialBalanceAccountItem[] | null>(null);
   const [exportingFormat, setExportingFormat] = useState<string | null>(null);
