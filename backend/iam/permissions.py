@@ -417,8 +417,12 @@ def get_user_allowed_branch_ids(request, company_id):
         membership = CompanyMembership.objects.filter(
             user=account, company=company, membership_status=ActiveStatus.ACTIVE
         ).select_related("employee").first()
-        if membership and membership.employee_id and membership.employee.branch_id:
-            return {str(membership.employee.branch_id)}
+        if membership:
+            if membership.employee_id and membership.employee.branch_id:
+                return {str(membership.employee.branch_id)}
+            return None
+        if getattr(request.user, "is_staff", False):
+            return None
         return set()
     if any(a.data_scope_set_id is None or a.data_scope_set.allow_all_company_data for a in assignments):
         return None

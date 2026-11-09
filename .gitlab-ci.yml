@@ -113,6 +113,7 @@ backend:test:
   # Tạm cho phép đỏ tới khi hết các test cũ; bỏ dòng này khi pipeline đã xanh.
   allow_failure: true
   script:
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends fonts-liberation || true
     - pip install -q -r backend/requirements.txt
     - cd backend
     - python manage.py test --noinput
