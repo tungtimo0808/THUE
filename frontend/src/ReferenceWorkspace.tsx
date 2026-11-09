@@ -3391,12 +3391,7 @@ function ReferenceWorkspace() {
           aria-live="polite"
           data-testid="context-switch-overlay"
         >
-          <div className="ref-context-spinner-box">
-            <div className="ref-context-spinner-ring" />
-            <span className="ref-context-spinner-text">
-              Đang chuyển sang <strong>{contextTransition.toLabel}</strong>...
-            </span>
-          </div>
+          <div className="ref-context-spinner-ring" />
         </div>
       )}
       <MisaBranchManagementModal
