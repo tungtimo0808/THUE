@@ -387,9 +387,7 @@ export function Reports({
         <p className="compact-empty">Chưa có chứng từ trong kỳ đã chọn.</p>
       )}
       <p className="report-note">
-        Báo cáo tổng hợp dữ liệu mẫu; chưa phải báo cáo tài chính hoặc tờ khai
-        thuế.
-      </p>
+        Báo cáo tổng hợp nhanh số liệu chứng từ phát sinh trong kỳ.</p>
     </section>
   );
 }

@@ -592,7 +592,7 @@ export default function MisaAssetsWorkspace({
       status: "Đã ghi sổ",
     }
   ]);
-  // UC-FA-06: API document being edited, eligible assets, references, attachments and the dirty check (AF26).
+  // UC-FA-06: API document being edited, eligible assets, references, attachments and the dirty check.
   const { token: apiToken } = useApiSession();
   const [editingRevalId, setEditingRevalId] = useState("");
   const [revalRecord, setRevalRecord] = useState<any>(null);
@@ -1895,7 +1895,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [stocktakeIsDirty, setStocktakeIsDirty] = useState(false);
   // AF20: post-stocktake processing of a recorded voucher (links the processing vouchers only)
   const [stocktakeProcessingMode, setStocktakeProcessingMode] = useState(false);
-  // BR13 & EF15: book rows as of the count date, reused when a row is added by hand (AF08)
+  // BR13 & EF15: book rows as of the count date, reused when a row is added by hand
   const [stocktakeBookLines, setStocktakeBookLines] = useState<any[]>([]);
   const [stocktakeRows, setStocktakeRows] = useState<StocktakeRowItem[]>([
     {
@@ -2711,7 +2711,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   const [incTaxLawValue, setIncTaxLawValue] = useState<number>(0);
   const [incTaxLawMonthValue, setIncTaxLawMonthValue] = useState<number>(0);
 
-  // Sub-tab 2: Thiết lập phân bổ (AF09, AF10, BR22, BR23)
+  // Sub-tab 2: Thiết lập phân bổ
   const [incAllocations, setIncAllocations] = useState<Array<{
     id: string;
     dept: string;
@@ -2721,7 +2721,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     costCenter: string;
   }>>([]);
 
-  // Sub-tab 3: Nguồn gốc hình thành (AF05, AF11, BR07, BR12, BR24, BR25)
+  // Sub-tab 3: Nguồn gốc hình thành
   const [incOrigins, setIncOrigins] = useState<Array<{
     id: string;
     originType: string;
@@ -2734,7 +2734,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
   }>>([]);
   const [incOriginVarianceReason, setIncOriginVarianceReason] = useState("");
 
-  // Sub-tab 4: Bộ phận cấu thành (AF12, BR26)
+  // Sub-tab 4: Bộ phận cấu thành
   const [incComponents, setIncComponents] = useState<Array<{
     id: string;
     name: string;
@@ -2743,7 +2743,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     value: number;
   }>>([]);
 
-  // Sub-tab 5: Dụng cụ, phụ tùng kèm theo (AF13, BR26)
+  // Sub-tab 5: Dụng cụ, phụ tùng kèm theo
   const [incAccessories, setIncAccessories] = useState<Array<{
     id: string;
     name: string;
@@ -2752,7 +2752,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     value: number;
   }>>([]);
 
-  // Sub-tab 6: Thông tin khác (AF14)
+  // Sub-tab 6: Thông tin khác
   const [incCountryOfOrigin, setIncCountryOfOrigin] = useState("");
   const [incManufactureYear, setIncManufactureYear] = useState("");
   const [incSerialNumber, setIncSerialNumber] = useState("");
@@ -4315,7 +4315,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     const mStr = String(deprVoucherMonth).padStart(2, "0");
     const periodLabel = `Tháng ${mStr}/${deprVoucherYear}`;
 
-    // EF16 (offline only): the backend skips assets already depreciated in the period, per asset (AF14).
+    // EF16 (offline only): the backend skips assets already depreciated in the period, per asset.
     const existingPeriodVoucher = deprVouchers.find(
       (v) => v.period === periodLabel && v.status !== "Đã hủy" && v.voucherNo !== trimmedNo
     );
@@ -4393,7 +4393,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       return;
     }
 
-    // Local state update: If recalculating an already-posted voucher for this period, revert old lines first (BR32)
+    // Local state update: If recalculating an already-posted voucher for this period, revert old lines first
     const oldPostedForPeriod = deprVouchers.find((v) => v.period === periodLabel && v.status === "Đã ghi sổ");
     setAssetsList((prevAssets) =>
       prevAssets.map((rawAsset) => {
@@ -4460,7 +4460,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       });
       return;
     }
-    // Roll back asset accumulated depreciation (AF14, BR34)
+    // Roll back asset accumulated depreciation
     setAssetsList((prevAssets) =>
       prevAssets.map((rawAsset) => {
         const a: any = { ...rawAsset };
@@ -4540,7 +4540,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       return;
     }
 
-    // UC-FA-04: a saved "Chưa ghi sổ" voucher is posted by the backend from its stored result (BR01, BR02).
+    // UC-FA-04: a saved "Chưa ghi sổ" voucher is posted by the backend from its stored result.
     const savedRunId = vTarget ? vTarget.id : deprCurrentRunId;
     if (apiConnected && savedRunId) {
       if (!vTarget && deprIsDirty) {
@@ -5857,7 +5857,7 @@ ${entries.length
                         type="button"
                         onClick={() => setShowAddCategoryModal(true)}
                         style={{ width: 28, height: 30, border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", color: "#00a862", fontWeight: "bold", fontSize: 15, cursor: "pointer", display: "grid", placeItems: "center" }}
-                        title="Thêm loại tài sản (AF04)"
+                        title="Thêm loại tài sản"
                       >
                         +
                       </button>
@@ -6558,7 +6558,7 @@ ${entries.length
                 </div>
               )}
 
-              {/* Sub-Tab 4: Bộ phận cấu thành (AF12, BR26) */}
+              {/* Sub-Tab 4: Bộ phận cấu thành */}
               {incSubTab === "components" && (
                 <div style={{ paddingTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -6657,7 +6657,7 @@ ${entries.length
                 </div>
               )}
 
-              {/* Sub-Tab 5: Dụng cụ, phụ tùng kèm theo (AF13, BR26) */}
+              {/* Sub-Tab 5: Dụng cụ, phụ tùng kèm theo */}
               {incSubTab === "accessories" && (
                 <div style={{ paddingTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -6756,7 +6756,7 @@ ${entries.length
                 </div>
               )}
 
-              {/* Sub-Tab 6: Thông tin khác (AF14) */}
+              {/* Sub-Tab 6: Thông tin khác */}
               {incSubTab === "others" && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, paddingTop: 8 }}>
                   <div>
@@ -6871,7 +6871,7 @@ ${entries.length
         </div>
       )}
 
-      {/* 1B. MODAL THÊM NHANH LOẠI TÀI SẢN CỐ ĐỊNH (AF04) */}
+      {/* 1B. MODAL THÊM NHANH LOẠI TÀI SẢN CỐ ĐỊNH */}
       {showAddCategoryModal && (
         <div
           style={{
@@ -7605,7 +7605,7 @@ ${entries.length
                 <div style={{ paddingTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
                   {isEditingAsset && (
                     <div style={{ padding: "8px 12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 4, fontSize: 12, color: "#92400e" }}>
-                      Thiết lập phân bổ chi phí khấu hao ảnh hưởng đến hạch toán kỳ tính khấu hao nên được giữ ở chế độ chỉ đọc (AF13, BR12).
+                      Thiết lập phân bổ chi phí khấu hao ảnh hưởng đến hạch toán kỳ tính khấu hao nên được giữ ở chế độ chỉ đọc.
                     </div>
                   )}
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -7635,7 +7635,7 @@ ${entries.length
               {detailSubTab === "origin" && (
                 <div style={{ paddingTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ fontSize: 12, color: "#475569", background: "#f8fafc", padding: "8px 12px", borderRadius: 4, border: "1px solid #e2e8f0" }}>
-                    <strong>Lưu ý (AF07, BR13):</strong> Bạn có thể cập nhật thông tin tham chiếu chứng từ nguồn gốc hình thành (Số chứng từ/Hóa đơn, Ngày chứng từ, Nhà cung cấp). Giá trị tiền nguồn gốc được khóa để bảo đảm luôn khớp với <strong>Nguyên giá ({formatVND(detailAsset.originalCost || 0)})</strong>.
+                    <strong>Lưu ý:</strong> Bạn có thể cập nhật thông tin tham chiếu chứng từ nguồn gốc hình thành (Số chứng từ/Hóa đơn, Ngày chứng từ, Nhà cung cấp). Giá trị tiền nguồn gốc được khóa để bảo đảm luôn khớp với <strong>Nguyên giá ({formatVND(detailAsset.originalCost || 0)})</strong>.
                   </div>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
@@ -7703,7 +7703,7 @@ ${entries.length
                               readOnly
                               onClick={() => {
                                 if (isEditingAsset) {
-                                  notify("Không được phép thay đổi số tiền nguồn gốc hình thành làm lệch Nguyên giá (BR13).");
+                                  notify("Không được phép thay đổi số tiền nguồn gốc hình thành làm lệch Nguyên giá.");
                                 }
                               }}
                               style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, textAlign: "right", fontWeight: 600, background: "#f1f5f9", color: "#475569", boxSizing: "border-box" }}
@@ -7730,11 +7730,11 @@ ${entries.length
                 </div>
               )}
 
-              {/* Sub-Tab 4: Bộ phận cấu thành (AF05, BR14) */}
+              {/* Sub-Tab 4: Bộ phận cấu thành */}
               {detailSubTab === "components" && (
                 <div style={{ paddingTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ fontSize: 12, color: "#475569", background: "#f8fafc", padding: "6px 10px", borderRadius: 4, border: "1px solid #e2e8f0" }}>
-                    Khai báo chi tiết các bộ phận cấu thành của tài sản (AF05). Việc cập nhật danh sách này phục vụ quản lý hiện vật và không làm thay đổi Nguyên giá (BR14).
+                    Khai báo chi tiết các bộ phận cấu thành của tài sản. Việc cập nhật danh sách này phục vụ quản lý hiện vật và không làm thay đổi Nguyên giá.
                   </div>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
@@ -7840,11 +7840,11 @@ ${entries.length
                 </div>
               )}
 
-              {/* Sub-Tab 5: Dụng cụ, phụ tùng kèm theo (AF06, BR15) */}
+              {/* Sub-Tab 5: Dụng cụ, phụ tùng kèm theo */}
               {detailSubTab === "accessories" && (
                 <div style={{ paddingTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ fontSize: 12, color: "#475569", background: "#f8fafc", padding: "6px 10px", borderRadius: 4, border: "1px solid #e2e8f0" }}>
-                    Khai báo dụng cụ, phụ tùng đi kèm tài sản (AF06). Việc cập nhật danh sách này không tự động cộng vào Nguyên giá TSCĐ (BR15).
+                    Khai báo dụng cụ, phụ tùng đi kèm tài sản. Việc cập nhật danh sách này không tự động cộng vào Nguyên giá TSCĐ.
                   </div>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                     <thead>
@@ -9565,7 +9565,7 @@ ${entries.length
                           <th style={{ width: 190, padding: "8px 10px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Giá trị tính vào CP hợp lý</th>
                           <th style={{ width: 210, padding: "8px 10px", textAlign: "right" }}>Giá trị tính vào CP không hợp lý</th>
                         </tr>
-                        {/* Summary Row (BR19) */}
+                        {/* Summary Row */}
                         <tr style={{ background: "#f8fafc", fontWeight: 700, borderBottom: "1px solid #cbd5e1" }}>
                           <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>Tổng cộng</td>
@@ -10006,7 +10006,7 @@ ${entries.length
                           cursor: "pointer",
                         }}
                       >
-                        Gộp bút toán cùng TK & Bộ phận (AF05)
+                        Gộp bút toán cùng TK & Bộ phận
                       </button>
                     </div>
                   )}
@@ -11701,7 +11701,7 @@ ${entries.length
                   </div>
                 </div>
 
-                {/* Row 4: Tham chiếu (AF17) */}
+                {/* Row 4: Tham chiếu */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span
                     onClick={() => setShowTransferRefInput((v) => !v)}
@@ -12693,7 +12693,7 @@ ${entries.length
                     </div>
                   </div>
 
-                  {/* Row: Kiểm kê đến ngày + Phạm vi kiểm kê (AF06, AF07) */}
+                  {/* Row: Kiểm kê đến ngày + Phạm vi kiểm kê */}
                   <div style={{ display: "grid", gridTemplateColumns: "160px 1fr 1fr", gap: 12, alignItems: "flex-end" }}>
                     <div>
                       <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
@@ -12716,7 +12716,7 @@ ${entries.length
 
                     <div>
                       <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
-                        Phạm vi Đơn vị sử dụng (AF06)
+                        Phạm vi Đơn vị sử dụng
                       </label>
                       <select
                         value={stocktakeScopeDept}
@@ -12732,7 +12732,7 @@ ${entries.length
 
                     <div>
                       <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#334155", marginBottom: 4 }}>
-                        Phạm vi Loại tài sản (AF07)
+                        Phạm vi Loại tài sản
                       </label>
                       <select
                         value={stocktakeScopeCategory}
@@ -13020,7 +13020,7 @@ ${entries.length
                       type="button"
                       onClick={handleAddSurplusStocktakeRow}
                       style={{ height: 26, padding: "0 10px", border: "1px solid #4f46e5", borderRadius: 4, background: "#eef2ff", color: "#4338ca", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
-                      title="Ghi nhận tài sản phát hiện thực tế nhưng chưa có trên sổ kế toán (AF11)"
+                      title="Ghi nhận tài sản phát hiện thực tế nhưng chưa có trên sổ kế toán"
                     >
                       + Thêm tài sản thừa
                     </button>
@@ -13232,7 +13232,7 @@ ${entries.length
                                       </select>
                                     )}
                                   </td>
-                                  {/* Đơn vị thực tế (AF10, BR23) */}
+                                  {/* Đơn vị thực tế */}
                                   <td style={{ padding: "4px 6px", borderRight: "1px solid #e2e8f0" }}>
                                     <select
                                       value={r.actualDept || r.dept || ""}
@@ -13358,7 +13358,7 @@ ${entries.length
                         </table>
                       </div>
 
-                      {/* Table Bottom Bar: Tổng số & Số dòng/trang (AF23) */}
+                      {/* Table Bottom Bar: Tổng số & Số dòng/trang */}
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12.5, color: "#334155", paddingTop: 4 }}>
                         <div>
                           <span>Tổng số: </span>
@@ -14248,7 +14248,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
         );
       })()}
 
-      {/* 9. MODAL TÌM KIẾM NHANH BÁO CÁO VỚI AVA KẾ TOÁN (AF12) */}
+      {/* 9. MODAL TÌM KIẾM NHANH BÁO CÁO VỚI AVA KẾ TOÁN */}
       {showAvaReportModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", display: "grid", placeItems: "center", zIndex: 1060, padding: 10 }}>
           <div style={{ width: 560, background: "#ffffff", borderRadius: 8, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
@@ -14300,7 +14300,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
         </div>
       )}
 
-      {/* 10. MODAL ẨN / HIỆN BÁO CÁO (AF14) */}
+      {/* 10. MODAL ẨN / HIỆN BÁO CÁO */}
       {showHideReportsModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", display: "grid", placeItems: "center", zIndex: 1060, padding: 10 }}>
           <div style={{ width: 500, background: "#ffffff", borderRadius: 8, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
@@ -15196,7 +15196,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
                   <td
                     onClick={() => openAssetDetailModal(a.assetCode)}
-                    title="Nhấn để mở chi tiết tài sản từ chứng từ ghi tăng (AF03)"
+                    title="Nhấn để mở chi tiết tài sản từ chứng từ ghi tăng"
                     style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
                   >
                     {a.voucherNo}
@@ -15204,7 +15204,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#64748b" }}>{a.date}</td>
                   <td
                     onClick={() => openAssetDetailModal(a.assetCode)}
-                    title="Nhấn để mở chi tiết tài sản (AF03)"
+                    title="Nhấn để mở chi tiết tài sản"
                     style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
                   >
                     {a.assetCode}

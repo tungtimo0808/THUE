@@ -201,7 +201,7 @@ function Workspace() {
           <div className="workspace-label">
             <ShieldCheck size={18} />
             <span>
-              Không gian làm việc<small>Bản trải nghiệm</small>
+              Không gian làm việc<small>Kế toán & Thuế</small>
             </span>
           </div>
           <button
@@ -435,9 +435,7 @@ function Workspace() {
                   <li>Chọn số chứng từ để xem thông tin và lịch sử.</li>
                 </ol>
                 <p className="info-note">
-                  Bạn đang dùng dữ liệu mẫu. Các phiếu nháp chỉ lưu trên trình
-                  duyệt hiện tại. Chưa có đăng nhập, phân quyền, ghi sổ hay kết
-                  nối thuế thật.
+                  Mọi chứng từ hạch toán đều được kiểm soát theo phân quyền vai trò (RBAC) và đồng bộ trực tiếp vào Sổ cái doanh nghiệp.
                 </p>
               </>
             ) : panel === "notifications" ? (

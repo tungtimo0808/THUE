@@ -3558,7 +3558,7 @@ export async function unpostSubledgerJournalIngestion(w: ApiWriter, ingestionId:
 export async function adjustJournalEntry(w: ApiWriter, entryId: string, d: Row) {
   const reason = String(d.reason || d.correction_reason || "").trim();
   if (!reason) {
-    throw new FormDataError("Vui lòng nhập Lý do điều chỉnh bút toán (BR-GL-ADJ-14).");
+    throw new FormDataError("Vui lòng nhập Lý do điều chỉnh bút toán.");
   }
   const rawRows = Array.isArray(d.accounting_lines)
     ? d.accounting_lines
@@ -3604,7 +3604,7 @@ export async function adjustJournalEntry(w: ApiWriter, entryId: string, d: Row) 
 export async function reverseJournalEntry(w: ApiWriter, entryId: string, d: Row) {
   const reason = String(d.reason || d.correction_reason || "").trim();
   if (!reason) {
-    throw new FormDataError("Vui lòng nhập Lý do đảo bút toán (BR-GL-ADJ-14).");
+    throw new FormDataError("Vui lòng nhập Lý do đảo bút toán.");
   }
   const payload: Row = {
     reason,
@@ -5125,7 +5125,7 @@ export async function annotateGlReconciliationNote(w: ApiWriter, id: string, d: 
   w.invalidate();
   return {
     record,
-    message: "Đã lưu ghi chú xử lý chênh lệch (BR-GL-REC-56: Cần chạy 'Đối chiếu lại' sau khi xử lý chứng từ nguồn để chuyển sang MATCHED).",
+    message: "Đã lưu ghi chú xử lý chênh lệch (Cần chạy 'Đối chiếu lại' sau khi xử lý chứng từ nguồn để chuyển sang MATCHED).",
   };
 }
 

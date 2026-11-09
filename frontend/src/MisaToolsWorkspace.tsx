@@ -7591,9 +7591,9 @@ export default function MisaToolsWorkspace({
                   onChange={(e) => setStocktakeResolveAction(e.target.value as any)}
                   style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5 }}
                 >
-                  <option value="VERIFY_CAUSE">Xác minh nguyên nhân chênh lệch (AF09)</option>
-                  <option value="APPROVE">Phê duyệt kết quả kiểm kê CCDC (AF10)</option>
-                  <option value="CREATE_ADJUSTMENT_VOUCHER">Lập chứng từ xử lý thừa / thiếu sau kiểm kê (AF11)</option>
+                  <option value="VERIFY_CAUSE">Xác minh nguyên nhân chênh lệch</option>
+                  <option value="APPROVE">Phê duyệt kết quả kiểm kê CCDC</option>
+                  <option value="CREATE_ADJUSTMENT_VOUCHER">Lập chứng từ xử lý thừa / thiếu sau kiểm kê</option>
                 </select>
               </div>
               <div>
@@ -13440,7 +13440,7 @@ export default function MisaToolsWorkspace({
                       <span
                         onClick={() => openReferenceVoucherPicker("ALLOC_PREPAID")}
                         style={{ color: "#00a862", fontWeight: 700, cursor: "pointer" }}
-                        title="Chọn chứng từ tham chiếu (AF01-AF03)"
+                        title="Chọn chứng từ tham chiếu"
                       >
                         ...
                       </span>

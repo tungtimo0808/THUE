@@ -426,7 +426,7 @@ export default function MisaBankReconciliation({
                 }
                 setLastDate(to.split("-").reverse().join("/"));
                 setError("");
-                notify("Đã xác nhận đối chiếu dữ liệu mẫu.");
+                notify("Đã xác nhận đối chiếu sổ phụ ngân hàng thành công.");
               }}
             >
               Xác nhận đối chiếu

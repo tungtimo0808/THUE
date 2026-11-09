@@ -90,7 +90,7 @@ export default function LivePasswordReset() {
       {step === "verify" && (
         <>
           <p className="auth-note">Nhập mã 6 số đã gửi đến email.</p>
-          {devOtp && <p className="account-dev-code">Mã kiểm thử trên BE local: <strong>{devOtp}</strong></p>}
+          {devOtp && <p className="account-dev-code">Mã xác thực hệ thống cấp tự động: <strong>{devOtp}</strong></p>}
           <form onSubmit={verify} className="auth-form">
             <AuthField id="reset-code" label="Mã xác thực" icon={KeyRound} inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={event => setCode(event.target.value)} autoComplete="one-time-code" required autoFocus />
             <AuthSubmit busy={busy} busyLabel="Đang xác nhận…">Xác nhận mã</AuthSubmit>

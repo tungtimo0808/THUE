@@ -385,7 +385,7 @@ export default function AuditedReportWorkspace({
         <section className="pc-preview" aria-label="Nội dung báo cáo">
           <h1>{definition.name.toLocaleUpperCase("vi")}</h1>
           <p>{subtitle}</p>
-          <small>Dữ liệu mẫu · Đơn vị tính: Đồng</small>
+          <small>Đơn vị tính: Đồng (VND)</small>
           <AuditedReportTable
             name={definition.name}
             headers={definition.headers}

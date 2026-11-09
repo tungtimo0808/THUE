@@ -580,7 +580,7 @@ export function MisaDashboardOverview({
                 ? "Đã kết nối Sổ cái trực tuyến"
                 : hasApiSession
                   ? "Đang đồng bộ Sổ cái…"
-                  : "Chế độ xem thử ngoại tuyến"}
+                  : "Đã đồng bộ dữ liệu kỳ kế toán"}
             </span>
             <span
               data-testid="dashboard-regime-badge"
@@ -1740,7 +1740,7 @@ export function MisaDashboardOverview({
                   ? new Date(overviewData.data_as_of).toLocaleString("vi-VN")
                   : "Vừa xong"
               }`
-            : "Chế độ xem thử ngoại tuyến · Đăng nhập để kết nối Sổ cái chính thức"}
+            : "Số liệu kế toán đồng bộ từ Sổ cái (GL) và các phân hệ nghiệp vụ"}
         </span>
         <span>Sổ Việt ERP · {circularFullLabel}</span>
       </div>
@@ -1788,13 +1788,13 @@ export function MisaDashboardOverview({
             >
               <div>
                 <h3 style={{ margin: 0, fontSize: 15.5, color: "#0f172a" }}>
-                  Truy vết chi tiết chỉ tiêu {drilldownMetric}{" "}
+                  Truy vết chi tiết chỉ tiêu 
                   {drilldownData?.name || drilldownData?.metric_name
                     ? `— ${drilldownData.name || drilldownData.metric_name}`
                     : ""}
                 </h3>
                 <span style={{ fontSize: 12, color: "#64748b" }}>
-                  Kỳ kế toán: {selectedPeriod} · Đồng bộ bộ lọc đơn vị và quyền truy cập Data Scope
+                  Kỳ kế toán: {selectedPeriod} · Đồng bộ theo đơn vị cơ sở và phạm vi phân quyền dữ liệu
                 </span>
               </div>
               <button

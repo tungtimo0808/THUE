@@ -310,7 +310,7 @@ export default function MisaSalesSummaryReports({
         <p>
           Từ {dateText(applied.from)} đến {dateText(applied.to)}
         </p>
-        <small>Dữ liệu mẫu · Đơn vị tính: Đồng</small>
+        <small>Đơn vị tính: Đồng (VND)</small>
         <div className="pc-report-scroll">
           <table aria-label={title}>
             <thead>
@@ -573,7 +573,7 @@ export default function MisaSalesSummaryReports({
                       cells: [
                         row.customer,
                         row.customerName,
-                        "Dữ liệu mẫu",
+                        "Tổng hợp kỳ báo cáo",
                         "",
                       ],
                     }))}

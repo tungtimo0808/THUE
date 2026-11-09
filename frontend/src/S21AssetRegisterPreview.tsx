@@ -9,7 +9,7 @@ export default function S21AssetRegisterPreview() {
       <span>Đơn vị: Công ty TNHH Minh An</span><strong>Mẫu số: S21-DN</strong>
     </div>
     <h2 style={{ textAlign: "center", fontSize: 18, margin: "8px 0" }}>SỔ TÀI SẢN CỐ ĐỊNH</h2>
-    <p style={{ textAlign: "center", margin: "8px 0" }}>Dữ liệu mẫu</p>
+    
     <div style={{ display: "flex", gap: 32, marginBottom: 12 }}><span>Loại TSCĐ: Tất cả</span><span>Tên loại: Tất cả</span></div>
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", minWidth: 1400, borderCollapse: "collapse", fontSize: 12 }}>

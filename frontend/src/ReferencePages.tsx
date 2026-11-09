@@ -750,7 +750,7 @@ export function ReferenceTransactions({
           <div key={label} className={`summary-${i}`}>
             <span>{label}</span>
             <strong>{cash || i === 0 ? money(Number(value)) : value}</strong>
-            <small>Dữ liệu mẫu</small>
+            <small>Số liệu kế toán</small>
           </div>
         ))}
       </div>

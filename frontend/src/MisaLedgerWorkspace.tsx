@@ -283,7 +283,7 @@ export default function MisaLedgerWorkspace({
     { code: "PURCHASE_JOURNAL", label: "S03a3-DN: Sổ nhật ký mua hàng", isOfficial: true },
     { code: "SALES_JOURNAL", label: "S03a4-DN: Sổ nhật ký bán hàng", isOfficial: true },
     { code: "FOREIGN_CURRENCY_LEDGER", label: "S39-DN: Sổ theo dõi thanh toán bằng ngoại tệ", isOfficial: true },
-    { code: "GL_ENTRY_INQUIRY", label: "GL-INQ-01: Tra cứu bút toán GL (Gồm cả Chưa ghi sổ)", isOfficial: false },
+    { code: "GL_ENTRY_INQUIRY", label: "Tra cứu bút toán Sổ cái (Gồm cả Chưa ghi sổ)", isOfficial: false },
     { code: "VOUCHER_TRACE", label: "GL-TRACE-01: Truy vết chứng từ & Chuỗi Đảo/Điều chỉnh 2 chiều", isOfficial: false },
   ];
 
@@ -793,7 +793,7 @@ export default function MisaLedgerWorkspace({
 
     // EF-09, BR-GL-TRACE-10, 11, 100: Sổ chính thức chỉ cho phép bút toán POSTED
     if (foundMeta.isOfficial && reqStatus !== "POSTED") {
-      const msg = `Sổ kế toán chính thức (${foundMeta.label}) chỉ được phép phản ánh các bút toán đã ghi sổ (POSTED). Không được trộn bút toán chưa ghi sổ (${reqStatus}) vào Sổ cái / Nhật ký chính thức. Vui lòng chọn chế độ 'GL-INQ-01: Tra cứu bút toán GL' để tra cứu chứng từ chưa ghi sổ.`;
+      const msg = `Sổ kế toán chính thức (${foundMeta.label}) chỉ được phép phản ánh các bút toán đã ghi sổ (POSTED). Không được trộn bút toán chưa ghi sổ (${reqStatus}) vào Sổ cái / Nhật ký chính thức. Vui lòng chọn chế độ 'Tra cứu bút toán Sổ cái' để tra cứu chứng từ chưa ghi sổ.`;
       setUc14Error(msg);
       notify(msg);
       return;
@@ -2752,7 +2752,7 @@ export default function MisaLedgerWorkspace({
     );
     setFxRevalCalculated(true);
     notify(
-      `Đã tính lại giá trị quy đổi và chênh lệch tỷ giá theo tỷ giá ${fxRevalExchangeRate.toLocaleString("vi-VN")} VND/${fxRevalCurrency} (Bước 5-8).`,
+      `Đã tính lại giá trị quy đổi và chênh lệch tỷ giá theo tỷ giá ${fxRevalExchangeRate.toLocaleString("vi-VN")} VND/${fxRevalCurrency}.`,
     );
   };
 
@@ -4636,7 +4636,7 @@ export default function MisaLedgerWorkspace({
     }
     if (!target.is_balanced || target.blocker_count > 0) {
       notify(
-        `Chặn chốt BCTC: Phiên bản ${target.batch_number} còn lỗi kiểm tra chéo hoặc mất cân đối. Hệ thống tuyệt đối không tự động plug số chênh lệch.`
+        `Chặn chốt BCTC: Phiên bản ${target.batch_number} còn lỗi kiểm tra chéo hoặc mất cân đối. Hệ thống tuyệt đối không tự động bù trừ số chênh lệch.`
       );
       return;
     }
@@ -4911,7 +4911,7 @@ export default function MisaLedgerWorkspace({
       }),
     );
     notify(
-      `Đã chạy kiểm tra điều kiện trước khóa (Checklist - Bước 5..28). Watermark: ${newWm}.`,
+      `Đã chạy kiểm tra điều kiện trước khóa. Mã kiểm soát: ${newWm}.`,
     );
   };
 
@@ -9538,7 +9538,7 @@ export default function MisaLedgerWorkspace({
                             </strong>
                           </span>
                           <span style={{ fontSize: 12, color: "#64748b" }}>
-                            Watermark GL: <code>{activeBatch?.source_watermark}</code>
+                            Mã kiểm soát GL: <code>{activeBatch?.source_watermark}</code>
                           </span>
                         </div>
 
@@ -9992,7 +9992,7 @@ export default function MisaLedgerWorkspace({
                           Hiển thị {allReportRows.length} báo cáo tài chính thuộc {statementBatches.length} phiên bản
                         </span>
                         <div style={{ fontWeight: 500, color: "#1e293b" }}>
-                          Chế độ kế toán áp dụng: {activeCircularLabel} (Không tự động plug số chênh lệch)
+                          Chế độ kế toán áp dụng: {activeCircularLabel} (Không tự động bù trừ số chênh lệch)
                         </div>
                       </div>
                     </>
@@ -10886,7 +10886,7 @@ export default function MisaLedgerWorkspace({
                   </span>
                 </div>
                 <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 3 }}>
-                  Ngăn phát sinh hoặc sửa đổi chứng từ làm ảnh hưởng số liệu đã chốt; bảo vệ bằng Watermark chống lệch dữ liệu sau khi kiểm tra:{" "}
+                  Ngăn phát sinh hoặc sửa đổi chứng từ làm ảnh hưởng số liệu đã chốt; mã đối soát toàn vẹn dữ liệu trước khi khóa sổ:{" "}
                   <code>{periodChecklistWatermark}</code>
                 </div>
               </div>
@@ -12331,7 +12331,7 @@ export default function MisaLedgerWorkspace({
                     </select>
                   </div>
                   <div style={{ fontSize: 11.5, color: "#64748b", lineHeight: 1.4 }}>
-                    Chỉ quy đổi số hiển thị trên BCTC; giữ nguyên toàn bộ số dư gốc <code>raw_amount</code> và bút toán Sổ cái GL.
+                    Chỉ quy đổi số hiển thị trên BCTC; giữ nguyên toàn bộ số dư gốc số liệu gốc và bút toán Sổ cái GL.
                   </div>
                 </div>
 
@@ -16215,7 +16215,7 @@ export default function MisaLedgerWorkspace({
                     border: "1px solid #bbf7d0",
                   }}
                 >
-                  Zero GL Mutation
+                  Chế độ tra cứu an toàn (Chỉ đọc)
                 </span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -18188,7 +18188,7 @@ export default function MisaLedgerWorkspace({
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: 11.5, color: "#475569" }}>Fingerprint nguồn:</div>
+                    <div style={{ fontSize: 11.5, color: "#475569" }}>Mã định danh nguồn:</div>
                     <div style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
                       {allocSourcePool.sourceFingerprint} ({allocSourcePool.sourceEntriesCount} bút toán)
                     </div>
@@ -18665,7 +18665,7 @@ export default function MisaLedgerWorkspace({
                     >
                       <span>A. Thông tin chung của lần đánh giá ngoại tệ (Mục 1.1.A)</span>
                       <span style={{ fontSize: 11, color: "#1d4ed8", fontWeight: 600 }}>
-                        Fingerprint nguồn: {fxRevalSourceFingerprint}
+                        Mã định danh nguồn: {fxRevalSourceFingerprint}
                       </span>
                     </div>
                     <div
@@ -19363,7 +19363,7 @@ export default function MisaLedgerWorkspace({
                       }}
                     >
                       <div style={{ fontWeight: 700, color: "#1e3a8a", marginBottom: 6 }}>
-                        Truy vết 2 chiều đợt đánh giá {fxRevalTraceRun.voucherNo} (Fingerprint:{" "}
+                        Truy vết 2 chiều đợt đánh giá {fxRevalTraceRun.voucherNo} (Mã truy vết:{" "}
                         {fxRevalTraceRun.sourceFingerprint}):
                       </div>
                       <div>
@@ -19453,7 +19453,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  1. Lấy số dư ngoại tệ (Bước 3)
+                  1. Lấy số dư ngoại tệ
                 </button>
                 <button
                   type="button"
@@ -19469,7 +19469,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  2. Tính đánh giá lại (Bước 5-8)
+                  2. Tính đánh giá lại
                 </button>
                 <button
                   type="button"
@@ -19582,7 +19582,7 @@ export default function MisaLedgerWorkspace({
                   </span>
                 </div>
                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                  Chỉ tổng hợp từ bút toán <strong>POSTED</strong> | Watermark nguồn:{" "}
+                  Chỉ tổng hợp từ bút toán <strong>POSTED</strong> | Mã phiên dữ liệu:{" "}
                   <code>{balAggWatermark}</code> | Cập nhật lúc: {balAggLastRunAt}
                 </div>
               </div>
@@ -19670,7 +19670,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  Kiểm tra 4 nguyên tắc cân đối (Bước 5-8)
+                  Kiểm tra 4 nguyên tắc cân đối
                 </button>
                 <button
                   type="button"
@@ -19710,25 +19710,25 @@ export default function MisaLedgerWorkspace({
               }}
             >
               <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>1. Tổng PS Nợ = Tổng PS Có (BR-18)</div>
+                <div style={{ color: "#64748b" }}>1. Tổng PS Nợ = Tổng PS Có</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   588.200.000 ₫ = 588.200.000 ₫ (Cân bằng)
                 </div>
               </div>
               <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>2. Tổng Dư ĐK & Dư CK (BR-19..20)</div>
+                <div style={{ color: "#64748b" }}>2. Tổng Dư ĐK & Dư CK</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   ĐK: 240.000.000 ₫ | CK: 408.200.000 ₫
                 </div>
               </div>
               <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>3. Liên tục số dư kỳ trước (BR-21..22)</div>
+                <div style={{ color: "#64748b" }}>3. Liên tục số dư kỳ trước</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   Khớp 100% Dư CK trước = Dư ĐK này
                 </div>
               </div>
               <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
-                <div style={{ color: "#64748b" }}>4. Khớp TK Cha-Con & Lưỡng tính (BR-23..29)</div>
+                <div style={{ color: "#64748b" }}>4. Khớp TK Cha-Con & Lưỡng tính</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   131 / 331 tách Dư Nợ - Dư Có theo đối tượng
                 </div>
@@ -20425,7 +20425,7 @@ export default function MisaLedgerWorkspace({
                   <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center" }}>
                     <input
                       type="text"
-                      placeholder="Ghi chú nguyên nhân / hướng xử lý tại chứng từ nguồn (Bước 44,)..."
+                      placeholder="Ghi chú nguyên nhân / hướng xử lý tại chứng từ nguồn..."
                       value={glRecNoteInput}
                       onChange={(e) => setGlRecNoteInput(e.target.value)}
                       style={{

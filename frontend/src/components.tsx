@@ -490,7 +490,7 @@ export function DocumentDetail({
         <ol className="timeline">
           <li className="complete">
             <strong>Tạo chứng từ</strong>
-            <small>{dateLabel(item.date)} · Dữ liệu mẫu</small>
+            <small>{dateLabel(item.date)}</small>
           </li>
           <li className={item.status !== "draft" ? "complete" : ""}>
             <strong>

@@ -480,7 +480,7 @@ export default function MisaPurchaseContractReports({
             aria-label="Nạp lại"
             onClick={() => {
               setQuery("");
-              notify?.("Đã nạp lại dữ liệu mẫu.");
+              notify?.("Đã làm mới dữ liệu báo cáo.");
             }}
           >
             <RefreshCw size={16} />
@@ -516,7 +516,7 @@ export default function MisaPurchaseContractReports({
       <section className="pc-preview" aria-label="Nội dung báo cáo">
         <h1>{title.toLocaleUpperCase("vi")}</h1>
         <p>{subtitle}</p>
-        <small>Dữ liệu mẫu · Đơn vị tính: Đồng</small>
+        <small>Đơn vị tính: Đồng (VND)</small>
         <div className="pc-report-scroll">
           <table aria-label={title}>
             <thead>
@@ -790,7 +790,7 @@ export default function MisaPurchaseContractReports({
                   )
                   .map((row) => ({
                     id: row.supplier,
-                    cells: [row.supplier, row.supplierName, "Dữ liệu mẫu", ""],
+                    cells: [row.supplier, row.supplierName, "Tổng hợp kỳ báo cáo", ""],
                   }))}
                 selected={draft.suppliers}
                 onChange={(ids) => update("suppliers", ids)}
