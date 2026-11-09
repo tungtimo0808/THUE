@@ -4296,31 +4296,145 @@ body.ref-process-scroll-lock {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.35);
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.28);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   pointer-events: none;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.18s ease;
 }
 
 .ref-context-transition-overlay.is-done {
   opacity: 0;
 }
 
+.ref-context-transition-card {
+  width: min(520px, 92vw);
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+}
+
+.ref-context-transition-body {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ref-context-transition-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ref-context-spinner-wrap {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .ref-context-spinner-ring {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 3.5px solid rgba(148, 163, 184, 0.35);
+  border: 3.5px solid #e2e8f0;
   border-top-color: #0284c7;
   border-right-color: #00a862;
-  animation: ref-context-spin 0.55s linear infinite;
+  animation: ref-context-spin 0.6s linear infinite;
 }
 
 @keyframes ref-context-spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+.ref-context-transition-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ref-context-transition-kicker {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: #0f172a;
+  text-transform: uppercase;
+}
+
+.ref-context-transition-sub {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.ref-context-transition-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.1fr);
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.ref-context-flow-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.ref-context-flow-box.from {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+}
+
+.ref-context-flow-box.to {
+  background: #ecfdf5;
+  border: 1.5px solid #10b981;
+}
+
+.ref-context-flow-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: #64748b;
+}
+
+.ref-context-flow-box.to .ref-context-flow-tag {
+  color: #047857;
+}
+
+.ref-context-flow-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ref-context-flow-box.to .ref-context-flow-val {
+  color: #065f46;
+}
+
+.ref-context-flow-arrow {
+  display: inline-flex;
+  align-items: center;
+  color: #0284c7;
 }
 
 /* Hide legacy AI / AVA buttons and triggers across all workspaces */

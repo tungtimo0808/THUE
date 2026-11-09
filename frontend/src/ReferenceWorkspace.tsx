@@ -654,14 +654,14 @@ function ReferenceWorkspace() {
 
       const t1 = window.setTimeout(() => {
         setContextTransition((prev) => (prev ? { ...prev, phase: "done" } : null));
-      }, 380);
+      }, 520);
       const t2 = window.setTimeout(() => {
         setContextTransition(null);
         setIsSwitchingContext(false);
-      }, 580);
+      }, 950);
       const t3 = window.setTimeout(() => {
         setRecentlyChangedCluster(null);
-      }, 1400);
+      }, 1600);
 
       transitionTimersRef.current = [t1, t2, t3];
     },
@@ -3391,7 +3391,37 @@ function ReferenceWorkspace() {
           aria-live="polite"
           data-testid="context-switch-overlay"
         >
-          <div className="ref-context-spinner-ring" />
+          <div className="ref-context-transition-card">
+            <div className="ref-context-transition-body">
+              <div className="ref-context-transition-header">
+                <div className="ref-context-spinner-wrap">
+                  <div className="ref-context-spinner-ring" />
+                </div>
+                <div className="ref-context-transition-titles">
+                  <span className="ref-context-transition-kicker">
+                    {contextTransition.title}
+                  </span>
+                  <p className="ref-context-transition-sub">{contextTransition.subTitle}</p>
+                </div>
+              </div>
+
+              <div className="ref-context-transition-flow">
+                <div className="ref-context-flow-box from">
+                  <span className="ref-context-flow-tag">CHUYỂN TỪ</span>
+                  <strong className="ref-context-flow-val">{contextTransition.fromLabel}</strong>
+                </div>
+
+                <div className="ref-context-flow-arrow" aria-hidden="true">
+                  <ChevronRight size={20} strokeWidth={2.5} />
+                </div>
+
+                <div className="ref-context-flow-box to">
+                  <span className="ref-context-flow-tag">SANG DỮ LIỆU</span>
+                  <strong className="ref-context-flow-val">{contextTransition.toLabel}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
       <MisaBranchManagementModal
