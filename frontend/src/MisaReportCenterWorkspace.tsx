@@ -2023,7 +2023,7 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
             className={`misa-reports-subtab-btn ${(activeSubtab as string) === "extended-apis" ? "active" : ""}`}
             onClick={() => setActiveSubtab("extended-apis" as any)}
           >
-            Cấu hình biểu mẫu & Kết xuất API
+            Cấu hình biểu mẫu & Kết xuất dữ liệu
           </button>
           <button
             type="button"

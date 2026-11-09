@@ -319,7 +319,7 @@ export function MisaSystemUtilitiesModal({
     }
     setBusyAction(false);
     notify(
-      `Đã thực hiện ${action === "post" ? "Ghi sổ" : "Bỏ ghi sổ"} thành công ${okCount}/${targets.length} chứng từ qua API.`
+      `Đã thực hiện ${action === "post" ? "Ghi sổ" : "Bỏ ghi sổ"} thành công ${okCount}/${targets.length} chứng từ.`
     );
     void loadUtilityData();
   };
@@ -463,8 +463,7 @@ export function MisaSystemUtilitiesModal({
                 {utilityName}
               </h2>
               <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
-                Doanh nghiệp: <strong style={{ color: "#e2e8f0" }}>{companyName}</strong> • Kết nối
-                trực tiếp API Hệ thống
+                Doanh nghiệp: <strong style={{ color: "#e2e8f0" }}>{companyName}</strong> • Đồng bộ dữ liệu hệ thống
               </div>
             </div>
           </div>
@@ -487,7 +486,7 @@ export function MisaSystemUtilitiesModal({
               }}
             >
               <RefreshCw size={13} className={loading ? "spin" : ""} />
-              Làm mới API
+              Làm mới
             </button>
             <button
               type="button"
@@ -719,7 +718,7 @@ export function MisaSystemUtilitiesModal({
                   }}
                 >
                   <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: "#1e293b" }}>
-                    Nhật ký tác động chứng từ gần nhất (Audit Trail API)
+                    Nhật ký tác động chứng từ gần nhất
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {auditLogs.slice(0, 4).map((log: any, idx: number) => (

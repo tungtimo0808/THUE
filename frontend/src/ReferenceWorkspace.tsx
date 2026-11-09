@@ -2991,40 +2991,21 @@ function ReferenceWorkspace() {
                   key={g.title}
                 >
                   <h3>{g.title}</h3>
-                  {filteredItems.map((label) => {
-                    const isQuickRoute =
-                      Boolean(quickAccessRoutes[label]) ||
-                      label === "Thiết lập màu sắc và hiển thị" ||
-                      label === "Gợi ý, nhắc nhở thông minh";
-                    return (
-                      <button
-                        key={label}
-                        onClick={() => infoAction(label)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 8,
-                          width: "100%",
-                        }}
-                      >
-                        <span>{label}</span>
-                        <span
-                          style={{
-                            fontSize: 10.5,
-                            fontWeight: 600,
-                            padding: "1px 6px",
-                            borderRadius: 4,
-                            background: isQuickRoute ? "#e0f2fe" : "#dcfce7",
-                            color: isQuickRoute ? "#0369a1" : "#15803d",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {isQuickRoute ? "Mở →" : "API"}
-                        </span>
-                      </button>
-                    );
-                  })}
+                  {filteredItems.map((label) => (
+                    <button
+                      key={label}
+                      onClick={() => infoAction(label)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 8,
+                        width: "100%",
+                      }}
+                    >
+                      <span>{label}</span>
+                    </button>
+                  ))}
                 </section>
               );
             })}
