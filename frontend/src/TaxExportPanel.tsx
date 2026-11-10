@@ -8,8 +8,8 @@ type Export = { id: string; period: string; format_code: string; exported_at: st
     period?: string; source_version?: string }; warnings: string[] };
 type List<T> = T[] | { results: T[] };
 const list = <T,>(value: List<T>): T[] => Array.isArray(value) ? value : value.results || [];
-const button = { border: "1px solid #00a862", borderRadius: 4, padding: "7px 12px",
-  color: "#008a50", background: "white", cursor: "pointer" };
+const button = { border: "1px solid var(--brand)", borderRadius: 4, padding: "7px 12px",
+  color: "var(--brand-hover)", background: "white", cursor: "pointer" };
 const labels: Record<string, string> = { VAT_LEDGER: "Sổ VAT", TAX_OBLIGATION: "Nghĩa vụ thuế" };
 
 export default function TaxExportPanel({ companyId, token }: { companyId: string; token?: string }) {
@@ -83,13 +83,13 @@ export default function TaxExportPanel({ companyId, token }: { companyId: string
         style={{ display: "block", height: 34, minWidth: 135 }}>
         <option value="REPORT">Báo cáo</option><option value="REVIEW">Rà soát</option><option value="ARCHIVE">Lưu trữ</option>
       </select></label>
-      <button type="button" style={{ ...button, background: "#00a862", color: "white" }} disabled={!periodId || busy}
+      <button type="button" style={{ ...button, background: "var(--brand)", color: "white" }} disabled={!periodId || busy}
         onClick={() => void generate()}>{busy ? "Đang xuất..." : "Xuất Excel"}</button>
       <button type="button" style={button} onClick={() => void load()}>Tải lại lịch sử</button>
     </div>
     {!periods.length && <p>Chưa có kỳ thuế để xuất.</p>}
     {error && <p role="alert" style={{ color: "#b91c1c" }}>{error}</p>}
-    {message && <p role="status" style={{ color: "#008a50" }}>{message}</p>}
+    {message && <p role="status" style={{ color: "var(--brand-hover)" }}>{message}</p>}
     <h3 style={{ fontSize: 14, marginTop: 20 }}>Lịch sử xuất dữ liệu</h3>
     <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
       <thead><tr style={{ background: "#e2ede6" }}><th>Ngày xuất</th><th>Dữ liệu</th><th>Kỳ</th><th>Dòng</th><th>Phiên bản nguồn</th><th>Trạng thái</th><th></th></tr></thead>

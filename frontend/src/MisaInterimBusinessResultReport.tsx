@@ -681,7 +681,7 @@ export default function MisaInterimBusinessResultReport({
             <span
               style={{
                 background: currentRun.run_status === "APPROVED" ? "#dcfce7" : "#e0f2fe",
-                color: currentRun.run_status === "APPROVED" ? "#166534" : "#0369a1",
+                color: currentRun.run_status === "APPROVED" ? "#166534" : "var(--brand-hover)",
                 padding: "2px 8px",
                 borderRadius: 4,
                 fontSize: 11.5,
@@ -738,7 +738,7 @@ export default function MisaInterimBusinessResultReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -766,7 +766,7 @@ export default function MisaInterimBusinessResultReport({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <button
+          <button disabled title="Chưa tích hợp xuất XML cho báo cáo này."
             type="button"
             style={{
               background: "transparent",
@@ -779,11 +779,11 @@ export default function MisaInterimBusinessResultReport({
               cursor: "pointer",
               fontWeight: 500,
             }}
-            onClick={() => notify?.("Đang xuất khẩu tệp XML theo chuẩn TCT...")}
+            onClick={undefined}
           >
             <FileText size={15} color="#64748b" />
             <span>Xuất XML</span>
-          </button>
+          <small className="pending-integration-label">Chưa tích hợp</small></button>
 
           <button
             type="button"
@@ -794,13 +794,13 @@ export default function MisaInterimBusinessResultReport({
               alignItems: "center",
               gap: 6,
               fontSize: 13,
-              color: "#0284c7",
+              color: "var(--brand)",
               cursor: "pointer",
               fontWeight: 600,
             }}
             onClick={() => notify?.("Kết nối cổng nộp thuế điện tử Sổ Việt eTax...")}
           >
-            <Send size={15} color="#0284c7" />
+            <Send size={15} color="var(--brand)" />
             <span>Nộp báo cáo qua Sổ Việt eTax</span>
           </button>
         </div>
@@ -814,7 +814,7 @@ export default function MisaInterimBusinessResultReport({
                 left: 10,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -1232,7 +1232,7 @@ export default function MisaInterimBusinessResultReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -1247,7 +1247,7 @@ export default function MisaInterimBusinessResultReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -1261,10 +1261,10 @@ export default function MisaInterimBusinessResultReport({
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  border: "1px solid #00a862",
+                  border: "1px solid var(--brand)",
                   borderRadius: 4,
                   background: "#e6f7ef",
-                  color: "#00a862",
+                  color: "var(--brand)",
                   fontWeight: 700,
                   fontSize: 12,
                 }}
@@ -1280,7 +1280,7 @@ export default function MisaInterimBusinessResultReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -1295,7 +1295,7 @@ export default function MisaInterimBusinessResultReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -1554,7 +1554,7 @@ export default function MisaInterimBusinessResultReport({
                     type="checkbox"
                     checked={draftFetchFromSaved}
                     onChange={(e) => setDraftFetchFromSaved(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Lấy dữ liệu từ báo cáo tài chính giữa niên độ đã lập</span>
                 </label>
@@ -1564,7 +1564,7 @@ export default function MisaInterimBusinessResultReport({
                     type="checkbox"
                     checked={draftHideZero}
                     onChange={(e) => setDraftHideZero(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Không hiển thị các chỉ tiêu có số liệu = 0</span>
                 </label>
@@ -1623,7 +1623,7 @@ export default function MisaInterimBusinessResultReport({
                   style={{
                     height: 34,
                     padding: "0 22px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     color: "#ffffff",
@@ -1685,7 +1685,7 @@ export default function MisaInterimBusinessResultReport({
                 <span
                   style={{
                     background: "#e0f2fe",
-                    color: "#0369a1",
+                    color: "var(--brand-hover)",
                     padding: "2px 8px",
                     borderRadius: 4,
                     fontSize: 11,
@@ -1714,7 +1714,7 @@ export default function MisaInterimBusinessResultReport({
                 </span>
                 <span>
                   Số phát sinh:{" "}
-                  <strong style={{ color: "#00a862" }}>{formatValue(drilldownItem.val).text}</strong>
+                  <strong style={{ color: "var(--brand)" }}>{formatValue(drilldownItem.val).text}</strong>
                 </span>
               </div>
 
@@ -1739,19 +1739,19 @@ export default function MisaInterimBusinessResultReport({
                       drilldownDetail.journal_lines.map((jl: any, idx: number) => (
                         <tr key={jl.journal_line_id || idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
                           <td style={{ padding: "8px 10px" }}>{jl.posting_date}</td>
-                          <td style={{ padding: "8px 10px", color: "#0284c7", fontWeight: 600 }}>
+                          <td style={{ padding: "8px 10px", color: "var(--brand)", fontWeight: 600 }}>
                             {jl.entry_no || jl.journal_number}
                           </td>
                           <td style={{ padding: "8px 10px" }}>{jl.description}</td>
                           <td style={{ padding: "8px 10px" }}>{jl.account_code}</td>
-                          <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#00a862" }}>
+                          <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "var(--brand)" }}>
                             {Number(jl.contribution_amount || 0).toLocaleString("vi-VN")}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: "#94a3b8", fontStyle: "italic" }}>
+                        <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: "#64748b", fontStyle: "italic" }}>
                           Không có chứng từ phát sinh trong kỳ.
                         </td>
                       </tr>
@@ -1767,7 +1767,7 @@ export default function MisaInterimBusinessResultReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,
@@ -1857,7 +1857,7 @@ export default function MisaInterimBusinessResultReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,

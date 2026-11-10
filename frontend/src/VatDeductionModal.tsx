@@ -110,7 +110,7 @@ export default function VatDeductionModal({ companyId, periodHint, token, notify
   return <div className="misa-modal-overlay"><div className="misa-modal-card" role="dialog" aria-modal="true"
     aria-label="Khấu trừ thuế GTGT đầu vào và đầu ra" style={{ width: 720, maxWidth: "95vw", maxHeight: "92vh", overflowY: "auto" }}>
     <header style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Calculator size={18} color="#00a862" /><h3 style={{ margin: 0, fontSize: 16 }}>Khấu trừ thuế GTGT đầu vào và đầu ra</h3></div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Calculator size={18} color="var(--brand)" /><h3 style={{ margin: 0, fontSize: 16 }}>Khấu trừ thuế GTGT đầu vào và đầu ra</h3></div>
       <button type="button" aria-label="Đóng" onClick={onClose} style={{ border: 0, background: "none", cursor: "pointer" }}><X size={18} /></button>
     </header>
     <div style={{ padding: "18px 22px", display: "grid", gap: 13, fontSize: 13 }}>
@@ -140,7 +140,7 @@ export default function VatDeductionModal({ companyId, periodHint, token, notify
           ["Chuyển từ kỳ trước", calculation.carry_forward_in], ["Khấu trừ trong kỳ", calculation.deducted_amount],
           ["Còn phải nộp", calculation.payable_amount], ["Chuyển kỳ sau", calculation.carry_forward_out]].map(([label, value]) =>
             <div key={label} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, padding: 11 }}><div style={{ color: "#64748b" }}>{label}</div>
-              <strong style={{ fontSize: 16, color: label === "Khấu trừ trong kỳ" ? "#00a862" : "#334155" }}>{money(value)}</strong></div>)}</div>
+              <strong style={{ fontSize: 16, color: label === "Khấu trừ trong kỳ" ? "var(--brand)" : "#334155" }}>{money(value)}</strong></div>)}</div>
         {!!calculation.warnings.length && <div style={{ padding: 11, borderRadius: 6, background: "#fff7e6", color: "#7c4a03" }}>
           <strong>Cần rà soát</strong>{calculation.warnings.map((item) => <p key={item} style={{ margin: "6px 0" }}>{item}</p>)}</div>}
         <button type="button" onClick={() => setShowSources((value) => !value)} style={{ justifySelf: "start" }}>{showSources ? "Ẩn chi tiết nguồn" : `Xem chi tiết nguồn (${calculation.sources.length})`}</button>
@@ -159,7 +159,7 @@ export default function VatDeductionModal({ companyId, periodHint, token, notify
     <footer style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "flex-end", gap: 10 }}>
       <button type="button" onClick={onClose}>Hủy</button>
       <button type="button" disabled={!canCreate || busy} onClick={() => void createDocument()}
-        style={{ background: canCreate ? "#00a862" : "#9ca3af", color: "white", border: 0, borderRadius: 4, padding: "8px 16px", cursor: canCreate ? "pointer" : "default" }}>Tạo chứng từ khấu trừ</button>
+        style={{ background: canCreate ? "var(--brand)" : "#9ca3af", color: "white", border: 0, borderRadius: 4, padding: "8px 16px", cursor: canCreate ? "pointer" : "default" }}>Tạo chứng từ khấu trừ</button>
     </footer>
   </div></div>;
 }

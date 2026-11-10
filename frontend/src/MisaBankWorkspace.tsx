@@ -1258,7 +1258,7 @@ export default function MisaBankWorkspace({
                             value={editBankCode}
                             readOnly={isPosted}
                             onChange={(e) => setEditBankCode(e.target.value)}
-                            style={{ fontWeight: 700, color: "#00a862" }}
+                            style={{ fontWeight: 700, color: "var(--brand)" }}
                           />
                         </div>
                       </div>
@@ -1440,7 +1440,7 @@ export default function MisaBankWorkspace({
                         type="button"
                         className="misa-btn-primary"
                         disabled={isSavingBankEdit}
-                        style={{ background: "#00a862", border: "none", fontWeight: 700 }}
+                        style={{ background: "var(--brand)", border: "none", fontWeight: 700 }}
                         onClick={() => void handleSaveBankVoucherEdit(true)}
                       >
                         Cất & Ghi sổ
@@ -1603,7 +1603,7 @@ export default function MisaBankWorkspace({
                   style={{ border: "none", background: "none", cursor: "pointer", color: "#9ca3af", padding: 0 }}
                   onClick={() => setShowAvaBanner(false)}
                 >
-                  ✕
+                  <X size={18} aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -1615,7 +1615,7 @@ export default function MisaBankWorkspace({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>Dòng tiền thuần</span>
                   <span
-                    style={{ fontSize: 11, color: "#0284c7", cursor: "pointer" }}
+                    style={{ fontSize: 11, color: "var(--brand)", cursor: "pointer" }}
                     onClick={() => notify("Mở phân tích chuyên sâu Dòng tiền thuần...")}
                   >
                     Phân tích chuyên sâu
@@ -1631,7 +1631,7 @@ export default function MisaBankWorkspace({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>Rủi ro &amp; Khuyến nghị</span>
                   <span
-                    style={{ fontSize: 11, color: "#0284c7", cursor: "pointer" }}
+                    style={{ fontSize: 11, color: "var(--brand)", cursor: "pointer" }}
                     onClick={() => notify("Mở phân tích chuyên sâu Rủi ro & Khuyến nghị...")}
                   >
                     Phân tích chuyên sâu
@@ -1662,7 +1662,7 @@ export default function MisaBankWorkspace({
                   border: "1px solid #bbf7d0",
                   display: "grid",
                   placeItems: "center",
-                  color: "#00b06b",
+                  color: "var(--brand)",
                   flexShrink: 0,
                 }}
               >
@@ -1672,7 +1672,7 @@ export default function MisaBankWorkspace({
                 <div style={{ fontSize: 13, color: "#334155", fontWeight: 500, marginBottom: 2 }}>
                   Tổng thu đầu năm đến hiện tại
                 </div>
-                <strong style={{ fontSize: 18, color: totalReceipt > 0 ? "#00b06b" : "#111827" }}>
+                <strong style={{ fontSize: 18, color: totalReceipt > 0 ? "var(--brand)" : "#111827" }}>
                   {formatVND(totalReceipt)}
                 </strong>
               </div>
@@ -1738,7 +1738,7 @@ export default function MisaBankWorkspace({
                 <div style={{ fontSize: 13, color: "#334155", fontWeight: 500, marginBottom: 2 }}>
                   Số dư tiền gửi đến ngày {currentCashDate()}
                 </div>
-                <strong style={{ fontSize: 18, color: "#00b06b" }}>{formatVND(currentBalance)}</strong>
+                <strong style={{ fontSize: 18, color: "var(--brand)" }}>{formatVND(currentBalance)}</strong>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11.5, color: "#94a3b8" }}>
                 <Clock size={12} />
@@ -1894,7 +1894,7 @@ export default function MisaBankWorkspace({
               type="button"
               className="misa-tax-icon-btn"
               title="Làm mới dữ liệu"
-              onClick={() => notify("Đã cập nhật danh sách tiền gửi.")}
+              onClick={reloadBankApi}
               style={{
                 width: 32,
                 height: 32,
@@ -1960,8 +1960,8 @@ export default function MisaBankWorkspace({
                   border: "1px solid #d1d5db",
                   borderRadius: 6,
                   background: bankExcelMenuOpen ? "#f0fdf4" : "#ffffff",
-                  borderColor: bankExcelMenuOpen ? "#00a862" : "#d1d5db",
-                  color: bankExcelMenuOpen ? "#00a862" : "#334155",
+                  borderColor: bankExcelMenuOpen ? "var(--brand)" : "#d1d5db",
+                  color: bankExcelMenuOpen ? "var(--brand)" : "#334155",
                   fontSize: 12.5,
                   fontWeight: 500,
                   display: "inline-flex",
@@ -2124,7 +2124,7 @@ export default function MisaBankWorkspace({
                 style={{
                   height: 32,
                   padding: "0 14px",
-                  background: "#00b06b",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 6,
@@ -2310,7 +2310,7 @@ export default function MisaBankWorkspace({
                 style={{
                   height: 32,
                   padding: "0 14px",
-                  background: "#00b06b",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 6,
@@ -2549,7 +2549,7 @@ export default function MisaBankWorkspace({
             <thead>
               <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 36, textAlign: "center", padding: "8px 4px" }}>
-                  <input type="checkbox" aria-label="Chọn tất cả chứng từ trang hiện tại" checked={bankVisibleRows.length>0&&bankVisibleRows.every(row=>bankCheckedIds.includes(row.id))} onChange={event=>{const ids=bankVisibleRows.map(row=>row.id);setBankCheckedIds(previous=>event.target.checked?[...new Set([...previous,...ids])]:previous.filter(id=>!ids.includes(id)));}} style={{ accentColor: "#00b06b" }} />
+                  <input type="checkbox" aria-label="Chọn tất cả chứng từ trang hiện tại" checked={bankVisibleRows.length>0&&bankVisibleRows.every(row=>bankCheckedIds.includes(row.id))} onChange={event=>{const ids=bankVisibleRows.map(row=>row.id);setBankCheckedIds(previous=>event.target.checked?[...new Set([...previous,...ids])]:previous.filter(id=>!ids.includes(id)));}} style={{ accentColor: "var(--brand)" }} />
                 </th>
                 {bankColumns.filter(column=>column.visible).map(column=><th key={column.id} style={{width:column.width,minWidth:column.width,textAlign:column.id===6?'right':'left',padding:'8px 10px'}}>{column.name}</th>)}
               </tr>
@@ -2574,7 +2574,7 @@ export default function MisaBankWorkspace({
                     <td style={{ padding: "8px 10px", color: "#374151" }}>{tx.dateChungTu}</td>,
                     <td style={{ padding: "8px 10px" }}>
                       <span
-                        style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }}
+                        style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (tx.kind === "transfer") { viewBankTransfer(String(tx.id).slice(9)); return; }
@@ -2862,7 +2862,7 @@ export default function MisaBankWorkspace({
                         <td style={{ padding: "8px 10px", textAlign: "right" }}>{it.taxRate}%</td>
                         <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{formatVND(it.taxAmount)}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center" }}>{it.taxAccount}</td>
-                        <td style={{ padding: "8px 10px", color: "#0284c7" }}>{it.invoiceCode}</td>
+                        <td style={{ padding: "8px 10px", color: "var(--brand)" }}>{it.invoiceCode}</td>
                         <td style={{ padding: "8px 10px", color: "#374151" }}>{it.invoiceDate}</td>
                       </tr>
                     ))}
@@ -2937,7 +2937,7 @@ export default function MisaBankWorkspace({
           </h2>
 
           <div
-            className="ref-process-canvas"
+            className="ref-process-canvas sv-flow-nodes"
             style={{
               position: "relative",
               height: 310,
@@ -2947,7 +2947,7 @@ export default function MisaBankWorkspace({
           >
             {/* SVG Connecting Flow Lines with Arrows (Image 2 & 3) */}
             <svg
-              className="ref-flow-lines"
+              className="ref-flow-lines sv-flow-connector"
               viewBox="0 0 650 300"
               preserveAspectRatio="none"
               aria-hidden="true"
@@ -3025,7 +3025,7 @@ export default function MisaBankWorkspace({
             )}
 
             {/* Node 1: Đề nghị chi tiền (Left, aligned with Chi tiền) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "13%",
@@ -3068,7 +3068,7 @@ export default function MisaBankWorkspace({
             </div>
 
             {/* Node 2: Thu tiền (Top Center) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "38%",
@@ -3171,7 +3171,7 @@ export default function MisaBankWorkspace({
             </div>
 
             {/* Node 3: Chi tiền (Bottom Center) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "38%",
@@ -3293,7 +3293,7 @@ export default function MisaBankWorkspace({
             </div>
 
             {/* Node 4: Đối chiếu ngân hàng (Right, middle vertical) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "63%",
@@ -3340,7 +3340,7 @@ export default function MisaBankWorkspace({
             </div>
 
             {/* Node 5: Dự báo dòng tiền (Right, connected to arrow) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "87%",
@@ -3372,7 +3372,7 @@ export default function MisaBankWorkspace({
                 </span>
                 <span
                   className="ref-gold-icon"
-                  style={{ background: "#0284c7", borderColor: "#38bdf8" }}
+                  style={{ background: "var(--brand)", borderColor: "#38bdf8" }}
                 >
                   <Calculator size={14} strokeWidth={2.2} />
                 </span>
@@ -3470,7 +3470,7 @@ export default function MisaBankWorkspace({
           >
             <span
               style={{
-                color: "#0284c7",
+                color: "var(--brand)",
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -3516,7 +3516,7 @@ export default function MisaBankWorkspace({
             }}
             onClick={() => navigate(href("/directory") + "&directory=" + encodeURIComponent("Tài khoản ngân hàng"))}
           >
-            <CreditCard size={20} style={{ color: "#00b06b" }} />
+            <CreditCard size={20} style={{ color: "var(--brand)" }} />
             <span>Tài khoản ngân hàng</span>
           </button>
 
@@ -3560,7 +3560,7 @@ export default function MisaBankWorkspace({
             }}
             onClick={() => navigate(href("/directory") + "&directory=" + encodeURIComponent("Nhà cung cấp"))}
           >
-            <Building2 size={20} style={{ color: "#00b06b" }} />
+            <Building2 size={20} style={{ color: "var(--brand)" }} />
             <span>Nhà cung cấp</span>
           </button>
 
@@ -3604,7 +3604,7 @@ export default function MisaBankWorkspace({
             }}
             onClick={() => navigate(href("/ledger/process"))}
           >
-            <Calculator size={20} style={{ color: "#00b06b" }} />
+            <Calculator size={20} style={{ color: "var(--brand)" }} />
             <span>Tính tỷ giá xuất quỹ</span>
           </button>
 

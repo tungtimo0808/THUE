@@ -2,13 +2,18 @@
 
 ## Hướng thiết kế
 
-Người dùng chính là kế toán doanh nghiệp, cần đọc số liệu, tìm chứng từ và biết việc cần xử lý. Điểm nhấn là thanh điều hướng xanh rêu cùng vùng làm việc kem đào; không dùng hình trang trí trong màn hình nghiệp vụ.
+Người dùng chính là kế toán doanh nghiệp, cần đọc số liệu, tìm chứng từ và biết việc cần xử lý. Giao diện xanh dương – trắng, bảng/lưới dữ liệu dùng tông xanh lá nhạt kiểu MISA; gọn, ít trang trí; không dùng hình trang trí trong màn hình nghiệp vụ.
 
-- Moss `#606C38`: nhận diện, điều hướng và hành động chính.
-- Peach cream `#FFE8D6`: nền workspace và vùng phân tách.
-- Surface `#FFFAF6`: bảng, form và lớp nội dung chính.
-- Ink `#2F3423`: chữ và số liệu; các sắc olive đậm/nhạt dùng cho trạng thái và hover.
-- Be Vietnam Pro, tự phục vụ qua npm: tiếng Việt rõ ràng, số tabular.
+Token màu khai báo tại `src/index.css` (`:root`). Dùng biến, không mã cứng màu mới trong TSX/CSS.
+
+- Brand `--brand #2f78a8` (hover `--brand-hover`, nền nhạt `--brand-soft`, viền `--brand-border`, chữ đậm `--brand-ink`): nhận diện, điều hướng, nút chính, trạng thái hover/đang chọn/focus.
+- Nền `--canvas #f8fafc`, bề mặt `--surface #ffffff`, chữ `--ink #1e293b`, chữ phụ `--muted #64748b`, viền `--border #e2e8f0`.
+- Trạng thái: `--success`, `--warning`, `--danger` cùng bản `-soft`.
+- Bảng/lưới: header xanh lá nhạt (`#eaf6ee`, báo cáo `#e2f0d9`), dòng đang chọn/hover `#f0fdf4`.
+- Chữ phụ trên nền sáng tối thiểu `#64748b` (≈4.8:1); không dùng `#94a3b8`/`#cbd5e1` cho chữ trên nền trắng. Cỡ chữ tối thiểu 10px trên màn hình (11px cho nhãn trạng thái).
+- Focus bàn phím: viền 2px `--brand`, không tắt `outline` khi không có chỉ báo thay thế.
+- Phản hồi: dùng `showNotice()` / `showPendingFeature()` trong `src/global-popup.tsx` (toast không chặn), không dùng `alert()`. Chức năng chưa có backend phải nói rõ "chưa tích hợp", không giả lập kết quả.
+- Font Roboto (tự phục vụ qua `@fontsource/roboto`), số tabular cho cột tiền.
 - Sidebar 182px; header 46px ở desktop; nội dung căn trái; khoảng cách theo nhịp 4/8/12/16/24px.
 - Dashboard: tổng quan → chỉ tiêu → dòng tiền + việc cần làm → chứng từ gần đây.
 - Các phân hệ: tên phân hệ/quick menu → tab trong URL → KPI/bộ lọc → bảng → quick detail → hồ sơ đầy đủ.
@@ -23,7 +28,7 @@ React + TypeScript + Vite, React Router, Recharts, Lucide, CSS tokens. Django ti
 
 ## Phạm vi và dữ liệu
 
-Đây là frontend tương tác chạy độc lập, dữ liệu mẫu và phiếu nháp được lưu localStorage theo doanh nghiệp. Chưa tích hợp API nghiệp vụ, không ghi sổ thật, không tính thuế/phân quyền ở client. Các module đều có workspace cấu hình để minh họa luồng danh sách; chỉ các màn hình trọng điểm có dữ liệu và hồ sơ chuyên biệt. Số tổng quan được tổng hợp từ các chứng từ mẫu trong kỳ; bộ lọc kỳ/doanh nghiệp áp dụng chung. Không chứa thông tin xác thực thật.
+Frontend gọi API Django qua lớp chung (`live-api.ts`, `misa-api-writes.ts`); xác thực, phân quyền, tính thuế và ghi sổ do backend xử lý. Ẩn nút theo quyền chỉ là trải nghiệm người dùng. Một số màn hình cũ vẫn còn phần chưa nối API — các nút đó phải ghi rõ "chưa tích hợp". Không chứa thông tin xác thực thật.
 
 ## Nguồn
 

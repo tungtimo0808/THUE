@@ -50,7 +50,7 @@ export function VoucherAttachments({ inputId, files, attachments, readOnly, onAd
           style={{ border: "1px dashed #cbd5e1", borderRadius: 4, background: "#f8fafc", padding: "12px 20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}
         >
           <Upload size={18} style={{ color: "#64748b" }} />
-          <span style={{ fontSize: 12.5, color: "#0284c7" }}>
+          <span style={{ fontSize: 12.5, color: "var(--brand)" }}>
             Chọn tệp <span style={{ color: "#64748b" }}>hoặc kéo và thả tệp vào đây</span>
           </span>
         </label>
@@ -60,7 +60,7 @@ export function VoucherAttachments({ inputId, files, attachments, readOnly, onAd
           {attachments.map((entry: any) => (
             <li key={entry.id} style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid #e2e8f0", borderRadius: 4, padding: "4px 8px", background: "#ffffff" }}>
               <Paperclip size={12} style={{ color: "#64748b" }} />
-              <button type="button" onClick={() => onDownload(entry)} style={{ border: "none", background: "none", padding: 0, color: "#0284c7", cursor: "pointer", fontSize: 12 }}>{entry.name}</button>
+              <button type="button" onClick={() => onDownload(entry)} style={{ border: "none", background: "none", padding: 0, color: "var(--brand)", cursor: "pointer", fontSize: 12 }}>{entry.name}</button>
               <span style={{ color: "#94a3b8" }}>{formatFileSize(entry.size)}</span>
               {!readOnly && <button type="button" title={`Xóa tệp ${entry.name}`} onClick={() => onRemove(entry)} style={{ border: "none", background: "none", padding: 0, color: "#ef4444", cursor: "pointer", display: "grid" }}><X size={12} /></button>}
             </li>

@@ -75,7 +75,7 @@ export default function ReportScheduleDialog({ onClose }: { onClose: () => void 
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}>
           <button type="button" onClick={step === 1 ? onClose : ()=>setStep(1)}>{step === 1 ? "Hủy" : "Quay lại"}</button>
-          <button type="button" style={{ background: "#00a862", color: "white", borderColor: "#00a862", fontWeight: 600 }} onClick={step === 1 ? ()=>setStep(2) : onClose}>{step === 1 ? "Tiếp tục" : "Lưu"}</button>
+          <button type="button" style={{ background: "var(--brand)", color: "white", borderColor: "var(--brand)", fontWeight: 600 }} onClick={step === 1 ? ()=>setStep(2) : onClose}>{step === 1 ? "Tiếp tục" : "Lưu"}</button>
         </div>
       </form>
       {senderDialogOpen&&<EmailSenderDialog onClose={()=>setSenderDialogOpen(false)} />}

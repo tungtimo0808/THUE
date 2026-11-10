@@ -1,3 +1,4 @@
+import { openSavedTableReports, saveVisibleTable, exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -269,7 +270,7 @@ export default function MisaDebtReconciliationReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -287,7 +288,7 @@ export default function MisaDebtReconciliationReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu báo cáo.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -297,7 +298,7 @@ export default function MisaDebtReconciliationReport({
             style={{
               height: 30,
               padding: "0 16px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 12.5,
@@ -420,7 +421,7 @@ export default function MisaDebtReconciliationReport({
             style={{
               background: "none",
               border: "none",
-              color: "#0284c7",
+              color: "var(--brand)",
               cursor: "pointer",
               padding: 4,
             }}
@@ -446,7 +447,7 @@ export default function MisaDebtReconciliationReport({
 
           <button
             type="button"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Bảng dữ liệu"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không xuất được dữ liệu."); } }}
             style={{
               background: "none",
               border: "none",
@@ -494,7 +495,7 @@ export default function MisaDebtReconciliationReport({
             padding: "40px 48px",
             boxSizing: "border-box",
             color: "#0f172a",
-            fontFamily: "'Times New Roman', Times, serif, system-ui",
+            fontFamily: "Roboto, Arial, sans-serif",
             fontSize: 12,
           }}
         >
@@ -1093,7 +1094,7 @@ export default function MisaDebtReconciliationReport({
                       type="checkbox"
                       checked={draftShowDetailedExpenses}
                       onChange={(e) => setDraftShowDetailedExpenses(e.target.checked)}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Hiển thị chi tiết CT phát sinh: Chi tiền, trả lại, giảm giá hàng mua</span>
                   </label>
@@ -1127,7 +1128,7 @@ export default function MisaDebtReconciliationReport({
                         filteredDrawerAccounts.every((a) => draftAccounts.includes(a.code))
                       }
                       onChange={toggleSelectAllAccounts}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                     <span
@@ -1225,7 +1226,7 @@ export default function MisaDebtReconciliationReport({
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => toggleSelectAccount(a.code)}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td style={{ padding: "6px 10px", fontWeight: 500 }}>{a.code}</td>
@@ -1266,7 +1267,7 @@ export default function MisaDebtReconciliationReport({
                         filteredDrawerSuppliers.every((s) => draftSuppliers.includes(s.code))
                       }
                       onChange={toggleSelectAllSuppliers}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                     <span
@@ -1364,7 +1365,7 @@ export default function MisaDebtReconciliationReport({
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => toggleSelectSupplier(s.code)}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td style={{ padding: "6px 10px", fontWeight: 500 }}>{s.code}</td>
@@ -1407,9 +1408,9 @@ export default function MisaDebtReconciliationReport({
                         <option value="20">20</option>
                       </select>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
                         <span style={{ fontWeight: 600, color: "#0075c0" }}>1</span>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
                       </div>
                     </div>
                   </div>
@@ -1433,7 +1434,7 @@ export default function MisaDebtReconciliationReport({
                       type="checkbox"
                       checked={draftHideZeroEnding}
                       onChange={(e) => setDraftHideZeroEnding(e.target.checked)}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Không hiển thị nhà cung cấp có số dư cuối kỳ bằng 0</span>
                   </label>
@@ -1492,7 +1493,7 @@ export default function MisaDebtReconciliationReport({
                   style={{
                     height: 32,
                     padding: "0 18px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 12.5,

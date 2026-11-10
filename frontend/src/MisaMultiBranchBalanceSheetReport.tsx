@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
@@ -570,7 +571,7 @@ export default function MisaMultiBranchBalanceSheetReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -691,7 +692,7 @@ export default function MisaMultiBranchBalanceSheetReport({
             cursor: "pointer",
           }}
           title="Xuất khẩu Excel"
-          onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+          onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
         >
           <Download size={15} />
           <ChevronDown size={13} />
@@ -1252,7 +1253,7 @@ export default function MisaMultiBranchBalanceSheetReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,
@@ -1367,7 +1368,7 @@ export default function MisaMultiBranchBalanceSheetReport({
                 </thead>
                 <tbody>
                   <tr>
-                    <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>
+                    <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px", textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>
                       {drilldownItem.code === "111" ? "111" : drilldownItem.code === "131" ? "131" : drilldownItem.code === "141" ? "156" : "331"}
                     </td>
                     <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px" }}>
@@ -1397,7 +1398,7 @@ export default function MisaMultiBranchBalanceSheetReport({
             >
               <button
                 type="button"
-                onClick={() => notify?.("Đã xuất khẩu chứng từ ra Excel.")}
+                onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất khẩu chứng từ"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                 style={{
                   height: 30,
                   padding: "0 14px",
@@ -1416,7 +1417,7 @@ export default function MisaMultiBranchBalanceSheetReport({
                 style={{
                   height: 30,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   fontSize: 12.5,
@@ -1497,7 +1498,7 @@ export default function MisaMultiBranchBalanceSheetReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,

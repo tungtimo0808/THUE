@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Pin,
   X,
   HelpCircle,
   ChevronDown,
@@ -296,7 +297,7 @@ export function SaleInvoiceModal({
         alignItems: "center",
         justifyContent: "center",
         zIndex: 1050,
-        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "Roboto, Arial, sans-serif",
       }}
     >
       <div
@@ -428,7 +429,7 @@ export function SaleInvoiceModal({
                   color: "#1e293b",
                 }}
               />
-              <Search size={13} style={{ color: "#94a3b8" }} />
+              <Search size={13} style={{ color: "#64748b" }} />
               <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
             </div>
           </div>
@@ -441,7 +442,7 @@ export function SaleInvoiceModal({
               style={{
                 background: "none",
                 border: "none",
-                color: "#00b06b",
+                color: "var(--brand)",
                 fontSize: 13,
                 fontWeight: 500,
                 cursor: "pointer",
@@ -451,7 +452,7 @@ export function SaleInvoiceModal({
                 padding: "4px 6px",
               }}
             >
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={13} />
             </button>
@@ -561,7 +562,7 @@ export function SaleInvoiceModal({
                           if (onOpenCustomerModal) onOpenCustomerModal();
                           else notify("Thêm nhanh khách hàng mới");
                         }}
-                        style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                        style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                       >
                         <Plus size={13} />
                       </button>
@@ -647,7 +648,7 @@ export function SaleInvoiceModal({
                       onChange={(e) => setTaxCode(e.target.value)}
                       style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12.5 }}
                     />
-                    <Globe size={13} style={{ color: "#94a3b8", cursor: "pointer", flexShrink: 0 }} />
+                    <Globe size={13} style={{ color: "#64748b", cursor: "pointer", flexShrink: 0 }} />
                   </div>
                 </div>
 
@@ -693,7 +694,7 @@ export function SaleInvoiceModal({
                       onChange={(e) => setIdCardNumber(e.target.value)}
                       style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12.5 }}
                     />
-                    <Search size={13} style={{ color: "#94a3b8", cursor: "pointer", flexShrink: 0 }} />
+                    <Search size={13} style={{ color: "#64748b", cursor: "pointer", flexShrink: 0 }} />
                   </div>
                 </div>
 
@@ -786,7 +787,7 @@ export function SaleInvoiceModal({
                 <div>
                   <label style={{ fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 4, marginBottom: 3, fontWeight: 500 }}>
                     <span>Người mua hàng</span>
-                    <Info size={12} style={{ color: "#0284c7" }} />
+                    <Info size={12} style={{ color: "var(--brand)" }} />
                   </label>
                   <input
                     type="text"
@@ -828,7 +829,7 @@ export function SaleInvoiceModal({
                       onChange={(e) => setBirthDate(e.target.value)}
                       style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 11.5 }}
                     />
-                    <Calendar size={12} style={{ color: "#94a3b8", flexShrink: 0 }} />
+                    <Calendar size={12} style={{ color: "#64748b", flexShrink: 0 }} />
                   </div>
                 </div>
 
@@ -921,7 +922,7 @@ export function SaleInvoiceModal({
                     <button
                       type="button"
                       onClick={() => notify("Thêm nhân viên bán hàng")}
-                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                      style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <Plus size={13} />
                     </button>
@@ -1000,7 +1001,7 @@ export function SaleInvoiceModal({
 
               {/* Row 6: Tham chiếu & Đã hạch toán */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 2 }}>
-                <div style={{ fontSize: 12, color: "#00a862", cursor: "pointer", fontWeight: 500 }}>
+                <div style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}>
                   <span>Tham chiếu </span>
                   <span>...</span>
                 </div>
@@ -1020,7 +1021,7 @@ export function SaleInvoiceModal({
                     type="checkbox"
                     checked={isAccounted}
                     onChange={(e) => setIsAccounted(e.target.checked)}
-                    style={{ accentColor: "#00b06b", width: 14, height: 14, cursor: "pointer" }}
+                    style={{ accentColor: "var(--brand)", width: 14, height: 14, cursor: "pointer" }}
                   />
                   <span>Đã hạch toán</span>
                 </label>
@@ -1120,7 +1121,7 @@ export function SaleInvoiceModal({
               <div>
                 <label style={{ fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 4, marginBottom: 3, fontWeight: 500 }}>
                   <span>Ngày HĐ</span>
-                  <Info size={12} style={{ color: "#0284c7" }} />
+                  <Info size={12} style={{ color: "var(--brand)" }} />
                 </label>
                 <div
                   style={{
@@ -1140,7 +1141,7 @@ export function SaleInvoiceModal({
                     onChange={(e) => setInvoiceDate(e.target.value)}
                     style={{ border: "none", outline: "none", width: "100%", fontSize: 12 }}
                   />
-                  <Calendar size={12} style={{ color: "#94a3b8" }} />
+                  <Calendar size={12} style={{ color: "#64748b" }} />
                 </div>
               </div>
             </div>
@@ -1165,8 +1166,8 @@ export function SaleInvoiceModal({
             <div
               style={{
                 padding: "8px 4px",
-                borderBottom: "2px solid #00b06b",
-                color: "#00b06b",
+                borderBottom: "2px solid var(--brand)",
+                color: "var(--brand)",
                 fontWeight: 600,
                 fontSize: 13,
                 cursor: "pointer",
@@ -1208,10 +1209,10 @@ export function SaleInvoiceModal({
           <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto", background: "#ffffff" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
               <thead>
-                <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid #00a862", color: "#065f46", height: 34, fontWeight: 600 }}>
+                <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid var(--brand)", color: "#065f46", height: 34, fontWeight: 600 }}>
                   <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>#</th>
                   <th style={{ width: 130, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
-                    📌 Mã hàng
+                    <Pin size={14} className="ui-inline-icon" aria-hidden="true" /> Mã hàng
                   </th>
                   <th style={{ minWidth: 200, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
                     Tên hàng
@@ -1225,7 +1226,7 @@ export function SaleInvoiceModal({
                   )}
 
                   <th style={{ width: 70, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
-                    ĐVT <FileText size={12} style={{ verticalAlign: "middle", color: "#00b06b", marginLeft: 2 }} />
+                    ĐVT <FileText size={12} style={{ verticalAlign: "middle", color: "var(--brand)", marginLeft: 2 }} />
                   </th>
                   <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
                     Số lượng
@@ -1288,7 +1289,7 @@ export function SaleInvoiceModal({
                           type="checkbox"
                           checked={row.isTradeDiscount}
                           onChange={(e) => handleItemChange(idx, "isTradeDiscount", e.target.checked)}
-                          style={{ accentColor: "#00b06b", width: 14, height: 14, cursor: "pointer" }}
+                          style={{ accentColor: "var(--brand)", width: 14, height: 14, cursor: "pointer" }}
                         />
                       </td>
                     )}
@@ -1437,7 +1438,7 @@ export function SaleInvoiceModal({
                     color: "#1e293b",
                   }}
                 >
-                  <Plus size={14} style={{ color: "#00b06b" }} />
+                  <Plus size={14} style={{ color: "var(--brand)" }} />
                   <span>Thêm dòng</span>
                 </button>
 
@@ -1585,7 +1586,7 @@ export function SaleInvoiceModal({
                         onChange={(e) => setDeliveredDate(e.target.value)}
                         style={{ border: "none", outline: "none", width: "100%", fontSize: 12 }}
                       />
-                      <Calendar size={12} style={{ color: "#94a3b8" }} />
+                      <Calendar size={12} style={{ color: "#64748b" }} />
                     </div>
                   </div>
                 </div>
@@ -1676,7 +1677,7 @@ export function SaleInvoiceModal({
                           onChange={(e) => setContractDate(e.target.value)}
                           style={{ border: "none", outline: "none", width: "100%", fontSize: 12 }}
                         />
-                        <Calendar size={12} style={{ color: "#94a3b8" }} />
+                        <Calendar size={12} style={{ color: "#64748b" }} />
                       </div>
                     </div>
                   </div>
@@ -1690,7 +1691,7 @@ export function SaleInvoiceModal({
                         type="checkbox"
                         checked={isReplacementInvoice}
                         onChange={(e) => setIsReplacementInvoice(e.target.checked)}
-                        style={{ accentColor: "#00b06b", width: 14, height: 14, cursor: "pointer" }}
+                        style={{ accentColor: "var(--brand)", width: 14, height: 14, cursor: "pointer" }}
                       />
                       <span>Là hóa đơn thay thế</span>
                     </label>
@@ -1850,7 +1851,7 @@ export function SaleInvoiceModal({
               style={{
                 height: 30,
                 padding: "0 14px",
-                background: "#00b06b",
+                background: "var(--brand)",
                 border: "none",
                 borderTopLeftRadius: 4,
                 borderBottomLeftRadius: 4,
@@ -1868,7 +1869,7 @@ export function SaleInvoiceModal({
               style={{
                 height: 30,
                 padding: "0 6px",
-                background: "#00b06b",
+                background: "var(--brand)",
                 border: "none",
                 borderLeft: "1px solid rgba(255,255,255,0.3)",
                 borderTopRightRadius: 4,

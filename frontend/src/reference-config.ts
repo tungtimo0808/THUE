@@ -435,7 +435,7 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
   ],
 };
 
-export const referenceTabHierarchy: Record<string, ReferenceTabNode[]> = {
+const moduleTabHierarchy: Record<string, ReferenceTabNode[]> = {
   ...Object.fromEntries(
     Object.entries(previousReferenceTabs).map(([moduleId, tabs]) => [
       moduleId,
@@ -444,6 +444,26 @@ export const referenceTabHierarchy: Record<string, ReferenceTabNode[]> = {
   ),
   ...auditedTabs,
 };
+
+// Open each module at its working list; keep process guides and charts as secondary tabs.
+export const moduleStartTabs: Record<string, string> = {
+  cash: "transactions", bank: "transactions", purchases: "transactions", sales: "transactions",
+  inventory: "receipts", tools: "register", assets: "register", payroll: "attendance",
+  ledger: "transactions", cost: "continuous-simple", budget: "planning", insurance: "declarations",
+};
+
+export const referenceTabHierarchy: Record<string, ReferenceTabNode[]> = Object.fromEntries(
+  Object.entries(moduleTabHierarchy).map(([moduleId, tabs]) => {
+    const start = moduleStartTabs[moduleId];
+    if (!start) return [moduleId, tabs];
+    const secondary = new Set(["process", "chart", "charts"]);
+    return [moduleId, [
+      ...tabs.filter((item) => item.id === start),
+      ...tabs.filter((item) => item.id !== start && !secondary.has(item.id)),
+      ...tabs.filter((item) => secondary.has(item.id)),
+    ]];
+  }),
+);
 
 export const referenceTabs: Record<string, [string, string][]> =
   Object.fromEntries(

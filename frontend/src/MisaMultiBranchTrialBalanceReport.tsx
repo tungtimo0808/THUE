@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -321,7 +322,7 @@ export default function MisaMultiBranchTrialBalanceReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -379,7 +380,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                 left: 10,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -496,7 +497,7 @@ export default function MisaMultiBranchTrialBalanceReport({
               fontSize: 12.5,
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã xuất khẩu báo cáo ra Excel thành công.")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất khẩu báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <Download size={14} />
             <ChevronDown size={12} />
@@ -802,7 +803,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -817,7 +818,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -831,10 +832,10 @@ export default function MisaMultiBranchTrialBalanceReport({
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  border: "1px solid #00a862",
+                  border: "1px solid var(--brand)",
                   borderRadius: 4,
                   background: "#e6f7ef",
-                  color: "#00a862",
+                  color: "var(--brand)",
                   fontWeight: 700,
                   fontSize: 12,
                 }}
@@ -850,7 +851,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -865,7 +866,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -987,7 +988,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                     width: "100%",
                     height: 34,
                     padding: "0 10px",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     background: "#ffffff",
                     fontSize: 13,
@@ -1098,7 +1099,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                     type="checkbox"
                     checked={draftShowTwoSideBalance}
                     onChange={(e) => setDraftShowTwoSideBalance(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Hiển thị số dư hai bên</span>
                 </label>
@@ -1116,7 +1117,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                       value="dataStart"
                       checked={draftAccumSource === "dataStart"}
                       onChange={() => setDraftAccumSource("dataStart")}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Ngày bắt đầu dữ liệu</span>
                   </label>
@@ -1127,7 +1128,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                       value="fiscalStart"
                       checked={draftAccumSource === "fiscalStart"}
                       onChange={() => setDraftAccumSource("fiscalStart")}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Ngày bắt đầu năm tài chính của kỳ báo cáo</span>
                   </label>
@@ -1187,7 +1188,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                   style={{
                     height: 34,
                     padding: "0 22px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     color: "#ffffff",
@@ -1253,7 +1254,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,
@@ -1314,7 +1315,7 @@ export default function MisaMultiBranchTrialBalanceReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,

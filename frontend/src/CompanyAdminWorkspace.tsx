@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
+  MapPin,
+  UserRound,
   Building2,
   Users,
   ShieldCheck,
@@ -310,8 +312,8 @@ const REGIME_ROLE_PRESETS = [
     badge: "8 Vai trò",
     activeCount: 8,
     count: 8,
-    color: "#0284c7",
-    badgeColor: "#0284c7",
+    color: "var(--brand)",
+    badgeColor: "var(--brand)",
     badgeBg: "#f0f9ff",
     desc: "Phù hợp doanh nghiệp nhỏ và vừa: tách Kế toán trưởng, KT Tổng hợp, KT Thuế, KT Bán hàng, Thủ quỹ, Thủ kho.",
   },
@@ -951,7 +953,7 @@ export default function CompanyAdminWorkspace() {
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     const t = searchParams.get("tab");
     if (t === "overview" || t === "personnel" || t === "roles" || t === "config") return t;
-    return "overview";
+    return "personnel";
   });
 
   useEffect(() => {
@@ -1805,7 +1807,7 @@ export default function CompanyAdminWorkspace() {
   if (restoring) {
     return (
       <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", zIndex: 9999 }}>
-        <div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTopColor: "#00b06b", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
+        <div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTopColor: "var(--brand)", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
         <span style={{ marginTop: 12, fontSize: 13, color: "#64748b", fontWeight: 500 }}>Đang tải không gian quản trị...</span>
         <style>{`@keyframes sv-spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -1966,13 +1968,13 @@ export default function CompanyAdminWorkspace() {
           className={`admin-nav-tab ${activeTab === "overview" ? "active" : ""}`}
           onClick={() => setActiveTab("overview")}
         >
-          <Layers size={16} /> 1. Tổng quan Doanh nghiệp
+          <Layers size={16} /> Hồ sơ doanh nghiệp
         </button>
         <button
           className={`admin-nav-tab ${activeTab === "personnel" ? "active" : ""}`}
           onClick={() => setActiveTab("personnel")}
         >
-          <Users size={16} /> 2. Nhân sự & Phân quyền ({members.length})
+          <Users size={16} /> Nhân sự & Phân quyền ({members.length})
           {pendingJoinRequestsCount > 0 && (
             <span
               style={{
@@ -1993,13 +1995,13 @@ export default function CompanyAdminWorkspace() {
           className={`admin-nav-tab ${activeTab === "roles" ? "active" : ""}`}
           onClick={() => setActiveTab("roles")}
         >
-          <ShieldCheck size={16} /> 3. Vai trò & Ma trận phân quyền ({activeRoles.length}/{roles.length})
+          <ShieldCheck size={16} /> Vai trò & Ma trận phân quyền ({activeRoles.length}/{roles.length})
         </button>
         <button
           className={`admin-nav-tab ${activeTab === "config" ? "active" : ""}`}
           onClick={() => setActiveTab("config")}
         >
-          <Settings size={16} /> 4. Cấu hình Hệ thống & Kế toán
+          <Settings size={16} /> Cấu hình Hệ thống & Kế toán
         </button>
       </nav>
 
@@ -2009,44 +2011,7 @@ export default function CompanyAdminWorkspace() {
         {/* ================= TAB 1: OVERVIEW ================= */}
         {activeTab === "overview" && (
           <div>
-            <div className="admin-kpi-grid">
-              <div className="admin-kpi-card">
-                <div className="admin-kpi-icon admin-kpi-icon-blue">
-                  <Users size={22} />
-                </div>
-                <div className="admin-kpi-data">
-                  <h4>Tổng nhân sự</h4>
-                  <p>{Math.max(members.length, employees.length)}</p>
-                </div>
-              </div>
-              <div className="admin-kpi-card">
-                <div className="admin-kpi-icon admin-kpi-icon-purple">
-                  <ShieldCheck size={22} />
-                </div>
-                <div className="admin-kpi-data">
-                  <h4>Vai trò đang bật</h4>
-                  <p>{activeRoles.length} <span style={{ fontSize: "13.6px", fontWeight: 500, color: "#64748b" }}>/ {roles.length} chuẩn</span></p>
-                </div>
-              </div>
-              <div className="admin-kpi-card">
-                <div className="admin-kpi-icon admin-kpi-icon-green">
-                  <Briefcase size={22} />
-                </div>
-                <div className="admin-kpi-data">
-                  <h4>Phòng ban / Đơn vị</h4>
-                  <p>{departments.length}</p>
-                </div>
-              </div>
-              <div className="admin-kpi-card">
-                <div className="admin-kpi-icon admin-kpi-icon-amber">
-                  <Calendar size={22} />
-                </div>
-                <div className="admin-kpi-data">
-                  <h4>Kỳ kế toán</h4>
-                  <p>{periods.length ? `${periods.length} kỳ` : "Đang mở"}</p>
-                </div>
-              </div>
-            </div>
+
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", alignItems: "stretch" }}>
               <div className="admin-card" style={{ height: "100%", marginBottom: 0, display: "flex", flexDirection: "column" }}>
@@ -2211,7 +2176,7 @@ export default function CompanyAdminWorkspace() {
                       Quản trị viên Doanh nghiệp (Chủ tài khoản):
                     </span>
                     <span className="admin-badge admin-badge-gold">
-                      👑 {members.find(m => m.role_assignments?.some(r => isAdminRoleCode(r.role_code)))?.email || companyInfo?.legal_representative || "Admin Doanh nghiệp"}
+                      <ShieldCheck size={14} className="ui-inline-icon" aria-hidden="true" /> {members.find(m => m.role_assignments?.some(r => isAdminRoleCode(r.role_code)))?.email || companyInfo?.legal_representative || "Admin Doanh nghiệp"}
                     </span>
                   </div>
                   <p style={{ margin: "0.2rem 0 0", fontSize: "13.2px", color: "#475569" }}>
@@ -2237,45 +2202,7 @@ export default function CompanyAdminWorkspace() {
               </div>
             </div>
 
-            {/* Quick KPI stats for personnel */}
-            <div className="admin-kpi-grid" style={{ marginBottom: "1.25rem" }}>
-              <div className="admin-kpi-card">
-                <div className="admin-kpi-icon admin-kpi-icon-blue">
-                  <Users size={20} />
-                </div>
-                <div className="admin-kpi-data">
-                  <h4>Thành viên tài khoản</h4>
-                  <p>{members.length}</p>
-                </div>
-              </div>
-              <div className="admin-kpi-card">
-                <div className="admin-kpi-icon admin-kpi-icon-amber">
-                  <Sparkles size={20} />
-                </div>
-                <div className="admin-kpi-data">
-                  <h4>Admin Doanh nghiệp</h4>
-                  <p>{adminMembersCount}</p>
-                </div>
-              </div>
-              <div className="admin-kpi-card">
-                <div className="admin-kpi-icon admin-kpi-icon-purple">
-                  <UserCheck size={20} />
-                </div>
-                <div className="admin-kpi-data">
-                  <h4>Nhân sự nghiệp vụ</h4>
-                  <p>{Math.max(0, members.length - adminMembersCount)}</p>
-                </div>
-              </div>
-              <div className="admin-kpi-card">
-                <div className="admin-kpi-icon admin-kpi-icon-green">
-                  <ShieldCheck size={20} />
-                </div>
-                <div className="admin-kpi-data">
-                  <h4>Bộ vai trò đang bật</h4>
-                  <p>{activeRoles.length} <span style={{ fontSize: "13.1px", fontWeight: 500, color: "#64748b" }}>/ {roles.length} chuẩn</span></p>
-                </div>
-              </div>
-            </div>
+
 
             {/* BẢNG CHÍNH: Danh sách Nhân sự & Phân bổ Vai trò */}
             <div className="admin-card">
@@ -2300,8 +2227,8 @@ export default function CompanyAdminWorkspace() {
                       searchable={false}
                       options={[
                         { value: "all", label: "Tất cả phân cấp" },
-                        { value: "admin", label: "👑 Chỉ Admin Doanh nghiệp" },
-                        { value: "staff", label: "👤 Chỉ Nhân sự nghiệp vụ" },
+                        { value: "admin", label: "Chỉ Admin Doanh nghiệp" },
+                        { value: "staff", label: "Chỉ Nhân sự nghiệp vụ" },
                       ]}
                     />
                     <MisaDropdownSelect
@@ -2383,7 +2310,7 @@ export default function CompanyAdminWorkspace() {
                                     </strong>
                                     {isCompanyAdmin && <Sparkles size={13} color="#eab308" />}
                                   </div>
-                                  <div style={{ fontSize: "12.8px", color: "#64748b", fontFamily: "monospace" }}>
+                                  <div style={{ fontSize: "12.8px", color: "#64748b", fontFamily: "Roboto, Arial, sans-serif" }}>
                                     {m.email}
                                   </div>
                                   {m.phone && (
@@ -2397,11 +2324,11 @@ export default function CompanyAdminWorkspace() {
                             <td>
                               {isCompanyAdmin ? (
                                 <span className="admin-badge admin-badge-gold">
-                                  👑 ADMIN DOANH NGHIỆP
+                                  <ShieldCheck size={14} className="ui-inline-icon" aria-hidden="true" /> ADMIN DOANH NGHIỆP
                                 </span>
                               ) : (
                                 <span className="admin-badge admin-badge-blue">
-                                  👤 NHÂN SỰ DOANH NGHIỆP
+                                  <UserRound size={14} className="ui-inline-icon" aria-hidden="true" /> NHÂN SỰ DOANH NGHIỆP
                                 </span>
                               )}
                             </td>
@@ -2466,7 +2393,7 @@ export default function CompanyAdminWorkspace() {
                                         whiteSpace: "nowrap",
                                       }}
                                     >
-                                      🏢 Toàn doanh nghiệp
+                                      <Building2 size={14} className="ui-inline-icon" aria-hidden="true" /> Toàn doanh nghiệp
                                     </span>
                                   ) : (
                                     <span
@@ -2484,7 +2411,7 @@ export default function CompanyAdminWorkspace() {
                                         whiteSpace: "nowrap",
                                       }}
                                     >
-                                      📍 Chỉ xem: {m.employee_branch_name || m.role_assignments?.[0]?.data_scope_set_name || "Chi nhánh riêng"}
+                                      <MapPin size={14} className="ui-inline-icon" aria-hidden="true" /> Chỉ xem: {m.employee_branch_name || m.role_assignments?.[0]?.data_scope_set_name || "Chi nhánh riêng"}
                                     </span>
                                   )}
                                 </div>
@@ -3466,7 +3393,7 @@ export default function CompanyAdminWorkspace() {
                               checked={isEnabled}
                               disabled={mod.core}
                               onChange={() => toggleErpModule(mod.id, mod.core)}
-                              style={{ width: 15, height: 15, accentColor: "#00a862", cursor: mod.core ? "not-allowed" : "pointer" }}
+                              style={{ width: 15, height: 15, accentColor: "var(--brand)", cursor: mod.core ? "not-allowed" : "pointer" }}
                             />
                             <strong style={{ color: isEnabled ? "#0f172a" : "#64748b" }}>{mod.name}</strong>
                           </label>
@@ -3673,10 +3600,10 @@ export default function CompanyAdminWorkspace() {
                     onChange={(val) => setEmployeeFormData({ ...employeeFormData, branch_id: val })}
                     searchPlaceholder="Tìm chi nhánh..."
                     options={[
-                      { value: "all", label: "🏢 Toàn doanh nghiệp (Xem tất cả chi nhánh)" },
+                      { value: "all", label: "Toàn doanh nghiệp (Xem tất cả chi nhánh)" },
                       ...branches.map((b) => ({
                         value: b.id,
-                        label: `📍 ${b.code} - ${b.name}${b.is_head_office ? " (Trụ sở chính)" : ""} — Chỉ xem dữ liệu chi nhánh này`,
+                        label: `${b.code} - ${b.name}${b.is_head_office ? " (Trụ sở chính)" : ""} — Chỉ xem dữ liệu chi nhánh này`,
                       })),
                     ]}
                   />
@@ -3934,10 +3861,10 @@ export default function CompanyAdminWorkspace() {
                     onChange={(val) => setTargetBranchScope(val)}
                     searchPlaceholder="Tìm chi nhánh..."
                     options={[
-                      { value: "all", label: "🏢 Toàn doanh nghiệp (Tất cả chi nhánh)" },
+                      { value: "all", label: "Toàn doanh nghiệp (Tất cả chi nhánh)" },
                       ...branches.map((b) => ({
                         value: b.id,
-                        label: `📍 Chỉ Chi nhánh: ${b.code} - ${b.name}${b.is_head_office ? " (Trụ sở chính)" : ""}`,
+                        label: `Chỉ Chi nhánh: ${b.code} - ${b.name}${b.is_head_office ? " (Trụ sở chính)" : ""}`,
                       })),
                     ]}
                   />
@@ -4006,7 +3933,7 @@ export default function CompanyAdminWorkspace() {
 
         const getModuleIcon = (mod: string) => {
           if (mod.includes("tiền mặt")) return <Wallet size={16} color="#16a34a" />;
-          if (mod.includes("ngân hàng")) return <Landmark size={16} color="#0284c7" />;
+          if (mod.includes("ngân hàng")) return <Landmark size={16} color="var(--brand)" />;
           if (mod.includes("Bán hàng")) return <ShoppingBag size={16} color="#2563eb" />;
           if (mod.includes("Mua hàng")) return <ShoppingCart size={16} color="#d97706" />;
           if (mod.includes("Kho")) return <Package size={16} color="#7c3aed" />;
@@ -4205,9 +4132,9 @@ export default function CompanyAdminWorkspace() {
                         fontSize: "12px",
                         fontWeight: 600,
                         cursor: "pointer",
-                        border: selectedModalModule === "ALL" ? "1px solid #0284c7" : "1px solid #e2e8f0",
+                        border: selectedModalModule === "ALL" ? "1px solid var(--brand)" : "1px solid #e2e8f0",
                         background: selectedModalModule === "ALL" ? "#eff6ff" : "#ffffff",
-                        color: selectedModalModule === "ALL" ? "#0284c7" : "#64748b",
+                        color: selectedModalModule === "ALL" ? "var(--brand)" : "#64748b",
                         whiteSpace: "nowrap",
                         flexShrink: 0,
                         transition: "all 0.15s ease",
@@ -4231,9 +4158,9 @@ export default function CompanyAdminWorkspace() {
                             fontSize: "12px",
                             fontWeight: 600,
                             cursor: "pointer",
-                            border: selectedModalModule === modName ? "1px solid #0284c7" : "1px solid #e2e8f0",
+                            border: selectedModalModule === modName ? "1px solid var(--brand)" : "1px solid #e2e8f0",
                             background: selectedModalModule === modName ? "#eff6ff" : "#ffffff",
-                            color: selectedModalModule === modName ? "#0284c7" : "#64748b",
+                            color: selectedModalModule === modName ? "var(--brand)" : "#64748b",
                             whiteSpace: "nowrap",
                             flexShrink: 0,
                             transition: "all 0.15s ease",

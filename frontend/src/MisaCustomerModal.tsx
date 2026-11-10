@@ -294,7 +294,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                   alignItems: "center",
                   gap: 6,
                   cursor: "pointer",
-                  color: customerType === "organization" ? "#00a862" : "#334155",
+                  color: customerType === "organization" ? "var(--brand)" : "#334155",
                   fontWeight: customerType === "organization" ? 600 : 400,
                 }}
               >
@@ -303,7 +303,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                   name="customerType"
                   checked={customerType === "organization"}
                   onChange={() => setCustomerType("organization")}
-                  style={{ accentColor: "#00a862", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Tổ chức</span>
               </label>
@@ -314,7 +314,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                   alignItems: "center",
                   gap: 6,
                   cursor: "pointer",
-                  color: customerType === "individual" ? "#00a862" : "#334155",
+                  color: customerType === "individual" ? "var(--brand)" : "#334155",
                   fontWeight: customerType === "individual" ? 600 : 400,
                 }}
               >
@@ -323,7 +323,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                   name="customerType"
                   checked={customerType === "individual"}
                   onChange={() => setCustomerType("individual")}
-                  style={{ accentColor: "#00a862", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Cá nhân</span>
               </label>
@@ -342,7 +342,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                   type="checkbox"
                   checked={isSupplier}
                   onChange={(e) => setIsSupplier(e.target.checked)}
-                  style={{ accentColor: "#00a862", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Là nhà cung cấp</span>
               </label>
@@ -441,7 +441,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                         background: "none",
                         border: "none",
                         cursor: "pointer",
-                        color: "#00a862",
+                        color: "var(--brand)",
                         padding: 0,
                         display: "grid",
                         placeItems: "center",
@@ -597,7 +597,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                         borderRadius: 4,
                         border: "1px solid #cbd5e1",
                         background: "#ffffff",
-                        color: "#00a862",
+                        color: "var(--brand)",
                         display: "grid",
                         placeItems: "center",
                         cursor: "pointer",
@@ -687,7 +687,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                           borderRadius: 4,
                           border: "1px solid #cbd5e1",
                           background: "#ffffff",
-                          color: "#00a862",
+                          color: "var(--brand)",
                           display: "grid",
                           placeItems: "center",
                           cursor: "pointer",
@@ -729,11 +729,11 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                         type="checkbox"
                         checked={isInternal}
                         onChange={(e) => setIsInternal(e.target.checked)}
-                        style={{ accentColor: "#00a862", cursor: "pointer" }}
+                        style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                       />
                       <span>Là Đối tượng nội bộ</span>
                     </label>
-                    <span title="Đối tượng nội bộ thuộc cùng công ty/tập đoàn" style={{ display: "inline-flex" }}><Info size={14} style={{ color: "#0284c7", cursor: "pointer" }}  /></span>
+                    <span title="Đối tượng nội bộ thuộc cùng công ty/tập đoàn" style={{ display: "inline-flex" }}><Info size={14} style={{ color: "var(--brand)", cursor: "pointer" }}  /></span>
                   </div>
                 </div>
               </div>
@@ -791,7 +791,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                         background: "none",
                         border: "none",
                         cursor: "pointer",
-                        color: "#00a862",
+                        color: "var(--brand)",
                         padding: 0,
                         display: "grid",
                         placeItems: "center",
@@ -830,7 +830,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                         background: "transparent",
                       }}
                     />
-                    <Calendar size={13} style={{ color: "#94a3b8" }} />
+                    <Calendar size={13} style={{ color: "#64748b" }} />
                   </div>
                 </div>
 
@@ -891,7 +891,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                         borderRadius: 4,
                         border: "1px solid #cbd5e1",
                         background: "#ffffff",
-                        color: "#00a862",
+                        color: "var(--brand)",
                         display: "grid",
                         placeItems: "center",
                         cursor: "pointer",
@@ -1003,7 +1003,7 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                         borderRadius: 4,
                         border: "1px solid #cbd5e1",
                         background: "#ffffff",
-                        color: "#00a862",
+                        color: "var(--brand)",
                         display: "grid",
                         placeItems: "center",
                         cursor: "pointer",
@@ -1091,11 +1091,11 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                       type="checkbox"
                       checked={isInternal}
                       onChange={(e) => setIsInternal(e.target.checked)}
-                      style={{ accentColor: "#00a862", cursor: "pointer" }}
+                      style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                     />
                     <span>Là Đối tượng nội bộ</span>
                   </label>
-                  <span title="Đối tượng nội bộ thuộc cùng công ty/tập đoàn" style={{ display: "inline-flex" }}><Info size={14} style={{ color: "#0284c7", cursor: "pointer" }}  /></span>
+                  <span title="Đối tượng nội bộ thuộc cùng công ty/tập đoàn" style={{ display: "inline-flex" }}><Info size={14} style={{ color: "var(--brand)", cursor: "pointer" }}  /></span>
                 </div>
               </div>
 
@@ -1151,8 +1151,8 @@ export const MisaCustomerModal: React.FC<MisaCustomerModalProps> = ({
                 style={{
                   background: "transparent",
                   border: "none",
-                  borderBottom: activeTab === t.id ? "2.5px solid #00a862" : "2.5px solid transparent",
-                  color: activeTab === t.id ? "#00a862" : "#475569",
+                  borderBottom: activeTab === t.id ? "2.5px solid var(--brand)" : "2.5px solid transparent",
+                  color: activeTab === t.id ? "var(--brand)" : "#475569",
                   fontWeight: activeTab === t.id ? 600 : 500,
                   fontSize: 13,
                   padding: "8px 2px",

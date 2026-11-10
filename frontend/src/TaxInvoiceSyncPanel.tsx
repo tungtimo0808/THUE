@@ -556,7 +556,7 @@ export default function TaxInvoiceSyncPanel({
               cursor: syncing || !tctConn.connected ? "not-allowed" : "pointer",
               fontWeight: 600,
               fontSize: 13,
-              background: tctConn.connected ? "#0284c7" : "#94a3b8",
+              background: tctConn.connected ? "var(--brand)" : "#94a3b8",
               color: "#fff",
               border: "none",
               boxShadow: tctConn.connected
@@ -1117,7 +1117,7 @@ export default function TaxInvoiceSyncPanel({
               gap: 8,
             }}
           >
-            <FileSpreadsheet size={18} color="#0284c7" />
+            <FileSpreadsheet size={18} color="var(--brand)" />
             Tùy chọn đồng bộ dữ liệu
           </h3>
           <div
@@ -1271,7 +1271,7 @@ export default function TaxInvoiceSyncPanel({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
-                background: tctConn.connected ? "#0284c7" : "#94a3b8",
+                background: tctConn.connected ? "var(--brand)" : "#94a3b8",
                 color: "#ffffff",
                 border: "none",
                 padding: "8px 18px",
@@ -1554,7 +1554,7 @@ export default function TaxInvoiceSyncPanel({
               gap: 8,
             }}
           >
-            <Clock size={18} color="#0284c7" />
+            <Clock size={18} color="var(--brand)" />
             Nhật ký truyền nhận & Đồng bộ với Cơ quan Thuế
           </h3>
           <span style={{ fontSize: 12.5, color: "#64748b" }}>

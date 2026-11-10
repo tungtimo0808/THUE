@@ -150,8 +150,8 @@ export default function LedgerAccountField({
           fontWeight: value ? 600 : 400,
           color: value ? '#0f172a' : '#94a3b8',
           background: position ? '#f8fafc' : undefined,
-          borderColor: position ? '#00b06b' : undefined,
-          boxShadow: position ? '0 0 0 1px #00b06b' : undefined,
+          borderColor: position ? 'var(--brand)' : undefined,
+          boxShadow: position ? '0 0 0 1px var(--brand)' : undefined,
         }}
       />
       <div
@@ -164,7 +164,7 @@ export default function LedgerAccountField({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: position ? '#00b06b' : '#94a3b8',
+          color: position ? 'var(--brand)' : '#94a3b8',
           pointerEvents: 'none',
         }}
       >
@@ -210,7 +210,7 @@ export default function LedgerAccountField({
               }}
             >
               <span>{label}</span>
-              <span style={{ fontSize: 9.5, fontWeight: 500, color: '#cbd5e1', textTransform: 'none' }}>
+              <span style={{ fontSize: 10, fontWeight: 500, color: '#64748b', textTransform: 'none' }}>
                 Hệ thống tài khoản
               </span>
             </div>
@@ -259,7 +259,7 @@ export default function LedgerAccountField({
                 }}
                 onFocus={(e) => {
                   e.target.style.background = '#ffffff';
-                  e.target.style.borderColor = '#0284c7';
+                  e.target.style.borderColor = 'var(--brand)';
                   e.target.style.boxShadow = '0 0 0 2px rgba(2, 132, 199, 0.1)';
                 }}
                 onBlur={(e) => {
@@ -329,7 +329,7 @@ export default function LedgerAccountField({
                       borderRadius: 5,
                       border: 'none',
                       background: isSelected ? '#f0f9ff' : isHighlighted ? '#f1f5f9' : 'transparent',
-                      color: isSelected ? '#0284c7' : isHighlighted ? '#0284c7' : '#334155',
+                      color: isSelected ? 'var(--brand)' : isHighlighted ? 'var(--brand)' : '#334155',
                       fontFamily: 'inherit',
                       fontSize: 12,
                       fontWeight: isSelected ? 600 : 500,
@@ -354,8 +354,8 @@ export default function LedgerAccountField({
                           fontWeight: 700,
                           fontSize: 11.5,
                           minWidth: 40,
-                          color: isSelected || isHighlighted ? '#0284c7' : '#0f172a',
-                          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                          color: isSelected || isHighlighted ? 'var(--brand)' : '#0f172a',
+                          fontFamily: "Roboto, Arial, sans-serif",
                         }}
                       >
                         {account.code}
@@ -367,7 +367,7 @@ export default function LedgerAccountField({
                           textOverflow: 'ellipsis',
                           flex: 1,
                           fontSize: 12,
-                          color: isSelected ? '#0284c7' : isHighlighted ? '#0284c7' : '#334155',
+                          color: isSelected ? 'var(--brand)' : isHighlighted ? 'var(--brand)' : '#334155',
                         }}
                         title={account.name}
                       >
@@ -380,7 +380,7 @@ export default function LedgerAccountField({
                         size={13}
                         className="ref-cluster-check"
                         style={{
-                          color: '#0284c7',
+                          color: 'var(--brand)',
                           flexShrink: 0,
                         }}
                       />
@@ -413,11 +413,11 @@ export default function LedgerAccountField({
                 borderTop: '1px solid #f1f5f9',
                 marginTop: 3,
                 fontSize: 10.5,
-                color: '#94a3b8',
+                color: '#64748b',
               }}
             >
               <span>{options.length} tài khoản</span>
-              <span style={{ fontSize: 9.5, color: '#cbd5e1' }}>↑ ↓ Enter để chọn</span>
+              <span style={{ fontSize: 10, color: '#64748b' }}>↑ ↓ Enter để chọn</span>
             </div>
           </div>,
           document.body

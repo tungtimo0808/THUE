@@ -39,6 +39,9 @@ from .models import (
     VerificationChallenge, WorkItem, WorkItemHistory,
 )
 
+# A company still finishing its initial setup must be enterable so its admin can complete it.
+WORKABLE_COMPANY_STATUSES = (CompanyStatus.ACTIVE, CompanyStatus.PENDING_SETUP)
+
 
 def iam_user(request):
     if not hasattr(request.user, "iam_account"):
@@ -968,7 +971,7 @@ def available_scopes(account):
     from iam.permissions import is_company_admin_member
     result = []
     memberships = CompanyMembership.objects.filter(
-        user=account, membership_status=ActiveStatus.ACTIVE, company__status="ACTIVE"
+        user=account, membership_status=ActiveStatus.ACTIVE, company__status__in=WORKABLE_COMPANY_STATUSES
     ).select_related("company")
     for membership in memberships:
         assignments = list(effective_assignments(account, membership.company))
@@ -1012,7 +1015,7 @@ def available_scopes(account):
 @transaction.atomic
 def switch_scope(account, company, branch=None, all_branches=False, request=None):
     require_membership(account, company)
-    if company.status != "ACTIVE":
+    if company.status not in WORKABLE_COMPANY_STATUSES:
         raise ValidationError("Doanh nghiệp không còn hoạt động.")
     if getattr(account.auth_user, "is_superuser", False):
         preference, _ = UserPreference.objects.select_for_update().get_or_create(user=account)

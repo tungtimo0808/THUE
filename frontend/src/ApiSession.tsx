@@ -24,6 +24,7 @@ export interface ApiSessionContextType {
   restoring: boolean;
   token: string;
   companyId: string;
+  company: Company | null;
   companies: Company[];
   session: ApiSessionData | null;
   signIn: (identifier: string, password: string) => Promise<void>;
@@ -300,6 +301,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
       restoring,
       token,
       companyId,
+      company: session?.company || null,
       companies,
       session,
       signIn,
@@ -334,6 +336,7 @@ export function useApiSession(): ApiSessionContextType {
     let fallbackToken = "";
     let fallbackCompanyId = "";
     let fallbackCompanies: Company[] = [];
+    let fallbackCompany: Company | null = null;
     try {
       const raw = localStorage.getItem("erp_api_session");
       if (raw) {
@@ -341,6 +344,7 @@ export function useApiSession(): ApiSessionContextType {
         fallbackToken = parsed.token || parsed.access || "";
         fallbackCompanyId = parsed.companyId || "";
         fallbackCompanies = parsed.companies || [];
+        fallbackCompany = parsed.company || fallbackCompanies.find((c: any) => c.id === fallbackCompanyId) || (fallbackCompanies.length > 0 ? fallbackCompanies[0] : null);
       }
     } catch {}
 
@@ -348,6 +352,7 @@ export function useApiSession(): ApiSessionContextType {
       restoring: false,
       token: fallbackToken,
       companyId: fallbackCompanyId,
+      company: fallbackCompany,
       companies: fallbackCompanies,
       session: fallbackToken
         ? {

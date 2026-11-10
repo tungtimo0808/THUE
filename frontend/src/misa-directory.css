@@ -81,13 +81,13 @@
 }
 .md-groups section > button:hover {
   text-decoration: underline;
-  color: #009b60;
+  color: var(--brand);
 }
 .md-list > header > button:last-child {
   margin-left: auto;
-  background: #009b60;
+  background: var(--brand);
   color: white;
-  border-color: #009b60;
+  border-color: var(--brand);
 }
 .md-toolbar {
   display: flex;
@@ -150,12 +150,12 @@
 .md-table button {
   border: 0;
   padding: 0;
-  color: #008f5d;
+  color: var(--brand-hover);
 }
 .md-list input[type="checkbox"] {
   width: 15px;
   height: 15px;
-  accent-color: #009b60;
+  accent-color: var(--brand);
 }
 .md-empty {
   text-align: center;
@@ -282,8 +282,8 @@
   padding: 12px 8px;
 }
 .md-editor nav .active {
-  color: #009b60;
-  border-bottom-color: #009b60;
+  color: var(--brand);
+  border-bottom-color: var(--brand);
 }
 .md-extra-label {
   display: flex;
@@ -313,9 +313,9 @@
   box-sizing: border-box;
 }
 .md-editor .md-primary {
-  background: #009b60;
+  background: var(--brand);
   color: white;
-  border-color: #009b60;
+  border-color: var(--brand);
 }
 .md-error {
   color: #c42b22;
@@ -390,7 +390,7 @@
   gap: 6px;
 }
 .md-radio-types input {
-  accent-color: #009b60;
+  accent-color: var(--brand);
 }
 
 /* Embedded quick creation keeps the originating voucher visible. */

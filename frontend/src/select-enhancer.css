@@ -22,7 +22,7 @@ select:not([multiple]):not([data-native-select]):hover:not(:disabled) {
 select:not([multiple]):not([data-native-select]):focus,
 select:not([multiple]):not([data-native-select]).sv-select-open {
   outline: none !important;
-  border-color: #00a862 !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 0 0 3px rgba(0, 168, 98, 0.12) !important;
 }
 

@@ -65,7 +65,7 @@
 .misa-opening-tile:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  border-color: #00a862;
+  border-color: var(--brand);
 }
 
 .misa-opening-tile-icon {
@@ -111,7 +111,7 @@
 
 .misa-opening-catalog-link {
   font-size: 12.5px;
-  color: #00a862;
+  color: var(--brand);
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -137,7 +137,7 @@
 }
 
 .misa-opening-info-link {
-  color: #0284c7;
+  color: var(--brand);
   text-decoration: none;
 }
 
@@ -149,7 +149,7 @@
   background: transparent;
   border: none;
   font-size: 12.5px;
-  color: #00a862;
+  color: var(--brand);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -209,7 +209,7 @@
 .misa-opening-btn-primary {
   height: 36px;
   padding: 0 24px;
-  background: #00a862;
+  background: var(--brand);
   color: #ffffff;
   border: none;
   border-radius: 4px;
@@ -221,7 +221,7 @@
 }
 
 .misa-opening-btn-primary:hover {
-  background: #009355;
+  background: var(--brand);
 }
 
 .misa-opening-btn-secondary {
@@ -284,8 +284,8 @@
 }
 
 .misa-opening-bottom-btn:hover {
-  border-color: #00a862;
-  color: #00a862;
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 /* Modals */
@@ -388,7 +388,7 @@
 }
 
 .misa-opening-input:focus {
-  border-color: #00a862;
+  border-color: var(--brand);
 }
 
 .misa-opening-select {
@@ -485,7 +485,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #00a862 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--brand) 0%, #059669 100%);
   color: #ffffff;
   border: none;
   padding: 8px 18px;

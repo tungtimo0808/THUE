@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import { useState, useEffect, Fragment } from "react";
 import { useMisaApiLists } from "./misa-api-lists";
 import { errorText } from "./misa-api-writes";
@@ -12,6 +13,7 @@ import { request } from "./live-api";
 import { useLocation } from "react-router-dom";
 import { MisaTaxReportModal } from "./MisaTaxReportModal";
 import {
+  Bot,
   Search,
   RotateCw,
   Printer,
@@ -221,7 +223,7 @@ export default function MisaTaxWorkspace({
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Building2 size={18} style={{ color: "#00a862" }} />
+                  <Building2 size={18} style={{ color: "var(--brand)" }} />
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
                     Thiết lập thông tin Cơ quan thuế quản lý
                   </h3>
@@ -283,7 +285,7 @@ export default function MisaTaxWorkspace({
                     );
                     if (saved) setShowTaxAuthorityModal(false);
                   }}
-                  style={{ height: 32, padding: "0 22px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                  style={{ height: 32, padding: "0 22px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                 >
                   Lưu thiết lập
                 </button>
@@ -362,7 +364,7 @@ export default function MisaTaxWorkspace({
                     disabled={!registrationsLoaded}
                     checked={selectAllDec}
                     onChange={(e) => handleToggleSelectAll(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer" }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16, cursor: "pointer" }}
                   />
                 </th>
                 <th style={{ textAlign: "left", padding: "8px 12px", fontWeight: 700, color: "#1e293b" }}>
@@ -407,7 +409,7 @@ export default function MisaTaxWorkspace({
                             disabled={!registrationsLoaded}
                             checked={item.checked}
                             onChange={() => handleToggleDeclaration(item.id)}
-                            style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer" }}
+                            style={{ accentColor: "var(--brand)", width: 16, height: 16, cursor: "pointer" }}
                           />
                         </td>
                         <td style={{ padding: "8px 12px", color: "#1e293b", fontWeight: item.checked ? 500 : 400 }}>
@@ -436,7 +438,7 @@ export default function MisaTaxWorkspace({
             style={{
               height: 36,
               padding: "0 32px",
-              background: "#00a862",
+              background: "var(--brand)",
               color: "#ffffff",
               border: "none",
               borderRadius: 4,
@@ -498,7 +500,7 @@ export default function MisaTaxWorkspace({
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: "#0284c7",
+                background: "var(--brand)",
                 display: "grid",
                 placeItems: "center",
                 color: "#ffffff",
@@ -634,7 +636,7 @@ export default function MisaTaxWorkspace({
               style={{
                 width: "100%",
                 height: 38,
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -673,45 +675,45 @@ export default function MisaTaxWorkspace({
               {/* Central Laptop (3D view) */}
               <g transform="translate(68, 20)">
                 {/* Screen frame */}
-                <polygon points="42,0 84,20 42,42 0,22" fill="#0284c7" />
+                <polygon points="42,0 84,20 42,42 0,22" fill="var(--brand)" />
                 <polygon points="42,2 80,20 42,39 4,21" fill="#38bdf8" />
                 {/* Stand / Keyboard base */}
-                <polygon points="0,22 42,42 84,20 42,3" fill="#0369a1" opacity="0.2" />
-                <polygon points="42,42 84,20 84,26 42,48 0,28 0,22" fill="#0284c7" />
+                <polygon points="0,22 42,42 84,20 42,3" fill="var(--brand-hover)" opacity="0.2" />
+                <polygon points="42,42 84,20 84,26 42,48 0,28 0,22" fill="var(--brand)" />
               </g>
 
               {/* Left Server Node */}
               <g transform="translate(18, 62)">
                 <ellipse cx="22" cy="10" rx="18" ry="8" fill="#7dd3fc" />
-                <path d="M4 10 L4 20 C4 24 12 28 22 28 C32 28 40 24 40 20 L40 10 Z" fill="#0284c7" />
+                <path d="M4 10 L4 20 C4 24 12 28 22 28 C32 28 40 24 40 20 L40 10 Z" fill="var(--brand)" />
                 <ellipse cx="22" cy="20" rx="18" ry="8" fill="#38bdf8" />
-                <path d="M4 20 L4 30 C4 34 12 38 22 38 C32 38 40 34 40 30 L40 20 Z" fill="#0369a1" />
-                <ellipse cx="22" cy="30" rx="18" ry="8" fill="#0284c7" />
+                <path d="M4 20 L4 30 C4 34 12 38 22 38 C32 38 40 34 40 30 L40 20 Z" fill="var(--brand-hover)" />
+                <ellipse cx="22" cy="30" rx="18" ry="8" fill="var(--brand)" />
               </g>
 
               {/* Right Server Node */}
               <g transform="translate(158, 62)">
                 <ellipse cx="22" cy="10" rx="18" ry="8" fill="#7dd3fc" />
-                <path d="M4 10 L4 20 C4 24 12 28 22 28 C32 28 40 24 40 20 L40 10 Z" fill="#0284c7" />
+                <path d="M4 10 L4 20 C4 24 12 28 22 28 C32 28 40 24 40 20 L40 10 Z" fill="var(--brand)" />
                 <ellipse cx="22" cy="20" rx="18" ry="8" fill="#38bdf8" />
-                <path d="M4 20 L4 30 C4 34 12 38 22 38 C32 38 40 34 40 30 L40 20 Z" fill="#0369a1" />
-                <ellipse cx="22" cy="30" rx="18" ry="8" fill="#0284c7" />
+                <path d="M4 20 L4 30 C4 34 12 38 22 38 C32 38 40 34 40 30 L40 20 Z" fill="var(--brand-hover)" />
+                <ellipse cx="22" cy="30" rx="18" ry="8" fill="var(--brand)" />
               </g>
 
               {/* Center Main Database Stack */}
               <g transform="translate(85, 85)">
                 <ellipse cx="26" cy="12" rx="26" ry="10" fill="#e0f2fe" />
                 <ellipse cx="26" cy="12" rx="22" ry="8" fill="#38bdf8" />
-                <path d="M4 12 L4 26 C4 32 14 36 26 36 C38 36 48 32 48 26 L48 12 Z" fill="#0284c7" />
+                <path d="M4 12 L4 26 C4 32 14 36 26 36 C38 36 48 32 48 26 L48 12 Z" fill="var(--brand)" />
                 <ellipse cx="26" cy="26" rx="22" ry="8" fill="#7dd3fc" />
-                <path d="M4 26 L4 40 C4 46 14 50 26 50 C38 50 48 46 48 40 L48 26 Z" fill="#0369a1" />
-                <ellipse cx="26" cy="40" rx="22" ry="8" fill="#0284c7" />
+                <path d="M4 26 L4 40 C4 46 14 50 26 50 C38 50 48 46 48 40 L48 26 Z" fill="var(--brand-hover)" />
+                <ellipse cx="26" cy="40" rx="22" ry="8" fill="var(--brand)" />
               </g>
 
               {/* Small floating sparkles */}
               <circle cx="34" cy="48" r="3" fill="#f59e0b" />
               <circle cx="186" cy="45" r="2.5" fill="#f59e0b" />
-              <circle cx="108" cy="148" r="2" fill="#0284c7" />
+              <circle cx="108" cy="148" r="2" fill="var(--brand)" />
             </svg>
           </div>
 
@@ -735,17 +737,17 @@ export default function MisaTaxWorkspace({
           {/* Bullets */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13, color: "#334155", lineHeight: 1.5 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-              <span style={{ color: "#00a862", fontWeight: 700 }}>•</span>
+              <span style={{ color: "var(--brand)", fontWeight: 700 }}>•</span>
               <span>
                 Đáp ứng đầy đủ mọi nghiệp vụ kê khai, nộp thuế cho Doanh nghiệp và Cá nhân (doanh nghiệp kê khai hộ)
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-              <span style={{ color: "#00a862", fontWeight: 700 }}>•</span>
+              <span style={{ color: "var(--brand)", fontWeight: 700 }}>•</span>
               <span>Tích hợp ngay trên phần mềm kế toán Sổ Việt ERP</span>
             </div>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-              <span style={{ color: "#00a862", fontWeight: 700 }}>•</span>
+              <span style={{ color: "var(--brand)", fontWeight: 700 }}>•</span>
               <span>Đã được Tổng Cục Thuế cấp phép</span>
             </div>
           </div>
@@ -841,7 +843,7 @@ export default function MisaTaxWorkspace({
             </button>
             <button
               type="button"
-              onClick={() => notify("Xuất danh sách nhà cung cấp rủi ro ra Excel")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Xuất danh sách nhà cung cấp rủi ro"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               title="In / Xuất dữ liệu"
               style={{
                 width: 32,
@@ -919,19 +921,19 @@ export default function MisaTaxWorkspace({
                 <line x1="40" y1="65" x2="120" y2="65" stroke="#f1f5f9" strokeWidth="6" strokeLinecap="round" />
 
                 {/* Sparkling green dots */}
-                <circle cx="28" cy="28" r="1.5" fill="#00a862" opacity="0.6" />
-                <circle cx="112" cy="38" r="2" fill="#00a862" opacity="0.7" />
-                <circle cx="106" cy="68" r="1.5" fill="#00a862" opacity="0.6" />
+                <circle cx="28" cy="28" r="1.5" fill="var(--brand)" opacity="0.6" />
+                <circle cx="112" cy="38" r="2" fill="var(--brand)" opacity="0.7" />
+                <circle cx="106" cy="68" r="1.5" fill="var(--brand)" opacity="0.6" />
 
                 {/* Magnifying Glass Outer Rim */}
                 <circle cx="68" cy="44" r="20" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="2.5" />
                 {/* Lens lines (document preview) */}
-                <line x1="61" y1="38" x2="75" y2="38" stroke="#00a862" strokeWidth="2" strokeLinecap="round" />
-                <line x1="61" y1="44" x2="75" y2="44" stroke="#00a862" strokeWidth="2" strokeLinecap="round" />
-                <line x1="61" y1="50" x2="71" y2="50" stroke="#00a862" strokeWidth="2" strokeLinecap="round" />
+                <line x1="61" y1="38" x2="75" y2="38" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="61" y1="44" x2="75" y2="44" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="61" y1="50" x2="71" y2="50" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" />
 
                 {/* Magnifier Handle */}
-                <path d="M82 58 L92 72" stroke="#00a862" strokeWidth="4.5" strokeLinecap="round" />
+                <path d="M82 58 L92 72" stroke="var(--brand)" strokeWidth="4.5" strokeLinecap="round" />
               </svg>
             </div>
 
@@ -1008,7 +1010,7 @@ export default function MisaTaxWorkspace({
             }}
           >
             <span>Tìm kiếm nhanh báo cáo</span>
-            <span style={{ fontSize: 14 }}>🤖</span>
+            <span style={{ fontSize: 14 }}><Bot size={14} className="ui-inline-icon" aria-hidden="true" /></span>
           </div>
         </div>
 
@@ -1135,7 +1137,7 @@ export default function MisaTaxWorkspace({
                         color: "#334155",
                         borderBottom: "1px solid #f8fafc",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                       onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1213,7 +1215,7 @@ export default function MisaTaxWorkspace({
                         color: "#334155",
                         borderBottom: "1px solid #f8fafc",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                       onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1285,7 +1287,7 @@ export default function MisaTaxWorkspace({
                         color: "#334155",
                         borderBottom: "1px solid #f8fafc",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                       onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

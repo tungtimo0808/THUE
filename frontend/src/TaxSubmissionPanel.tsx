@@ -10,8 +10,8 @@ type List<T> = T[] | { results: T[] };
 const list = <T,>(value: List<T>): T[] => Array.isArray(value) ? value : value.results || [];
 const labels: Record<string, string> = { SUBMITTED_EXTERNALLY: "Đã ghi nhận nộp ngoài", UNKNOWN: "Chưa rõ kết quả",
   ACCEPTED: "Được báo chấp nhận (thủ công)", REJECTED: "Được báo từ chối (thủ công)" };
-const button = { padding: "7px 12px", border: "1px solid #00a862", background: "white",
-  color: "#008a50", borderRadius: 4, cursor: "pointer" };
+const button = { padding: "7px 12px", border: "1px solid var(--brand)", background: "white",
+  color: "var(--brand-hover)", borderRadius: 4, cursor: "pointer" };
 const localNow = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
 export default function TaxSubmissionPanel({ companyId, token, declaration, notify }: {
@@ -76,7 +76,7 @@ export default function TaxSubmissionPanel({ companyId, token, declaration, noti
           style={{ display: "block", height: 32 }} /></label>
         <label>Mã/chỗ lưu bằng chứng (nếu có)<input aria-label="Bằng chứng nộp ban đầu" value={initialEvidence}
           onChange={(event) => setInitialEvidence(event.target.value)} style={{ display: "block", height: 32 }} /></label>
-        <button type="button" style={{ ...button, background: "#00a862", color: "white" }} disabled={busy || !reference.trim() || !submittedAt}
+        <button type="button" style={{ ...button, background: "var(--brand)", color: "white" }} disabled={busy || !reference.trim() || !submittedAt}
           onClick={() => void create()}>Ghi nhận nộp ngoài</button>
       </div>
     </div>}
@@ -100,7 +100,7 @@ export default function TaxSubmissionPanel({ companyId, token, declaration, noti
         </select></label>
         <label>Mã/chỗ lưu bằng chứng<input aria-label="Bằng chứng kết quả" value={evidence} onChange={(event) => setEvidence(event.target.value)} style={{ display: "block", height: 32 }} /></label>
         <label>Ghi chú kết quả<input aria-label="Ghi chú kết quả" value={note} onChange={(event) => setNote(event.target.value)} style={{ display: "block", height: 32, minWidth: 220 }} /></label>
-        <button type="button" style={{ ...button, background: "#00a862", color: "white" }} disabled={busy}
+        <button type="button" style={{ ...button, background: "var(--brand)", color: "white" }} disabled={busy}
           onClick={() => void update()}>Lưu kết quả</button>
         <button type="button" style={button} onClick={() => setSelectedId("")}>Đóng</button>
       </div>

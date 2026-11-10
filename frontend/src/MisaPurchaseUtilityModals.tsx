@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { formatVND, SAMPLE_SUPPLIERS } from "./MisaPurchaseModals";
 
+import { showNotice, showPendingFeature } from "./global-popup";
 const CURRENT_YEAR = new Date().getFullYear();
 
 // ============================================================================
@@ -111,7 +112,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
 
   const handleExecute = () => {
     if (totalOffset <= 0) {
-      alert("Vui lòng nhập hoặc chọn số tiền đối trừ lớn hơn 0!");
+      showNotice("Vui lòng nhập hoặc chọn số tiền đối trừ lớn hơn 0!");
       return;
     }
     onSuccess?.(`Đã đối trừ thành công số tiền ${formatVND(totalOffset)} đ cho nhà cung cấp ${supplier}`);
@@ -124,7 +125,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
         {/* Header */}
         <header className="misa-credit-modal-header" style={{ borderBottom: "1px solid #e2e8f0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <ArrowRightLeft size={20} style={{ color: "#00b06b" }} />
+            <ArrowRightLeft size={20} style={{ color: "var(--brand)" }} />
             <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#111827" }}>
               Đối trừ chứng từ
             </h2>
@@ -134,7 +135,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
               type="button"
               className="misa-invoice-circle-btn"
               title="Hướng dẫn (F1)"
-              onClick={() => alert("Hướng dẫn đối trừ chứng từ thanh toán và hóa đơn công nợ.")}
+              onClick={() => showPendingFeature("Hướng dẫn đối trừ chứng từ thanh toán và hóa đơn công nợ.")}
             >
               <HelpCircle size={18} />
             </button>
@@ -217,7 +218,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
                   padding: "0 14px",
                   borderRadius: 4,
                   border: "none",
-                  background: "#00b06b",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -245,7 +246,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
               <button
                 type="button"
                 onClick={handleAutoOffset}
-                style={{ fontSize: 12, color: "#0284c7", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                style={{ fontSize: 12, color: "var(--brand)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
               >
                 Tự động phân bổ đối trừ
               </button>
@@ -282,7 +283,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
                       </td>
                       <td style={{ padding: "6px 8px" }}>{doc.postDate}</td>
                       <td style={{ padding: "6px 8px" }}>{doc.docDate}</td>
-                      <td style={{ padding: "6px 8px", fontWeight: 600, color: "#0284c7" }}>{doc.docNo}</td>
+                      <td style={{ padding: "6px 8px", fontWeight: 600, color: "var(--brand)" }}>{doc.docNo}</td>
                       <td style={{ padding: "6px 8px" }}>{doc.desc}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(doc.amount)}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right", color: "#64748b" }}>{formatVND(doc.unOffsetAmount)}</td>
@@ -341,7 +342,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
                       </td>
                       <td style={{ padding: "6px 8px" }}>{doc.postDate}</td>
                       <td style={{ padding: "6px 8px" }}>{doc.docDate}</td>
-                      <td style={{ padding: "6px 8px", fontWeight: 600, color: "#0284c7" }}>{doc.docNo}</td>
+                      <td style={{ padding: "6px 8px", fontWeight: 600, color: "var(--brand)" }}>{doc.docNo}</td>
                       <td style={{ padding: "6px 8px" }}>{doc.desc}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(doc.amount)}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right", color: "#64748b" }}>{formatVND(doc.unOffsetAmount)}</td>
@@ -372,7 +373,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span style={{ fontSize: 13, color: "#475569" }}>Tổng số đối trừ:</span>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#00b06b" }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)" }}>
                 {formatVND(totalOffset)} đ
               </span>
             </div>
@@ -391,7 +392,7 @@ export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
                 padding: "0 20px",
                 borderRadius: 4,
                 border: "none",
-                background: "#00b06b",
+                background: "var(--brand)",
                 color: "#ffffff",
                 fontSize: 13,
                 fontWeight: 600,
@@ -468,7 +469,7 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
         {/* Header */}
         <header className="misa-credit-modal-header" style={{ borderBottom: "1px solid #e2e8f0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <ArrowRightLeft size={20} style={{ color: "#00b06b" }} />
+            <ArrowRightLeft size={20} style={{ color: "var(--brand)" }} />
             <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#111827" }}>
               Đối trừ chứng từ nhiều đối tượng
             </h2>
@@ -485,13 +486,13 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
 
         {/* Stepper Wizard Bar */}
         <div style={{ display: "flex", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", padding: "10px 24px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, color: step === 1 ? "#00b06b" : "#475569", fontWeight: 700, fontSize: 13 }}>
-            <span style={{ width: 22, height: 22, borderRadius: "50%", background: step === 1 ? "#00b06b" : "#cbd5e1", color: "#fff", display: "grid", placeItems: "center", fontSize: 12 }}>1</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: step === 1 ? "var(--brand)" : "#475569", fontWeight: 700, fontSize: 13 }}>
+            <span style={{ width: 22, height: 22, borderRadius: "50%", background: step === 1 ? "var(--brand)" : "#cbd5e1", color: "#fff", display: "grid", placeItems: "center", fontSize: 12 }}>1</span>
             <span>CHỌN NHÀ CUNG CẤP</span>
           </div>
           <div style={{ width: 40, height: 1, background: "#cbd5e1", alignSelf: "center", margin: "0 16px" }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 8, color: step === 2 ? "#00b06b" : "#94a3b8", fontWeight: 700, fontSize: 13 }}>
-            <span style={{ width: 22, height: 22, borderRadius: "50%", background: step === 2 ? "#00b06b" : "#e2e8f0", color: step === 2 ? "#fff" : "#64748b", display: "grid", placeItems: "center", fontSize: 12 }}>2</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: step === 2 ? "var(--brand)" : "#94a3b8", fontWeight: 700, fontSize: 13 }}>
+            <span style={{ width: 22, height: 22, borderRadius: "50%", background: step === 2 ? "var(--brand)" : "#e2e8f0", color: step === 2 ? "#fff" : "#64748b", display: "grid", placeItems: "center", fontSize: 12 }}>2</span>
             <span>CHI TIẾT ĐỐI TRỪ & KẾT QUẢ</span>
           </div>
         </div>
@@ -539,7 +540,7 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
             <div>
               <button
                 type="button"
-                style={{ height: 32, padding: "0 14px", borderRadius: 4, border: "none", background: "#00b06b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 32, padding: "0 14px", borderRadius: 4, border: "none", background: "var(--brand)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Lấy dữ liệu
               </button>
@@ -579,11 +580,11 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
                             onChange={(e) => setSuppliersList((prev) => prev.map((item) => (item.id === s.id ? { ...item, selected: e.target.checked } : item)))}
                           />
                         </td>
-                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{s.code}</td>
+                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{s.code}</td>
                         <td style={{ padding: "8px 10px" }}>{s.name}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(s.unpaidPayment)}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(s.unpaidDebt)}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: s.expectedOffset > 0 ? "#00b06b" : "#94a3b8" }}>
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: s.expectedOffset > 0 ? "var(--brand)" : "#94a3b8" }}>
                           {formatVND(s.expectedOffset)}
                         </td>
                       </tr>
@@ -620,9 +621,9 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
                       .filter((s) => s.selected)
                       .map((s) => (
                         <tr key={s.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                          <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{s.code}</td>
+                          <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{s.code}</td>
                           <td style={{ padding: "8px 10px" }}>{s.name}</td>
-                          <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00b06b" }}>
+                          <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>
                             {formatVND(s.expectedOffset)} đ
                           </td>
                           <td style={{ padding: "8px 10px", textAlign: "center" }}>
@@ -642,7 +643,7 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
         {/* Footer */}
         <footer style={{ height: 50, background: "#ffffff", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
           <div style={{ fontSize: 13, color: "#475569" }}>
-            Đã chọn: <strong>{selectedCount}</strong> nhà cung cấp | Tổng dự kiến: <strong style={{ color: "#00b06b" }}>{formatVND(totalOffsetExpected)} đ</strong>
+            Đã chọn: <strong>{selectedCount}</strong> nhà cung cấp | Tổng dự kiến: <strong style={{ color: "var(--brand)" }}>{formatVND(totalOffsetExpected)} đ</strong>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button type="button" className="misa-invoice-btn-cancel" onClick={onClose}>
@@ -660,10 +661,10 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
             {step === 1 ? (
               <button
                 type="button"
-                style={{ height: 32, padding: "0 18px", borderRadius: 4, border: "none", background: "#00b06b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 32, padding: "0 18px", borderRadius: 4, border: "none", background: "var(--brand)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                 onClick={() => {
                   if (selectedCount === 0) {
-                    alert("Vui lòng chọn ít nhất 1 nhà cung cấp để đối trừ!");
+                    showNotice("Vui lòng chọn ít nhất 1 nhà cung cấp để đối trừ!");
                     return;
                   }
                   setStep(2);
@@ -674,7 +675,7 @@ export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModa
             ) : (
               <button
                 type="button"
-                style={{ height: 32, padding: "0 18px", borderRadius: 4, border: "none", background: "#00b06b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 32, padding: "0 18px", borderRadius: 4, border: "none", background: "var(--brand)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                 onClick={handleFinish}
               >
                 Thực hiện đối trừ
@@ -718,7 +719,7 @@ export function UnOffsetModal({ onClose, onSuccess }: UnOffsetModalProps) {
 
   const handleExecute = () => {
     if (selectedCount === 0) {
-      alert("Vui lòng chọn chứng từ cần bỏ đối trừ!");
+      showNotice("Vui lòng chọn chứng từ cần bỏ đối trừ!");
       return;
     }
     onSuccess?.(`Đã bỏ đối trừ thành công ${selectedCount} chứng từ với số tiền ${formatVND(totalAmount)} đ.`);
@@ -802,7 +803,7 @@ export function UnOffsetModal({ onClose, onSuccess }: UnOffsetModalProps) {
             <div>
               <button
                 type="button"
-                style={{ height: 32, padding: "0 14px", borderRadius: 4, border: "none", background: "#00b06b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 32, padding: "0 14px", borderRadius: 4, border: "none", background: "var(--brand)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Lấy dữ liệu
               </button>
@@ -841,8 +842,8 @@ export function UnOffsetModal({ onClose, onSuccess }: UnOffsetModalProps) {
                       />
                     </td>
                     <td style={{ padding: "8px 10px" }}>{r.offsetDate}</td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{r.paymentDocNo}</td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{r.debtDocNo}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{r.paymentDocNo}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{r.debtDocNo}</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#ef4444" }}>
                       {formatVND(r.amount)} đ
                     </td>
@@ -916,7 +917,7 @@ export function MultiUnOffsetModal({ onClose, onSuccess }: MultiUnOffsetModalPro
 
   const handleExecute = () => {
     if (selectedCount === 0) {
-      alert("Vui lòng chọn ít nhất 1 nhà cung cấp để bỏ đối trừ!");
+      showNotice("Vui lòng chọn ít nhất 1 nhà cung cấp để bỏ đối trừ!");
       return;
     }
     if (confirm(`Bạn có chắc chắn muốn bỏ đối trừ tất cả chứng từ của ${selectedCount} nhà cung cấp đã chọn không?`)) {
@@ -1012,7 +1013,7 @@ export function MultiUnOffsetModal({ onClose, onSuccess }: MultiUnOffsetModalPro
             <div>
               <button
                 type="button"
-                style={{ height: 32, padding: "0 14px", borderRadius: 4, border: "none", background: "#00b06b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 32, padding: "0 14px", borderRadius: 4, border: "none", background: "var(--brand)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Lấy dữ liệu
               </button>
@@ -1057,7 +1058,7 @@ export function MultiUnOffsetModal({ onClose, onSuccess }: MultiUnOffsetModalPro
                         onChange={(e) => setSuppliers((prev) => prev.map((item) => (item.id === s.id ? { ...item, selected: e.target.checked } : item)))}
                       />
                     </td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{s.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{s.code}</td>
                     <td style={{ padding: "8px 10px" }}>{s.name}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 600 }}>{s.count}</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#ef4444" }}>
@@ -1140,7 +1141,7 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
 
   const handleExecute = () => {
     if (clearingValue <= 0) {
-      alert("Vui lòng nhập số tiền bù trừ lớn hơn 0!");
+      showNotice("Vui lòng nhập số tiền bù trừ lớn hơn 0!");
       return;
     }
     onSuccess?.(`Đã bù trừ công nợ thành công số tiền ${formatVND(clearingValue)} đ giữa TK 131 và TK 331.`);
@@ -1153,7 +1154,7 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
         {/* Header */}
         <header className="misa-credit-modal-header" style={{ borderBottom: "1px solid #e2e8f0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <ArrowRightLeft size={20} style={{ color: "#00b06b" }} />
+            <ArrowRightLeft size={20} style={{ color: "var(--brand)" }} />
             <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#111827" }}>
               Bù trừ công nợ
             </h2>
@@ -1222,7 +1223,7 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
             <div>
               <button
                 type="button"
-                style={{ height: 32, padding: "0 14px", borderRadius: 4, border: "none", background: "#00b06b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 32, padding: "0 14px", borderRadius: 4, border: "none", background: "var(--brand)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Lấy dữ liệu
               </button>
@@ -1266,7 +1267,7 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
                         />
                       </td>
                       <td style={{ padding: "6px 8px" }}>{doc.docDate}</td>
-                      <td style={{ padding: "6px 8px", fontWeight: 600, color: "#0284c7" }}>{doc.docNo}</td>
+                      <td style={{ padding: "6px 8px", fontWeight: 600, color: "var(--brand)" }}>{doc.docNo}</td>
                       <td style={{ padding: "6px 8px" }}>{doc.desc}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(doc.amount)}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>
@@ -1321,7 +1322,7 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
                         />
                       </td>
                       <td style={{ padding: "6px 8px" }}>{doc.docDate}</td>
-                      <td style={{ padding: "6px 8px", fontWeight: 600, color: "#0284c7" }}>{doc.docNo}</td>
+                      <td style={{ padding: "6px 8px", fontWeight: 600, color: "var(--brand)" }}>{doc.docNo}</td>
                       <td style={{ padding: "6px 8px" }}>{doc.desc}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(doc.amount)}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>
@@ -1359,7 +1360,7 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <span style={{ fontSize: 13, color: "#475569" }}>Số tiền bù trừ:</span>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#00b06b" }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)" }}>
                 {formatVND(clearingValue)} đ
               </span>
             </div>
@@ -1368,7 +1369,7 @@ export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps
             </button>
             <button
               type="button"
-              style={{ height: 32, padding: "0 20px", borderRadius: 4, border: "none", background: "#00b06b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              style={{ height: 32, padding: "0 20px", borderRadius: 4, border: "none", background: "var(--brand)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               onClick={handleExecute}
             >
               Bù trừ

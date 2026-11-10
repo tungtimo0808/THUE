@@ -1173,7 +1173,7 @@ export function MisaModuleApiExtensionPanel({
               </span>
             </div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
-              Đang chọn: <strong style={{ color: "#0284c7" }}>{activeEndpoint.label}</strong>
+              Đang chọn: <strong style={{ color: "var(--brand)" }}>{activeEndpoint.label}</strong>
             </div>
           </div>
         </div>
@@ -1210,7 +1210,7 @@ export function MisaModuleApiExtensionPanel({
                   borderRadius: 6,
                   border: "none",
                   background: isSelected ? "#e0f2fe" : "transparent",
-                  color: isSelected ? "#0369a1" : "#334155",
+                  color: isSelected ? "var(--brand-hover)" : "#334155",
                   fontWeight: isSelected ? 700 : 500,
                   fontSize: 13,
                   cursor: "pointer",
@@ -1221,7 +1221,7 @@ export function MisaModuleApiExtensionPanel({
                 }}
               >
                 <span>{ep.label}</span>
-                <span style={{ fontSize: 10.5, color: isSelected ? "#0284c7" : "#94a3b8", fontFamily: "monospace" }}>
+                <span style={{ fontSize: 10.5, color: isSelected ? "var(--brand)" : "#94a3b8", fontFamily: "Roboto, Arial, sans-serif" }}>
                   {ep.path.replace("/api/v1/", "/")}
                 </span>
               </button>

@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import React, { useEffect, useState } from "react";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import { formatMoneyInput, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
@@ -82,8 +83,9 @@ import {
 import { useApiSession } from "./ApiSession";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import { request } from "./live-api";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
+  LockKeyhole,
   HelpCircle,
   Lightbulb,
   Plus,
@@ -1075,7 +1077,7 @@ export default function MisaLedgerWorkspace({
   };
 
   // Transactions tab landing / table & dropdown state
-  const [showVoucherTable, setShowVoucherTable] = useState(false);
+  const [showVoucherTable, setShowVoucherTable] = useState(true);
   const [showAddVoucherMenu, setShowAddVoucherMenu] = useState(false);
   const [aiVoucherModalOpen, setAiVoucherModalOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -3622,6 +3624,14 @@ export default function MisaLedgerWorkspace({
 
   // UC-GL-11: Đối chiếu số liệu GL với các phân hệ (GL <-> AP, AR, CASH, BANK, INV, FA, TAX)
   const [glReconciliationModalOpen, setGlReconciliationModalOpen] = useState(false);
+  const [actionParams, setActionParams] = useSearchParams();
+  useEffect(() => {
+    const action = actionParams.get("action");
+    if (action !== "reconcile" && action !== "list") return;
+    if (action === "reconcile") setGlReconciliationModalOpen(true);
+    else setShowVoucherTable(true);
+    setActionParams((current) => { const next = new URLSearchParams(current); next.delete("action"); return next; }, { replace: true });
+  }, [actionParams, setActionParams]);
   const [glRecPeriodCode, setGlRecPeriodCode] = useState("");
   const [glRecPeriods, setGlRecPeriods] = useState<any[]>([]);
   const [glRecAccounts, setGlRecAccounts] = useState<any[]>([]);
@@ -5819,7 +5829,7 @@ export default function MisaLedgerWorkspace({
                   }}
                 >
                   {/* Subtle connection lines background SVG */}
-                  <svg
+                  <svg className="sv-flow-connector"
                     viewBox="0 0 1000 280"
                     preserveAspectRatio="none"
                     style={{
@@ -5910,7 +5920,7 @@ export default function MisaLedgerWorkspace({
                   </svg>
 
                   {/* Row 1: Đề nghị quyết toán tạm ứng -> Quyết toán tạm ứng */}
-                  <div
+                  <div className="sv-flow-nodes"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -5921,7 +5931,7 @@ export default function MisaLedgerWorkspace({
                     }}
                   >
                     {/* Node 1: Đề nghị quyết toán tạm ứng */}
-                    <div
+                    <div className="sv-flow-node"
                       onClick={(e) => {
                         e.stopPropagation();
                         setAddAdvanceRequestModalOpen(true);
@@ -5960,7 +5970,7 @@ export default function MisaLedgerWorkspace({
                     </div>
 
                     {/* Node 2: Quyết toán tạm ứng */}
-                    <div
+                    <div className="sv-flow-node"
                       onClick={(e) => {
                         e.stopPropagation();
                         setAddAdvanceSettlementModalOpen(true);
@@ -6000,7 +6010,7 @@ export default function MisaLedgerWorkspace({
                   </div>
 
                   {/* Row 2: Chứng từ nghiệp vụ khác -> Kết chuyển lãi lỗ -> Khóa sổ -> Lập báo cáo tài chính */}
-                  <div
+                  <div className="sv-flow-nodes"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -6011,7 +6021,7 @@ export default function MisaLedgerWorkspace({
                     }}
                   >
                     {/* Node 3: Chứng từ nghiệp vụ khác */}
-                    <div
+                    <div className="sv-flow-node"
                       onClick={(e) => {
                         e.stopPropagation();
                         setAddVoucherModalOpen(true);
@@ -6050,7 +6060,7 @@ export default function MisaLedgerWorkspace({
                     </div>
 
                     {/* Node 4: Kết chuyển lãi lỗ */}
-                    <div
+                    <div className="sv-flow-node"
                       onClick={(e) => {
                         e.stopPropagation();
                         setClosingEntryModalOpen(true);
@@ -6089,7 +6099,7 @@ export default function MisaLedgerWorkspace({
                     </div>
 
                     {/* Node 5: Khóa sổ kỳ kế toán (With Image 1 Popover) */}
-                    <div
+                    <div className="sv-flow-node"
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowLockMenu(!showLockMenu);
@@ -6238,7 +6248,7 @@ export default function MisaLedgerWorkspace({
                     </div>
 
                     {/* Node 6: Lập báo cáo tài chính (With Image 2 Popover) */}
-                    <div
+                    <div className="sv-flow-node"
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowStatementsMenu(!showStatementsMenu);
@@ -6426,7 +6436,7 @@ export default function MisaLedgerWorkspace({
                           lineHeight: 1.45,
                           transition: "color 0.15s",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                         onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                       >
                         <span style={{ fontSize: 14, color: "#64748b" }}>•</span>
@@ -6443,7 +6453,7 @@ export default function MisaLedgerWorkspace({
                       textDecoration: "none",
                       fontSize: 13,
                       fontWeight: 500,
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 4,
@@ -6522,7 +6532,7 @@ export default function MisaLedgerWorkspace({
                     transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#00a862";
+                    e.currentTarget.style.borderColor = "var(--brand)";
                     e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 168, 98, 0.08)";
                   }}
                   onMouseLeave={(e) => {
@@ -6539,7 +6549,7 @@ export default function MisaLedgerWorkspace({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#00a862",
+                      color: "var(--brand)",
                     }}
                   >
                     <card.icon size={20} />
@@ -6611,8 +6621,8 @@ export default function MisaLedgerWorkspace({
                         alignItems: "center",
                         gap: 8,
                         background: "#ffffff",
-                        color: "#00a862",
-                        border: "1px solid #00a862",
+                        color: "var(--brand)",
+                        border: "1px solid var(--brand)",
                         borderRadius: 6,
                         padding: "8px 16px",
                         fontSize: 13,
@@ -6631,7 +6641,7 @@ export default function MisaLedgerWorkspace({
                         display: "flex",
                         alignItems: "center",
                         gap: 6,
-                        background: "#0284c7",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         border: "none",
                         borderRadius: 6,
@@ -6652,7 +6662,7 @@ export default function MisaLedgerWorkspace({
                         display: "flex",
                         alignItems: "center",
                         gap: 8,
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         border: "none",
                         borderRadius: 6,
@@ -6663,8 +6673,8 @@ export default function MisaLedgerWorkspace({
                         boxShadow: "0 2px 6px rgba(0, 168, 98, 0.2)",
                         transition: "all 0.15s ease",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#009153")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "#00a862")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--brand-hover)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "var(--brand)")}
                     >
                       <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                         <path d="M3.5 6.5h7M15.5 6.5h1M3.5 13.5h2M10.5 13.5h6" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
@@ -6725,7 +6735,7 @@ export default function MisaLedgerWorkspace({
                           width: 34,
                           height: 34,
                           borderRadius: "50%",
-                          background: "#0284c7",
+                          background: "var(--brand)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -6776,7 +6786,7 @@ export default function MisaLedgerWorkspace({
                             width: 17,
                             height: 17,
                             borderRadius: "50%",
-                            background: "#00a862",
+                            background: "var(--brand)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -6806,7 +6816,7 @@ export default function MisaLedgerWorkspace({
                           width: 24,
                           height: 24,
                           borderRadius: "50%",
-                          background: "#0284c7",
+                          background: "var(--brand)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -6872,7 +6882,7 @@ export default function MisaLedgerWorkspace({
                           width: 34,
                           height: 34,
                           borderRadius: "50%",
-                          background: "#0284c7",
+                          background: "var(--brand)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -6923,7 +6933,7 @@ export default function MisaLedgerWorkspace({
                             width: 17,
                             height: 17,
                             borderRadius: "50%",
-                            background: "#00a862",
+                            background: "var(--brand)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -6953,7 +6963,7 @@ export default function MisaLedgerWorkspace({
                           width: 24,
                           height: 24,
                           borderRadius: "50%",
-                          background: "#0284c7",
+                          background: "var(--brand)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -7015,8 +7025,8 @@ export default function MisaLedgerWorkspace({
                       }}
                     >
                       <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 2 A10 10 0 0 1 22 12 H12 Z" fill="#0284c7" />
-                        <path d="M22 12 A10 10 0 0 1 12 22 V12 Z" fill="#00a862" />
+                        <path d="M12 2 A10 10 0 0 1 22 12 H12 Z" fill="var(--brand)" />
+                        <path d="M22 12 A10 10 0 0 1 12 22 V12 Z" fill="var(--brand)" />
                         <path d="M12 22 A10 10 0 0 1 2 12 H12 Z" fill="#eab308" />
                         <path d="M2 12 A10 10 0 0 1 12 2 V12 Z" fill="#ef4444" />
                         <circle cx="12" cy="12" r="4.5" fill="#ffffff" />
@@ -7060,7 +7070,7 @@ export default function MisaLedgerWorkspace({
                             width: 17,
                             height: 17,
                             borderRadius: "50%",
-                            background: "#00a862",
+                            background: "var(--brand)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -7086,8 +7096,8 @@ export default function MisaLedgerWorkspace({
                       }}
                     >
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 2 A10 10 0 0 1 22 12 H12 Z" fill="#0284c7" />
-                        <path d="M22 12 A10 10 0 0 1 12 22 V12 Z" fill="#00a862" />
+                        <path d="M12 2 A10 10 0 0 1 22 12 H12 Z" fill="var(--brand)" />
+                        <path d="M22 12 A10 10 0 0 1 12 22 V12 Z" fill="var(--brand)" />
                         <path d="M12 22 A10 10 0 0 1 2 12 H12 Z" fill="#eab308" />
                         <path d="M2 12 A10 10 0 0 1 12 2 V12 Z" fill="#ef4444" />
                         <circle cx="12" cy="12" r="4.5" fill="#ffffff" />
@@ -7117,7 +7127,7 @@ export default function MisaLedgerWorkspace({
                         border: "1px solid #cbd5e1",
                         background: "#ffffff",
                         fontSize: 13,
-                        color: "#00a862",
+                        color: "var(--brand)",
                         fontWeight: 600,
                         cursor: "pointer",
                       }}
@@ -7195,7 +7205,7 @@ export default function MisaLedgerWorkspace({
                         gap: 6,
                         padding: "8px 16px",
                         borderRadius: 6,
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         border: "none",
                         fontWeight: 600,
@@ -7288,10 +7298,10 @@ export default function MisaLedgerWorkspace({
                               <td style={{ padding: "10px 14px" }}>
                                 <input type="checkbox" />
                               </td>
-                              <td style={{ padding: "10px 14px", fontWeight: 600, color: "#00a862" }}>
+                              <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--brand)" }}>
                                 {item.id}
                                 {item.settlementVoucherNo && (
-                                  <div style={{ fontSize: 11, color: "#0284c7", fontWeight: 500, marginTop: 2 }}>
+                                  <div style={{ fontSize: 11, color: "var(--brand)", fontWeight: 500, marginTop: 2 }}>
                                     CT: {item.settlementVoucherNo}
                                   </div>
                                 )}
@@ -7540,7 +7550,7 @@ export default function MisaLedgerWorkspace({
                       {/* Long Hair Back */}
                       <path d="M106 96c-6 4-12 12-14 26 5-2 10-6 12-12 2 8 6 18 10 24-2-12-3-26-8-38z" fill="#334155" />
                       {/* Green Blouse */}
-                      <path d="M110 114c-10 2-16 10-18 24h32c-2-14-6-22-14-24z" fill="#00a862" />
+                      <path d="M110 114c-10 2-16 10-18 24h32c-2-14-6-22-14-24z" fill="var(--brand)" />
                       {/* Left Arm Typing */}
                       <path d="M98 126c4 4 12 10 20 10l-2 4c-8 0-16-6-20-11z" fill="#00884d" />
                       {/* Right Arm Typing */}
@@ -7560,17 +7570,17 @@ export default function MisaLedgerWorkspace({
                       <g transform="translate(132, 32)">
                         <rect width="25" height="32" rx="3" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
                         <path d="M18 0 L25 7 H20 a2 2 0 0 1 -2 -2 V0 Z" fill="#e2e8f0" />
-                        <rect x="4" y="6" width="10" height="2" rx="1" fill="#00a862" />
-                        <circle cx="12.5" cy="19" r="6" fill="#ecfdf5" stroke="#00a862" strokeWidth="1.5" />
-                        <path d="M12.5 13 A6 6 0 0 1 18.5 19 H12.5 V13 Z" fill="#00a862" />
+                        <rect x="4" y="6" width="10" height="2" rx="1" fill="var(--brand)" />
+                        <circle cx="12.5" cy="19" r="6" fill="#ecfdf5" stroke="var(--brand)" strokeWidth="1.5" />
+                        <path d="M12.5 13 A6 6 0 0 1 18.5 19 H12.5 V13 Z" fill="var(--brand)" />
                       </g>
 
                       {/* Floating Doc 2 (top right: bar chart) */}
                       <g transform="translate(172, 54)">
                         <rect width="25" height="32" rx="3" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
                         <path d="M18 0 L25 7 H20 a2 2 0 0 1 -2 -2 V0 Z" fill="#e2e8f0" />
-                        <rect x="4" y="5" width="10" height="2" rx="1" fill="#00a862" />
-                        <rect x="5" y="19" width="3" height="7" rx="0.5" fill="#00a862" />
+                        <rect x="4" y="5" width="10" height="2" rx="1" fill="var(--brand)" />
+                        <rect x="5" y="19" width="3" height="7" rx="0.5" fill="var(--brand)" />
                         <rect x="10" y="15" width="3" height="11" rx="0.5" fill="#10b981" />
                         <rect x="15" y="11" width="3" height="15" rx="0.5" fill="#34d399" />
                       </g>
@@ -7579,18 +7589,18 @@ export default function MisaLedgerWorkspace({
                       <g transform="translate(198, 92)">
                         <rect width="23" height="29" rx="3" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
                         <path d="M16 0 L23 7 H18 a2 2 0 0 1 -2 -2 V0 Z" fill="#e2e8f0" />
-                        <rect x="4" y="5" width="8" height="2" rx="1" fill="#00a862" />
-                        <circle cx="11.5" cy="17.5" r="5" fill="#ecfdf5" stroke="#00a862" strokeWidth="1.5" />
-                        <path d="M11.5 12.5 A5 5 0 0 1 16.5 17.5 H11.5 V12.5 Z" fill="#00a862" />
+                        <rect x="4" y="5" width="8" height="2" rx="1" fill="var(--brand)" />
+                        <circle cx="11.5" cy="17.5" r="5" fill="#ecfdf5" stroke="var(--brand)" strokeWidth="1.5" />
+                        <path d="M11.5 12.5 A5 5 0 0 1 16.5 17.5 H11.5 V12.5 Z" fill="var(--brand)" />
                       </g>
 
                       {/* Sparkles / Stars / Diamonds */}
                       <path d="M88 92 h6 M91 89 v6" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
                       <path d="M192 40 h5 M194.5 37.5 v5" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
                       <path d="M148 20 h4 M150 18 v4" stroke="#94a3b8" strokeWidth="1.2" strokeLinecap="round" />
-                      <rect x="136" y="84" width="3.5" height="3.5" transform="rotate(45 136 84)" fill="#00a862" />
+                      <rect x="136" y="84" width="3.5" height="3.5" transform="rotate(45 136 84)" fill="var(--brand)" />
                       <rect x="194" y="74" width="3.5" height="3.5" transform="rotate(45 194 74)" fill="#94a3b8" />
-                      <rect x="226" y="102" width="3" height="3" transform="rotate(45 226 102)" fill="#00a862" />
+                      <rect x="226" y="102" width="3" height="3" transform="rotate(45 226 102)" fill="var(--brand)" />
                       <circle cx="214" cy="66" r="1.5" fill="#94a3b8" />
                       <circle cx="94" cy="110" r="1.5" fill="#94a3b8" />
                     </svg>
@@ -7610,10 +7620,12 @@ export default function MisaLedgerWorkspace({
                     Lập chứng từ nghiệp vụ khác: Vay tiền ngân hàng để trả NCC, bù trừ công nợ phải thu và phải trả, hạch toán thuế TNDN phải nộp, quyết toán tạm ứng,...
                   </h2>
 
-                  {/* 3 Buttons Row Matching Screenshot */}
+                  {/* Voucher actions wrap to fit the available workspace width. */}
                   <div
+                    className="sv-ledger-actions"
                     style={{
                       display: "flex",
+                      flexWrap: "wrap",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 12,
@@ -7686,7 +7698,7 @@ export default function MisaLedgerWorkspace({
                           display: "flex",
                           alignItems: "center",
                           gap: 8,
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 6,
@@ -7697,8 +7709,8 @@ export default function MisaLedgerWorkspace({
                           boxShadow: "0 2px 6px rgba(0, 168, 98, 0.2)",
                           transition: "all 0.15s ease",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "#009153")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = "#00a862")}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--brand-hover)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "var(--brand)")}
                       >
                         <span>Thêm</span>
                         <ChevronDown size={14} strokeWidth={2.5} />
@@ -7736,7 +7748,7 @@ export default function MisaLedgerWorkspace({
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.background = "#f0fdf4";
-                              e.currentTarget.style.color = "#00a862";
+                              e.currentTarget.style.color = "var(--brand)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.background = "#f8fafc";
@@ -7761,7 +7773,7 @@ export default function MisaLedgerWorkspace({
                                 }}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.background = "#f0fdf4";
-                                  e.currentTarget.style.color = "#00a862";
+                                  e.currentTarget.style.color = "var(--brand)";
                                 }}
                                 onMouseLeave={(e) => {
                                   e.currentTarget.style.background = "transparent";
@@ -7790,7 +7802,7 @@ export default function MisaLedgerWorkspace({
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.background = "#f8fafc";
-                              e.currentTarget.style.color = "#00a862";
+                              e.currentTarget.style.color = "var(--brand)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.background = "transparent";
@@ -7859,7 +7871,7 @@ export default function MisaLedgerWorkspace({
                         alignItems: "center",
                         gap: 6,
                         background: "#f0fdf4",
-                        color: "#00a862",
+                        color: "var(--brand)",
                         border: "1px solid #86efac",
                         borderRadius: 6,
                         padding: "8px 16px",
@@ -7950,10 +7962,10 @@ export default function MisaLedgerWorkspace({
                       onClick={() => setShowVoucherTable(true)}
                       style={{
                         background: "#ffffff",
-                        border: "1px solid #00a862",
+                        border: "1px solid var(--brand)",
                         borderRadius: 4,
                         padding: "7px 22px",
-                        color: "#00a862",
+                        color: "var(--brand)",
                         fontSize: 13,
                         fontWeight: 500,
                         cursor: "pointer",
@@ -8075,7 +8087,7 @@ export default function MisaLedgerWorkspace({
 
                     <button
                       type="button"
-                      onClick={() => notify("Xuất Excel danh sách chứng từ nghiệp vụ khác")}
+                      onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Xuất Excel danh sách chứng từ nghiệp vụ khác"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -8106,7 +8118,7 @@ export default function MisaLedgerWorkspace({
                           gap: 8,
                           padding: "8px 16px",
                           borderRadius: 6,
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           fontWeight: 600,
@@ -8150,7 +8162,7 @@ export default function MisaLedgerWorkspace({
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.background = "#f0fdf4";
-                              e.currentTarget.style.color = "#00a862";
+                              e.currentTarget.style.color = "var(--brand)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.background = "#f8fafc";
@@ -8175,7 +8187,7 @@ export default function MisaLedgerWorkspace({
                                 }}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.background = "#f0fdf4";
-                                  e.currentTarget.style.color = "#00a862";
+                                  e.currentTarget.style.color = "var(--brand)";
                                 }}
                                 onMouseLeave={(e) => {
                                   e.currentTarget.style.background = "transparent";
@@ -8204,7 +8216,7 @@ export default function MisaLedgerWorkspace({
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.background = "#f8fafc";
-                              e.currentTarget.style.color = "#00a862";
+                              e.currentTarget.style.color = "var(--brand)";
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.background = "transparent";
@@ -8258,9 +8270,9 @@ export default function MisaLedgerWorkspace({
                             />
                           </td>
                           <td style={{ padding: "10px 14px" }}>{item.date}</td>
-                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "#00a862" }}>{item.id}</td>
+                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--brand)" }}>{item.id}</td>
                           <td style={{ padding: "10px 14px" }}>{item.desc}</td>
-                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "#0369a1" }}>{item.debitAcc}</td>
+                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--brand-hover)" }}>{item.debitAcc}</td>
                           <td style={{ padding: "10px 14px", fontWeight: 600, color: "#b45309" }}>{item.creditAcc}</td>
                           <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600 }}>
                             {formatVND(item.amount)}
@@ -8534,14 +8546,14 @@ export default function MisaLedgerWorkspace({
                       <button
                         type="button"
                         onClick={() => { void handleSaveCorrectionModal(false); }}
-                        style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #0284c7", background: "#e0f2fe", color: "#0369a1", fontWeight: 600, cursor: "pointer" }}
+                        style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid var(--brand)", background: "#e0f2fe", color: "var(--brand-hover)", fontWeight: 600, cursor: "pointer" }}
                       >
                         Cất (Chưa ghi sổ)
                       </button>
                       <button
                         type="button"
                         onClick={() => { void handleSaveCorrectionModal(true); }}
-                        style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: "#00a862", color: "#fff", fontWeight: 600, cursor: "pointer" }}
+                        style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: "var(--brand)", color: "#fff", fontWeight: 600, cursor: "pointer" }}
                       >
                         Cất và Ghi sổ
                       </button>
@@ -8604,32 +8616,32 @@ export default function MisaLedgerWorkspace({
                         fill="#e2e8f0"
                       />
                       {/* Top green corner */}
-                      <path d="M0 12 C0 5.37 5.37 0 12 0 H26 V24 H0 Z" fill="#00a862" />
+                      <path d="M0 12 C0 5.37 5.37 0 12 0 H26 V24 H0 Z" fill="var(--brand)" />
                       {/* White circular badge inside */}
-                      <circle cx="24" cy="25" r="13" fill="#ffffff" stroke="#00a862" strokeWidth="2" />
+                      <circle cx="24" cy="25" r="13" fill="#ffffff" stroke="var(--brand)" strokeWidth="2" />
                       {/* Circular arrows loop */}
                       <path
                         d="M19 22 A5 5 0 0 1 29 22 M29 22 L26 20 M29 22 L28 24"
-                        stroke="#00a862"
+                        stroke="var(--brand)"
                         strokeWidth="1.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
                       <path
                         d="M29 28 A5 5 0 0 1 19 28 M19 28 L22 30 M19 28 L20 26"
-                        stroke="#00a862"
+                        stroke="var(--brand)"
                         strokeWidth="1.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
-                      <text x="24" y="27" textAnchor="middle" fontSize="8" fontWeight="700" fill="#00a862">
+                      <text x="24" y="27" textAnchor="middle" fontSize="8" fontWeight="700" fill="var(--brand)">
                         $
                       </text>
                     </g>
 
                     {/* Coin with plus badge */}
                     <g transform="translate(86, 76)">
-                      <circle cx="9" cy="9" r="9" fill="#00a862" />
+                      <circle cx="9" cy="9" r="9" fill="var(--brand)" />
                       <path d="M9 5 V13 M5 9 H13" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
                     </g>
 
@@ -8639,7 +8651,7 @@ export default function MisaLedgerWorkspace({
                       <rect x="-24" y="52" width="70" height="3" rx="1.5" fill="#e2e8f0" />
 
                       {/* Body: Green blouse */}
-                      <path d="M-6 52 C-6 38 28 38 28 52 Z" fill="#00a862" />
+                      <path d="M-6 52 C-6 38 28 38 28 52 Z" fill="var(--brand)" />
                       <path d="M4 38 L9 46 L14 38 Z" fill="#ffffff" />
 
                       {/* Neck & Head */}
@@ -8667,27 +8679,27 @@ export default function MisaLedgerWorkspace({
                     {/* 1. Bar Chart */}
                     <g transform="translate(162, 58)">
                       <circle cx="8" cy="8" r="8" fill="#e6fcf5" stroke="#a7f3d0" strokeWidth="1" />
-                      <rect x="4" y="9" width="2" height="4" fill="#00a862" />
-                      <rect x="7" y="7" width="2" height="6" fill="#00a862" />
-                      <rect x="10" y="5" width="2" height="8" fill="#00a862" />
+                      <rect x="4" y="9" width="2" height="4" fill="var(--brand)" />
+                      <rect x="7" y="7" width="2" height="6" fill="var(--brand)" />
+                      <rect x="10" y="5" width="2" height="8" fill="var(--brand)" />
                     </g>
 
                     {/* 2. Clock with Dollar */}
                     <g transform="translate(182, 40)">
-                      <circle cx="8" cy="8" r="8" fill="#ecfdf5" stroke="#00a862" strokeWidth="1.2" />
-                      <path d="M8 4 V8 H11" stroke="#00a862" strokeWidth="1.2" strokeLinecap="round" />
+                      <circle cx="8" cy="8" r="8" fill="#ecfdf5" stroke="var(--brand)" strokeWidth="1.2" />
+                      <path d="M8 4 V8 H11" stroke="var(--brand)" strokeWidth="1.2" strokeLinecap="round" />
                     </g>
 
                     {/* 3. Percent / Growth */}
                     <g transform="translate(180, 78)">
                       <circle cx="7" cy="7" r="7" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1" />
-                      <text x="7" y="10" textAnchor="middle" fontSize="8" fontWeight="700" fill="#00a862">
+                      <text x="7" y="10" textAnchor="middle" fontSize="8" fontWeight="700" fill="var(--brand)">
                         %
                       </text>
                     </g>
 
                     {/* Decorative Sparkles & Dots */}
-                    <rect x="70" y="108" width="3" height="3" transform="rotate(45 70 108)" fill="#00a862" />
+                    <rect x="70" y="108" width="3" height="3" transform="rotate(45 70 108)" fill="var(--brand)" />
                     <rect x="198" y="62" width="2.5" height="2.5" transform="rotate(45 198 62)" fill="#94a3b8" />
                     <circle cx="180" cy="26" r="1.5" fill="#94a3b8" />
                     <path d="M102 36 h4 M104 34 v4" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" />
@@ -8773,7 +8785,7 @@ export default function MisaLedgerWorkspace({
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       borderRadius: 6,
@@ -8784,8 +8796,8 @@ export default function MisaLedgerWorkspace({
                       boxShadow: "0 2px 6px rgba(0, 168, 98, 0.2)",
                       transition: "all 0.15s ease",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#009153")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "#00a862")}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--brand-hover)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "var(--brand)")}
                   >
                     <span>Thêm</span>
                   </button>
@@ -8821,7 +8833,7 @@ export default function MisaLedgerWorkspace({
                       border: "1px solid #cbd5e1",
                       borderRadius: 4,
                       padding: "6px 20px",
-                      color: "#00a862",
+                      color: "var(--brand)",
                       fontSize: 13,
                       fontWeight: 500,
                       cursor: "pointer",
@@ -8829,7 +8841,7 @@ export default function MisaLedgerWorkspace({
                       transition: "all 0.15s ease",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "#00a862";
+                      e.currentTarget.style.borderColor = "var(--brand)";
                       e.currentTarget.style.background = "#f0fdf4";
                     }}
                     onMouseLeave={(e) => {
@@ -8897,7 +8909,7 @@ export default function MisaLedgerWorkspace({
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <button
                       type="button"
-                      onClick={() => notify("Xuất Excel danh sách chứng từ kết chuyển")}
+                      onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Xuất Excel danh sách chứng từ kết chuyển"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -8926,7 +8938,7 @@ export default function MisaLedgerWorkspace({
                         gap: 6,
                         padding: "8px 18px",
                         borderRadius: 6,
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         border: "none",
                         fontWeight: 600,
@@ -8965,11 +8977,11 @@ export default function MisaLedgerWorkspace({
                           }}
                         >
                           <td style={{ padding: "10px 14px", color: "#94a3b8" }}>{idx + 1}</td>
-                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "#00a862" }}>{item.id}</td>
+                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--brand)" }}>{item.id}</td>
                           <td style={{ padding: "10px 14px", fontWeight: 500 }}>{item.period}</td>
                           <td style={{ padding: "10px 14px" }}>{item.date}</td>
                           <td style={{ padding: "10px 14px" }}>{item.desc}</td>
-                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "#0369a1" }}>{item.debitAcc}</td>
+                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--brand-hover)" }}>{item.debitAcc}</td>
                           <td style={{ padding: "10px 14px", fontWeight: 600, color: "#b45309" }}>{item.creditAcc}</td>
                           <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600 }}>
                             {formatVND(item.amount)}
@@ -9032,15 +9044,15 @@ export default function MisaLedgerWorkspace({
 
                     {/* Green Document Folder with Bar Chart & $ Badge (Top Left of Accountant) */}
                     <g transform="translate(85, 30)">
-                      <rect x="0" y="0" width="56" height="52" rx="10" fill="#00a862" />
+                      <rect x="0" y="0" width="56" height="52" rx="10" fill="var(--brand)" />
                       <rect x="6" y="6" width="44" height="40" rx="6" fill="#e8f5e9" />
                       {/* Bar chart inside folder */}
-                      <rect x="14" y="28" width="6" height="12" rx="2" fill="#00a862" />
-                      <rect x="24" y="20" width="6" height="20" rx="2" fill="#00a862" />
+                      <rect x="14" y="28" width="6" height="12" rx="2" fill="var(--brand)" />
+                      <rect x="24" y="20" width="6" height="20" rx="2" fill="var(--brand)" />
                       <rect x="34" y="14" width="6" height="26" rx="2" fill="#10b981" />
                       {/* Dollar badge on folder corner */}
-                      <circle cx="48" cy="10" r="10" fill="#00a862" stroke="#ffffff" strokeWidth="2" />
-                      <text x="48" y="14" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold" fontFamily="sans-serif">$</text>
+                      <circle cx="48" cy="10" r="10" fill="var(--brand)" stroke="#ffffff" strokeWidth="2" />
+                      <text x="48" y="14" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold" fontFamily="Roboto, Arial, sans-serif">$</text>
                     </g>
 
                     {/* Female Accountant Character (sitting behind laptop) */}
@@ -9076,29 +9088,29 @@ export default function MisaLedgerWorkspace({
                       {/* Laptop logo dot */}
                       <circle cx="28" cy="14" r="2.5" fill="#ffffff" />
                       {/* Screen light glow line */}
-                      <line x1="16" y1="12" x2="24" y2="12" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" />
+                      <line x1="16" y1="12" x2="24" y2="12" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
                     </g>
 
                     {/* Floating Decorative Badges matching Screenshot 1 */}
                     <g transform="translate(80, 105)">
-                      <circle cx="10" cy="10" r="9" fill="#00a862" />
-                      <text x="10" y="14" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold" fontFamily="sans-serif">+</text>
+                      <circle cx="10" cy="10" r="9" fill="var(--brand)" />
+                      <text x="10" y="14" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold" fontFamily="Roboto, Arial, sans-serif">+</text>
                     </g>
 
                     <g transform="translate(192, 54)">
-                      <circle cx="9" cy="9" r="8" fill="#00a862" />
-                      <text x="9" y="12.5" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold" fontFamily="sans-serif">%</text>
+                      <circle cx="9" cy="9" r="8" fill="var(--brand)" />
+                      <text x="9" y="12.5" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold" fontFamily="Roboto, Arial, sans-serif">%</text>
                     </g>
 
                     <g transform="translate(182, 92)">
-                      <circle cx="8" cy="8" r="7" fill="#00a862" />
-                      <text x="8" y="11.5" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="bold" fontFamily="sans-serif">$</text>
+                      <circle cx="8" cy="8" r="7" fill="var(--brand)" />
+                      <text x="8" y="11.5" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="bold" fontFamily="Roboto, Arial, sans-serif">$</text>
                     </g>
 
-                    <g fill="#00a862" opacity="0.8">
-                      <circle cx="178" cy="42" r="2.5" fill="#00a862" />
-                      <circle cx="75" cy="120" r="2" fill="#00a862" />
-                      <circle cx="198" cy="115" r="2" fill="#00a862" />
+                    <g fill="var(--brand)" opacity="0.8">
+                      <circle cx="178" cy="42" r="2.5" fill="var(--brand)" />
+                      <circle cx="75" cy="120" r="2" fill="var(--brand)" />
+                      <circle cx="198" cy="115" r="2" fill="var(--brand)" />
                     </g>
                   </svg>
                 </div>
@@ -9133,7 +9145,7 @@ export default function MisaLedgerWorkspace({
                       data-testid="statement-split-btn"
                       onClick={() => setShowStatementDropdown(!showStatementDropdown)}
                       style={{
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         border: "none",
                         padding: "8px 18px",
@@ -9149,7 +9161,7 @@ export default function MisaLedgerWorkspace({
                       data-testid="statement-dropdown-arrow"
                       onClick={() => setShowStatementDropdown(!showStatementDropdown)}
                       style={{
-                        background: "#009153",
+                        background: "var(--brand-hover)",
                         color: "#ffffff",
                         border: "none",
                         borderLeft: "1px solid rgba(255,255,255,0.2)",
@@ -9343,7 +9355,7 @@ export default function MisaLedgerWorkspace({
                           type="button"
                           onClick={() => setShowStatementDropdown(!showStatementDropdown)}
                           style={{
-                            background: "#00a862",
+                            background: "var(--brand)",
                             color: "#ffffff",
                             border: "none",
                             padding: "6px 14px",
@@ -9358,7 +9370,7 @@ export default function MisaLedgerWorkspace({
                           type="button"
                           onClick={() => setShowStatementDropdown(!showStatementDropdown)}
                           style={{
-                            background: "#009153",
+                            background: "var(--brand-hover)",
                             color: "#ffffff",
                             border: "none",
                             borderLeft: "1px solid rgba(255,255,255,0.2)",
@@ -9427,7 +9439,7 @@ export default function MisaLedgerWorkspace({
 
                     <button
                       type="button"
-                      onClick={() => notify("Đã xuất danh sách Báo cáo tài chính ra file Excel!")}
+                      onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất danh sách Báo cáo tài chính ra file Excel!"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -9681,7 +9693,7 @@ export default function MisaLedgerWorkspace({
                           <thead>
                             <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                               <th style={{ width: 40, padding: "10px 14px", textAlign: "center" }}>
-                                <input type="checkbox" defaultChecked style={{ accentColor: "#00a862" }} />
+                                <input type="checkbox" defaultChecked style={{ accentColor: "var(--brand)" }} />
                               </th>
                               <th style={{ width: 120, padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#475569" }}>
                                 Mã báo cáo
@@ -9734,7 +9746,7 @@ export default function MisaLedgerWorkspace({
                                     }}
                                   >
                                     <td style={{ padding: "10px 14px", textAlign: "center" }}>
-                                      <input type="checkbox" defaultChecked style={{ accentColor: "#00a862" }} />
+                                      <input type="checkbox" defaultChecked style={{ accentColor: "var(--brand)" }} />
                                     </td>
                                     <td style={{ padding: "10px 14px" }}>
                                       <span
@@ -9791,7 +9803,7 @@ export default function MisaLedgerWorkspace({
                                             borderRadius: 4,
                                             border: "1px solid #10b981",
                                             background: "#ffffff",
-                                            color: "#00a862",
+                                            color: "var(--brand)",
                                             fontSize: 12,
                                             fontWeight: 600,
                                             cursor: "pointer",
@@ -9975,7 +9987,7 @@ export default function MisaLedgerWorkspace({
                                         borderRadius: 4,
                                         border: "1px solid #cbd5e1",
                                         background: "#ffffff",
-                                        color: "#0284c7",
+                                        color: "var(--brand)",
                                         fontSize: 11.5,
                                         fontWeight: 600,
                                         cursor: "pointer",
@@ -10083,7 +10095,7 @@ export default function MisaLedgerWorkspace({
                   onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
                   <span>Tìm kiếm nhanh báo cáo</span>
-                  <span style={{ fontSize: 15 }}>🤖</span>
+                  <span style={{ fontSize: 15 }}><Bot size={14} className="ui-inline-icon" aria-hidden="true" /></span>
                 </div>
               </div>
 
@@ -10202,7 +10214,7 @@ export default function MisaLedgerWorkspace({
                           cursor: "pointer",
                           transition: "color 0.12s",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                         onMouseLeave={(e) => (e.currentTarget.style.color = "#1e293b")}
                       >
                         {item.name}
@@ -10245,7 +10257,7 @@ export default function MisaLedgerWorkspace({
                             alignItems: "center",
                           }}
                         >
-                          <Star size={16} fill="#00a862" color="#00a862" />
+                          <Star size={16} fill="var(--brand)" color="var(--brand)" />
                         </button>
                       </div>
                     </div>
@@ -10323,7 +10335,7 @@ export default function MisaLedgerWorkspace({
                                 cursor: "pointer",
                                 transition: "color 0.12s",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                               onMouseLeave={(e) => (e.currentTarget.style.color = "#1e293b")}
                             >
                               {item.name}
@@ -10366,8 +10378,8 @@ export default function MisaLedgerWorkspace({
                               >
                                 <Star
                                   size={16}
-                                  fill={favoriteReports[item.name] ? "#00a862" : "none"}
-                                  color={favoriteReports[item.name] ? "#00a862" : "#94a3b8"}
+                                  fill={favoriteReports[item.name] ? "var(--brand)" : "none"}
+                                  color={favoriteReports[item.name] ? "var(--brand)" : "#94a3b8"}
                                 />
                               </button>
                             </div>
@@ -10437,7 +10449,7 @@ export default function MisaLedgerWorkspace({
                                 cursor: "pointer",
                                 transition: "color 0.12s",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                               onMouseLeave={(e) => (e.currentTarget.style.color = "#1e293b")}
                             >
                               {item.name}
@@ -10480,8 +10492,8 @@ export default function MisaLedgerWorkspace({
                               >
                                 <Star
                                   size={16}
-                                  fill={favoriteReports[item.name] ? "#00a862" : "none"}
-                                  color={favoriteReports[item.name] ? "#00a862" : "#94a3b8"}
+                                  fill={favoriteReports[item.name] ? "var(--brand)" : "none"}
+                                  color={favoriteReports[item.name] ? "var(--brand)" : "#94a3b8"}
                                 />
                               </button>
                             </div>
@@ -10547,7 +10559,7 @@ export default function MisaLedgerWorkspace({
                                 cursor: "pointer",
                                 transition: "color 0.12s",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                               onMouseLeave={(e) => (e.currentTarget.style.color = "#1e293b")}
                             >
                               {item.name}
@@ -10590,8 +10602,8 @@ export default function MisaLedgerWorkspace({
                               >
                                 <Star
                                   size={16}
-                                  fill={favoriteReports[item.name] ? "#00a862" : "none"}
-                                  color={favoriteReports[item.name] ? "#00a862" : "#94a3b8"}
+                                  fill={favoriteReports[item.name] ? "var(--brand)" : "none"}
+                                  color={favoriteReports[item.name] ? "var(--brand)" : "#94a3b8"}
                                 />
                               </button>
                             </div>
@@ -10657,7 +10669,7 @@ export default function MisaLedgerWorkspace({
                                 cursor: "pointer",
                                 transition: "color 0.12s",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                               onMouseLeave={(e) => (e.currentTarget.style.color = "#1e293b")}
                             >
                               {item.name}
@@ -10700,8 +10712,8 @@ export default function MisaLedgerWorkspace({
                               >
                                 <Star
                                   size={16}
-                                  fill={favoriteReports[item.name] ? "#00a862" : "none"}
-                                  color={favoriteReports[item.name] ? "#00a862" : "#94a3b8"}
+                                  fill={favoriteReports[item.name] ? "var(--brand)" : "none"}
+                                  color={favoriteReports[item.name] ? "var(--brand)" : "#94a3b8"}
                                 />
                               </button>
                             </div>
@@ -10769,7 +10781,7 @@ export default function MisaLedgerWorkspace({
                                 cursor: "pointer",
                                 transition: "color 0.12s",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                               onMouseLeave={(e) => (e.currentTarget.style.color = "#1e293b")}
                             >
                               {item.name}
@@ -10812,8 +10824,8 @@ export default function MisaLedgerWorkspace({
                               >
                                 <Star
                                   size={16}
-                                  fill={favoriteReports[item.name] ? "#00a862" : "none"}
-                                  color={favoriteReports[item.name] ? "#00a862" : "#94a3b8"}
+                                  fill={favoriteReports[item.name] ? "var(--brand)" : "none"}
+                                  color={favoriteReports[item.name] ? "var(--brand)" : "#94a3b8"}
                                 />
                               </button>
                             </div>
@@ -10872,7 +10884,7 @@ export default function MisaLedgerWorkspace({
             >
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Lock size={18} color="#00a862" />
+                  <Lock size={18} color="var(--brand)" />
                   <span style={{ fontSize: 15.5, fontWeight: 700, color: "#0f172a" }}>
                     Khóa sổ kỳ kế toán & Kiểm tra điều kiện trước khóa
                   </span>
@@ -11014,9 +11026,9 @@ export default function MisaLedgerWorkspace({
                     style={{
                       padding: "4px 12px",
                       borderRadius: 5,
-                      border: "1px solid #0284c7",
+                      border: "1px solid var(--brand)",
                       background: "#ffffff",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       fontSize: 12,
                       fontWeight: 600,
                       cursor: "pointer",
@@ -11118,7 +11130,7 @@ export default function MisaLedgerWorkspace({
                       borderRadius: 4,
                       border: "1px solid #cbd5e1",
                       background: "#ffffff",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       fontSize: 11.5,
                       fontWeight: 600,
                       cursor: "pointer",
@@ -11137,7 +11149,7 @@ export default function MisaLedgerWorkspace({
                       borderRadius: 4,
                       border: "1px solid #cbd5e1",
                       background: "#ffffff",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       fontSize: 11.5,
                       fontWeight: 600,
                       cursor: "pointer",
@@ -11194,7 +11206,7 @@ export default function MisaLedgerWorkspace({
                 style={{
                   padding: "8px 20px",
                   borderRadius: 6,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -11251,7 +11263,7 @@ export default function MisaLedgerWorkspace({
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Unlock size={18} color="#0284c7" />
+                <Unlock size={18} color="var(--brand)" />
                 <span style={{ fontSize: 15.5, fontWeight: 700, color: "#0f172a" }}>
                   Bỏ khóa / Mở lại sổ kỳ kế toán & Nhật ký Audit
                 </span>
@@ -11427,7 +11439,7 @@ export default function MisaLedgerWorkspace({
                   <tbody>
                     {periodLockHistory.map((h) => (
                       <tr key={h.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "6px 8px", fontWeight: 700, color: "#0284c7" }}>{h.action}</td>
+                        <td style={{ padding: "6px 8px", fontWeight: 700, color: "var(--brand)" }}>{h.action}</td>
                         <td style={{ padding: "6px 8px", fontWeight: 600 }}>
                           {h.previousStatus} → {h.newStatus}
                         </td>
@@ -11477,7 +11489,7 @@ export default function MisaLedgerWorkspace({
                 style={{
                   padding: "8px 20px",
                   borderRadius: 6,
-                  background: "#0284c7",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -11582,7 +11594,7 @@ export default function MisaLedgerWorkspace({
                           }}
                         />
                       </td>
-                      <td style={{ padding: "8px 12px", fontWeight: 600, color: "#0284c7" }}>{vt.id}</td>
+                      <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>{vt.id}</td>
                       <td style={{ padding: "8px 12px" }}>{vt.name}</td>
                       <td style={{ padding: "8px 12px" }}>
                         <input
@@ -11639,7 +11651,7 @@ export default function MisaLedgerWorkspace({
                 style={{
                   padding: "8px 20px",
                   borderRadius: 6,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -11765,7 +11777,7 @@ export default function MisaLedgerWorkspace({
                 style={{
                   padding: "8px 20px",
                   borderRadius: 6,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -12027,7 +12039,7 @@ export default function MisaLedgerWorkspace({
                         name="goingConcern"
                         checked={statementGoingConcern === "continuous"}
                         onChange={() => setStatementGoingConcern("continuous")}
-                        style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                        style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                       />
                       Doanh nghiệp đáp ứng giả định hoạt động liên tục
                     </label>
@@ -12037,7 +12049,7 @@ export default function MisaLedgerWorkspace({
                         name="goingConcern"
                         checked={statementGoingConcern === "discontinuous"}
                         onChange={() => setStatementGoingConcern("discontinuous")}
-                        style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                        style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                       />
                       Doanh nghiệp không đáp ứng giả định hoạt động liên tục
                     </label>
@@ -12066,7 +12078,7 @@ export default function MisaLedgerWorkspace({
                                     "B09-DN": checked,
                                   });
                                 }}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </th>
                             <th style={{ width: 155, padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#1e293b", borderRight: "1px solid #c2d6cb" }}>
@@ -12134,7 +12146,7 @@ export default function MisaLedgerWorkspace({
                                       [item.key]: e.target.checked,
                                     });
                                   }}
-                                  style={{ accentColor: "#00a862" }}
+                                  style={{ accentColor: "var(--brand)" }}
                                 />
                               </td>
                               <td style={{ padding: "9px 12px", fontWeight: 500, color: "#0f172a", borderRight: "1px solid #f1f5f9" }}>
@@ -12168,7 +12180,7 @@ export default function MisaLedgerWorkspace({
                       type="checkbox"
                       checked={statementReuseLatest}
                       onChange={(e) => setStatementReuseLatest(e.target.checked)}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     Lấy thông tin chung từ lần nhập gần nhất (Không sao chép số liệu kỳ trước)
                   </label>
@@ -12185,7 +12197,7 @@ export default function MisaLedgerWorkspace({
                         name="interimFormat"
                         checked={statementInterimFormat === "FULL"}
                         onChange={() => setStatementInterimFormat("FULL")}
-                        style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                        style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                       />
                       Dạng đầy đủ (B01a-DN, B02a-DN, B03a-DN, B09a-DN)
                     </label>
@@ -12195,7 +12207,7 @@ export default function MisaLedgerWorkspace({
                         name="interimFormat"
                         checked={statementInterimFormat === "CONDENSED"}
                         onChange={() => setStatementInterimFormat("CONDENSED")}
-                        style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                        style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                       />
                       Dạng tóm lược (B01b-DN, B02b-DN, B03b-DN, B09a-DN)
                     </label>
@@ -12222,7 +12234,7 @@ export default function MisaLedgerWorkspace({
                                   "B09a-DN": checked,
                                 });
                               }}
-                              style={{ accentColor: "#00a862" }}
+                              style={{ accentColor: "var(--brand)" }}
                             />
                           </th>
                           <th style={{ width: 155, padding: "8px 12px", textAlign: "left", fontWeight: 700, color: "#1e293b", borderRight: "1px solid #c2d6cb" }}>
@@ -12274,7 +12286,7 @@ export default function MisaLedgerWorkspace({
                                     [item.key]: e.target.checked,
                                   });
                                 }}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td style={{ padding: "9px 12px", fontWeight: 500, color: "#0f172a", borderRight: "1px solid #f1f5f9" }}>
@@ -12302,7 +12314,7 @@ export default function MisaLedgerWorkspace({
                       type="checkbox"
                       checked={statementReuseLatest}
                       onChange={(e) => setStatementReuseLatest(e.target.checked)}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     Lấy thông tin chung từ lần nhập gần nhất (Không sao chép số liệu kỳ trước)
                   </label>
@@ -12365,7 +12377,7 @@ export default function MisaLedgerWorkspace({
                     <div>• Tổng hợp GL: <strong style={{ color: "#059669" }}>{statementPrecheckSummary.gl_aggregation}</strong></div>
                     <div>• Đối chiếu phân hệ: <strong style={{ color: "#059669" }}>{statementPrecheckSummary.reconciliation}</strong></div>
                     <div>• Kết chuyển lãi lỗ: <strong style={{ color: "#059669" }}>{statementPrecheckSummary.pl_closing}</strong></div>
-                    <div>• Khóa kỳ kế toán: <strong style={{ color: "#0284c7" }}>{periodLockStatus}</strong></div>
+                    <div>• Khóa kỳ kế toán: <strong style={{ color: "var(--brand)" }}>{periodLockStatus}</strong></div>
                   </div>
                 </div>
               </div>
@@ -12510,7 +12522,7 @@ export default function MisaLedgerWorkspace({
                       <td style={{ padding: "8px 10px", fontWeight: 700 }}>{b.account_code}</td>
                       <td style={{ padding: "8px 10px" }}>{b.party_code || "-"}</td>
                       <td style={{ padding: "8px 10px" }}>{b.party_name || b.account_name || "-"}</td>
-                      <td style={{ padding: "8px 10px", color: "#0369a1", fontWeight: 600 }}>{b.side}</td>
+                      <td style={{ padding: "8px 10px", color: "var(--brand-hover)", fontWeight: 600 }}>{b.side}</td>
                       <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700 }}>
                         {Number(b.amount || 0).toLocaleString("vi-VN")}
                       </td>
@@ -12757,7 +12769,7 @@ export default function MisaLedgerWorkspace({
                     padding: "6px 18px",
                     borderRadius: 4,
                     border: "none",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     fontWeight: 600,
                     cursor: "pointer",
@@ -12866,7 +12878,7 @@ export default function MisaLedgerWorkspace({
                     >
                       {selectedVoucherType}
                     </span>
-                    <Plus size={14} color="#00a862" strokeWidth={2.5} />
+                    <Plus size={14} color="var(--brand)" strokeWidth={2.5} />
                     <ChevronDown size={14} color="#64748b" />
                   </div>
 
@@ -12893,7 +12905,7 @@ export default function MisaLedgerWorkspace({
                           style={{
                             padding: "8px 14px",
                             fontSize: 13,
-                            color: selectedVoucherType === vType ? "#00a862" : "#1e293b",
+                            color: selectedVoucherType === vType ? "var(--brand)" : "#1e293b",
                             fontWeight: selectedVoucherType === vType ? 600 : 400,
                             background: selectedVoucherType === vType ? "#f0fdf4" : "transparent",
                             cursor: "pointer",
@@ -12913,7 +12925,7 @@ export default function MisaLedgerWorkspace({
                           }}
                         >
                           <span>{vType}</span>
-                          {selectedVoucherType === vType && <Check size={14} color="#00a862" />}
+                          {selectedVoucherType === vType && <Check size={14} color="var(--brand)" />}
                         </div>
                       ))}
                     </div>
@@ -13045,7 +13057,7 @@ export default function MisaLedgerWorkspace({
                         width: "100%",
                         padding: "7px 32px 7px 10px",
                         borderRadius: 4,
-                        border: "1px solid #00a862",
+                        border: "1px solid var(--brand)",
                         outline: "none",
                         fontSize: 13,
                         color: "#0f172a",
@@ -13093,7 +13105,7 @@ export default function MisaLedgerWorkspace({
                   <span
                     style={{
                       fontSize: 12.5,
-                      color: "#00a862",
+                      color: "var(--brand)",
                       cursor: "pointer",
                       fontWeight: 500,
                       display: "inline-block",
@@ -13191,8 +13203,8 @@ export default function MisaLedgerWorkspace({
                     padding: "10px 4px",
                     fontSize: 13,
                     fontWeight: 600,
-                    color: activeDetailTab === "hach_toan" ? "#00a862" : "#64748b",
-                    borderBottom: activeDetailTab === "hach_toan" ? "2px solid #00a862" : "2px solid transparent",
+                    color: activeDetailTab === "hach_toan" ? "var(--brand)" : "#64748b",
+                    borderBottom: activeDetailTab === "hach_toan" ? "2px solid var(--brand)" : "2px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -13206,8 +13218,8 @@ export default function MisaLedgerWorkspace({
                       padding: "10px 4px",
                       fontSize: 13,
                       fontWeight: 600,
-                      color: activeDetailTab === "ke_khai_thue" ? "#00a862" : "#64748b",
-                      borderBottom: activeDetailTab === "ke_khai_thue" ? "2px solid #00a862" : "2px solid transparent",
+                      color: activeDetailTab === "ke_khai_thue" ? "var(--brand)" : "#64748b",
+                      borderBottom: activeDetailTab === "ke_khai_thue" ? "2px solid var(--brand)" : "2px solid transparent",
                       cursor: "pointer",
                     }}
                   >
@@ -13370,7 +13382,7 @@ export default function MisaLedgerWorkspace({
                               background: "transparent",
                               fontSize: 13,
                               fontWeight: 500,
-                              color: "#0369a1",
+                              color: "var(--brand-hover)",
                             }}
                           />
                         </td>
@@ -13695,7 +13707,7 @@ export default function MisaLedgerWorkspace({
                             style={{ width: "100%", border: "none", outline: "none", fontSize: 13 }}
                           />
                         </td>
-                        <td style={{ padding: "4px 8px", color: "#0369a1", fontWeight: 500 }}>{tRow.debitAcc}</td>
+                        <td style={{ padding: "4px 8px", color: "var(--brand-hover)", fontWeight: 500 }}>{tRow.debitAcc}</td>
                         <td style={{ padding: "4px 8px", color: "#b45309", fontWeight: 500 }}>{tRow.creditAcc}</td>
                         <td style={{ padding: "4px 8px", textAlign: "right" }}>
                           <input
@@ -13779,7 +13791,7 @@ export default function MisaLedgerWorkspace({
                       cursor: "pointer",
                     }}
                   >
-                    <Plus size={14} color="#00a862" />
+                    <Plus size={14} color="var(--brand)" />
                     <span>Thêm dòng</span>
                   </button>
                   <button
@@ -13823,7 +13835,7 @@ export default function MisaLedgerWorkspace({
                   </div>
                   <ChevronsLeft size={16} style={{ cursor: "pointer", opacity: 0.5 }} />
                   <ChevronDown size={14} style={{ transform: "rotate(90deg)", cursor: "pointer", opacity: 0.5 }} />
-                  <span style={{ fontWeight: 600, color: "#00a862" }}>1</span>
+                  <span style={{ fontWeight: 600, color: "var(--brand)" }}>1</span>
                   <ChevronDown size={14} style={{ transform: "rotate(-90deg)", cursor: "pointer", opacity: 0.5 }} />
                   <ChevronsRight size={16} style={{ cursor: "pointer", opacity: 0.5 }} />
                 </div>
@@ -13985,7 +13997,7 @@ export default function MisaLedgerWorkspace({
                   onClick={() => { void handleSaveGeneralVoucher(true); }}
                   style={{
                     padding: "7px 18px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     fontWeight: 600,
@@ -14000,7 +14012,7 @@ export default function MisaLedgerWorkspace({
                   type="button"
                   style={{
                     padding: "7px 8px",
-                    background: "#009153",
+                    background: "var(--brand-hover)",
                     color: "#ffffff",
                     border: "none",
                     borderLeft: "1px solid rgba(255,255,255,0.2)",
@@ -14168,7 +14180,7 @@ export default function MisaLedgerWorkspace({
                           display: "flex",
                           alignItems: "center",
                           width: "100%",
-                          border: "1px solid #00a862",
+                          border: "1px solid var(--brand)",
                           borderRadius: 4,
                           background: "#ffffff",
                           padding: "0 6px",
@@ -14201,7 +14213,7 @@ export default function MisaLedgerWorkspace({
                             />
                           ))}
                         </datalist>
-                        <Plus size={14} color="#00a862" strokeWidth={2.5} style={{ cursor: "pointer", marginRight: 4 }} />
+                        <Plus size={14} color="var(--brand)" strokeWidth={2.5} style={{ cursor: "pointer", marginRight: 4 }} />
                         <ChevronDown size={14} color="#64748b" style={{ cursor: "pointer" }} />
                       </div>
                     </div>
@@ -14225,7 +14237,7 @@ export default function MisaLedgerWorkspace({
                             width: 170,
                             padding: "6px 10px",
                             borderRadius: 4,
-                            border: "1px solid #00a862",
+                            border: "1px solid var(--brand)",
                             fontSize: 13,
                             outline: "none",
                           }}
@@ -14288,7 +14300,7 @@ export default function MisaLedgerWorkspace({
                     onClick={() => setShowAdvanceRefPicker((v) => !v)}
                     style={{
                       fontSize: 12.5,
-                      color: "#00a862",
+                      color: "var(--brand)",
                       cursor: "pointer",
                       fontWeight: 500,
                       display: "inline-block",
@@ -14370,7 +14382,7 @@ export default function MisaLedgerWorkspace({
                               <span>
                                 <strong>{reqItem.id}</strong> — {reqItem.employee}
                               </span>
-                              <span style={{ color: "#00a862", fontWeight: 600 }}>
+                              <span style={{ color: "var(--brand)", fontWeight: 600 }}>
                                 {Number(reqItem.amount || 0).toLocaleString("vi-VN")} đ
                               </span>
                             </div>
@@ -14470,8 +14482,8 @@ export default function MisaLedgerWorkspace({
                     padding: "10px 4px",
                     fontSize: 13,
                     fontWeight: 600,
-                    color: advanceDetailTab === "hach_toan" ? "#00a862" : "#64748b",
-                    borderBottom: advanceDetailTab === "hach_toan" ? "2px solid #00a862" : "2px solid transparent",
+                    color: advanceDetailTab === "hach_toan" ? "var(--brand)" : "#64748b",
+                    borderBottom: advanceDetailTab === "hach_toan" ? "2px solid var(--brand)" : "2px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -14484,8 +14496,8 @@ export default function MisaLedgerWorkspace({
                     padding: "10px 4px",
                     fontSize: 13,
                     fontWeight: 600,
-                    color: advanceDetailTab === "ke_khai_thue" ? "#00a862" : "#64748b",
-                    borderBottom: advanceDetailTab === "ke_khai_thue" ? "2px solid #00a862" : "2px solid transparent",
+                    color: advanceDetailTab === "ke_khai_thue" ? "var(--brand)" : "#64748b",
+                    borderBottom: advanceDetailTab === "ke_khai_thue" ? "2px solid var(--brand)" : "2px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -14617,7 +14629,7 @@ export default function MisaLedgerWorkspace({
                               background: "transparent",
                               fontSize: 13,
                               fontWeight: 500,
-                              color: "#0369a1",
+                              color: "var(--brand-hover)",
                             }}
                           />
                         </td>
@@ -14825,7 +14837,7 @@ export default function MisaLedgerWorkspace({
                               newRows[tIdx].debitAcc = e.target.value;
                               setAdvanceTaxRows(newRows);
                             }}
-                            style={{ width: "100%", border: "none", outline: "none", fontSize: 13, color: "#0369a1", fontWeight: 500 }}
+                            style={{ width: "100%", border: "none", outline: "none", fontSize: 13, color: "var(--brand-hover)", fontWeight: 500 }}
                           />
                         </td>
                         <td style={{ padding: "4px 8px" }}>
@@ -14951,7 +14963,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  <Plus size={14} color="#00a862" />
+                  <Plus size={14} color="var(--brand)" />
                   <span>Thêm dòng</span>
                 </button>
                 <button
@@ -15286,7 +15298,7 @@ export default function MisaLedgerWorkspace({
                   {/* Row 3: Tham chiếu */}
                   <div>
                     <span
-                      style={{ fontSize: 12.5, color: "#00a862", cursor: "pointer", textDecoration: "none" }}
+                      style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", textDecoration: "none" }}
                       onClick={() => notify("Mở danh sách chứng từ tham chiếu")}
                     >
                       Tham chiếu ...
@@ -15369,8 +15381,8 @@ export default function MisaLedgerWorkspace({
                   padding: "10px 16px",
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#00a862",
-                  borderBottom: "2px solid #00a862",
+                  color: "var(--brand)",
+                  borderBottom: "2px solid var(--brand)",
                   cursor: "pointer",
                 }}
               >
@@ -15508,7 +15520,7 @@ export default function MisaLedgerWorkspace({
                             background: "transparent",
                             fontSize: 13,
                             fontWeight: 500,
-                            color: "#0369a1",
+                            color: "var(--brand-hover)",
                           }}
                         />
                       </td>
@@ -15631,7 +15643,7 @@ export default function MisaLedgerWorkspace({
                     cursor: "pointer",
                   }}
                 >
-                  <Plus size={14} color="#00a862" />
+                  <Plus size={14} color="var(--brand)" />
                   <span>Thêm dòng</span>
                 </button>
                 <button
@@ -15762,7 +15774,7 @@ export default function MisaLedgerWorkspace({
                     }}
                     style={{
                       padding: "7px 18px",
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       fontWeight: 600,
@@ -15776,7 +15788,7 @@ export default function MisaLedgerWorkspace({
                     type="button"
                     style={{
                       padding: "7px 8px",
-                      background: "#009153",
+                      background: "var(--brand-hover)",
                       color: "#ffffff",
                       border: "none",
                       borderLeft: "1px solid rgba(255,255,255,0.2)",
@@ -16006,7 +16018,7 @@ export default function MisaLedgerWorkspace({
                 style={{
                   padding: "8px 20px",
                   borderRadius: 6,
-                  background: isSubmittingAdvReq ? "#94a3b8" : "#00a862",
+                  background: isSubmittingAdvReq ? "#94a3b8" : "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -16069,7 +16081,7 @@ export default function MisaLedgerWorkspace({
             <div style={{ padding: "18px 22px", display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#64748b" }}>Số đề nghị:</span>
-                <strong style={{ color: "#00a862" }}>{viewingAdvReq.id}</strong>
+                <strong style={{ color: "var(--brand)" }}>{viewingAdvReq.id}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#64748b" }}>Ngày đề nghị:</span>
@@ -16094,7 +16106,7 @@ export default function MisaLedgerWorkspace({
               {viewingAdvReq.settlementVoucherNo && (
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "#64748b" }}>Chứng từ quyết toán liên kết:</span>
-                  <strong style={{ color: "#0284c7" }}>{viewingAdvReq.settlementVoucherNo}</strong>
+                  <strong style={{ color: "var(--brand)" }}>{viewingAdvReq.settlementVoucherNo}</strong>
                 </div>
               )}
               <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 8 }}>
@@ -16131,7 +16143,7 @@ export default function MisaLedgerWorkspace({
                 style={{
                   padding: "7px 16px",
                   borderRadius: 6,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -16188,7 +16200,7 @@ export default function MisaLedgerWorkspace({
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <FileSpreadsheet size={19} color="#00a862" />
+                <FileSpreadsheet size={19} color="var(--brand)" />
                 <span style={{ fontSize: 15, fontWeight: 800, color: "#0f172a" }}>
                   {uc14BookResult?.book_title || previewReportName}
                 </span>
@@ -16199,7 +16211,7 @@ export default function MisaLedgerWorkspace({
                     padding: "2px 8px",
                     borderRadius: 999,
                     background: uc14BookResult?.is_official_book !== false ? "#dcfce7" : "#e0f2fe",
-                    color: uc14BookResult?.is_official_book !== false ? "#166534" : "#0369a1",
+                    color: uc14BookResult?.is_official_book !== false ? "#166534" : "var(--brand-hover)",
                   }}
                 >
                   {uc14BookResult?.is_official_book !== false
@@ -16277,7 +16289,7 @@ export default function MisaLedgerWorkspace({
                   type="button"
                   onClick={() => { void handleExportReport("XLSX"); }}
                   style={{
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 6,
                     padding: "6px 12px",
@@ -16425,7 +16437,7 @@ export default function MisaLedgerWorkspace({
                     padding: "0 16px",
                     borderRadius: 6,
                     border: "none",
-                    background: "#0284c7",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     fontWeight: 700,
                     fontSize: 12.5,
@@ -16480,8 +16492,8 @@ export default function MisaLedgerWorkspace({
                       style={{
                         padding: "5px 11px",
                         borderRadius: 5,
-                        border: uc14SubView === tabItem.id ? "1px solid #00a862" : "1px solid #cbd5e1",
-                        background: uc14SubView === tabItem.id ? "#00a862" : "#ffffff",
+                        border: uc14SubView === tabItem.id ? "1px solid var(--brand)" : "1px solid #cbd5e1",
+                        background: uc14SubView === tabItem.id ? "var(--brand)" : "#ffffff",
                         color: uc14SubView === tabItem.id ? "#ffffff" : "#334155",
                         fontSize: 12,
                         fontWeight: 700,
@@ -16535,11 +16547,11 @@ export default function MisaLedgerWorkspace({
                 </div>
                 <div>
                   <span style={{ color: "#64748b" }}>Phát sinh Nợ: </span>
-                  <strong style={{ color: "#0284c7" }}>{apiNumber(uc14BookResult?.summary_totals?.period_debit || 0).toLocaleString("vi-VN")}</strong>
+                  <strong style={{ color: "var(--brand)" }}>{apiNumber(uc14BookResult?.summary_totals?.period_debit || 0).toLocaleString("vi-VN")}</strong>
                 </div>
                 <div>
                   <span style={{ color: "#64748b" }}>Phát sinh Có: </span>
-                  <strong style={{ color: "#0284c7" }}>{apiNumber(uc14BookResult?.summary_totals?.period_credit || 0).toLocaleString("vi-VN")}</strong>
+                  <strong style={{ color: "var(--brand)" }}>{apiNumber(uc14BookResult?.summary_totals?.period_credit || 0).toLocaleString("vi-VN")}</strong>
                 </div>
                 <div>
                   <span style={{ color: "#64748b" }}>Dư Nợ cuối kỳ: </span>
@@ -16621,7 +16633,7 @@ export default function MisaLedgerWorkspace({
                                   background: "none",
                                   border: "none",
                                   padding: 0,
-                                  color: "#0284c7",
+                                  color: "var(--brand)",
                                   fontWeight: 700,
                                   cursor: "pointer",
                                   textDecoration: "underline",
@@ -16659,7 +16671,7 @@ export default function MisaLedgerWorkspace({
                             <td style={{ border: "1px solid #e2e8f0", padding: "6px 8px", textAlign: "center" }}>
                               <span style={{ fontWeight: 700 }}>{row.currency_code}</span>
                               {row.currency_code !== "VND" && (
-                                <div style={{ fontSize: 11, color: "#0369a1" }}>
+                                <div style={{ fontSize: 11, color: "var(--brand-hover)" }}>
                                   NT: {apiNumber(row.debit_fc || row.credit_fc).toLocaleString("vi-VN")} (TG: {apiNumber(row.exchange_rate).toLocaleString("vi-VN")})
                                 </div>
                               )}
@@ -16716,7 +16728,7 @@ export default function MisaLedgerWorkspace({
                               <td style={{ border: "1px solid #e2e8f0", padding: 7 }}>
                                 {a.account_name}
                                 {a.is_bilateral && (
-                                  <span style={{ marginLeft: 6, fontSize: 10.5, padding: "1px 6px", borderRadius: 4, background: "#e0f2fe", color: "#0369a1", fontWeight: 700 }}>
+                                  <span style={{ marginLeft: 6, fontSize: 10.5, padding: "1px 6px", borderRadius: 4, background: "#e0f2fe", color: "var(--brand-hover)", fontWeight: 700 }}>
                                     Lưỡng tính
                                   </span>
                                 )}
@@ -16761,7 +16773,7 @@ export default function MisaLedgerWorkspace({
                               <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right" }}>{apiNumber(p.opening_credit).toLocaleString("vi-VN")}</td>
                               <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right" }}>{apiNumber(p.period_debit).toLocaleString("vi-VN")}</td>
                               <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right" }}>{apiNumber(p.period_credit).toLocaleString("vi-VN")}</td>
-                              <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right", fontWeight: 700, color: "#0284c7" }}>{apiNumber(p.closing_debit).toLocaleString("vi-VN")}</td>
+                              <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{apiNumber(p.closing_debit).toLocaleString("vi-VN")}</td>
                               <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right", fontWeight: 700, color: "#b45309" }}>{apiNumber(p.closing_credit).toLocaleString("vi-VN")}</td>
                             </tr>
                           ))}
@@ -16791,7 +16803,7 @@ export default function MisaLedgerWorkspace({
                         <tbody>
                           {(uc14BookResult?.currency_totals || []).map((c: any) => (
                             <tr key={c.currency_code}>
-                              <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "center", fontWeight: 700, color: "#0369a1" }}>{c.currency_code}</td>
+                              <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "center", fontWeight: 700, color: "var(--brand-hover)" }}>{c.currency_code}</td>
                               <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right", fontWeight: 700 }}>{apiNumber(c.period_debit_fc).toLocaleString("vi-VN")}</td>
                               <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right", fontWeight: 700 }}>{apiNumber(c.period_credit_fc).toLocaleString("vi-VN")}</td>
                               <td style={{ border: "1px solid #e2e8f0", padding: 7, textAlign: "right" }}>{apiNumber(c.period_debit_vnd).toLocaleString("vi-VN")}</td>
@@ -16867,7 +16879,7 @@ export default function MisaLedgerWorkspace({
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontWeight: 800, fontSize: 14, color: "#0f172a" }}>
-                      🔍 Chuỗi Truy vết Chứng từ 2 chiều
+                      <Search size={14} className="ui-inline-icon" aria-hidden="true" /> Chuỗi Truy vết Chứng từ 2 chiều
                     </div>
                     <button
                       type="button"
@@ -16896,7 +16908,7 @@ export default function MisaLedgerWorkspace({
                     {(uc14TraceDetail.trace_chain_breadcrumb || []).map((step: string, i: number) => (
                       <span key={i}>
                         {i > 0 && <span style={{ color: "#94a3b8", margin: "0 4px" }}>→</span>}
-                        <span style={{ color: i === (uc14TraceDetail.trace_chain_breadcrumb?.length || 1) - 1 ? "#00a862" : "#0f172a" }}>
+                        <span style={{ color: i === (uc14TraceDetail.trace_chain_breadcrumb?.length || 1) - 1 ? "var(--brand)" : "#0f172a" }}>
                           {step}
                         </span>
                       </span>
@@ -16984,7 +16996,7 @@ export default function MisaLedgerWorkspace({
                     {uc14TraceDetail.source_voucher ? (
                       uc14TraceDetail.source_voucher.access_restricted ? (
                         <div style={{ fontSize: 12, color: "#c2410c", fontWeight: 600 }}>
-                          🔒 {uc14TraceDetail.source_voucher.message}
+                          <LockKeyhole size={14} className="ui-inline-icon" aria-hidden="true" /> {uc14TraceDetail.source_voucher.message}
                         </div>
                       ) : (
                         <div style={{ fontSize: 12, color: "#334155", display: "flex", flexDirection: "column", gap: 4 }}>
@@ -17039,7 +17051,7 @@ export default function MisaLedgerWorkspace({
               <button
                 type="button"
                 onClick={() => setChartOfAccountsModalOpen(false)}
-                style={{ padding: "7px 16px", borderRadius: 6, background: "#00a862", color: "#fff", border: "none", fontWeight: 600 }}
+                style={{ padding: "7px 16px", borderRadius: 6, background: "var(--brand)", color: "#fff", border: "none", fontWeight: 600 }}
               >
                 Đóng
               </button>
@@ -17076,7 +17088,7 @@ export default function MisaLedgerWorkspace({
               <button
                 type="button"
                 onClick={() => setStatsCodeModalOpen(false)}
-                style={{ padding: "7px 16px", borderRadius: 6, background: "#00a862", color: "#fff", border: "none", fontWeight: 600 }}
+                style={{ padding: "7px 16px", borderRadius: 6, background: "var(--brand)", color: "#fff", border: "none", fontWeight: 600 }}
               >
                 Đóng
               </button>
@@ -17113,7 +17125,7 @@ export default function MisaLedgerWorkspace({
               <button
                 type="button"
                 onClick={() => setExpenseItemModalOpen(false)}
-                style={{ padding: "7px 16px", borderRadius: 6, background: "#00a862", color: "#fff", border: "none", fontWeight: 600 }}
+                style={{ padding: "7px 16px", borderRadius: 6, background: "var(--brand)", color: "#fff", border: "none", fontWeight: 600 }}
               >
                 Đóng
               </button>
@@ -17150,7 +17162,7 @@ export default function MisaLedgerWorkspace({
               <button
                 type="button"
                 onClick={() => setOptionsModalOpen(false)}
-                style={{ padding: "7px 16px", borderRadius: 6, background: "#00a862", color: "#fff", border: "none", fontWeight: 600 }}
+                style={{ padding: "7px 16px", borderRadius: 6, background: "var(--brand)", color: "#fff", border: "none", fontWeight: 600 }}
               >
                 Đóng
               </button>
@@ -17178,7 +17190,7 @@ export default function MisaLedgerWorkspace({
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Settings size={18} color="#00a862" />
+                <Settings size={18} color="var(--brand)" />
                 <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
                   Thiết lập tự động hóa đề nghị quyết toán tạm ứng
                 </span>
@@ -17244,7 +17256,7 @@ export default function MisaLedgerWorkspace({
                   setAutoSyncAdvanceModalOpen(false);
                   notify("Đã lưu thiết lập tự động hóa đề nghị quyết toán tạm ứng thành công!");
                 }}
-                style={{ padding: "8px 20px", borderRadius: 6, background: "#00a862", color: "#ffffff", border: "none", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+                style={{ padding: "8px 20px", borderRadius: 6, background: "var(--brand)", color: "#ffffff", border: "none", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
               >
                 Lưu cấu hình
               </button>
@@ -17740,7 +17752,7 @@ export default function MisaLedgerWorkspace({
                     type="button"
                     onClick={() => { void handleIngestSubledger(); }}
                     style={{
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       borderRadius: 6,
@@ -17779,10 +17791,10 @@ export default function MisaLedgerWorkspace({
                       {subledgerIngestions.map((ing) => (
                         <tr key={ing.id} style={{ borderTop: "1px solid #e2e8f0" }}>
                           <td style={{ padding: "10px 12px", fontWeight: 600 }}>{ing.sourceModule}</td>
-                          <td style={{ padding: "10px 12px", color: "#0284c7", fontWeight: 600 }}>
+                          <td style={{ padding: "10px 12px", color: "var(--brand)", fontWeight: 600 }}>
                             {ing.sourceDocumentNumber}
                           </td>
-                          <td style={{ padding: "10px 12px", color: "#64748b", fontFamily: "monospace", fontSize: 11.5 }}>
+                          <td style={{ padding: "10px 12px", color: "#64748b", fontFamily: "Roboto, Arial, sans-serif", fontSize: 11.5 }}>
                             {ing.sourceEventId}
                           </td>
                           <td style={{ padding: "10px 12px" }}>{ing.postingDate}</td>
@@ -17874,7 +17886,7 @@ export default function MisaLedgerWorkspace({
                                 }
                                 style={{
                                   background: "transparent",
-                                  color: "#0284c7",
+                                  color: "var(--brand)",
                                   border: "1px solid #bae6fd",
                                   borderRadius: 4,
                                   padding: "3px 8px",
@@ -18197,7 +18209,7 @@ export default function MisaLedgerWorkspace({
                   </div>
                   <div>
                     <div style={{ fontSize: 11.5, color: "#475569" }}>Còn lại được phép phân bổ:</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#00a862" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--brand)" }}>
                       {allocSourcePool.remainingAllocatableAmount.toLocaleString("vi-VN")} ₫
                     </div>
                   </div>
@@ -18216,9 +18228,9 @@ export default function MisaLedgerWorkspace({
                     style={{
                       padding: "7px 14px",
                       borderRadius: 6,
-                      border: "1px solid #0284c7",
+                      border: "1px solid var(--brand)",
                       background: "#ffffff",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       fontSize: 12.5,
                       fontWeight: 600,
                       cursor: "pointer",
@@ -18233,7 +18245,7 @@ export default function MisaLedgerWorkspace({
                       padding: "7px 14px",
                       borderRadius: 6,
                       border: "none",
-                      background: "#0284c7",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       fontSize: 12.5,
                       fontWeight: 600,
@@ -18280,7 +18292,7 @@ export default function MisaLedgerWorkspace({
                                 ? dest.directAmount.toLocaleString("vi-VN")
                                 : dest.basisValue.toLocaleString("vi-VN")}
                           </td>
-                          <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#0284c7" }}>
+                          <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "var(--brand)" }}>
                             {dest.percentage}%
                           </td>
                           <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#0f172a" }}>
@@ -18320,7 +18332,7 @@ export default function MisaLedgerWorkspace({
                     <tbody>
                       {allocRunsHistory.map((run) => (
                         <tr key={run.id} style={{ borderTop: "1px solid #e2e8f0" }}>
-                          <td style={{ padding: "8px 10px", fontWeight: 700, color: "#0284c7" }}>{run.number}</td>
+                          <td style={{ padding: "8px 10px", fontWeight: 700, color: "var(--brand)" }}>{run.number}</td>
                           <td style={{ padding: "8px 10px" }}>
                             {run.periodCode} ({run.postingDate})
                           </td>
@@ -18463,7 +18475,7 @@ export default function MisaLedgerWorkspace({
                                   borderRadius: 4,
                                   border: "1px solid #bae6fd",
                                   background: "#f0f9ff",
-                                  color: "#0284c7",
+                                  color: "var(--brand)",
                                   fontSize: 11.5,
                                   fontWeight: 600,
                                   cursor: "pointer",
@@ -18517,9 +18529,9 @@ export default function MisaLedgerWorkspace({
                   style={{
                     padding: "8px 16px",
                     borderRadius: 6,
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     background: "#ffffff",
-                    color: "#00a862",
+                    color: "var(--brand)",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -18534,7 +18546,7 @@ export default function MisaLedgerWorkspace({
                     padding: "8px 18px",
                     borderRadius: 6,
                     border: "none",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     fontSize: 13,
                     fontWeight: 600,
@@ -19302,7 +19314,7 @@ export default function MisaLedgerWorkspace({
                                     fontSize: 11,
                                     borderRadius: 4,
                                     border: "none",
-                                    background: "#00a862",
+                                    background: "var(--brand)",
                                     color: "#fff",
                                     cursor: "pointer",
                                   }}
@@ -19676,9 +19688,9 @@ export default function MisaLedgerWorkspace({
                   style={{
                     padding: "7px 14px",
                     borderRadius: 6,
-                    border: "1px solid #0284c7",
+                    border: "1px solid var(--brand)",
                     background: "#f0f9ff",
-                    color: "#0369a1",
+                    color: "var(--brand-hover)",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -19695,7 +19707,7 @@ export default function MisaLedgerWorkspace({
                     padding: "7px 16px",
                     borderRadius: 6,
                     border: "none",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     fontSize: 13,
                     fontWeight: 600,
@@ -19798,7 +19810,7 @@ export default function MisaLedgerWorkspace({
                         <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0" }}>
                           <div>{row.accountName}</div>
                           {row.bilateralNote && (
-                            <div style={{ fontSize: 11, color: "#0369a1", marginTop: 2 }}>{row.bilateralNote}</div>
+                            <div style={{ fontSize: 11, color: "var(--brand-hover)", marginTop: 2 }}>{row.bilateralNote}</div>
                           )}
                         </td>
                         <td style={{ padding: "8px 10px", border: "1px solid #e2e8f0", textAlign: "right" }}>
@@ -19830,7 +19842,7 @@ export default function MisaLedgerWorkspace({
                               borderRadius: 4,
                               border: "1px solid #cbd5e1",
                               background: "#ffffff",
-                              color: "#0284c7",
+                              color: "var(--brand)",
                               fontSize: 11.5,
                               fontWeight: 600,
                               cursor: "pointer",
@@ -19888,7 +19900,7 @@ export default function MisaLedgerWorkspace({
                     <tbody>
                       {balAggDrilldownRows.map((m, idx) => (
                         <tr key={idx}>
-                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", fontWeight: 600, color: "#0284c7" }}>
+                          <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>
                             {m.entry_number}
                           </td>
                           <td style={{ padding: "6px 8px", border: "1px solid #e2e8f0" }}>{m.posting_date}</td>
@@ -19924,9 +19936,9 @@ export default function MisaLedgerWorkspace({
                 style={{
                   padding: "7px 16px",
                   borderRadius: 6,
-                  border: "1px solid #0284c7",
+                  border: "1px solid var(--brand)",
                   background: "#f0f9ff",
-                  color: "#0369a1",
+                  color: "var(--brand-hover)",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -20127,9 +20139,9 @@ export default function MisaLedgerWorkspace({
                   style={{
                     padding: "7px 14px",
                     borderRadius: 6,
-                    border: "1px solid #0284c7",
+                    border: "1px solid var(--brand)",
                     background: "#f0f9ff",
-                    color: "#0369a1",
+                    color: "var(--brand-hover)",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -20146,7 +20158,7 @@ export default function MisaLedgerWorkspace({
                     padding: "7px 16px",
                     borderRadius: 6,
                     border: "none",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     fontSize: 13,
                     fontWeight: 600,
@@ -20264,7 +20276,7 @@ export default function MisaLedgerWorkspace({
                         </div>
                         <div style={{ fontSize: 11, color: "#64748b" }}>{ln.objectName}</div>
                         {ln.note && (
-                          <div style={{ fontSize: 11, color: "#0369a1", marginTop: 2 }}>Ghi chú: {ln.note}</div>
+                          <div style={{ fontSize: 11, color: "var(--brand-hover)", marginTop: 2 }}>Ghi chú: {ln.note}</div>
                         )}
                       </td>
                       <td style={{ padding: "8px", border: "1px solid #e2e8f0", textAlign: "right" }}>{formatVndNumber(ln.glOpening)}</td>
@@ -20321,7 +20333,7 @@ export default function MisaLedgerWorkspace({
                             borderRadius: 4,
                             border: "1px solid #cbd5e1",
                             background: "#ffffff",
-                            color: "#0284c7",
+                            color: "var(--brand)",
                             fontSize: 11.5,
                             fontWeight: 600,
                             cursor: "pointer",
@@ -20492,7 +20504,7 @@ export default function MisaLedgerWorkspace({
                 style={{
                   padding: "7px 16px",
                   borderRadius: 6,
-                  border: "1px solid #00a862",
+                  border: "1px solid var(--brand)",
                   background: "#f0fdf4",
                   color: "#15803d",
                   fontSize: 13,

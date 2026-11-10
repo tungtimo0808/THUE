@@ -1,3 +1,4 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
 import ReportOutputMenu from "./ReportOutputMenu";
 import React, { useState, useMemo } from "react";
 import ReportCustomizationMenu from "./ReportCustomizationMenu";
@@ -255,7 +256,7 @@ export default function MisaPurchaseSummaryByItemReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -273,7 +274,7 @@ export default function MisaPurchaseSummaryByItemReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -283,7 +284,7 @@ export default function MisaPurchaseSummaryByItemReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -426,7 +427,7 @@ export default function MisaPurchaseSummaryByItemReport({
               width: 22,
               height: 22,
               borderRadius: "50%",
-              background: "#0284c7",
+              background: "var(--brand)",
               border: "none",
               color: "#ffffff",
               cursor: "pointer",
@@ -648,7 +649,7 @@ export default function MisaPurchaseSummaryByItemReport({
                       <td style={{ padding: "8px 12px", borderRight: "1px solid #e2e8f0" }}>
                         <span
                           style={{
-                            color: "#0284c7",
+                            color: "var(--brand)",
                             cursor: "pointer",
                             fontWeight: 500,
                             textDecoration: "none",
@@ -835,11 +836,11 @@ export default function MisaPurchaseSummaryByItemReport({
                         <line x1="34" y1="19" x2="48" y2="19" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" />
                         <line x1="34" y1="25" x2="52" y2="25" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" />
                         <line x1="34" y1="31" x2="44" y2="31" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" />
-                        <circle cx="50" cy="38" r="11" fill="#ffffff" stroke="#00a862" strokeWidth="2.5" />
-                        <path d="M58 46L66 54" stroke="#00a862" strokeWidth="2.5" strokeLinecap="round" />
-                        <circle cx="20" cy="34" r="2" fill="#00a862" opacity="0.6" />
-                        <circle cx="68" cy="22" r="2" fill="#00a862" opacity="0.7" />
-                        <polygon points="70,16 71.5,19 74.5,20 71.5,21 70,24 68.5,21 65.5,20 68.5,19" fill="#00a862" opacity="0.8" />
+                        <circle cx="50" cy="38" r="11" fill="#ffffff" stroke="var(--brand)" strokeWidth="2.5" />
+                        <path d="M58 46L66 54" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" />
+                        <circle cx="20" cy="34" r="2" fill="var(--brand)" opacity="0.6" />
+                        <circle cx="68" cy="22" r="2" fill="var(--brand)" opacity="0.7" />
+                        <polygon points="70,16 71.5,19 74.5,20 71.5,21 70,24 68.5,21 65.5,20 68.5,19" fill="var(--brand)" opacity="0.8" />
                       </svg>
                       <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>
                         Không có dữ liệu
@@ -932,7 +933,7 @@ export default function MisaPurchaseSummaryByItemReport({
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#94a3b8",
+                    color: "#64748b",
                     cursor: "pointer",
                   }}
                   title="Trợ giúp"
@@ -1178,7 +1179,7 @@ export default function MisaPurchaseSummaryByItemReport({
                       onChange={(e) =>
                         setDraftItemCode(e.target.checked ? "CPMH" : "")
                       }
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                   </label>
@@ -1205,7 +1206,7 @@ export default function MisaPurchaseSummaryByItemReport({
                         position: "absolute",
                         right: 6,
                         top: 6,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1234,7 +1235,7 @@ export default function MisaPurchaseSummaryByItemReport({
                             onChange={(e) =>
                               setDraftItemCode(e.target.checked ? "CPMH" : "")
                             }
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th
@@ -1279,7 +1280,7 @@ export default function MisaPurchaseSummaryByItemReport({
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={() => {}}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td
@@ -1370,7 +1371,7 @@ export default function MisaPurchaseSummaryByItemReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

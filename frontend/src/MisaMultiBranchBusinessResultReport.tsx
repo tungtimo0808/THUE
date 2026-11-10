@@ -1,3 +1,5 @@
+import { saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo, useEffect } from "react";
 import { apiClient } from "./apiClient";
 import {
@@ -460,11 +462,7 @@ export default function MisaMultiBranchBusinessResultReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() =>
-              notify?.(
-                "Đã lưu Báo cáo kết quả hoạt động kinh doanh theo nhiều chi nhánh."
-              )
-            }
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -474,7 +472,7 @@ export default function MisaMultiBranchBusinessResultReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -592,7 +590,7 @@ export default function MisaMultiBranchBusinessResultReport({
             cursor: "pointer",
           }}
           title="Xuất khẩu Excel"
-          onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+          onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
         >
           <Download size={15} />
           <ChevronDown size={13} />
@@ -774,7 +772,7 @@ export default function MisaMultiBranchBusinessResultReport({
                           paddingLeft: 12 + (row.indent || 0) * 16,
                           fontWeight: row.isBold ? 700 : 400,
                           color: row.isBlueLink
-                            ? "#0284c7"
+                            ? "var(--brand)"
                             : row.isBold
                             ? "#0f172a"
                             : "#334155",
@@ -1131,7 +1129,7 @@ export default function MisaMultiBranchBusinessResultReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,
@@ -1254,7 +1252,7 @@ export default function MisaMultiBranchBusinessResultReport({
                         border: "1px solid #e2e8f0",
                         padding: "8px 10px",
                         textAlign: "center",
-                        color: "#0284c7",
+                        color: "var(--brand)",
                         fontWeight: 600,
                       }}
                     >
@@ -1297,7 +1295,7 @@ export default function MisaMultiBranchBusinessResultReport({
             >
               <button
                 type="button"
-                onClick={() => notify?.("Đã xuất khẩu chứng từ ra Excel.")}
+                onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất khẩu chứng từ"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                 style={{
                   height: 30,
                   padding: "0 14px",
@@ -1316,7 +1314,7 @@ export default function MisaMultiBranchBusinessResultReport({
                 style={{
                   height: 30,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   fontSize: 12.5,
@@ -1397,7 +1395,7 @@ export default function MisaMultiBranchBusinessResultReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,

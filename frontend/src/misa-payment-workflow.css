@@ -21,9 +21,9 @@
   border-radius: 6px;
 }
 .pw-workspace .misa-btn-primary {
-  background: #00a862;
+  background: var(--brand);
   color: #ffffff;
-  border: 1px solid #00a862;
+  border: 1px solid var(--brand);
   font-weight: 600;
   border-radius: 6px;
 }
@@ -41,8 +41,8 @@
   border-radius: 0;
 }
 .pw-workspace > nav .active {
-  color: #009b60;
-  border-bottom-color: #009b60;
+  color: var(--brand);
+  border-bottom-color: var(--brand);
   font-weight: 600;
 }
 .pw-workspace > header {
@@ -60,9 +60,9 @@
   margin: 0;
 }
 .pw-workspace > header button {
-  background: #009b60;
+  background: var(--brand);
   color: white;
-  border-color: #009b60;
+  border-color: var(--brand);
 }
 .pw-steps {
   display: grid;
@@ -87,7 +87,7 @@
   left: -23px;
   top: 45%;
   font-size: 36px;
-  color: #009b60;
+  color: var(--brand);
 }
 .pw-steps span {
   font-size: 12px;
@@ -96,7 +96,7 @@
   letter-spacing: 1px;
 }
 .pw-steps small {
-  color: #009b60;
+  color: var(--brand);
   margin-top: 12px;
   font-size: 13px;
   font-weight: 600;
@@ -117,7 +117,7 @@
   margin-top: auto;
   padding-top: 18px;
   border-top: 1px solid #eef0f2;
-  color: #009b60;
+  color: var(--brand);
   font-size: 13px;
 }
 @media (max-width: 850px) {

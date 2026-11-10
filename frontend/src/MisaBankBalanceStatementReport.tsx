@@ -294,7 +294,7 @@ export default function MisaBankBalanceStatementReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -389,7 +389,7 @@ export default function MisaBankBalanceStatementReport({
               style={{
                 position: "absolute",
                 left: 10,
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -805,7 +805,7 @@ export default function MisaBankBalanceStatementReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -819,7 +819,7 @@ export default function MisaBankBalanceStatementReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -830,7 +830,7 @@ export default function MisaBankBalanceStatementReport({
               <span
                 style={{
                   padding: "2px 8px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   borderRadius: 3,
                   fontSize: 12,
@@ -845,7 +845,7 @@ export default function MisaBankBalanceStatementReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -859,7 +859,7 @@ export default function MisaBankBalanceStatementReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -972,7 +972,7 @@ export default function MisaBankBalanceStatementReport({
                     width: "100%",
                     height: 32,
                     padding: "0 10px",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 13,
                     background: "#ffffff",
@@ -1024,7 +1024,7 @@ export default function MisaBankBalanceStatementReport({
                         position: "absolute",
                         right: 10,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1063,7 +1063,7 @@ export default function MisaBankBalanceStatementReport({
                         position: "absolute",
                         right: 10,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1089,7 +1089,7 @@ export default function MisaBankBalanceStatementReport({
                     width: "100%",
                     height: 32,
                     padding: "0 10px",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 13,
                     background: "#ffffff",
@@ -1154,7 +1154,7 @@ export default function MisaBankBalanceStatementReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

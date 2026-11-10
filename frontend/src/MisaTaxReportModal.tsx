@@ -259,7 +259,7 @@ export function MisaTaxReportModal({
             <span
               style={{
                 padding: "3px 8px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 borderRadius: 4,
                 fontSize: 12,
@@ -275,7 +275,7 @@ export function MisaTaxReportModal({
               </h3>
               <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 2 }}>
                 Đơn vị: <strong>{company.name}</strong> • Kỳ:{" "}
-                <span style={{ color: "#00a862", fontWeight: 600 }}>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>
                   Từ {fromDate} đến {toDate}
                 </span>{" "}
                 ({periodPreset})
@@ -425,7 +425,7 @@ export function MisaTaxReportModal({
                     type="checkbox"
                     checked={onlyDifferences}
                     onChange={(e) => setOnlyDifferences(e.target.checked)}
-                    style={{ width: 16, height: 16, accentColor: "#00a862" }}
+                    style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
                   />
                   <span>Chỉ hiển thị các dòng phát sinh chênh lệch / cảnh báo cần đối chiếu</span>
                 </label>
@@ -442,7 +442,7 @@ export function MisaTaxReportModal({
                 <button
                   type="button"
                   onClick={fetchReport}
-                  style={{ height: 36, padding: "0 20px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                  style={{ height: 36, padding: "0 20px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                 >
                   Áp dụng & Xem báo cáo
                 </button>
@@ -466,7 +466,7 @@ export function MisaTaxReportModal({
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, maxWidth: 360 }}>
                 <div style={{ position: "relative", width: "100%" }}>
-                  <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                  <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
                   <input
                     type="text"
                     placeholder="Tìm theo số HĐ, MST, tên đối tác..."
@@ -515,7 +515,7 @@ export function MisaTaxReportModal({
                   style={{
                     height: 32,
                     padding: "0 14px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 4,
@@ -557,7 +557,7 @@ export function MisaTaxReportModal({
                 {reportData.summary.total_tax_amount !== undefined && (
                   <div>
                     <span style={{ color: "#64748b" }}>Tổng tiền thuế: </span>
-                    <strong style={{ color: "#00a862" }}>
+                    <strong style={{ color: "var(--brand)" }}>
                       {Number(reportData.summary.total_tax_amount).toLocaleString("vi-VN")} đ
                     </strong>
                   </div>
@@ -646,7 +646,7 @@ export function MisaTaxReportModal({
                         colSpan={columns.length + 1}
                         style={{ textAlign: "center", padding: "40px 20px", color: "#64748b" }}
                       >
-                        <Info size={28} style={{ margin: "0 auto 8px auto", color: "#94a3b8" }} />
+                        <Info size={28} style={{ margin: "0 auto 8px auto", color: "#64748b" }} />
                         <div>Không có dữ liệu thuế phù hợp với bộ lọc trong kỳ này</div>
                       </td>
                     </tr>
@@ -814,7 +814,7 @@ export function MisaTaxReportModal({
                 </div>
                 <div style={{ marginBottom: 12 }}>
                   <span style={{ color: "#64748b" }}>Số liệu báo cáo: </span>
-                  <strong style={{ color: "#00a862", fontSize: 15 }}>
+                  <strong style={{ color: "var(--brand)", fontSize: 15 }}>
                     {Number(drilldownModal.context?.display_value || 0).toLocaleString("vi-VN")} đ
                   </strong>
                 </div>
@@ -850,7 +850,7 @@ export function MisaTaxReportModal({
                 <button
                   type="button"
                   onClick={() => setDrilldownModal(null)}
-                  style={{ height: 32, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                  style={{ height: 32, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                 >
                   Đóng
                 </button>

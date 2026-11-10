@@ -1,3 +1,4 @@
+import { openSavedTableReports, saveVisibleTable, exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -232,8 +233,7 @@ export default function MisaSupplierPayablesLedgerReport({
         width: "100%",
         background: "#ffffff",
         overflow: "hidden",
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        fontFamily: "Roboto, Arial, sans-serif",
       }}
     >
       {/* 1. Header Bar */}
@@ -293,7 +293,7 @@ export default function MisaSupplierPayablesLedgerReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -311,7 +311,7 @@ export default function MisaSupplierPayablesLedgerReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu báo cáo.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -321,7 +321,7 @@ export default function MisaSupplierPayablesLedgerReport({
             style={{
               height: 30,
               padding: "0 16px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 12.5,
@@ -516,7 +516,7 @@ export default function MisaSupplierPayablesLedgerReport({
             style={{
               background: "none",
               border: "none",
-              color: "#0284c7",
+              color: "var(--brand)",
               cursor: "pointer",
               padding: 4,
             }}
@@ -551,7 +551,7 @@ export default function MisaSupplierPayablesLedgerReport({
           <div style={{ display: "flex", alignItems: "center" }}>
             <button
               type="button"
-              onClick={() => notify?.("Đang xuất khẩu báo cáo...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Bảng dữ liệu"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không xuất được dữ liệu."); } }}
               style={{
                 background: "none",
                 border: "none",
@@ -1099,7 +1099,7 @@ export default function MisaSupplierPayablesLedgerReport({
                       style={{
                         padding: "30px",
                         textAlign: "center",
-                        color: "#94a3b8",
+                        color: "#64748b",
                         fontStyle: "italic",
                       }}
                     >
@@ -1143,7 +1143,7 @@ export default function MisaSupplierPayablesLedgerReport({
                 <option value="100">100</option>
               </select>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
                 <span
                   style={{
                     display: "inline-block",
@@ -1155,7 +1155,7 @@ export default function MisaSupplierPayablesLedgerReport({
                 >
                   1
                 </span>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
               </div>
             </div>
           </div>
@@ -1442,7 +1442,7 @@ export default function MisaSupplierPayablesLedgerReport({
                         filteredSuppliers.every((s) => draftSelectedSuppliers.includes(s.code))
                       }
                       onChange={toggleSelectAllSuppliers}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả nhà cung cấp</span>
                   </label>
@@ -1523,7 +1523,7 @@ export default function MisaSupplierPayablesLedgerReport({
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => toggleSelectSupplier(s.code)}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td style={{ padding: "6px 10px", fontWeight: 500 }}>{s.code}</td>
@@ -1566,9 +1566,9 @@ export default function MisaSupplierPayablesLedgerReport({
                         <option value="20">20</option>
                       </select>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
                         <span style={{ fontWeight: 600, color: "#0075c0" }}>1</span>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
                       </div>
                     </div>
                   </div>
@@ -1591,7 +1591,7 @@ export default function MisaSupplierPayablesLedgerReport({
                     type="checkbox"
                     checked={draftCombineIdentical}
                     onChange={(e) => setDraftCombineIdentical(e.target.checked)}
-                    style={{ accentColor: "#00a862" }}
+                    style={{ accentColor: "var(--brand)" }}
                   />
                   <span>Cộng gộp các bút toán giống nhau</span>
                 </label>
@@ -1610,7 +1610,7 @@ export default function MisaSupplierPayablesLedgerReport({
                     type="checkbox"
                     checked={draftCombineIdenticalTax}
                     onChange={(e) => setDraftCombineIdenticalTax(e.target.checked)}
-                    style={{ accentColor: "#00a862" }}
+                    style={{ accentColor: "var(--brand)" }}
                   />
                   <span>Cộng gộp các bút toán thuế giống nhau</span>
                 </label>
@@ -1668,7 +1668,7 @@ export default function MisaSupplierPayablesLedgerReport({
                   style={{
                     height: 32,
                     padding: "0 18px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 12.5,

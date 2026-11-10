@@ -1,9 +1,14 @@
+import { exportVisibleTable } from "./table-actions";
 import { useState, useEffect } from "react";
 import { formatMoneyInput, formatVnDecimal, parseMoneyInput } from "./formatMoney";
 import { useNavigate } from "react-router-dom";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import {
+  Building2,
+  Factory,
+  Folder,
+  Truck,
   Search,
   Plus,
   X,
@@ -691,9 +696,9 @@ export default function MisaToolsWorkspace({
   };
 
   // View modes for landing/list
-  const [registerViewMode, setRegisterViewMode] = useState<"landing" | "list">("landing");
-  const [managementViewMode, setManagementViewMode] = useState<"landing" | "list">("landing");
-  const [prepaidViewMode, setPrepaidViewMode] = useState<"landing" | "list">("landing");
+  const [registerViewMode, setRegisterViewMode] = useState<"landing" | "list">("list");
+  const [managementViewMode, setManagementViewMode] = useState<"landing" | "list">("list");
+  const [prepaidViewMode, setPrepaidViewMode] = useState<"landing" | "list">("list");
 
   // Subtabs for Management (Quản lý công cụ dụng cụ)
   const initialManagementSubtab = [
@@ -786,7 +791,7 @@ export default function MisaToolsWorkspace({
   // =========================================================================
   // STATE CHO PHÂN BỔ CHI PHÍ CCDC (Ảnh user cung cấp)
   // =========================================================================
-  const [allocationViewMode, setAllocationViewMode] = useState<"landing" | "list">("landing");
+  const [allocationViewMode, setAllocationViewMode] = useState<"landing" | "list">("list");
   const [showSelectPeriodModal, setShowSelectPeriodModal] = useState(false);
   const [allocationMonth, setAllocationMonth] = useState<number>(10);
   const [allocationYear, setAllocationYear] = useState<number>(CURRENT_YEAR);
@@ -810,7 +815,7 @@ export default function MisaToolsWorkspace({
   // =========================================================================
   // STATE CHO ĐIỀU CHỈNH CÔNG CỤ DỤNG CỤ (Ảnh 1 & 2 của user)
   // =========================================================================
-  const [adjustmentViewMode, setAdjustmentViewMode] = useState<"landing" | "list">("landing");
+  const [adjustmentViewMode, setAdjustmentViewMode] = useState<"landing" | "list">("list");
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [adjustmentVouchers, setAdjustmentVouchers] = useState(SAMPLE_ADJUSTMENT_VOUCHERS);
   const [adjustmentVoucherNo, setAdjustmentVoucherNo] = useState("ĐCH00001");
@@ -848,7 +853,7 @@ export default function MisaToolsWorkspace({
   // =========================================================================
   // STATE CHO ĐIỀU CHUYỂN CÔNG CỤ DỤNG CỤ (Ảnh 1 & 2 của user)
   // =========================================================================
-  const [transferViewMode, setTransferViewMode] = useState<"landing" | "list">("landing");
+  const [transferViewMode, setTransferViewMode] = useState<"landing" | "list">("list");
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferVouchers, setTransferVouchers] = useState(SAMPLE_TRANSFER_VOUCHERS);
   const [transferVoucherNo, setTransferVoucherNo] = useState("ĐCCC00001");
@@ -890,7 +895,7 @@ export default function MisaToolsWorkspace({
   // =========================================================================
   // STATE CHO GHI GIẢM CÔNG CỤ DỤNG CỤ (Ảnh 1 & 2 của user)
   // =========================================================================
-  const [decreaseViewMode, setDecreaseViewMode] = useState<"landing" | "list">("landing");
+  const [decreaseViewMode, setDecreaseViewMode] = useState<"landing" | "list">("list");
   const [showDecreaseModal, setShowDecreaseModal] = useState(false);
   const [decreaseVouchers, setDecreaseVouchers] = useState(SAMPLE_DECREASE_VOUCHERS);
   const [decreaseVoucherNo, setDecreaseVoucherNo] = useState("GGCC00001");
@@ -1147,7 +1152,7 @@ export default function MisaToolsWorkspace({
   // =========================================================================
   // STATE CHO KIỂM KÊ CÔNG CỤ DỤNG CỤ (Ảnh của user)
   // =========================================================================
-  const [stocktakeViewMode, setStocktakeViewMode] = useState<"landing" | "list">("landing");
+  const [stocktakeViewMode, setStocktakeViewMode] = useState<"landing" | "list">("list");
   const [showStocktakeDateModal, setShowStocktakeDateModal] = useState(false);
   const [showStocktakeVoucherModal, setShowStocktakeVoucherModal] = useState(false);
   const [stocktakeToDate, setStocktakeToDate] = useState(`30/09/${CURRENT_YEAR}`);
@@ -1384,7 +1389,7 @@ export default function MisaToolsWorkspace({
   const [excelAutoMap, setExcelAutoMap] = useState(true);
 
   // Subtab 2: Phân bổ chi phí trả trước
-  const [prepaidAllocViewMode, setPrepaidAllocViewMode] = useState<"landing" | "list">("landing");
+  const [prepaidAllocViewMode, setPrepaidAllocViewMode] = useState<"landing" | "list">("list");
   const [showPrepaidDateModal, setShowPrepaidDateModal] = useState(false);
   const [prepaidAllocMonth, setPrepaidAllocMonth] = useState(10);
   const [prepaidAllocYear, setPrepaidAllocYear] = useState(CURRENT_YEAR);
@@ -1423,7 +1428,7 @@ export default function MisaToolsWorkspace({
   ]);
 
   // Subtab 3: Ghi giảm chi phí trả trước (Ảnh 4)
-  const [prepaidDecreaseViewMode, setPrepaidDecreaseViewMode] = useState<"landing" | "list">("landing");
+  const [prepaidDecreaseViewMode, setPrepaidDecreaseViewMode] = useState<"landing" | "list">("list");
   const [showPrepaidDecreaseModal, setShowPrepaidDecreaseModal] = useState(false);
   const [prepaidDecreaseVoucherNo, setPrepaidDecreaseVoucherNo] = useState("GGCP00001");
   const [prepaidDecreaseVoucherDate, setPrepaidDecreaseVoucherDate] = useState(`30/09/${CURRENT_YEAR}`);
@@ -1821,7 +1826,7 @@ export default function MisaToolsWorkspace({
                       type="text"
                       value={singleVoucherNo}
                       onChange={(e) => setSingleVoucherNo(e.target.value)}
-                      style={{ width: "100%", height: 26, border: "1px solid #00a862", borderRadius: 3, padding: "0 6px", fontSize: 12, outline: "none", boxSizing: "border-box" }}
+                      style={{ width: "100%", height: 26, border: "1px solid var(--brand)", borderRadius: 3, padding: "0 6px", fontSize: 12, outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
 
@@ -2050,8 +2055,8 @@ export default function MisaToolsWorkspace({
                     padding: "8px 2px",
                     fontSize: 12.5,
                     fontWeight: singleActiveTab === t.id ? 700 : 500,
-                    color: singleActiveTab === t.id ? "#00a862" : "#475569",
-                    borderBottom: singleActiveTab === t.id ? "2.5px solid #00a862" : "2.5px solid transparent",
+                    color: singleActiveTab === t.id ? "var(--brand)" : "#475569",
+                    borderBottom: singleActiveTab === t.id ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -2272,7 +2277,7 @@ export default function MisaToolsWorkspace({
                       ))}
                       <tr style={{ background: "#f8fafc", borderTop: "1px solid #cbd5e1", fontWeight: 700 }}>
                         <td colSpan={3} style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>Tổng tỷ lệ phân bổ:</td>
-                        <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                        <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>
                           {singleAllocRows.reduce((sum, r) => sum + (r.rate || 0), 0).toFixed(2).replace(".", ",")}%
                         </td>
                         <td colSpan={4}></td>
@@ -2346,7 +2351,7 @@ export default function MisaToolsWorkspace({
                       {singleOriginRows.length > 0 ? singleOriginRows.map((row, idx) => (
                         <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ textAlign: "center", padding: "6px 4px", color: "#64748b", borderRight: "1px solid #e2e8f0" }}>{idx + 1}</td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{row.voucherNo}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{row.voucherNo}</td>
                           <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{row.voucherDate}</td>
                           <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0" }}>{row.type}</td>
                           <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{row.qty}</td>
@@ -2386,7 +2391,7 @@ export default function MisaToolsWorkspace({
                   notify(`Đã ghi tăng thành công CCDC: ${singleToolCode || "CCDC007"} - ${singleToolName || "Công cụ dụng cụ mới"}`);
                   setShowSingleAddModal(false);
                 }}
-                style={{ height: 28, padding: "0 18px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 28, padding: "0 18px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
               >
                 Ghi tăng
               </button>
@@ -2743,7 +2748,7 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={handleGenerateBatchCodes}
-                  style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", color: "#00a862", fontWeight: 500 }}
+                  style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", color: "var(--brand)", fontWeight: 500 }}
                 >
                   <Plus size={12} />
                   <span>Sinh mã CCDC</span>
@@ -2752,7 +2757,7 @@ export default function MisaToolsWorkspace({
                 <button
                   type="button"
                   onClick={handleGenerateBatchVouchers}
-                  style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", color: "#00a862", fontWeight: 500 }}
+                  style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", color: "var(--brand)", fontWeight: 500 }}
                 >
                   <Plus size={12} />
                   <span>Sinh số CT ghi tăng</span>
@@ -2774,8 +2779,8 @@ export default function MisaToolsWorkspace({
                       padding: "8px 2px",
                       fontSize: 12.5,
                       fontWeight: batchActiveTab === t.id ? 700 : 500,
-                      color: batchActiveTab === t.id ? "#00a862" : "#475569",
-                      borderBottom: batchActiveTab === t.id ? "2.5px solid #00a862" : "2.5px solid transparent",
+                      color: batchActiveTab === t.id ? "var(--brand)" : "#475569",
+                      borderBottom: batchActiveTab === t.id ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                       cursor: "pointer",
                     }}
                   >
@@ -2952,7 +2957,7 @@ export default function MisaToolsWorkspace({
                         ))}
                         <tr style={{ background: "#ffffff", borderTop: "1px solid #cbd5e1", fontWeight: 700 }}>
                           <td colSpan={3} style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>Tổng:</td>
-                          <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                          <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>
                             {batchAllocRows.reduce((sum, r) => sum + (r.rate || 0), 0).toFixed(2).replace(".", ",")}%
                           </td>
                           <td colSpan={3}></td>
@@ -2998,7 +3003,7 @@ export default function MisaToolsWorkspace({
                   notify(`Đã ghi tăng hàng loạt thành công ${batchRows.filter((r) => r.name || r.code).length || batchRows.length} CCDC vào sổ`);
                   setShowBatchAddModal(false);
                 }}
-                style={{ height: 28, padding: "0 18px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 28, padding: "0 18px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
               >
                 Ghi tăng
               </button>
@@ -3037,7 +3042,7 @@ export default function MisaToolsWorkspace({
             <div
               style={{
                 height: 42,
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 display: "flex",
                 alignItems: "center",
@@ -3148,9 +3153,9 @@ export default function MisaToolsWorkspace({
                         onMouseLeave={(e) => { e.currentTarget.style.background = "#ffffff"; }}
                       >
                         <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0" }}>
-                          <Check size={14} style={{ color: "#00a862" }} />
+                          <Check size={14} style={{ color: "var(--brand)" }} />
                         </td>
-                        <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{v.voucherNo}</td>
+                        <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{v.voucherNo}</td>
                         <td style={{ padding: "6px 6px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{v.voucherDate}</td>
                         <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{v.type}</td>
                         <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>{v.itemName}</td>
@@ -3235,9 +3240,9 @@ export default function MisaToolsWorkspace({
                         onMouseLeave={(e) => { e.currentTarget.style.background = "#ffffff"; }}
                       >
                         <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0" }}>
-                          <Check size={14} style={{ color: "#00a862" }} />
+                          <Check size={14} style={{ color: "var(--brand)" }} />
                         </td>
-                        <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{v.voucherNo}</td>
+                        <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{v.voucherNo}</td>
                         <td style={{ padding: "6px 6px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{v.voucherDate}</td>
                         <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>{v.itemName}</td>
                         <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{v.unit}</td>
@@ -3294,7 +3299,7 @@ export default function MisaToolsWorkspace({
             <div
               style={{
                 height: 48,
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 display: "flex",
                 alignItems: "center",
@@ -3396,7 +3401,7 @@ export default function MisaToolsWorkspace({
                     return (
                       <tr key={item.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                         <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0" }}>{idx + 1}</td>
-                        <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                        <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                         <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0" }}>{item.name}</td>
                         <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{item.dept}</td>
                         <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(item.originalCost)}</td>
@@ -3427,16 +3432,16 @@ export default function MisaToolsWorkspace({
       {showOrgTreeModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.6)", display: "grid", placeItems: "center", zIndex: 1000, padding: 20 }}>
           <div style={{ width: 560, background: "#ffffff", borderRadius: 8, overflow: "hidden", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)" }}>
-            <div style={{ height: 44, background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
+            <div style={{ height: 44, background: "var(--brand)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
               <strong style={{ fontSize: 14 }}>Cơ cấu tổ chức sử dụng CCDC</strong>
               <button type="button" onClick={() => setShowOrgTreeModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
             </div>
             <div style={{ padding: 18, fontSize: 13, color: "#334155" }}>
               <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 12, background: "#f8fafc", display: "flex", flexDirection: "column", gap: 8 }}>
-                <div>🏢 <strong>Công ty Cổ phần Minh An</strong></div>
-                <div style={{ paddingLeft: 20 }}>📁 Khối Văn phòng (Phòng Kế toán, Phòng Hành chính - Nhân sự, Phòng Kinh doanh)</div>
-                <div style={{ paddingLeft: 20 }}>🏭 Khối Sản xuất (Phân xưởng Kỹ thuật cơ điện, Xưởng Sản xuất Tủ bảng điện)</div>
-                <div style={{ paddingLeft: 20 }}>🚚 Khối Kho vận (Tổng kho Logistics, Đội Bảo vệ & An ninh)</div>
+                <div><Building2 size={14} className="ui-inline-icon" aria-hidden="true" /> <strong>Công ty Cổ phần Minh An</strong></div>
+                <div style={{ paddingLeft: 20 }}><Folder size={14} className="ui-inline-icon" aria-hidden="true" /> Khối Văn phòng (Phòng Kế toán, Phòng Hành chính - Nhân sự, Phòng Kinh doanh)</div>
+                <div style={{ paddingLeft: 20 }}><Factory size={14} className="ui-inline-icon" aria-hidden="true" /> Khối Sản xuất (Phân xưởng Kỹ thuật cơ điện, Xưởng Sản xuất Tủ bảng điện)</div>
+                <div style={{ paddingLeft: 20 }}><Truck size={14} className="ui-inline-icon" aria-hidden="true" /> Khối Kho vận (Tổng kho Logistics, Đội Bảo vệ & An ninh)</div>
               </div>
             </div>
             <div style={{ height: 42, background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "0 16px" }}>
@@ -3449,7 +3454,7 @@ export default function MisaToolsWorkspace({
       {showCategoryModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.6)", display: "grid", placeItems: "center", zIndex: 1000, padding: 20 }}>
           <div style={{ width: 560, background: "#ffffff", borderRadius: 8, overflow: "hidden", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)" }}>
-            <div style={{ height: 44, background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
+            <div style={{ height: 44, background: "var(--brand)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
               <strong style={{ fontSize: 14 }}>Danh mục loại công cụ dụng cụ</strong>
               <button type="button" onClick={() => setShowCategoryModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
             </div>
@@ -3472,7 +3477,7 @@ export default function MisaToolsWorkspace({
       {showOptionsModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.6)", display: "grid", placeItems: "center", zIndex: 1000, padding: 20 }}>
           <div style={{ width: 520, background: "#ffffff", borderRadius: 8, overflow: "hidden", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)" }}>
-            <div style={{ height: 44, background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
+            <div style={{ height: 44, background: "var(--brand)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px" }}>
               <strong style={{ fontSize: 14 }}>Tùy chọn thiết lập phân hệ CCDC</strong>
               <button type="button" onClick={() => setShowOptionsModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
             </div>
@@ -3732,7 +3737,7 @@ export default function MisaToolsWorkspace({
                 style={{
                   height: 32,
                   padding: "0 22px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   fontSize: 13,
@@ -3938,7 +3943,7 @@ export default function MisaToolsWorkspace({
                   <span>Tham chiếu</span>
                   <span
                     onClick={() => openReferenceVoucherPicker("ALLOC_CCDC")}
-                    style={{ color: "#00a862", fontWeight: 700, cursor: "pointer" }}
+                    style={{ color: "var(--brand)", fontWeight: 700, cursor: "pointer" }}
                   >
                     ...
                   </span>
@@ -4078,8 +4083,8 @@ export default function MisaToolsWorkspace({
                       padding: "10px 4px",
                       fontSize: 13,
                       fontWeight: isActive ? 600 : 500,
-                      color: isActive ? "#00a862" : "#64748b",
-                      borderBottom: isActive ? "2.5px solid #00a862" : "2.5px solid transparent",
+                      color: isActive ? "var(--brand)" : "#64748b",
+                      borderBottom: isActive ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                       cursor: "pointer",
                     }}
                   >
@@ -4131,11 +4136,11 @@ export default function MisaToolsWorkspace({
                           toolAllocIdentifyRows.map((row, idx) => (
                             <tr key={`${row.code || row.tool_code}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
                               <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                              <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{row.code || row.tool_code}</td>
+                              <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{row.code || row.tool_code}</td>
                               <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b" }}>{row.name || row.tool_name}</td>
                               <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.category_name || "Công cụ dụng cụ"}</td>
                               <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVND(Number(row.total_allocation_amount || 0))}</td>
-                              <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#00a862" }}>{formatVND(Number(row.active_allocation_amount ?? row.in_use_allocation_amount ?? row.total_allocation_amount ?? 0))}</td>
+                              <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "var(--brand)" }}>{formatVND(Number(row.active_allocation_amount ?? row.in_use_allocation_amount ?? row.total_allocation_amount ?? 0))}</td>
                               <td style={{ padding: "6px 10px", textAlign: "right", color: "#64748b" }}>{formatVND(Number(row.disposed_remaining_amount || 0))}</td>
                             </tr>
                           ))
@@ -4199,9 +4204,9 @@ export default function MisaToolsWorkspace({
                           width: 320,
                         }}
                       >
-                        <Upload size={18} style={{ color: "#0284c7" }} />
+                        <Upload size={18} style={{ color: "var(--brand)" }} />
                         <div style={{ fontSize: 12.5, color: "#64748b" }}>
-                          <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                          <span style={{ color: "var(--brand)", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                         </div>
                       </div>
                       {toolAllocAttachments.length > 0 && (
@@ -4253,7 +4258,7 @@ export default function MisaToolsWorkspace({
                         <th style={{ width: 95, padding: "7px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Giá trị còn lại</th>
                         <th style={{ width: 60, padding: "7px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Số kỳ PB</th>
                         <th style={{ width: 65, padding: "7px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Kỳ còn lại</th>
-                        <th style={{ width: 110, padding: "7px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "#00a862" }}>PB kỳ này</th>
+                        <th style={{ width: 110, padding: "7px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", color: "var(--brand)" }}>PB kỳ này</th>
                         <th style={{ width: 65, padding: "7px 4px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK chờ</th>
                         <th style={{ width: 70, padding: "7px 4px", textAlign: "center" }}>TK CP</th>
                       </tr>
@@ -4262,7 +4267,7 @@ export default function MisaToolsWorkspace({
                       {(toolAllocDetailRows.length > 0 ? toolAllocDetailRows : SAMPLE_ALLOCATION_ITEMS).map((item: any, idx: number) => (
                         <tr key={item.code || item.tool_code || item.toolCode || idx} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{item.code || item.tool_code || item.toolCode}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{item.code || item.tool_code || item.toolCode}</td>
                           <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>{item.name || item.tool_name || item.toolName}</td>
                           <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{item.target_name || item.department_name || item.dept}</td>
                           <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(Number(item.original_cost ?? item.total_allocation_value ?? item.originalCost ?? 0))}</td>
@@ -4270,7 +4275,7 @@ export default function MisaToolsWorkspace({
                           <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(Number(item.remaining_amount ?? item.remainingAmount ?? 0))}</td>
                           <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{item.allocation_periods ?? item.total_periods ?? item.allocMonths ?? 1}</td>
                           <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{item.remaining_periods ?? item.remainingMonths ?? 1}</td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(Number(item.period_allocation_amount ?? item.allocated_value ?? item.thisMonthAlloc ?? 0))}</td>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(Number(item.period_allocation_amount ?? item.allocated_value ?? item.thisMonthAlloc ?? 0))}</td>
                           <td style={{ padding: "6px 4px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 500 }}>{item.waiting_account || item.waitingAcc || "242"}</td>
                           <td style={{ padding: "6px 4px", textAlign: "center", fontWeight: 600, color: "#1e293b" }}>{item.expense_account || item.costAcc || "6423"}</td>
                         </tr>
@@ -4302,7 +4307,7 @@ export default function MisaToolsWorkspace({
                             <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>{row.description}</td>
                             <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>{row.debit_account}</td>
                             <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>{row.credit_account}</td>
-                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(Number(row.amount || 0))}</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(Number(row.amount || 0))}</td>
                             <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.expense_item || ""}</td>
                             <td style={{ padding: "10px 8px", color: "#475569" }}>{row.target_name || ""}</td>
                           </tr>
@@ -4316,7 +4321,7 @@ export default function MisaToolsWorkspace({
                             </td>
                             <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>6422</td>
                             <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>242</td>
-                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(6488888)}</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(6488888)}</td>
                             <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>Chi phí dụng cụ đồ dùng văn phòng</td>
                             <td style={{ padding: "10px 8px", color: "#475569" }}>Khối Văn phòng & Kinh doanh</td>
                           </tr>
@@ -4327,7 +4332,7 @@ export default function MisaToolsWorkspace({
                             </td>
                             <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>6277</td>
                             <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 700, color: "#1e293b" }}>242</td>
-                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(9161112)}</td>
+                            <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(9161112)}</td>
                             <td style={{ padding: "10px 8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>Chi phí dụng cụ sản xuất phân xưởng</td>
                             <td style={{ padding: "10px 8px", color: "#475569" }}>Khối Sản xuất & Cơ điện</td>
                           </tr>
@@ -4495,7 +4500,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 32,
                     padding: "0 16px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     color: "#ffffff",
                     fontSize: 13,
@@ -4511,7 +4516,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 32,
                     padding: "0 8px",
-                    background: "#009657",
+                    background: "var(--brand)",
                     border: "none",
                     borderLeft: "1px solid rgba(255,255,255,0.25)",
                     color: "#ffffff",
@@ -4648,7 +4653,7 @@ export default function MisaToolsWorkspace({
                   <div style={{ marginTop: 6 }}>
                     <span
                       onClick={() => notify("Mở danh sách chứng từ tham chiếu")}
-                      style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", textDecoration: "none" }}
+                      style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", textDecoration: "none" }}
                     >
                       Tham chiếu ...
                     </span>
@@ -4721,7 +4726,7 @@ export default function MisaToolsWorkspace({
                     style={{
                       fontSize: 26,
                       fontWeight: 700,
-                      color: totalAdjRemainingDiff !== 0 ? (totalAdjRemainingDiff > 0 ? "#00a862" : "#ef4444") : "#1e293b",
+                      color: totalAdjRemainingDiff !== 0 ? (totalAdjRemainingDiff > 0 ? "var(--brand)" : "#ef4444") : "#1e293b",
                     }}
                   >
                     {totalAdjRemainingDiff !== 0 ? formatVND(totalAdjRemainingDiff) : "0"}
@@ -4753,8 +4758,8 @@ export default function MisaToolsWorkspace({
                         padding: "10px 2px",
                         fontSize: 13,
                         fontWeight: isActive ? 600 : 400,
-                        color: isActive ? "#00a862" : "#64748b",
-                        borderBottom: isActive ? "2.5px solid #00a862" : "2.5px solid transparent",
+                        color: isActive ? "var(--brand)" : "#64748b",
+                        borderBottom: isActive ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                         cursor: "pointer",
                       }}
                     >
@@ -4905,7 +4910,7 @@ export default function MisaToolsWorkspace({
                               borderRight: "1px solid #e2e8f0",
                               textAlign: "right",
                               fontWeight: 600,
-                              color: row.remainingDiff > 0 ? "#00a862" : row.remainingDiff < 0 ? "#ef4444" : "#64748b",
+                              color: row.remainingDiff > 0 ? "var(--brand)" : row.remainingDiff < 0 ? "#ef4444" : "#64748b",
                             }}
                           >
                             {row.remainingDiff ? formatVND(row.remainingDiff) : "0"}
@@ -4954,7 +4959,7 @@ export default function MisaToolsWorkspace({
                               borderRight: "1px solid #e2e8f0",
                               textAlign: "right",
                               fontWeight: 600,
-                              color: row.periodDiff > 0 ? "#00a862" : row.periodDiff < 0 ? "#ef4444" : "#64748b",
+                              color: row.periodDiff > 0 ? "var(--brand)" : row.periodDiff < 0 ? "#ef4444" : "#64748b",
                             }}
                           >
                             {row.periodDiff ? `${row.periodDiff},00` : "0,00"}
@@ -5013,7 +5018,7 @@ export default function MisaToolsWorkspace({
                         <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right" }}>
                           {totalAdjRemainingAfter ? formatVND(totalAdjRemainingAfter) : "0"}
                         </td>
-                        <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right", color: totalAdjRemainingDiff !== 0 ? (totalAdjRemainingDiff > 0 ? "#00a862" : "#ef4444") : "#1e293b" }}>
+                        <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right", color: totalAdjRemainingDiff !== 0 ? (totalAdjRemainingDiff > 0 ? "var(--brand)" : "#ef4444") : "#1e293b" }}>
                           {totalAdjRemainingDiff ? formatVND(totalAdjRemainingDiff) : "0"}
                         </td>
                         <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right" }}>
@@ -5140,7 +5145,7 @@ export default function MisaToolsWorkspace({
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                       <Upload size={20} style={{ color: "#64748b" }} />
                       <div style={{ fontSize: 12.5, color: "#64748b" }}>
-                        <span style={{ color: "#0284c7", fontWeight: 500 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                        <span style={{ color: "var(--brand)", fontWeight: 500 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                       </div>
                     </div>
                   </div>
@@ -5227,7 +5232,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     color: "#ffffff",
@@ -5343,11 +5348,11 @@ export default function MisaToolsWorkspace({
                       width: "100%",
                       height: 32,
                       padding: "0 10px",
-                      border: "1.5px solid #00a862",
+                      border: "1.5px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 12.5,
                       fontWeight: 600,
-                      color: "#00a862",
+                      color: "var(--brand)",
                       boxSizing: "border-box",
                       outline: "none",
                     }}
@@ -5473,7 +5478,7 @@ export default function MisaToolsWorkspace({
                 <div style={{ marginTop: 6 }}>
                   <span
                     onClick={() => notify("Mở danh sách chứng từ tham chiếu")}
-                    style={{ fontSize: 12, color: "#0284c7", cursor: "pointer" }}
+                    style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer" }}
                   >
                     Tham chiếu ...
                   </span>
@@ -5497,8 +5502,8 @@ export default function MisaToolsWorkspace({
                   padding: "10px 4px",
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#00a862",
-                  borderBottom: "2.5px solid #00a862",
+                  color: "var(--brand)",
+                  borderBottom: "2.5px solid var(--brand)",
                   cursor: "pointer",
                 }}
               >
@@ -5759,7 +5764,7 @@ export default function MisaToolsWorkspace({
                       <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right" }}>
                         {totalTransferCurrentQty ? `${totalTransferCurrentQty},00` : "0,00"}
                       </td>
-                      <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right", color: "#00a862" }}>
+                      <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right", color: "var(--brand)" }}>
                         {totalTransferQty ? `${totalTransferQty},00` : "0,00"}
                       </td>
                       <td colSpan={4}></td>
@@ -5870,7 +5875,7 @@ export default function MisaToolsWorkspace({
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                     <Upload size={20} style={{ color: "#64748b" }} />
                     <div style={{ fontSize: 12.5, color: "#64748b" }}>
-                      <span style={{ color: "#0284c7", fontWeight: 500 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                      <span style={{ color: "var(--brand)", fontWeight: 500 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                     </div>
                   </div>
                 </div>
@@ -5957,7 +5962,7 @@ export default function MisaToolsWorkspace({
                 style={{
                   height: 32,
                   padding: "0 20px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   color: "#ffffff",
@@ -6072,7 +6077,7 @@ export default function MisaToolsWorkspace({
                       width: "100%",
                       height: 32,
                       padding: "0 30px 0 10px",
-                      border: "1.5px solid #00a862",
+                      border: "1.5px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 12.5,
                       color: "#1e293b",
@@ -6104,7 +6109,7 @@ export default function MisaToolsWorkspace({
                 <div style={{ marginTop: 8 }}>
                   <span
                     onClick={() => openReferenceVoucherPicker("DEC_CCDC")}
-                    style={{ fontSize: 12, color: "#0284c7", cursor: "pointer" }}
+                    style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer" }}
                   >
                     Tham chiếu ...
                   </span>
@@ -6187,8 +6192,8 @@ export default function MisaToolsWorkspace({
                   padding: "10px 4px",
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#00a862",
-                  borderBottom: "2.5px solid #00a862",
+                  color: "var(--brand)",
+                  borderBottom: "2.5px solid var(--brand)",
                   cursor: "pointer",
                 }}
               >
@@ -6492,7 +6497,7 @@ export default function MisaToolsWorkspace({
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                     <Upload size={20} style={{ color: "#64748b" }} />
                     <div style={{ fontSize: 12.5, color: "#64748b" }}>
-                      <span style={{ color: "#0284c7", fontWeight: 500 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                      <span style={{ color: "var(--brand)", fontWeight: 500 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                     </div>
                   </div>
                 </div>
@@ -6581,7 +6586,7 @@ export default function MisaToolsWorkspace({
                 style={{
                   height: 32,
                   padding: "0 20px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   color: "#ffffff",
@@ -6674,7 +6679,7 @@ export default function MisaToolsWorkspace({
                     width: "100%",
                     height: 32,
                     padding: "0 28px 0 10px",
-                    border: "1.5px solid #00a862",
+                    border: "1.5px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 13,
                     color: "#1e293b",
@@ -6752,7 +6757,7 @@ export default function MisaToolsWorkspace({
                 style={{
                   height: 30,
                   padding: "0 20px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   fontSize: 12.5,
@@ -6944,8 +6949,8 @@ export default function MisaToolsWorkspace({
                       padding: "10px 4px",
                       fontSize: 13,
                       fontWeight: isActive ? 600 : 400,
-                      color: isActive ? "#00a862" : "#64748b",
-                      borderBottom: isActive ? "2.5px solid #00a862" : "2.5px solid transparent",
+                      color: isActive ? "var(--brand)" : "#64748b",
+                      borderBottom: isActive ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                       cursor: "pointer",
                     }}
                   >
@@ -7041,7 +7046,7 @@ export default function MisaToolsWorkspace({
                               style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, textAlign: "right", fontSize: 12, boxSizing: "border-box" }}
                             />
                           </td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: row.diffExcess > 0 ? "#00a862" : "#64748b", fontWeight: row.diffExcess > 0 ? 600 : 400 }}>
+                          <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: row.diffExcess > 0 ? "var(--brand)" : "#64748b", fontWeight: row.diffExcess > 0 ? 600 : 400 }}>
                             {row.diffExcess ? `${row.diffExcess},00` : "0,00"}
                           </td>
                           <td style={{ padding: "6px 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: row.diffShortage > 0 ? "#ef4444" : "#64748b", fontWeight: row.diffShortage > 0 ? 600 : 400 }}>
@@ -7081,7 +7086,7 @@ export default function MisaToolsWorkspace({
                         <td colSpan={4} style={{ padding: "7px 12px", borderRight: "1px solid #cbd5e1" }}>Tổng cộng</td>
                         <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right" }}>{totalStocktakeBookQty ? `${totalStocktakeBookQty},00` : "0,00"}</td>
                         <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right" }}>{totalStocktakeActualQty ? `${totalStocktakeActualQty},00` : "0,00"}</td>
-                        <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right", color: "#00a862" }}>{totalStocktakeDiffExcess ? `${totalStocktakeDiffExcess},00` : "0,00"}</td>
+                        <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right", color: "var(--brand)" }}>{totalStocktakeDiffExcess ? `${totalStocktakeDiffExcess},00` : "0,00"}</td>
                         <td style={{ padding: "7px 8px", borderRight: "1px solid #cbd5e1", textAlign: "right", color: "#ef4444" }}>{totalStocktakeDiffShortage ? `${totalStocktakeDiffShortage},00` : "0,00"}</td>
                         <td colSpan={2}></td>
                       </tr>
@@ -7230,7 +7235,7 @@ export default function MisaToolsWorkspace({
                         })));
                         notify("Đã lấy toàn bộ danh mục CCDC đang dùng vào bảng kiểm kê");
                       }}
-                      style={{ height: 28, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, fontWeight: 500, color: "#00a862", cursor: "pointer" }}
+                      style={{ height: 28, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, fontWeight: 500, color: "var(--brand)", cursor: "pointer" }}
                     >
                       Lấy toàn bộ CCDC đang dùng
                     </button>
@@ -7266,7 +7271,7 @@ export default function MisaToolsWorkspace({
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                     <Upload size={20} style={{ color: "#64748b" }} />
                     <div style={{ fontSize: 12.5, color: "#64748b" }}>
-                      <span style={{ color: "#0284c7", fontWeight: 500 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                      <span style={{ color: "var(--brand)", fontWeight: 500 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                     </div>
                   </div>
                 </div>
@@ -7390,7 +7395,7 @@ export default function MisaToolsWorkspace({
                   setStocktakeViewMode("list");
                   notify(`Đã lưu và chuẩn bị in biên bản kiểm kê CCDC ${stocktakeVoucherNo}`);
                 }}
-                style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, color: "#ffffff", fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                style={{ height: 32, padding: "0 20px", background: "var(--brand)", border: "none", borderRadius: 4, color: "#ffffff", fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
                 <span>Lưu và In</span>
                 <ChevronDown size={14} />
@@ -7404,7 +7409,7 @@ export default function MisaToolsWorkspace({
       {showRefVoucherModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", display: "grid", placeItems: "center", zIndex: 1200, padding: 12 }}>
           <div style={{ width: 760, background: "#ffffff", borderRadius: 6, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
-            <div style={{ height: 42, padding: "0 16px", background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ height: 42, padding: "0 16px", background: "var(--brand)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <strong style={{ fontSize: 13.5 }}>Chọn chứng từ tham chiếu ({refVoucherContext})</strong>
               <button type="button" onClick={() => setShowRefVoucherModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
             </div>
@@ -7463,7 +7468,7 @@ export default function MisaToolsWorkspace({
                                 style={{ cursor: "pointer" }}
                               />
                             </td>
-                            <td style={{ padding: "8px", fontWeight: 600, color: "#00a862", borderRight: "1px solid #e2e8f0" }}>{rv.voucherNo}</td>
+                            <td style={{ padding: "8px", fontWeight: 600, color: "var(--brand)", borderRight: "1px solid #e2e8f0" }}>{rv.voucherNo}</td>
                             <td style={{ padding: "8px", textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{rv.voucherDate}</td>
                             <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{rv.voucherType || "Chứng từ gốc"}</td>
                             <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0" }}>{rv.description}</td>
@@ -7472,7 +7477,7 @@ export default function MisaToolsWorkspace({
                               <button
                                 type="button"
                                 onClick={() => notify(`Chi tiết chứng từ ${rv.voucherNo} (${rv.voucherDate}): ${rv.description} - ${formatVND(rv.amount)} đ`)}
-                                style={{ height: 24, padding: "0 8px", background: "#f1f5f9", color: "#0284c7", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}
+                                style={{ height: 24, padding: "0 8px", background: "#f1f5f9", color: "var(--brand)", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}
                               >
                                 Xem
                               </button>
@@ -7519,7 +7524,7 @@ export default function MisaToolsWorkspace({
                     setShowRefVoucherModal(false);
                     notify(selectedItems.length > 0 ? `Đã gắn ${selectedItems.length} chứng từ tham chiếu.` : "Đã cập nhật danh sách tham chiếu.");
                   }}
-                  style={{ height: 28, padding: "0 16px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                  style={{ height: 28, padding: "0 16px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                 >
                   Đồng ý
                 </button>
@@ -7533,13 +7538,13 @@ export default function MisaToolsWorkspace({
       {showToolDetailTraceModal && selectedToolTrace && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", display: "grid", placeItems: "center", zIndex: 1200, padding: 12 }}>
           <div style={{ width: 760, background: "#ffffff", borderRadius: 6, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
-            <div style={{ height: 42, padding: "0 16px", background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ height: 42, padding: "0 16px", background: "var(--brand)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <strong style={{ fontSize: 13.5 }}>Hồ sơ & Lịch sử biến động CCDC: {selectedToolTrace.code} - {selectedToolTrace.name}</strong>
               <button type="button" onClick={() => setShowToolDetailTraceModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
             </div>
             <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12, fontSize: 12.5 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-                <div><strong>Mã CCDC:</strong> <span style={{ color: "#00a862", fontWeight: 700 }}>{selectedToolTrace.code}</span></div>
+                <div><strong>Mã CCDC:</strong> <span style={{ color: "var(--brand)", fontWeight: 700 }}>{selectedToolTrace.code}</span></div>
                 <div><strong>Loại CCDC:</strong> {selectedToolTrace.category}</div>
                 <div><strong>Đơn vị sử dụng:</strong> {selectedToolTrace.dept}</div>
                 <div><strong>Nguyên giá:</strong> {formatVND(selectedToolTrace.originalCost)}</div>
@@ -7560,7 +7565,7 @@ export default function MisaToolsWorkspace({
                   {(selectedToolTrace.history || []).map((h: any, idx: number) => (
                     <tr key={`${h.voucherNo}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
                       <td style={{ padding: "7px", textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{h.date}</td>
-                      <td style={{ padding: "7px", fontWeight: 600, color: "#00a862", borderRight: "1px solid #e2e8f0" }}>{h.voucherNo}</td>
+                      <td style={{ padding: "7px", fontWeight: 600, color: "var(--brand)", borderRight: "1px solid #e2e8f0" }}>{h.voucherNo}</td>
                       <td style={{ padding: "7px", borderRight: "1px solid #e2e8f0" }}>{h.type}</td>
                       <td style={{ padding: "7px", textAlign: "right", fontWeight: 600 }}>{formatVND(h.amount)}</td>
                     </tr>
@@ -7569,7 +7574,7 @@ export default function MisaToolsWorkspace({
               </table>
             </div>
             <div style={{ height: 42, background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "0 16px" }}>
-              <button type="button" onClick={() => setShowToolDetailTraceModal(false)} style={{ height: 28, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Đóng</button>
+              <button type="button" onClick={() => setShowToolDetailTraceModal(false)} style={{ height: 28, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Đóng</button>
             </div>
           </div>
         </div>
@@ -7579,7 +7584,7 @@ export default function MisaToolsWorkspace({
       {showStocktakeResolveModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", display: "grid", placeItems: "center", zIndex: 1200, padding: 12 }}>
           <div style={{ width: 520, background: "#ffffff", borderRadius: 6, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
-            <div style={{ height: 42, padding: "0 16px", background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ height: 42, padding: "0 16px", background: "var(--brand)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <strong style={{ fontSize: 13.5 }}>Xử lý chênh lệch & Phê duyệt kiểm kê ({selectedStocktakeForResolve})</strong>
               <button type="button" onClick={() => setShowStocktakeResolveModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
             </div>
@@ -7632,7 +7637,7 @@ export default function MisaToolsWorkspace({
                   setShowStocktakeResolveModal(false);
                   notify(`Đã thực hiện xử lý kiểm kê ${selectedStocktakeForResolve} thành công.`);
                 }}
-                style={{ height: 28, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 28, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
               >
                 Xác nhận
               </button>
@@ -7645,7 +7650,7 @@ export default function MisaToolsWorkspace({
       {showReportVisibilityModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.55)", display: "grid", placeItems: "center", zIndex: 1200, padding: 12 }}>
           <div style={{ width: 500, background: "#ffffff", borderRadius: 6, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
-            <div style={{ height: 42, padding: "0 16px", background: "#00a862", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ height: 42, padding: "0 16px", background: "var(--brand)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <strong style={{ fontSize: 13.5 }}>Thiết lập Ẩn/hiện danh mục báo cáo CCDC & CPTT</strong>
               <button type="button" onClick={() => setShowReportVisibilityModal(false)} style={{ border: "none", background: "transparent", color: "#ffffff", cursor: "pointer" }}><X size={16} /></button>
             </div>
@@ -7698,7 +7703,7 @@ export default function MisaToolsWorkspace({
                   }
                   setShowReportVisibilityModal(false);
                 }}
-                style={{ height: 28, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 28, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
               >
                 Lưu thiết lập
               </button>
@@ -7756,13 +7761,13 @@ export default function MisaToolsWorkspace({
             </div>
 
             <div style={{ padding: "35px 24px 45px 24px", position: "relative" }}>
-              <div style={{ position: "absolute", left: "12%", right: "8%", top: 145, height: 2, background: "#cbd5e1", zIndex: 1 }}>
+              <div className="sv-flow-connector" style={{ position: "absolute", left: "12%", right: "8%", top: 145, height: 2, background: "#cbd5e1", zIndex: 1 }}>
                 <div style={{ position: "absolute", right: -2, top: -4, width: 0, height: 0, borderTop: "5px solid transparent", borderBottom: "5px solid transparent", borderLeft: "8px solid #cbd5e1" }} />
               </div>
 
-              <div style={{ position: "relative", zIndex: 2, minHeight: 210 }}>
+              <div className="sv-flow-nodes" style={{ position: "relative", zIndex: 2, minHeight: 210 }}>
                 {/* Ghi tăng */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => {
                     navigateTo("management");
                     setManagementSubtab("increase");
@@ -7791,7 +7796,7 @@ export default function MisaToolsWorkspace({
                 </div>
 
                 {/* Điều chuyển */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => {
                     navigateTo("management");
                     setManagementSubtab("transfer");
@@ -7817,11 +7822,11 @@ export default function MisaToolsWorkspace({
                     </span>
                   </span>
                   <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Điều chuyển</span>
-                  <div style={{ position: "absolute", top: 48, width: 2, height: 46, background: "#cbd5e1", zIndex: -1 }} />
+                  <div className="sv-flow-connector" style={{ position: "absolute", top: 48, width: 2, height: 46, background: "#cbd5e1", zIndex: -1 }} />
                 </div>
 
                 {/* Phân bổ */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => {
                     navigateTo("management");
                     setManagementSubtab("allocation");
@@ -7847,18 +7852,18 @@ export default function MisaToolsWorkspace({
                     </span>
                   </span>
                   <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Phân bổ</span>
-                  <div style={{ position: "absolute", top: 48, width: 2, height: 46, background: "#cbd5e1", zIndex: -1 }} />
+                  <div className="sv-flow-connector" style={{ position: "absolute", top: 48, width: 2, height: 46, background: "#cbd5e1", zIndex: -1 }} />
                 </div>
 
                 {/* Điều chỉnh */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => {
                     navigateTo("management");
                     setManagementSubtab("adjustment");
                   }}
                   style={{ position: "absolute", left: "43%", transform: "translateX(-50%)", top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
-                  <div style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
+                  <div className="sv-flow-connector" style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
                   <span className="ref-business-icon adjust" style={{ marginBottom: 6 }}>
                     <span
                       className="ref-document-sheet"
@@ -7881,14 +7886,14 @@ export default function MisaToolsWorkspace({
                 </div>
 
                 {/* Ghi giảm */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => {
                     navigateTo("management");
                     setManagementSubtab("decrease");
                   }}
                   style={{ position: "absolute", left: "72%", transform: "translateX(-50%)", top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
-                  <div style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
+                  <div className="sv-flow-connector" style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
                   <span className="ref-business-icon decrease" style={{ marginBottom: 6 }}>
                     <span
                       className="ref-document-sheet"
@@ -7911,14 +7916,14 @@ export default function MisaToolsWorkspace({
                 </div>
 
                 {/* Kiểm kê */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => {
                     navigateTo("management");
                     setManagementSubtab("stocktake");
                   }}
                   style={{ position: "absolute", left: "88%", transform: "translateX(-50%)", top: 175, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 80 }}
                 >
-                  <div style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
+                  <div className="sv-flow-connector" style={{ position: "absolute", top: -30, width: 2, height: 30, background: "#cbd5e1", zIndex: -1 }} />
                   <span className="ref-business-icon audit" style={{ marginBottom: 6 }}>
                     <span
                       className="ref-document-sheet"
@@ -7945,15 +7950,15 @@ export default function MisaToolsWorkspace({
             {/* Bottom Bar: 3 buttons */}
             <div style={{ borderTop: "1px solid #e2e8f0", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: "#fafafa" }}>
               <div onClick={() => setShowOrgTreeModal(true)} style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", borderRight: "1px solid #e2e8f0" }}>
-                <GitBranch size={16} style={{ color: "#00a862" }} />
+                <GitBranch size={16} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>Cơ cấu tổ chức</span>
               </div>
               <div onClick={() => setShowCategoryModal(true)} style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", borderRight: "1px solid #e2e8f0" }}>
-                <Wrench size={16} style={{ color: "#00a862" }} />
+                <Wrench size={16} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>Loại công cụ dụng cụ</span>
               </div>
               <div onClick={() => setShowOptionsModal(true)} style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
-                <SlidersHorizontal size={16} style={{ color: "#00a862" }} />
+                <SlidersHorizontal size={16} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>Tùy chọn</span>
               </div>
             </div>
@@ -7981,7 +7986,7 @@ export default function MisaToolsWorkspace({
               </div>
             </div>
             <div style={{ textAlign: "center", marginTop: 20, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
-              <span onClick={() => navigateTo("reports")} style={{ fontSize: 13, color: "#0284c7", fontWeight: 600, cursor: "pointer" }}>
+              <span onClick={() => navigateTo("reports")} style={{ fontSize: 13, color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}>
                 Tất cả báo cáo
               </span>
             </div>
@@ -8004,25 +8009,25 @@ export default function MisaToolsWorkspace({
           <div style={{ marginBottom: 20 }}>
             <svg width="260" height="150" viewBox="0 0 260 150" fill="none">
               <ellipse cx="130" cy="138" rx="100" ry="10" fill="#f1f5f9" />
-              <rect x="55" y="35" width="42" height="58" rx="6" fill="#00a862" />
+              <rect x="55" y="35" width="42" height="58" rx="6" fill="var(--brand)" />
               <rect x="62" y="42" width="28" height="14" rx="2" fill="#e6f4ea" />
               <circle cx="67" cy="65" r="2.5" fill="#ffffff" /><circle cx="76" cy="65" r="2.5" fill="#ffffff" /><circle cx="85" cy="65" r="2.5" fill="#ffffff" />
               <circle cx="67" cy="74" r="2.5" fill="#ffffff" /><circle cx="76" cy="74" r="2.5" fill="#ffffff" /><circle cx="85" cy="74" r="2.5" fill="#ffffff" />
               <circle cx="67" cy="83" r="2.5" fill="#ffffff" /><circle cx="76" cy="83" r="2.5" fill="#ffffff" /><circle cx="85" cy="83" r="2.5" fill="#ffffff" />
               <rect x="108" y="28" width="56" height="38" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" />
-              <rect x="114" y="34" width="44" height="24" rx="2" fill="#00a862" opacity="0.85" />
+              <rect x="114" y="34" width="44" height="24" rx="2" fill="var(--brand)" opacity="0.85" />
               <line x1="118" y1="46" x2="134" y2="40" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
               <line x1="134" y1="40" x2="148" y2="50" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
               <path d="M136 66 V78 M126 78 H146" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
-              <path d="M50 115 C45 105 50 95 60 95 C63 95 66 97 68 100 L78 92 C80 94 82 96 80 98 L70 106 C72 108 72 112 70 115 C66 122 55 122 50 115 Z" fill="#00a862" />
-              <rect x="72" y="102" width="28" height="8" rx="3" transform="rotate(35 72 102)" fill="#00a862" />
-              <rect x="180" y="52" width="42" height="52" rx="4" fill="#00a862" />
+              <path d="M50 115 C45 105 50 95 60 95 C63 95 66 97 68 100 L78 92 C80 94 82 96 80 98 L70 106 C72 108 72 112 70 115 C66 122 55 122 50 115 Z" fill="var(--brand)" />
+              <rect x="72" y="102" width="28" height="8" rx="3" transform="rotate(35 72 102)" fill="var(--brand)" />
+              <rect x="180" y="52" width="42" height="52" rx="4" fill="var(--brand)" />
               <rect x="175" y="58" width="42" height="48" rx="4" fill="#10b981" />
               <line x1="184" y1="70" x2="208" y2="70" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
               <line x1="184" y1="78" x2="202" y2="78" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
-              <circle cx="100" cy="20" r="2" fill="#00a862" />
-              <circle cx="178" cy="25" r="1.5" fill="#00a862" />
-              <circle cx="215" cy="40" r="2.5" fill="#00a862" />
+              <circle cx="100" cy="20" r="2" fill="var(--brand)" />
+              <circle cx="178" cy="25" r="1.5" fill="var(--brand)" />
+              <circle cx="215" cy="40" r="2.5" fill="var(--brand)" />
             </svg>
           </div>
 
@@ -8044,7 +8049,7 @@ export default function MisaToolsWorkspace({
             <button
               type="button"
               onClick={() => setRegisterViewMode("list")}
-              style={{ height: 32, padding: "0 20px", background: "#ffffff", border: "1px solid #00a862", borderRadius: 16, fontSize: 12.5, fontWeight: 600, color: "#00a862", cursor: "pointer" }}
+              style={{ height: 32, padding: "0 20px", background: "#ffffff", border: "1px solid var(--brand)", borderRadius: 16, fontSize: 12.5, fontWeight: 600, color: "var(--brand)", cursor: "pointer" }}
             >
               Xem danh sách chứng từ
             </button>
@@ -8062,7 +8067,7 @@ export default function MisaToolsWorkspace({
             <button
               type="button"
               onClick={() => setShowSingleAddModal(true)}
-              style={{ height: 30, padding: "0 14px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+              style={{ height: 30, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
             >
               <Plus size={14} />
               <span>Khai báo CCDC</span>
@@ -8118,7 +8123,7 @@ export default function MisaToolsWorkspace({
                   <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
                   <td
                     onClick={() => openToolDetailTrace(row.code)}
-                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer" }}
+                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer" }}
                   >
                     {row.code}
                   </td>
@@ -8131,7 +8136,7 @@ export default function MisaToolsWorkspace({
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#16a34a" }}>{formatVND(row.remainingAmount)}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{row.allocationMonths}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{row.remainingMonths}</td>
-                  <td style={{ padding: "8px", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{row.costAccount}</td>
+                  <td style={{ padding: "8px", textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>{row.costAccount}</td>
                 </tr>
               ))}
             </tbody>
@@ -8187,8 +8192,8 @@ export default function MisaToolsWorkspace({
                   padding: "12px 2px",
                   fontSize: 13,
                   fontWeight: isActive ? 600 : 400,
-                  color: isActive ? "#00a862" : "#475569",
-                  borderBottom: isActive ? "2.5px solid #00a862" : "2.5px solid transparent",
+                  color: isActive ? "var(--brand)" : "#475569",
+                  borderBottom: isActive ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                   cursor: "pointer",
                   transition: "all 0.15s",
                 }}
@@ -8207,20 +8212,20 @@ export default function MisaToolsWorkspace({
               <div style={{ marginBottom: 20 }}>
                 <svg width="260" height="150" viewBox="0 0 260 150" fill="none">
                   <ellipse cx="130" cy="138" rx="100" ry="10" fill="#f1f5f9" />
-                  <rect x="58" y="70" width="46" height="42" rx="4" fill="#00a862" />
+                  <rect x="58" y="70" width="46" height="42" rx="4" fill="var(--brand)" />
                   <rect x="54" y="65" width="54" height="8" rx="2" fill="#10b981" />
                   <line x1="68" y1="85" x2="68" y2="105" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
                   <line x1="94" y1="85" x2="94" y2="105" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
                   <g transform="translate(108, 40)">
-                    <circle cx="14" cy="14" r="12" fill="#00a862" />
-                    <rect x="11" y="24" width="6" height="36" rx="3" fill="#00a862" />
+                    <circle cx="14" cy="14" r="12" fill="var(--brand)" />
+                    <rect x="11" y="24" width="6" height="36" rx="3" fill="var(--brand)" />
                     <circle cx="14" cy="14" r="6" fill="#ffffff" />
                   </g>
                   <rect x="160" y="45" width="48" height="50" rx="5" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" />
-                  <rect x="160" y="45" width="48" height="14" rx="3" fill="#00a862" />
-                  <circle cx="172" cy="70" r="2.5" fill="#00a862" /><circle cx="184" cy="70" r="2.5" fill="#00a862" /><circle cx="196" cy="70" r="2.5" fill="#00a862" />
-                  <circle cx="172" cy="82" r="2.5" fill="#00a862" /><circle cx="184" cy="82" r="2.5" fill="#00a862" />
-                  <circle cx="195" cy="100" r="14" fill="#00a862" />
+                  <rect x="160" y="45" width="48" height="14" rx="3" fill="var(--brand)" />
+                  <circle cx="172" cy="70" r="2.5" fill="var(--brand)" /><circle cx="184" cy="70" r="2.5" fill="var(--brand)" /><circle cx="196" cy="70" r="2.5" fill="var(--brand)" />
+                  <circle cx="172" cy="82" r="2.5" fill="var(--brand)" /><circle cx="184" cy="82" r="2.5" fill="var(--brand)" />
+                  <circle cx="195" cy="100" r="14" fill="var(--brand)" />
                   <path d="M195 92 V100 H201" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </div>
@@ -8239,7 +8244,7 @@ export default function MisaToolsWorkspace({
                       style={{
                         height: 34,
                         padding: "0 18px",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         border: "none",
                         fontSize: 13,
@@ -8255,7 +8260,7 @@ export default function MisaToolsWorkspace({
                       style={{
                         width: 26,
                         height: 34,
-                        background: "#009959",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         border: "none",
                         borderLeft: "1px solid rgba(255,255,255,0.25)",
@@ -8342,11 +8347,11 @@ export default function MisaToolsWorkspace({
                     height: 32,
                     padding: "0 20px",
                     background: "#ffffff",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 16,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#00a862",
+                    color: "var(--brand)",
                     cursor: "pointer",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "#e6f4ea"; }}
@@ -8365,7 +8370,7 @@ export default function MisaToolsWorkspace({
                   <button
                     type="button"
                     onClick={() => setShowSingleAddModal(true)}
-                    style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                    style={{ height: 30, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
                     <Plus size={14} />
                     <span>Ghi tăng CCDC</span>
@@ -8373,7 +8378,7 @@ export default function MisaToolsWorkspace({
                   <button
                     type="button"
                     onClick={() => setShowBatchAddModal(true)}
-                    style={{ height: 30, padding: "0 16px", background: "#ffffff", border: "1px solid #00a862", color: "#00a862", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                    style={{ height: 30, padding: "0 16px", background: "#ffffff", border: "1px solid var(--brand)", color: "var(--brand)", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
                     <Plus size={14} />
                     <span>Ghi tăng CCDC hàng loạt</span>
@@ -8407,7 +8412,7 @@ export default function MisaToolsWorkspace({
                     {increaseVouchers.map((v, i) => (
                       <tr key={v.voucherNo} style={{ borderBottom: "1px solid #e2e8f0" }}>
                         <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{i + 1}</td>
-                        <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{v.voucherNo}</td>
+                        <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{v.voucherNo}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{v.postingDate}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{v.voucherDate}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0" }}>{v.reason}</td>
@@ -8448,11 +8453,11 @@ export default function MisaToolsWorkspace({
               <div style={{ marginBottom: 16 }}>
                 <svg width="360" height="170" viewBox="0 0 360 170" fill="none">
                   {/* Ambient 4-point green sparkles */}
-                  <path d="M72 40 L75 45 L80 48 L75 51 L72 56 L69 51 L64 48 L69 45 Z" fill="#00a862" opacity="0.65" />
-                  <path d="M216 28 L218 32 L222 34 L218 36 L216 40 L214 36 L210 34 L214 32 Z" fill="#00a862" opacity="0.6" />
-                  <path d="M305 110 L307 114 L311 116 L307 118 L305 122 L303 118 L299 116 L303 114 Z" fill="#00a862" opacity="0.65" />
-                  <circle cx="160" cy="50" r="2" fill="#00a862" opacity="0.4" />
-                  <circle cx="200" cy="115" r="2.5" fill="#00a862" opacity="0.5" />
+                  <path d="M72 40 L75 45 L80 48 L75 51 L72 56 L69 51 L64 48 L69 45 Z" fill="var(--brand)" opacity="0.65" />
+                  <path d="M216 28 L218 32 L222 34 L218 36 L216 40 L214 36 L210 34 L214 32 Z" fill="var(--brand)" opacity="0.6" />
+                  <path d="M305 110 L307 114 L311 116 L307 118 L305 122 L303 118 L299 116 L303 114 Z" fill="var(--brand)" opacity="0.65" />
+                  <circle cx="160" cy="50" r="2" fill="var(--brand)" opacity="0.4" />
+                  <circle cx="200" cy="115" r="2.5" fill="var(--brand)" opacity="0.5" />
 
                   {/* Soft document backdrop */}
                   <rect x="186" y="46" width="62" height="66" rx="6" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1.5" />
@@ -8467,7 +8472,7 @@ export default function MisaToolsWorkspace({
                   {/* Left: Green Folder / Clipboard with Tools */}
                   <g transform="translate(70, 52)">
                     {/* Folder Body */}
-                    <rect x="0" y="16" width="48" height="52" rx="6" fill="#00a862" />
+                    <rect x="0" y="16" width="48" height="52" rx="6" fill="var(--brand)" />
                     {/* Top tab / clamp */}
                     <path d="M12 9 C 14 5, 34 5, 36 9 L 36 16 L 12 16 Z" fill="#008f52" />
                     <rect x="15" y="7" width="18" height="5" rx="2" fill="#ffffff" opacity="0.9" />
@@ -8475,12 +8480,12 @@ export default function MisaToolsWorkspace({
                     {/* Tool 1 left: Wrench handle sticking up */}
                     <rect x="9" y="-6" width="7" height="23" rx="2" fill="#ffffff" />
                     <circle cx="12.5" cy="-6" r="6" fill="#ffffff" />
-                    <circle cx="12.5" cy="-6" r="3" fill="#00a862" />
+                    <circle cx="12.5" cy="-6" r="3" fill="var(--brand)" />
 
                     {/* Tool 2 right: Spanner handle sticking up */}
                     <rect x="32" y="-4" width="7" height="21" rx="2" fill="#ffffff" />
                     <circle cx="35.5" cy="-4" r="6" fill="#ffffff" />
-                    <circle cx="35.5" cy="-4" r="3" fill="#00a862" />
+                    <circle cx="35.5" cy="-4" r="3" fill="var(--brand)" />
 
                     {/* Folder front lines */}
                     <rect x="10" y="28" width="28" height="4" rx="2" fill="#ffffff" opacity="0.3" />
@@ -8489,20 +8494,20 @@ export default function MisaToolsWorkspace({
 
                   {/* Center: Crossed Tools (Green Spanners) */}
                   <g transform="translate(150, 52)">
-                    <rect x="-1" y="2" width="6" height="26" rx="2" transform="rotate(-40 2 15)" fill="#00a862" />
-                    <circle cx="-5" cy="5" r="5" fill="#00a862" />
+                    <rect x="-1" y="2" width="6" height="26" rx="2" transform="rotate(-40 2 15)" fill="var(--brand)" />
+                    <circle cx="-5" cy="5" r="5" fill="var(--brand)" />
                     <circle cx="-5" cy="5" r="2.5" fill="#ffffff" />
 
-                    <rect x="1" y="2" width="6" height="26" rx="2" transform="rotate(40 4 15)" fill="#00a862" />
-                    <circle cx="13" cy="5" r="5" fill="#00a862" />
+                    <rect x="1" y="2" width="6" height="26" rx="2" transform="rotate(40 4 15)" fill="var(--brand)" />
+                    <circle cx="13" cy="5" r="5" fill="var(--brand)" />
                     <circle cx="13" cy="5" r="2.5" fill="#ffffff" />
                   </g>
 
                   {/* Center Lower: Green Dollar Badge */}
                   <g transform="translate(152, 94)">
-                    <circle cx="13" cy="13" r="13" fill="#00a862" />
+                    <circle cx="13" cy="13" r="13" fill="var(--brand)" />
                     <circle cx="13" cy="13" r="10.5" stroke="#ffffff" strokeWidth="1" strokeDasharray="2 2" fill="none" opacity="0.5" />
-                    <text x="13" y="18" textAnchor="middle" fill="#ffffff" fontSize="14" fontWeight="bold" fontFamily="sans-serif">$</text>
+                    <text x="13" y="18" textAnchor="middle" fill="#ffffff" fontSize="14" fontWeight="bold" fontFamily="Roboto, Arial, sans-serif">$</text>
                   </g>
 
                   {/* Right: Green Calendar with Clock Badge */}
@@ -8510,7 +8515,7 @@ export default function MisaToolsWorkspace({
                     {/* Calendar body */}
                     <rect x="0" y="6" width="58" height="52" rx="6" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
                     {/* Calendar header */}
-                    <rect x="0" y="6" width="58" height="16" rx="5" fill="#00a862" />
+                    <rect x="0" y="6" width="58" height="16" rx="5" fill="var(--brand)" />
                     {/* Binder rings */}
                     <rect x="10" y="1" width="4" height="9" rx="2" fill="#334155" />
                     <rect x="27" y="1" width="4" height="9" rx="2" fill="#334155" />
@@ -8519,13 +8524,13 @@ export default function MisaToolsWorkspace({
                     {/* Dates grid */}
                     <rect x="8" y="28" width="8" height="6" rx="1.5" fill="#e2e8f0" />
                     <rect x="20" y="28" width="8" height="6" rx="1.5" fill="#e2e8f0" />
-                    <rect x="32" y="28" width="8" height="6" rx="1.5" fill="#00a862" opacity="0.3" />
+                    <rect x="32" y="28" width="8" height="6" rx="1.5" fill="var(--brand)" opacity="0.3" />
                     <rect x="8" y="38" width="8" height="6" rx="1.5" fill="#e2e8f0" />
                     <rect x="20" y="38" width="8" height="6" rx="1.5" fill="#e2e8f0" />
 
                     {/* Clock Badge on bottom right corner */}
                     <g transform="translate(32, 28)">
-                      <circle cx="16" cy="16" r="15" fill="#00a862" stroke="#ffffff" strokeWidth="2.5" />
+                      <circle cx="16" cy="16" r="15" fill="var(--brand)" stroke="#ffffff" strokeWidth="2.5" />
                       <path d="M16 8 V16 H22" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
                     </g>
                   </g>
@@ -8555,7 +8560,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 34,
                     padding: "0 28px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 4,
@@ -8565,8 +8570,8 @@ export default function MisaToolsWorkspace({
                     boxShadow: "0 2px 6px rgba(0, 168, 98, 0.25)",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#009959"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#00a862"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--brand)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "var(--brand)"; }}
                 >
                   Thêm
                 </button>
@@ -8581,11 +8586,11 @@ export default function MisaToolsWorkspace({
                     height: 32,
                     padding: "0 22px",
                     background: "#ffffff",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#00a862",
+                    color: "var(--brand)",
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
@@ -8617,7 +8622,7 @@ export default function MisaToolsWorkspace({
                     style={{
                       height: 32,
                       padding: "0 18px",
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       borderRadius: 4,
@@ -8672,7 +8677,7 @@ export default function MisaToolsWorkspace({
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
                     type="button"
-                    onClick={() => notify("Đã xuất danh sách chứng từ phân bổ ra file Excel")}
+                    onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất danh sách chứng từ phân bổ ra file Excel"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                     style={{
                       height: 30,
                       padding: "0 12px",
@@ -8753,19 +8758,19 @@ export default function MisaToolsWorkspace({
                               setAllocationReason(v.reason);
                               setShowAllocationVoucherModal(true);
                             }}
-                            style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer" }}
+                            style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer" }}
                           >
                             {v.voucherNo}
                           </td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{v.postingDate}</td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{v.voucherDate}</td>
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0" }}>{v.reason}</td>
-                          <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>
+                          <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>
                             {formatVND(v.totalAmount)}
                           </td>
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{v.creator}</td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
-                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "#00a862", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
+                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
                               {v.status}
                             </span>
                           </td>
@@ -8780,7 +8785,7 @@ export default function MisaToolsWorkspace({
                                   setAllocationReason(v.reason);
                                   setShowAllocationVoucherModal(true);
                                 }}
-                                style={{ border: "none", background: "transparent", color: "#00a862", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+                                style={{ border: "none", background: "transparent", color: "var(--brand)", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
                               >
                                 Xem
                               </button>
@@ -8841,7 +8846,7 @@ export default function MisaToolsWorkspace({
                 <span>Số lượng chứng từ: {allocationVouchers.length}</span>
                 <span>
                   Tổng tiền phân bổ:{" "}
-                  <span style={{ color: "#00a862", fontWeight: 700 }}>
+                  <span style={{ color: "var(--brand)", fontWeight: 700 }}>
                     {formatVND(allocationVouchers.reduce((s, c) => s + c.totalAmount, 0))}
                   </span>
                 </span>
@@ -8871,11 +8876,11 @@ export default function MisaToolsWorkspace({
               <div style={{ marginBottom: 16 }}>
                 <svg width="360" height="170" viewBox="0 0 360 170" fill="none">
                   {/* Ambient 4-point sparkles */}
-                  <path d="M192 32 L194 36 L198 38 L194 40 L192 44 L190 40 L186 38 L190 36 Z" fill="#00a862" opacity="0.6" />
-                  <path d="M218 24 L220 28 L224 30 L220 32 L218 36 L216 32 L212 30 L216 28 Z" fill="#00a862" opacity="0.7" />
-                  <path d="M188 126 L190 130 L194 132 L190 134 L188 138 L186 134 L182 132 L186 130 Z" fill="#00a862" opacity="0.6" />
-                  <circle cx="178" cy="40" r="2" fill="#00a862" opacity="0.5" />
-                  <circle cx="182" cy="115" r="2" fill="#00a862" opacity="0.5" />
+                  <path d="M192 32 L194 36 L198 38 L194 40 L192 44 L190 40 L186 38 L190 36 Z" fill="var(--brand)" opacity="0.6" />
+                  <path d="M218 24 L220 28 L224 30 L220 32 L218 36 L216 32 L212 30 L216 28 Z" fill="var(--brand)" opacity="0.7" />
+                  <path d="M188 126 L190 130 L194 132 L190 134 L188 138 L186 134 L182 132 L186 130 Z" fill="var(--brand)" opacity="0.6" />
+                  <circle cx="178" cy="40" r="2" fill="var(--brand)" opacity="0.5" />
+                  <circle cx="182" cy="115" r="2" fill="var(--brand)" opacity="0.5" />
 
                   {/* Dotted connecting line from left through page to right */}
                   <path d="M110 92 L 216 92" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4 4" fill="none" />
@@ -8892,12 +8897,12 @@ export default function MisaToolsWorkspace({
                     
                     {/* Green pie / circle icon on document */}
                     <circle cx="20" cy="30" r="11" fill="#e2e8f0" />
-                    <path d="M20 30 L 20 19 A 11 11 0 0 1 31 30 Z" fill="#00a862" />
-                    <path d="M20 30 L 31 30 A 11 11 0 0 1 20 41 Z" fill="#00a862" opacity="0.8" />
+                    <path d="M20 30 L 20 19 A 11 11 0 0 1 31 30 Z" fill="var(--brand)" />
+                    <path d="M20 30 L 31 30 A 11 11 0 0 1 20 41 Z" fill="var(--brand)" opacity="0.8" />
                     <circle cx="20" cy="30" r="4" fill="#ffffff" />
 
                     {/* Green horizontal content lines on document */}
-                    <rect x="10" y="47" width="32" height="4" rx="2" fill="#00a862" />
+                    <rect x="10" y="47" width="32" height="4" rx="2" fill="var(--brand)" />
                     <rect x="10" y="55" width="20" height="4" rx="2" fill="#cbd5e1" />
                   </g>
 
@@ -8905,24 +8910,24 @@ export default function MisaToolsWorkspace({
                   <g transform="translate(125, 62)">
                     {/* Tool 1 (Wrench / Spanner left) */}
                     <g transform="translate(0, 0)">
-                      <rect x="5" y="8" width="6" height="24" rx="2" fill="#00a862" />
-                      <circle cx="8" cy="8" r="7" fill="#00a862" />
+                      <rect x="5" y="8" width="6" height="24" rx="2" fill="var(--brand)" />
+                      <circle cx="8" cy="8" r="7" fill="var(--brand)" />
                       <circle cx="8" cy="8" r="3.5" fill="#ffffff" />
                       <rect x="6" y="1" width="4" height="6" fill="#ffffff" />
                     </g>
 
                     {/* Tool 2 (Screwdriver / Pliers right) */}
                     <g transform="translate(18, 0)">
-                      <rect x="4" y="6" width="5" height="26" rx="2" fill="#00a862" />
-                      <circle cx="6.5" cy="5" r="5" fill="#00a862" />
-                      <rect x="5" y="-1" width="3" height="6" rx="1" fill="#00a862" />
+                      <rect x="4" y="6" width="5" height="26" rx="2" fill="var(--brand)" />
+                      <circle cx="6.5" cy="5" r="5" fill="var(--brand)" />
+                      <rect x="5" y="-1" width="3" height="6" rx="1" fill="var(--brand)" />
                     </g>
                   </g>
 
                   {/* Right: Green Calculator + Dollar Badge + Trend dots */}
                   <g transform="translate(262, 70)">
                     {/* Calculator Body */}
-                    <rect x="0" y="6" width="26" height="34" rx="4" fill="#00a862" />
+                    <rect x="0" y="6" width="26" height="34" rx="4" fill="var(--brand)" />
                     {/* Screen */}
                     <rect x="3" y="10" width="20" height="7" rx="1.5" fill="#ffffff" />
                     {/* Buttons */}
@@ -8937,15 +8942,15 @@ export default function MisaToolsWorkspace({
 
                     {/* Dollar Badge next to calculator */}
                     <g transform="translate(24, 18)">
-                      <circle cx="8" cy="8" r="9" fill="#00a862" stroke="#ffffff" strokeWidth="1.5" />
-                      <text x="8" y="12" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold" fontFamily="sans-serif">$</text>
+                      <circle cx="8" cy="8" r="9" fill="var(--brand)" stroke="#ffffff" strokeWidth="1.5" />
+                      <text x="8" y="12" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold" fontFamily="Roboto, Arial, sans-serif">$</text>
                     </g>
 
                     {/* Trend dots above */}
-                    <circle cx="20" cy="1" r="2" fill="#00a862" />
-                    <circle cx="28" cy="-5" r="2.5" fill="#00a862" />
-                    <circle cx="36" cy="-10" r="3" fill="#00a862" />
-                    <path d="M16 6 L 20 1 L 28 -5 L 36 -10" stroke="#00a862" strokeWidth="1" strokeDasharray="2 2" fill="none" />
+                    <circle cx="20" cy="1" r="2" fill="var(--brand)" />
+                    <circle cx="28" cy="-5" r="2.5" fill="var(--brand)" />
+                    <circle cx="36" cy="-10" r="3" fill="var(--brand)" />
+                    <path d="M16 6 L 20 1 L 28 -5 L 36 -10" stroke="var(--brand)" strokeWidth="1" strokeDasharray="2 2" fill="none" />
                   </g>
                 </svg>
               </div>
@@ -8973,7 +8978,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 34,
                     padding: "0 28px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 4,
@@ -8983,8 +8988,8 @@ export default function MisaToolsWorkspace({
                     boxShadow: "0 2px 6px rgba(0, 168, 98, 0.25)",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#009959"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#00a862"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--brand)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "var(--brand)"; }}
                 >
                   Thêm
                 </button>
@@ -8999,11 +9004,11 @@ export default function MisaToolsWorkspace({
                     height: 32,
                     padding: "0 22px",
                     background: "#ffffff",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#00a862",
+                    color: "var(--brand)",
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
@@ -9035,7 +9040,7 @@ export default function MisaToolsWorkspace({
                     style={{
                       height: 32,
                       padding: "0 18px",
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       borderRadius: 4,
@@ -9098,7 +9103,7 @@ export default function MisaToolsWorkspace({
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
                     type="button"
-                    onClick={() => notify("Đã xuất danh sách chứng từ điều chỉnh CCDC ra file Excel")}
+                    onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất danh sách chứng từ điều chỉnh CCDC ra file Excel"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                     style={{
                       height: 30,
                       padding: "0 12px",
@@ -9177,18 +9182,18 @@ export default function MisaToolsWorkspace({
                               setAdjustmentReason(v.reason);
                               setShowAdjustmentModal(true);
                             }}
-                            style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer" }}
+                            style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer" }}
                           >
                             {v.voucherNo}
                           </td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{v.voucherDate}</td>
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0" }}>{v.reason}</td>
-                          <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: v.adjustmentAmount >= 0 ? "#00a862" : "#ef4444" }}>
+                          <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: v.adjustmentAmount >= 0 ? "var(--brand)" : "#ef4444" }}>
                             {formatVND(v.adjustmentAmount)}
                           </td>
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{v.creator}</td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
-                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "#00a862", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
+                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
                               {toolTransactionStatus(v.voucherNo, v.status)}
                             </span>
                           </td>
@@ -9202,7 +9207,7 @@ export default function MisaToolsWorkspace({
                                   setAdjustmentReason(v.reason);
                                   setShowAdjustmentModal(true);
                                 }}
-                                style={{ border: "none", background: "transparent", color: "#00a862", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+                                style={{ border: "none", background: "transparent", color: "var(--brand)", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
                               >
                                 Xem
                               </button>
@@ -9240,7 +9245,7 @@ export default function MisaToolsWorkspace({
                 <span>Số lượng chứng từ: {adjustmentVouchers.length}</span>
                 <span>
                   Tổng tiền điều chỉnh:{" "}
-                  <span style={{ color: "#00a862", fontWeight: 700 }}>
+                  <span style={{ color: "var(--brand)", fontWeight: 700 }}>
                     {formatVND(adjustmentVouchers.reduce((s, c) => s + c.adjustmentAmount, 0))}
                   </span>
                 </span>
@@ -9270,11 +9275,11 @@ export default function MisaToolsWorkspace({
               <div style={{ marginBottom: 18 }}>
                 <svg width="380" height="175" viewBox="0 0 380 175" fill="none">
                   {/* Ambient 4-point sparkles & pluses */}
-                  <path d="M204 32 L206 36 L210 38 L206 40 L204 44 L202 40 L198 38 L202 36 Z" fill="#00a862" opacity="0.6" />
-                  <path d="M192 136 L194 140 L198 142 L194 144 L192 148 L190 144 L186 142 L190 140 Z" fill="#00a862" opacity="0.5" />
+                  <path d="M204 32 L206 36 L210 38 L206 40 L204 44 L202 40 L198 38 L202 36 Z" fill="var(--brand)" opacity="0.6" />
+                  <path d="M192 136 L194 140 L198 142 L194 144 L192 148 L190 144 L186 142 L190 140 Z" fill="var(--brand)" opacity="0.5" />
                   <path d="M280 28 L284 28 M282 26 L282 30" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M110 34 L114 34 M112 32 L112 36" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" />
-                  <circle cx="106" cy="120" r="2" fill="#00a862" opacity="0.5" />
+                  <path d="M110 34 L114 34 M112 32 L112 36" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
+                  <circle cx="106" cy="120" r="2" fill="var(--brand)" opacity="0.5" />
                   <circle cx="272" cy="138" r="2.5" fill="#94a3b8" opacity="0.5" />
 
                   {/* Dotted connecting line with arrow from left through document to right */}
@@ -9292,11 +9297,11 @@ export default function MisaToolsWorkspace({
                     <path d="M36 0 L 36 16 L 52 16 Z" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1.5" />
                     
                     {/* Green folder fold / badge on center document */}
-                    <path d="M8 20 C 8 13.4, 13.4 8, 20 8 L 26 8 C 29.3 8, 32 10.7, 32 14 L 32 30 C 32 33.3, 29.3 36, 26 36 L 14 36 C 10.7 36, 8 33.3, 8 30 Z" fill="#00a862" />
+                    <path d="M8 20 C 8 13.4, 13.4 8, 20 8 L 26 8 C 29.3 8, 32 10.7, 32 14 L 32 30 C 32 33.3, 29.3 36, 26 36 L 14 36 C 10.7 36, 8 33.3, 8 30 Z" fill="var(--brand)" />
                     <circle cx="20" cy="22" r="5" fill="#ffffff" opacity="0.9" />
 
                     {/* Green horizontal content lines */}
-                    <rect x="10" y="44" width="32" height="4" rx="2" fill="#00a862" />
+                    <rect x="10" y="44" width="32" height="4" rx="2" fill="var(--brand)" />
                     <rect x="10" y="52" width="22" height="4" rx="2" fill="#cbd5e1" />
                   </g>
 
@@ -9304,17 +9309,17 @@ export default function MisaToolsWorkspace({
                   <g transform="translate(118, 62)">
                     {/* Tool 1: Wrench (Green) */}
                     <g transform="translate(0, 0)">
-                      <rect x="5" y="8" width="6" height="24" rx="2" fill="#00a862" />
-                      <circle cx="8" cy="8" r="7.5" fill="#00a862" />
+                      <rect x="5" y="8" width="6" height="24" rx="2" fill="var(--brand)" />
+                      <circle cx="8" cy="8" r="7.5" fill="var(--brand)" />
                       <circle cx="8" cy="8" r="3.5" fill="#ffffff" />
                       <rect x="6" y="0.5" width="4" height="6" fill="#ffffff" />
                     </g>
 
                     {/* Tool 2: Screwdriver/Pliers (Green) */}
                     <g transform="translate(18, 0)">
-                      <rect x="4" y="6" width="5.5" height="26" rx="2" fill="#00a862" />
-                      <circle cx="6.7" cy="5" r="5" fill="#00a862" />
-                      <rect x="5.2" y="-1" width="3" height="6" rx="1" fill="#00a862" />
+                      <rect x="4" y="6" width="5.5" height="26" rx="2" fill="var(--brand)" />
+                      <circle cx="6.7" cy="5" r="5" fill="var(--brand)" />
+                      <rect x="5.2" y="-1" width="3" height="6" rx="1" fill="var(--brand)" />
                     </g>
                   </g>
 
@@ -9339,8 +9344,8 @@ export default function MisaToolsWorkspace({
                   {/* Avatars: People figures representing transfer of responsibility */}
                   {/* Green person near bottom right of document */}
                   <g transform="translate(225, 128)">
-                    <circle cx="8" cy="6" r="4.5" fill="#00a862" />
-                    <path d="M2 18 C 2 13.5, 4.5 12, 8 12 C 11.5 12, 14 13.5, 14 18 Z" fill="#00a862" />
+                    <circle cx="8" cy="6" r="4.5" fill="var(--brand)" />
+                    <path d="M2 18 C 2 13.5, 4.5 12, 8 12 C 11.5 12, 14 13.5, 14 18 Z" fill="var(--brand)" />
                   </g>
 
                   {/* Gray person 1 standing near right tools */}
@@ -9387,7 +9392,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 34,
                     padding: "0 28px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 4,
@@ -9397,8 +9402,8 @@ export default function MisaToolsWorkspace({
                     boxShadow: "0 2px 6px rgba(0, 168, 98, 0.25)",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#009959"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#00a862"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--brand)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "var(--brand)"; }}
                 >
                   Thêm
                 </button>
@@ -9413,11 +9418,11 @@ export default function MisaToolsWorkspace({
                     height: 32,
                     padding: "0 22px",
                     background: "#ffffff",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#00a862",
+                    color: "var(--brand)",
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
@@ -9465,7 +9470,7 @@ export default function MisaToolsWorkspace({
                     style={{
                       height: 32,
                       padding: "0 18px",
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       borderRadius: 4,
@@ -9528,7 +9533,7 @@ export default function MisaToolsWorkspace({
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
                     type="button"
-                    onClick={() => notify("Đã xuất danh sách chứng từ điều chuyển CCDC ra file Excel")}
+                    onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất danh sách chứng từ điều chuyển CCDC ra file Excel"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                     style={{
                       height: 30,
                       padding: "0 12px",
@@ -9620,7 +9625,7 @@ export default function MisaToolsWorkspace({
                               setTransferReason(v.reason);
                               setShowTransferModal(true);
                             }}
-                            style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer" }}
+                            style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer" }}
                           >
                             {v.voucherNo}
                           </td>
@@ -9629,7 +9634,7 @@ export default function MisaToolsWorkspace({
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", color: "#334155" }}>{v.receiver}</td>
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0" }}>{v.reason}</td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
-                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "#00a862", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
+                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
                               {toolTransactionStatus(v.voucherNo, v.status)}
                             </span>
                           </td>
@@ -9645,7 +9650,7 @@ export default function MisaToolsWorkspace({
                                   setTransferReason(v.reason);
                                   setShowTransferModal(true);
                                 }}
-                                style={{ border: "none", background: "transparent", color: "#00a862", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+                                style={{ border: "none", background: "transparent", color: "var(--brand)", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
                               >
                                 Xem
                               </button>
@@ -9722,12 +9727,12 @@ export default function MisaToolsWorkspace({
               <div style={{ marginBottom: 18 }}>
                 <svg width="380" height="175" viewBox="0 0 380 175" fill="none">
                   {/* Ambient 4-point sparkles & pluses */}
-                  <path d="M204 32 L206 36 L210 38 L206 40 L204 44 L202 40 L198 38 L202 36 Z" fill="#00a862" opacity="0.6" />
+                  <path d="M204 32 L206 36 L210 38 L206 40 L204 44 L202 40 L198 38 L202 36 Z" fill="var(--brand)" opacity="0.6" />
                   <path d="M280 26 L284 26 M282 24 L282 28" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M110 36 L114 36 M112 34 L112 38" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" />
-                  <circle cx="106" cy="120" r="2" fill="#00a862" opacity="0.5" />
+                  <path d="M110 36 L114 36 M112 34 L112 38" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
+                  <circle cx="106" cy="120" r="2" fill="var(--brand)" opacity="0.5" />
                   <circle cx="272" cy="138" r="2.5" fill="#94a3b8" opacity="0.5" />
-                  <circle cx="192" cy="136" r="2" fill="#00a862" opacity="0.6" />
+                  <circle cx="192" cy="136" r="2" fill="var(--brand)" opacity="0.6" />
 
                   {/* Dotted connecting line from left across document to right */}
                   <path d="M130 92 L 245 92" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4 4" fill="none" />
@@ -9743,11 +9748,11 @@ export default function MisaToolsWorkspace({
                     
                     {/* Green circular pie chart on document */}
                     <circle cx="24" cy="28" r="11" fill="#e2e8f0" />
-                    <path d="M24 28 L 24 17 A 11 11 0 0 1 35 28 Z" fill="#00a862" />
+                    <path d="M24 28 L 24 17 A 11 11 0 0 1 35 28 Z" fill="var(--brand)" />
                     <circle cx="24" cy="28" r="4" fill="#ffffff" />
 
                     {/* Content lines */}
-                    <rect x="10" y="45" width="32" height="4" rx="2" fill="#00a862" />
+                    <rect x="10" y="45" width="32" height="4" rx="2" fill="var(--brand)" />
                     <rect x="10" y="53" width="20" height="4" rx="2" fill="#cbd5e1" />
                   </g>
 
@@ -9755,8 +9760,8 @@ export default function MisaToolsWorkspace({
                   <g transform="translate(116, 62)">
                     {/* Tool 1: Green Wrench */}
                     <g transform="translate(0, 0)">
-                      <rect x="5" y="8" width="6" height="24" rx="2" fill="#00a862" />
-                      <circle cx="8" cy="8" r="7.5" fill="#00a862" />
+                      <rect x="5" y="8" width="6" height="24" rx="2" fill="var(--brand)" />
+                      <circle cx="8" cy="8" r="7.5" fill="var(--brand)" />
                       <circle cx="8" cy="8" r="3.5" fill="#ffffff" />
                       <rect x="6" y="0.5" width="4" height="6" fill="#ffffff" />
                     </g>
@@ -9772,34 +9777,34 @@ export default function MisaToolsWorkspace({
                   {/* Right: Green Wrench 1 (Top, pointing up with curved arrow) */}
                   <g transform="translate(262, 44)">
                     <g transform="rotate(45, 12, 12)">
-                      <rect x="9" y="8" width="5" height="18" rx="1.5" fill="#00a862" />
-                      <circle cx="11.5" cy="7" r="6" fill="#00a862" />
+                      <rect x="9" y="8" width="5" height="18" rx="1.5" fill="var(--brand)" />
+                      <circle cx="11.5" cy="7" r="6" fill="var(--brand)" />
                       <circle cx="11.5" cy="7" r="2.5" fill="#ffffff" />
                       <rect x="10" y="1" width="3" height="5" fill="#ffffff" />
                     </g>
                     {/* Curved arrow pointing up-right */}
-                    <path d="M24 16 C 30 14, 35 11, 38 7" stroke="#00a862" strokeWidth="2" strokeLinecap="round" fill="none" />
-                    <path d="M34 6 L 39 6 L 38 11" stroke="#00a862" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <path d="M24 16 C 30 14, 35 11, 38 7" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" fill="none" />
+                    <path d="M34 6 L 39 6 L 38 11" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </g>
 
                   {/* Right: Green Wrench 2 (Middle, pointing down with curved arrow) */}
                   <g transform="translate(262, 88)">
                     <g transform="rotate(-45, 12, 12)">
-                      <rect x="9" y="8" width="5" height="18" rx="1.5" fill="#00a862" />
-                      <circle cx="11.5" cy="7" r="6" fill="#00a862" />
+                      <rect x="9" y="8" width="5" height="18" rx="1.5" fill="var(--brand)" />
+                      <circle cx="11.5" cy="7" r="6" fill="var(--brand)" />
                       <circle cx="11.5" cy="7" r="2.5" fill="#ffffff" />
                       <rect x="10" y="1" width="3" height="5" fill="#ffffff" />
                     </g>
                     {/* Curved arrow pointing down-right */}
-                    <path d="M24 8 C 30 10, 35 13, 38 17" stroke="#00a862" strokeWidth="2" strokeLinecap="round" fill="none" />
-                    <path d="M38 12 L 39 17 L 34 17" stroke="#00a862" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <path d="M24 8 C 30 10, 35 13, 38 17" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" fill="none" />
+                    <path d="M38 12 L 39 17 L 34 17" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </g>
 
                   {/* Right: Toolbox / Container (Bottom right) */}
                   <g transform="translate(268, 134)">
                     <rect x="0" y="4" width="28" height="16" rx="2" fill="#cbd5e1" />
                     <rect x="0" y="10" width="28" height="4" fill="#94a3b8" />
-                    <rect x="8" y="0" width="12" height="4" rx="1" fill="#00a862" />
+                    <rect x="8" y="0" width="12" height="4" rx="1" fill="var(--brand)" />
                     <line x1="2" y1="20" x2="6" y2="23" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
                     <line x1="26" y1="20" x2="22" y2="23" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
                   </g>
@@ -9834,7 +9839,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 34,
                     padding: "0 28px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 4,
@@ -9844,8 +9849,8 @@ export default function MisaToolsWorkspace({
                     boxShadow: "0 2px 6px rgba(0, 168, 98, 0.25)",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#009959"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#00a862"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--brand)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "var(--brand)"; }}
                 >
                   Thêm
                 </button>
@@ -9860,11 +9865,11 @@ export default function MisaToolsWorkspace({
                     height: 32,
                     padding: "0 22px",
                     background: "#ffffff",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#00a862",
+                    color: "var(--brand)",
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
@@ -9910,7 +9915,7 @@ export default function MisaToolsWorkspace({
                     style={{
                       height: 32,
                       padding: "0 18px",
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       borderRadius: 4,
@@ -9973,7 +9978,7 @@ export default function MisaToolsWorkspace({
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
                     type="button"
-                    onClick={() => notify("Đã xuất danh sách chứng từ ghi giảm CCDC ra file Excel")}
+                    onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất danh sách chứng từ ghi giảm CCDC ra file Excel"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                     style={{
                       height: 30,
                       padding: "0 12px",
@@ -10061,7 +10066,7 @@ export default function MisaToolsWorkspace({
                               setDecreaseReason(v.reason);
                               setShowDecreaseModal(true);
                             }}
-                            style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer" }}
+                            style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer" }}
                           >
                             {v.voucherNo}
                           </td>
@@ -10074,7 +10079,7 @@ export default function MisaToolsWorkspace({
                             {v.totalRemainingAmount ? formatVND(v.totalRemainingAmount) : "0"}
                           </td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
-                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "#00a862", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
+                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
                               {toolTransactionStatus(v.voucherNo, v.status)}
                             </span>
                           </td>
@@ -10088,7 +10093,7 @@ export default function MisaToolsWorkspace({
                                   setDecreaseReason(v.reason);
                                   setShowDecreaseModal(true);
                                 }}
-                                style={{ border: "none", background: "transparent", color: "#00a862", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+                                style={{ border: "none", background: "transparent", color: "var(--brand)", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
                               >
                                 Xem
                               </button>
@@ -10171,12 +10176,12 @@ export default function MisaToolsWorkspace({
               <div style={{ marginBottom: 18 }}>
                 <svg width="380" height="175" viewBox="0 0 380 175" fill="none">
                   {/* Ambient sparkles & pluses */}
-                  <path d="M204 32 L206 36 L210 38 L206 40 L204 44 L202 40 L198 38 L202 36 Z" fill="#00a862" opacity="0.6" />
+                  <path d="M204 32 L206 36 L210 38 L206 40 L204 44 L202 40 L198 38 L202 36 Z" fill="var(--brand)" opacity="0.6" />
                   <path d="M280 26 L284 26 M282 24 L282 28" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M110 36 L114 36 M112 34 L112 38" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" />
-                  <circle cx="106" cy="120" r="2" fill="#00a862" opacity="0.5" />
+                  <path d="M110 36 L114 36 M112 34 L112 38" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
+                  <circle cx="106" cy="120" r="2" fill="var(--brand)" opacity="0.5" />
                   <circle cx="272" cy="138" r="2.5" fill="#94a3b8" opacity="0.5" />
-                  <circle cx="255" cy="52" r="2.5" fill="#00a862" opacity="0.6" />
+                  <circle cx="255" cy="52" r="2.5" fill="var(--brand)" opacity="0.6" />
 
                   {/* Soft Document Drop Shadow */}
                   <rect x="194" y="60" width="62" height="74" rx="8" fill="#f1f5f9" />
@@ -10193,18 +10198,18 @@ export default function MisaToolsWorkspace({
                     <rect x="0" y="2" width="62" height="78" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1" />
                     
                     {/* Checkbox item 1 (Checked green) */}
-                    <rect x="8" y="16" width="9" height="9" rx="2" fill="#e6f4ea" stroke="#00a862" strokeWidth="1.2" />
-                    <path d="M10 20.5 L 12.5 23 L 15.5 18" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                    <rect x="22" y="18" width="32" height="4" rx="2" fill="#00a862" />
+                    <rect x="8" y="16" width="9" height="9" rx="2" fill="#e6f4ea" stroke="var(--brand)" strokeWidth="1.2" />
+                    <path d="M10 20.5 L 12.5 23 L 15.5 18" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <rect x="22" y="18" width="32" height="4" rx="2" fill="var(--brand)" />
 
                     {/* Checkbox item 2 (Checked green) */}
-                    <rect x="8" y="32" width="9" height="9" rx="2" fill="#e6f4ea" stroke="#00a862" strokeWidth="1.2" />
-                    <path d="M10 36.5 L 12.5 39 L 15.5 34" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <rect x="8" y="32" width="9" height="9" rx="2" fill="#e6f4ea" stroke="var(--brand)" strokeWidth="1.2" />
+                    <path d="M10 36.5 L 12.5 39 L 15.5 34" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                     <rect x="22" y="34" width="28" height="4" rx="2" fill="#cbd5e1" />
 
                     {/* Checkbox item 3 (Checked green) */}
-                    <rect x="8" y="48" width="9" height="9" rx="2" fill="#e6f4ea" stroke="#00a862" strokeWidth="1.2" />
-                    <path d="M10 52.5 L 12.5 55 L 15.5 50" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <rect x="8" y="48" width="9" height="9" rx="2" fill="#e6f4ea" stroke="var(--brand)" strokeWidth="1.2" />
+                    <path d="M10 52.5 L 12.5 55 L 15.5 50" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                     <rect x="22" y="50" width="24" height="4" rx="2" fill="#cbd5e1" />
 
                     {/* Checkbox item 4 */}
@@ -10215,8 +10220,8 @@ export default function MisaToolsWorkspace({
                   {/* Left: 2 Tools standing (Green Wrench + Gray Tool) */}
                   <g transform="translate(116, 68)">
                     <g transform="translate(0, 0)">
-                      <rect x="5" y="8" width="6" height="24" rx="2" fill="#00a862" />
-                      <circle cx="8" cy="8" r="7.5" fill="#00a862" />
+                      <rect x="5" y="8" width="6" height="24" rx="2" fill="var(--brand)" />
+                      <circle cx="8" cy="8" r="7.5" fill="var(--brand)" />
                       <circle cx="8" cy="8" r="3.5" fill="#ffffff" />
                       <rect x="6" y="0.5" width="4" height="6" fill="#ffffff" />
                     </g>
@@ -10229,11 +10234,11 @@ export default function MisaToolsWorkspace({
 
                   {/* Right: Magnifying Glass + Pen Checking Items */}
                   <g transform="translate(268, 62)">
-                    <circle cx="16" cy="16" r="14" fill="#ffffff" stroke="#00a862" strokeWidth="3" />
+                    <circle cx="16" cy="16" r="14" fill="#ffffff" stroke="var(--brand)" strokeWidth="3" />
                     <circle cx="16" cy="16" r="11" fill="#e6f4ea" opacity="0.6" />
-                    <line x1="26" y1="26" x2="38" y2="38" stroke="#00a862" strokeWidth="4" strokeLinecap="round" />
+                    <line x1="26" y1="26" x2="38" y2="38" stroke="var(--brand)" strokeWidth="4" strokeLinecap="round" />
                     
-                    <circle cx="16" cy="16" r="6" fill="#00a862" />
+                    <circle cx="16" cy="16" r="6" fill="var(--brand)" />
                     <path d="M13.5 16 L 15.5 18 L 19 14" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </g>
                 </svg>
@@ -10262,7 +10267,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 34,
                     padding: "0 28px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 4,
@@ -10272,8 +10277,8 @@ export default function MisaToolsWorkspace({
                     boxShadow: "0 2px 6px rgba(0, 168, 98, 0.25)",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#009959"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#00a862"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--brand)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "var(--brand)"; }}
                 >
                   Thêm
                 </button>
@@ -10288,11 +10293,11 @@ export default function MisaToolsWorkspace({
                     height: 32,
                     padding: "0 22px",
                     background: "#ffffff",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#00a862",
+                    color: "var(--brand)",
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
@@ -10326,7 +10331,7 @@ export default function MisaToolsWorkspace({
                     style={{
                       height: 32,
                       padding: "0 18px",
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       borderRadius: 4,
@@ -10489,7 +10494,7 @@ export default function MisaToolsWorkspace({
                               setStocktakePurpose(v.purpose);
                               setShowStocktakeVoucherModal(true);
                             }}
-                            style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer" }}
+                            style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer" }}
                           >
                             {v.voucherNo}
                           </td>
@@ -10508,13 +10513,13 @@ export default function MisaToolsWorkspace({
                               borderRight: "1px solid #e2e8f0",
                               textAlign: "right",
                               fontWeight: 700,
-                              color: v.diffQty === 0 ? "#00a862" : v.diffQty > 0 ? "#00a862" : "#ef4444",
+                              color: v.diffQty === 0 ? "var(--brand)" : v.diffQty > 0 ? "var(--brand)" : "#ef4444",
                             }}
                           >
                             {v.diffQty ? `${v.diffQty},00` : "0,00"}
                           </td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
-                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "#00a862", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
+                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
                               {v.status}
                             </span>
                           </td>
@@ -10529,7 +10534,7 @@ export default function MisaToolsWorkspace({
                                   setStocktakePurpose(v.purpose);
                                   setShowStocktakeVoucherModal(true);
                                 }}
-                                style={{ border: "none", background: "transparent", color: "#00a862", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+                                style={{ border: "none", background: "transparent", color: "var(--brand)", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
                               >
                                 Xem
                               </button>
@@ -10540,7 +10545,7 @@ export default function MisaToolsWorkspace({
                                   setSelectedStocktakeForResolve(v.voucherNo);
                                   setShowStocktakeResolveModal(true);
                                 }}
-                                style={{ border: "none", background: "transparent", color: "#0284c7", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+                                style={{ border: "none", background: "transparent", color: "var(--brand)", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
                               >
                                 Xử lý CL
                               </button>
@@ -10627,8 +10632,8 @@ export default function MisaToolsWorkspace({
                   padding: "12px 2px",
                   fontSize: 13,
                   fontWeight: isActive ? 600 : 400,
-                  color: isActive ? "#00a862" : "#475569",
-                  borderBottom: isActive ? "2.5px solid #00a862" : "2.5px solid transparent",
+                  color: isActive ? "var(--brand)" : "#475569",
+                  borderBottom: isActive ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                   cursor: "pointer",
                   transition: "all 0.15s",
                 }}
@@ -10653,14 +10658,14 @@ export default function MisaToolsWorkspace({
 
                   {/* Tài liệu bên trái */}
                   <rect x="42" y="32" width="54" height="74" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-                  <path d="M42 36 C42 34 44 32 46 32 H82 L96 46 V50 H42 Z" fill="#00a862" />
-                  <path d="M82 32 V46 H96 Z" fill="#00804c" />
+                  <path d="M42 36 C42 34 44 32 46 32 H82 L96 46 V50 H42 Z" fill="var(--brand)" />
+                  <path d="M82 32 V46 H96 Z" fill="var(--brand-hover)" />
                   {/* Biểu đồ cột */}
-                  <rect x="52" y="74" width="7" height="22" rx="1.5" fill="#00a862" />
+                  <rect x="52" y="74" width="7" height="22" rx="1.5" fill="var(--brand)" />
                   <rect x="65" y="62" width="7" height="34" rx="1.5" fill="#007848" />
                   <rect x="78" y="80" width="7" height="16" rx="1.5" fill="#10b981" />
                   {/* Badge $ trên tài liệu */}
-                  <circle cx="86" cy="52" r="9" fill="#00a862" stroke="#ffffff" strokeWidth="1.5" />
+                  <circle cx="86" cy="52" r="9" fill="var(--brand)" stroke="#ffffff" strokeWidth="1.5" />
                   <text x="86" y="55.5" fill="#ffffff" fontSize="10.5" fontWeight="bold" textAnchor="middle">$</text>
 
                   {/* 3 nhánh nét đứt nối sang 3 tờ lịch */}
@@ -10669,19 +10674,19 @@ export default function MisaToolsWorkspace({
                   <path d="M96 74 C 120 74, 130 112, 172 112" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="3 3" />
 
                   {/* Đồng xu $ trên mỗi nhánh */}
-                  <circle cx="136" cy="46" r="8.5" fill="#00a862" stroke="#ffffff" strokeWidth="1.5" />
+                  <circle cx="136" cy="46" r="8.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1.5" />
                   <text x="136" y="49.5" fill="#ffffff" fontSize="10" fontWeight="bold" textAnchor="middle">$</text>
 
-                  <circle cx="136" cy="74" r="8.5" fill="#00a862" stroke="#ffffff" strokeWidth="1.5" />
+                  <circle cx="136" cy="74" r="8.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1.5" />
                   <text x="136" y="77.5" fill="#ffffff" fontSize="10" fontWeight="bold" textAnchor="middle">$</text>
 
-                  <circle cx="136" cy="102" r="8.5" fill="#00a862" stroke="#ffffff" strokeWidth="1.5" />
+                  <circle cx="136" cy="102" r="8.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1.5" />
                   <text x="136" y="105.5" fill="#ffffff" fontSize="10" fontWeight="bold" textAnchor="middle">$</text>
 
                   {/* 3 tờ lịch bên phải */}
                   {/* Tờ lịch 1 */}
                   <rect x="174" y="20" width="38" height="32" rx="3" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-                  <rect x="174" y="20" width="38" height="10" rx="3" fill="#00a862" />
+                  <rect x="174" y="20" width="38" height="10" rx="3" fill="var(--brand)" />
                   <circle cx="182" cy="20" r="1.5" fill="#ffffff" />
                   <circle cx="204" cy="20" r="1.5" fill="#ffffff" />
                   <rect x="180" y="34" width="4" height="4" rx="0.5" fill="#94a3b8" />
@@ -10693,7 +10698,7 @@ export default function MisaToolsWorkspace({
 
                   {/* Tờ lịch 2 */}
                   <rect x="174" y="58" width="38" height="32" rx="3" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-                  <rect x="174" y="58" width="38" height="10" rx="3" fill="#00a862" />
+                  <rect x="174" y="58" width="38" height="10" rx="3" fill="var(--brand)" />
                   <circle cx="182" cy="58" r="1.5" fill="#ffffff" />
                   <circle cx="204" cy="58" r="1.5" fill="#ffffff" />
                   <rect x="180" y="72" width="4" height="4" rx="0.5" fill="#94a3b8" />
@@ -10705,7 +10710,7 @@ export default function MisaToolsWorkspace({
 
                   {/* Tờ lịch 3 */}
                   <rect x="174" y="96" width="38" height="32" rx="3" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-                  <rect x="174" y="96" width="38" height="10" rx="3" fill="#00a862" />
+                  <rect x="174" y="96" width="38" height="10" rx="3" fill="var(--brand)" />
                   <circle cx="182" cy="96" r="1.5" fill="#ffffff" />
                   <circle cx="204" cy="96" r="1.5" fill="#ffffff" />
                   <rect x="180" y="110" width="4" height="4" rx="0.5" fill="#94a3b8" />
@@ -10736,7 +10741,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 34,
                     padding: "0 22px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 4,
@@ -10856,11 +10861,11 @@ export default function MisaToolsWorkspace({
                     height: 32,
                     padding: "0 20px",
                     background: "#ffffff",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 16,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#00a862",
+                    color: "var(--brand)",
                     cursor: "pointer",
                   }}
                 >
@@ -10877,7 +10882,7 @@ export default function MisaToolsWorkspace({
                     <button
                       type="button"
                       onClick={() => setShowPrepaidAddDropdown(!showPrepaidAddDropdown)}
-                      style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                      style={{ height: 30, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                     >
                       <Plus size={14} />
                       <span>Thêm chi phí trả trước</span>
@@ -10992,10 +10997,10 @@ export default function MisaToolsWorkspace({
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
                     type="button"
-                    onClick={() => notify("Xuất danh sách chi phí trả trước ra file Excel thành công")}
+                    onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Xuất danh sách chi phí trả trước ra file Excel"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                     style={{ height: 28, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#334155", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
                   >
-                    <FileSpreadsheet size={13} style={{ color: "#00a862" }} />
+                    <FileSpreadsheet size={13} style={{ color: "var(--brand)" }} />
                     <span>Xuất khẩu</span>
                   </button>
                   <button
@@ -11030,14 +11035,14 @@ export default function MisaToolsWorkspace({
                     {filteredPrepaidList.map((cp, idx) => (
                       <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                         <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                        <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{cp.code}</td>
+                        <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{cp.code}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b" }}>{cp.name}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#64748b" }}>{cp.startDate || "01/01/2026"}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVND(cp.totalAmount)}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{cp.allocationMonths} tháng</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(cp.allocatedAmount)}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#16a34a" }}>{formatVND(cp.remainingAmount)}</td>
-                        <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{cp.costAccount}</td>
+                        <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>{cp.costAccount}</td>
                         <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{cp.dept}</td>
                         <td style={{ padding: "8px", textAlign: "center" }}>
                           <button
@@ -11062,7 +11067,7 @@ export default function MisaToolsWorkspace({
               <div style={{ height: 38, background: "#f8fafc", borderTop: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", fontSize: 12.5, fontWeight: 600, color: "#1e293b" }}>
                 <span>Tổng số khoản chi phí: {filteredPrepaidList.length}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                  <span>Tổng nguyên giá: <strong style={{ color: "#00a862" }}>{formatVND(totalPrepaidOriginal)}</strong></span>
+                  <span>Tổng nguyên giá: <strong style={{ color: "var(--brand)" }}>{formatVND(totalPrepaidOriginal)}</strong></span>
                   <span>Đã phân bổ: <strong style={{ color: "#64748b" }}>{formatVND(totalPrepaidAllocated)}</strong></span>
                   <span>Còn lại chưa phân bổ: <strong style={{ color: "#16a34a" }}>{formatVND(totalPrepaidRemaining)}</strong></span>
                 </div>
@@ -11116,7 +11121,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 34,
                     padding: "0 22px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 4,
@@ -11139,11 +11144,11 @@ export default function MisaToolsWorkspace({
                     height: 32,
                     padding: "0 20px",
                     background: "#ffffff",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 16,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#00a862",
+                    color: "var(--brand)",
                     cursor: "pointer",
                   }}
                 >
@@ -11171,7 +11176,7 @@ export default function MisaToolsWorkspace({
                   <button
                     type="button"
                     onClick={() => setShowPrepaidDateModal(true)}
-                    style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                    style={{ height: 30, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
                     <Plus size={14} />
                     <span>Thêm</span>
@@ -11240,11 +11245,11 @@ export default function MisaToolsWorkspace({
                       .map((v, idx) => (
                         <tr key={v.voucherNo} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                          <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{v.voucherNo}</td>
+                          <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{v.voucherNo}</td>
                           <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#64748b" }}>{v.voucherDate}</td>
                           <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 500 }}>{v.period}</td>
                           <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{v.reason}</td>
-                          <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#00a862" }}>{formatVND(v.totalAmount)}</td>
+                          <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "var(--brand)" }}>{formatVND(v.totalAmount)}</td>
                           <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
                             <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 10, background: "#dcfce7", color: "#166534", fontSize: 11.5, fontWeight: 500 }}>
                               {v.status}
@@ -11282,7 +11287,7 @@ export default function MisaToolsWorkspace({
               {/* Status bar */}
               <div style={{ height: 38, background: "#f8fafc", borderTop: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", fontSize: 12.5, fontWeight: 600, color: "#1e293b" }}>
                 <span>Số lượng chứng từ: {prepaidAllocVouchers.length}</span>
-                <span>Tổng tiền phân bổ: <strong style={{ color: "#00a862" }}>{formatVND(prepaidAllocVouchers.reduce((s, v) => s + v.totalAmount, 0))}</strong></span>
+                <span>Tổng tiền phân bổ: <strong style={{ color: "var(--brand)" }}>{formatVND(prepaidAllocVouchers.reduce((s, v) => s + v.totalAmount, 0))}</strong></span>
               </div>
             </div>
           )
@@ -11302,18 +11307,18 @@ export default function MisaToolsWorkspace({
 
                   {/* Tài liệu bên trái kèm badge $ */}
                   <rect x="42" y="44" width="48" height="64" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-                  <path d="M42 48 C42 45 44 44 47 44 H76 L90 58 V62 H42 Z" fill="#00a862" />
-                  <path d="M76 44 V58 H90 Z" fill="#00804c" />
-                  <circle cx="86" cy="62" r="9" fill="#00a862" stroke="#ffffff" strokeWidth="1.5" />
+                  <path d="M42 48 C42 45 44 44 47 44 H76 L90 58 V62 H42 Z" fill="var(--brand)" />
+                  <path d="M76 44 V58 H90 Z" fill="var(--brand-hover)" />
+                  <circle cx="86" cy="62" r="9" fill="var(--brand)" stroke="#ffffff" strokeWidth="1.5" />
                   <text x="86" y="65.5" fill="#ffffff" fontSize="10.5" fontWeight="bold" textAnchor="middle">$</text>
 
                   {/* Mũi tên cong nét đứt trỏ sang kiện hàng */}
                   <path d="M92 76 C 108 64, 116 66, 126 74" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="3 3" />
-                  <circle cx="110" cy="66" r="8" fill="#00a862" stroke="#ffffff" strokeWidth="1.5" />
+                  <circle cx="110" cy="66" r="8" fill="var(--brand)" stroke="#ffffff" strokeWidth="1.5" />
                   <text x="110" y="69.5" fill="#ffffff" fontSize="9.5" fontWeight="bold" textAnchor="middle">$</text>
 
                   {/* Kiện hàng xanh lá ở giữa */}
-                  <rect x="130" y="70" width="36" height="32" rx="3" fill="#00a862" stroke="#00804c" strokeWidth="1" />
+                  <rect x="130" y="70" width="36" height="32" rx="3" fill="var(--brand)" stroke="var(--brand-hover)" strokeWidth="1" />
                   <path d="M130 78 H166" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="2 2" />
                   <path d="M148 70 V102" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="2 2" />
 
@@ -11322,12 +11327,12 @@ export default function MisaToolsWorkspace({
 
                   {/* Tờ lịch bên phải */}
                   <rect x="194" y="52" width="42" height="40" rx="3" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-                  <rect x="194" y="52" width="42" height="12" rx="3" fill="#00a862" />
+                  <rect x="194" y="52" width="42" height="12" rx="3" fill="var(--brand)" />
                   <circle cx="203" cy="52" r="1.5" fill="#ffffff" />
                   <circle cx="227" cy="52" r="1.5" fill="#ffffff" />
 
                   {/* Biểu tượng đồng hồ tròn xanh trên lịch */}
-                  <circle cx="224" cy="78" r="13" fill="#00a862" stroke="#ffffff" strokeWidth="2" />
+                  <circle cx="224" cy="78" r="13" fill="var(--brand)" stroke="#ffffff" strokeWidth="2" />
                   <circle cx="224" cy="78" r="1.5" fill="#ffffff" />
                   <path d="M224 78 V71 M224 78 H229" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" />
 
@@ -11360,7 +11365,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 34,
                     padding: "0 22px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 4,
@@ -11383,11 +11388,11 @@ export default function MisaToolsWorkspace({
                     height: 32,
                     padding: "0 20px",
                     background: "#ffffff",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 16,
                     fontSize: 12.5,
                     fontWeight: 600,
-                    color: "#00a862",
+                    color: "var(--brand)",
                     cursor: "pointer",
                   }}
                 >
@@ -11418,7 +11423,7 @@ export default function MisaToolsWorkspace({
                       });
                     }
                   }}
-                    style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                    style={{ height: 30, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
                     <Plus size={14} />
                     <span>Thêm</span>
@@ -11487,7 +11492,7 @@ export default function MisaToolsWorkspace({
                       .map((v, idx) => (
                         <tr key={v.voucherNo} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                          <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{v.voucherNo}</td>
+                          <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{v.voucherNo}</td>
                           <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#64748b" }}>{v.voucherDate}</td>
                           <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{v.reason}</td>
                           <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#ef4444" }}>{formatVND(v.totalAmount)}</td>
@@ -11601,7 +11606,7 @@ export default function MisaToolsWorkspace({
                     style={{
                       width: "100%",
                       height: 32,
-                      border: "1.5px solid #00a862",
+                      border: "1.5px solid var(--brand)",
                       borderRadius: 4,
                       padding: "0 10px",
                       fontSize: 13,
@@ -11738,7 +11743,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 32,
                     padding: "0 22px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 12.5,
@@ -11813,7 +11818,7 @@ export default function MisaToolsWorkspace({
                       borderRadius: 13,
                       background: "#ffffff",
                       fontSize: 12,
-                      color: "#00a862",
+                      color: "var(--brand)",
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
@@ -11852,7 +11857,7 @@ export default function MisaToolsWorkspace({
                           width: "100%",
                           height: 32,
                           padding: "0 10px",
-                          border: "1.5px solid #00a862",
+                          border: "1.5px solid var(--brand)",
                           borderRadius: 4,
                           fontSize: 12.5,
                           outline: "none",
@@ -11996,7 +12001,7 @@ export default function MisaToolsWorkspace({
                           type="checkbox"
                           checked={form1StopAlloc}
                           onChange={(e) => setForm1StopAlloc(e.target.checked)}
-                          style={{ accentColor: "#00a862" }}
+                          style={{ accentColor: "var(--brand)" }}
                         />
                         <span>Ngừng phân bổ</span>
                       </label>
@@ -12007,7 +12012,7 @@ export default function MisaToolsWorkspace({
                   <div>
                     <span
                       onClick={() => notify("Chọn chứng từ tham chiếu")}
-                      style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                      style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </span>
@@ -12022,8 +12027,8 @@ export default function MisaToolsWorkspace({
                       padding: "10px 4px",
                       fontSize: 13,
                       fontWeight: form1Tab === "setup" ? 700 : 500,
-                      color: form1Tab === "setup" ? "#00a862" : "#475569",
-                      borderBottom: form1Tab === "setup" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                      color: form1Tab === "setup" ? "var(--brand)" : "#475569",
+                      borderBottom: form1Tab === "setup" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                       cursor: "pointer",
                     }}
                   >
@@ -12035,8 +12040,8 @@ export default function MisaToolsWorkspace({
                       padding: "10px 4px",
                       fontSize: 13,
                       fontWeight: form1Tab === "docs" ? 700 : 500,
-                      color: form1Tab === "docs" ? "#00a862" : "#475569",
-                      borderBottom: form1Tab === "docs" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                      color: form1Tab === "docs" ? "var(--brand)" : "#475569",
+                      borderBottom: form1Tab === "docs" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                       cursor: "pointer",
                     }}
                   >
@@ -12155,7 +12160,7 @@ export default function MisaToolsWorkspace({
                             {/* Dòng tổng cộng */}
                             <tr style={{ background: "#f8fafc", fontWeight: 700, borderBottom: "1px solid #cbd5e1" }}>
                               <td colSpan={3} style={{ padding: "8px 12px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>Tổng:</td>
-                              <td style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                              <td style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>
                                 {form1Rows.reduce((s, r) => s + (r.rate || 0), 0).toFixed(2).replace(".", ",")}
                               </td>
                               <td colSpan={4}></td>
@@ -12210,7 +12215,7 @@ export default function MisaToolsWorkspace({
                                       const val = e.target.value;
                                       setForm1SourceDocs((prev) => prev.map((d, i) => (i === idx ? { ...d, voucherNo: val } : d)));
                                     }}
-                                    style={{ width: "100%", height: 28, border: "1px solid transparent", outline: "none", fontSize: 12.5, fontWeight: 600, color: "#00a862" }}
+                                    style={{ width: "100%", height: 28, border: "1px solid transparent", outline: "none", fontSize: 12.5, fontWeight: 600, color: "var(--brand)" }}
                                   />
                                 </td>
                                 <td style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0" }}>
@@ -12275,7 +12280,7 @@ export default function MisaToolsWorkspace({
                             {form1SourceDocs.length > 0 && (
                               <tr style={{ background: "#f8fafc", fontWeight: 700, borderBottom: "1px solid #cbd5e1" }}>
                                 <td colSpan={4} style={{ padding: "8px 12px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>Tổng tiền tập hợp:</td>
-                                <td style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                                <td style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>
                                   {formatVND(form1SourceDocs.reduce((s, d) => s + (d.amount || 0), 0))}
                                 </td>
                                 <td></td>
@@ -12303,7 +12308,7 @@ export default function MisaToolsWorkspace({
                             setForm1SourceDocs(nextDocs);
                             setForm1Amount(nextDocs.reduce((s, d) => s + (d.amount || 0), 0));
                           }}
-                          style={{ height: 28, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, fontWeight: 600, color: "#00a862", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                          style={{ height: 28, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, fontWeight: 600, color: "var(--brand)", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
                         >
                           <Plus size={13} />
                           <span>Chọn chứng từ</span>
@@ -12490,7 +12495,7 @@ export default function MisaToolsWorkspace({
                       borderRadius: 13,
                       background: "#ffffff",
                       fontSize: 12,
-                      color: "#00a862",
+                      color: "var(--brand)",
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
@@ -12525,7 +12530,7 @@ export default function MisaToolsWorkspace({
                         type="text"
                         value={form2Code}
                         onChange={(e) => setForm2Code(e.target.value)}
-                        style={{ width: "100%", height: 32, padding: "0 10px", border: "1.5px solid #00a862", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                        style={{ width: "100%", height: 32, padding: "0 10px", border: "1.5px solid var(--brand)", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                       />
                     </div>
                     <div>
@@ -12666,7 +12671,7 @@ export default function MisaToolsWorkspace({
                           type="checkbox"
                           checked={form2StopAlloc}
                           onChange={(e) => setForm2StopAlloc(e.target.checked)}
-                          style={{ accentColor: "#00a862" }}
+                          style={{ accentColor: "var(--brand)" }}
                         />
                         <span>Ngừng phân bổ</span>
                       </label>
@@ -12677,7 +12682,7 @@ export default function MisaToolsWorkspace({
                   <div>
                     <span
                       onClick={() => notify("Chọn chứng từ tham chiếu")}
-                      style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                      style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </span>
@@ -12691,8 +12696,8 @@ export default function MisaToolsWorkspace({
                       padding: "10px 4px",
                       fontSize: 13,
                       fontWeight: 700,
-                      color: "#00a862",
-                      borderBottom: "2.5px solid #00a862",
+                      color: "var(--brand)",
+                      borderBottom: "2.5px solid var(--brand)",
                       cursor: "pointer",
                     }}
                   >
@@ -12805,7 +12810,7 @@ export default function MisaToolsWorkspace({
                         {/* Dòng tổng */}
                         <tr style={{ background: "#f8fafc", fontWeight: 700, borderBottom: "1px solid #cbd5e1" }}>
                           <td colSpan={3} style={{ padding: "8px 12px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>Tổng:</td>
-                          <td style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                          <td style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>
                             {form2Rows.reduce((s, r) => s + (r.rate || 0), 0).toFixed(2).replace(".", ",")}
                           </td>
                           <td colSpan={4}></td>
@@ -12908,7 +12913,7 @@ export default function MisaToolsWorkspace({
                     setForm2Amount(0);
                     notify(`Đã lưu chi phí trả trước đầu kỳ ${form2Code} và mở biểu mẫu thêm mới`);
                   }}
-                  style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
+                  style={{ height: 32, padding: "0 22px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
                 >
                   Lưu và Thêm
                 </button>
@@ -12965,29 +12970,29 @@ export default function MisaToolsWorkspace({
 
                 {/* Stepper */}
                 <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 13 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: excelStep >= 1 ? "#00a862" : "#94a3b8", fontWeight: excelStep === 1 ? 700 : 500 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: excelStep >= 1 ? "#00a862" : "#cbd5e1", color: "#ffffff", fontSize: 11, display: "grid", placeItems: "center", fontWeight: 700 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: excelStep >= 1 ? "var(--brand)" : "#94a3b8", fontWeight: excelStep === 1 ? 700 : 500 }}>
+                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: excelStep >= 1 ? "var(--brand)" : "#cbd5e1", color: "#ffffff", fontSize: 11, display: "grid", placeItems: "center", fontWeight: 700 }}>
                       1
                     </span>
                     <span>Chọn tệp</span>
                   </div>
-                  <div style={{ width: 40, height: 1, background: excelStep >= 2 ? "#00a862" : "#cbd5e1" }} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: excelStep >= 2 ? "#00a862" : "#94a3b8", fontWeight: excelStep === 2 ? 700 : 500 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: excelStep >= 2 ? "#00a862" : "#cbd5e1", color: "#ffffff", fontSize: 11, display: "grid", placeItems: "center", fontWeight: 700 }}>
+                  <div style={{ width: 40, height: 1, background: excelStep >= 2 ? "var(--brand)" : "#cbd5e1" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: excelStep >= 2 ? "var(--brand)" : "#94a3b8", fontWeight: excelStep === 2 ? 700 : 500 }}>
+                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: excelStep >= 2 ? "var(--brand)" : "#cbd5e1", color: "#ffffff", fontSize: 11, display: "grid", placeItems: "center", fontWeight: 700 }}>
                       2
                     </span>
                     <span>Ghép dữ liệu</span>
                   </div>
-                  <div style={{ width: 40, height: 1, background: excelStep >= 3 ? "#00a862" : "#cbd5e1" }} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: excelStep >= 3 ? "#00a862" : "#94a3b8", fontWeight: excelStep === 3 ? 700 : 500 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: excelStep >= 3 ? "#00a862" : "#cbd5e1", color: "#ffffff", fontSize: 11, display: "grid", placeItems: "center", fontWeight: 700 }}>
+                  <div style={{ width: 40, height: 1, background: excelStep >= 3 ? "var(--brand)" : "#cbd5e1" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: excelStep >= 3 ? "var(--brand)" : "#94a3b8", fontWeight: excelStep === 3 ? 700 : 500 }}>
+                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: excelStep >= 3 ? "var(--brand)" : "#cbd5e1", color: "#ffffff", fontSize: 11, display: "grid", placeItems: "center", fontWeight: 700 }}>
                       3
                     </span>
                     <span>Kiểm tra dữ liệu</span>
                   </div>
-                  <div style={{ width: 40, height: 1, background: excelStep >= 4 ? "#00a862" : "#cbd5e1" }} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: excelStep >= 4 ? "#00a862" : "#94a3b8", fontWeight: excelStep === 4 ? 700 : 500 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: excelStep >= 4 ? "#00a862" : "#cbd5e1", color: "#ffffff", fontSize: 11, display: "grid", placeItems: "center", fontWeight: 700 }}>
+                  <div style={{ width: 40, height: 1, background: excelStep >= 4 ? "var(--brand)" : "#cbd5e1" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: excelStep >= 4 ? "var(--brand)" : "#94a3b8", fontWeight: excelStep === 4 ? 700 : 500 }}>
+                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: excelStep >= 4 ? "var(--brand)" : "#cbd5e1", color: "#ffffff", fontSize: 11, display: "grid", placeItems: "center", fontWeight: 700 }}>
                       4
                     </span>
                     <span>Kết quả</span>
@@ -13028,7 +13033,7 @@ export default function MisaToolsWorkspace({
                         transition: "border 0.2s, background 0.2s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "#00a862";
+                        e.currentTarget.style.borderColor = "var(--brand)";
                         e.currentTarget.style.background = "#f0fdf4";
                       }}
                       onMouseLeave={(e) => {
@@ -13048,9 +13053,9 @@ export default function MisaToolsWorkspace({
                           }
                         }}
                       />
-                      <Upload size={32} style={{ color: "#00a862", marginBottom: 10 }} />
+                      <Upload size={32} style={{ color: "var(--brand)", marginBottom: 10 }} />
                       <div style={{ fontSize: 13.5, color: "#1e293b", fontWeight: 500, marginBottom: 4 }}>
-                        <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                        <span style={{ color: "var(--brand)", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                       </div>
                       <div style={{ fontSize: 12, color: "#94a3b8" }}>
                         {excelFileName ? `Đã tải: ${excelFileName}` : "Định dạng XLSX, XLS (tối đa 20MB)"}
@@ -13078,7 +13083,7 @@ export default function MisaToolsWorkspace({
                       }}
                     >
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#0284c7", marginBottom: 2 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--brand)", marginBottom: 2 }}>
                           Tải tệp mẫu
                         </div>
                         <div style={{ fontSize: 12, color: "#64748b" }}>
@@ -13126,7 +13131,7 @@ export default function MisaToolsWorkspace({
                         checked={excelAutoMap}
                         onChange={(e) => setExcelAutoMap(e.target.checked)}
                         id="prepaid-excel-ava"
-                        style={{ accentColor: "#00a862" }}
+                        style={{ accentColor: "var(--brand)" }}
                       />
                       <label htmlFor="prepaid-excel-ava" style={{ fontSize: 12.5, color: "#1e293b", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                         <span>Tự động ghép cột dữ liệu</span>
@@ -13215,7 +13220,7 @@ export default function MisaToolsWorkspace({
                       notify("Nhập khẩu danh sách chi phí trả trước từ Excel thành công!");
                     }
                   }}
-                  style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
+                  style={{ height: 32, padding: "0 22px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
                 >
                   {excelStep === 1 ? "Tiếp tục" : "Hoàn tất"}
                 </button>
@@ -13292,13 +13297,13 @@ export default function MisaToolsWorkspace({
                       borderRadius: 14,
                       border: "1px solid #cbd5e1",
                       background: "#ffffff",
-                      color: "#00a862",
+                      color: "var(--brand)",
                       fontSize: 12,
                       fontWeight: 500,
                       cursor: "pointer",
                     }}
                   >
-                    <HelpCircle size={14} style={{ color: "#00a862" }} />
+                    <HelpCircle size={14} style={{ color: "var(--brand)" }} />
                     <span>Hướng dẫn sử dụng</span>
                     <ChevronDown size={13} style={{ color: "#64748b" }} />
                   </button>
@@ -13439,7 +13444,7 @@ export default function MisaToolsWorkspace({
                       <span>Tham chiếu</span>
                       <span
                         onClick={() => openReferenceVoucherPicker("ALLOC_PREPAID")}
-                        style={{ color: "#00a862", fontWeight: 700, cursor: "pointer" }}
+                        style={{ color: "var(--brand)", fontWeight: 700, cursor: "pointer" }}
                         title="Chọn chứng từ tham chiếu"
                       >
                         ...
@@ -13454,7 +13459,7 @@ export default function MisaToolsWorkspace({
                             padding: "1px 6px",
                             borderRadius: 4,
                             background: "#e0f2fe",
-                            color: "#0284c7",
+                            color: "var(--brand)",
                             fontSize: 11.5,
                             fontWeight: 600,
                           }}
@@ -13576,8 +13581,8 @@ export default function MisaToolsWorkspace({
                         padding: "10px 4px",
                         fontSize: 13,
                         fontWeight: isActive ? 600 : 500,
-                        color: isActive ? "#00a862" : "#64748b",
-                        borderBottom: isActive ? "2.5px solid #00a862" : "2.5px solid transparent",
+                        color: isActive ? "var(--brand)" : "#64748b",
+                        borderBottom: isActive ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                         cursor: "pointer",
                       }}
                     >
@@ -13623,11 +13628,11 @@ export default function MisaToolsWorkspace({
                             prepaidAllocIdentifyRows.map((row, idx) => (
                               <tr key={`${row.code || row.prepaid_code}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
                                 <td style={{ textAlign: "center", padding: "6px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                                <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{row.code || row.prepaid_code}</td>
+                                <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{row.code || row.prepaid_code}</td>
                                 <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b" }}>{row.name || row.prepaid_name}</td>
                                 <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(Number(row.total_amount || 0))}</td>
                                 <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#475569" }}>{formatVND(Number(row.unallocated_amount || 0))}</td>
-                                <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(Number(row.period_allocation_amount || row.total_allocation_amount || 0))}</td>
+                                <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(Number(row.period_allocation_amount || row.total_allocation_amount || 0))}</td>
                               </tr>
                             ))
                           ) : (
@@ -13669,9 +13674,9 @@ export default function MisaToolsWorkspace({
                           onChange={(e) => handleAllocationAttachmentUpload(e.target.files, "PREPAID")}
                           style={{ display: "none" }}
                         />
-                        <Upload size={18} style={{ color: "#0284c7" }} />
+                        <Upload size={18} style={{ color: "var(--brand)" }} />
                         <div style={{ fontSize: 12.5, color: "#64748b" }}>
-                          <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                          <span style={{ color: "var(--brand)", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                         </div>
                       </label>
                       {prepaidAllocAttachments.length > 0 && (
@@ -13691,7 +13696,7 @@ export default function MisaToolsWorkspace({
                                 color: "#334155",
                               }}
                             >
-                              <Paperclip size={12} style={{ color: "#0284c7" }} />
+                              <Paperclip size={12} style={{ color: "var(--brand)" }} />
                               <span>{att.file_name}</span>
                               <span style={{ color: "#94a3b8", fontSize: 11 }}>({Math.ceil(att.file_size / 1024)} KB)</span>
                               <X
@@ -13732,7 +13737,7 @@ export default function MisaToolsWorkspace({
                           prepaidAllocDetailRows.map((row, idx) => (
                             <tr key={`${row.code || row.prepaid_code}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
                               <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{row.code || row.prepaid_code}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{row.code || row.prepaid_code}</td>
                               <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{row.name || row.prepaid_name}</td>
                               <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.allocation_target || row.unit_name || "Quản lý DN"}</td>
                               <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(Number(row.total_amount || row.original_cost || 0))}</td>
@@ -13741,9 +13746,9 @@ export default function MisaToolsWorkspace({
                               <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{row.total_periods || 1}</td>
                               <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{row.remaining_periods ?? 1}</td>
                               <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{Number(row.allocation_rate ?? 100)}%</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(Number(row.period_allocation || row.allocated_this_period || 0))}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(Number(row.period_allocation || row.allocated_this_period || 0))}</td>
                               <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>{row.waiting_account || "242"}</td>
-                              <td style={{ padding: "8px", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{row.expense_account || "6422"}</td>
+                              <td style={{ padding: "8px", textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>{row.expense_account || "6422"}</td>
                             </tr>
                           ))
                         ) : (
@@ -13753,7 +13758,7 @@ export default function MisaToolsWorkspace({
                             return (
                               <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                                 <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
-                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{cp.code}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{cp.code}</td>
                                 <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{cp.name}</td>
                                 <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{cp.dept}</td>
                                 <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>{formatVND(cp.totalAmount)}</td>
@@ -13762,9 +13767,9 @@ export default function MisaToolsWorkspace({
                                 <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{cp.allocationMonths}</td>
                                 <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{remPeriods}</td>
                                 <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right" }}>100%</td>
-                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(allocThisPeriod)}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(allocThisPeriod)}</td>
                                 <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>242</td>
-                                <td style={{ padding: "8px", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{cp.costAccount}</td>
+                                <td style={{ padding: "8px", textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>{cp.costAccount}</td>
                               </tr>
                             );
                           })
@@ -13794,9 +13799,9 @@ export default function MisaToolsWorkspace({
                             <tr key={`${entry.debit_account}-${entry.credit_account}-${idx}`} style={{ borderBottom: "1px solid #e2e8f0" }}>
                               <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
                               <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{entry.description}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#0284c7" }}>{entry.debit_account}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "var(--brand)" }}>{entry.debit_account}</td>
                               <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>{entry.credit_account}</td>
-                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(Number(entry.amount || 0))}</td>
+                              <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(Number(entry.amount || 0))}</td>
                               <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{entry.cost_item || "Chi phí trả trước"}</td>
                               <td style={{ padding: "8px", color: "#475569" }}>{entry.target_name || "Quản lý DN"}</td>
                             </tr>
@@ -13808,9 +13813,9 @@ export default function MisaToolsWorkspace({
                               <tr key={cp.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                                 <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{idx + 1}</td>
                                 <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>Phân bổ {cp.name} - T{String(prepaidAllocMonth).padStart(2, "0")}/{prepaidAllocYear}</td>
-                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#0284c7" }}>{cp.costAccount}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "var(--brand)" }}>{cp.costAccount}</td>
                                 <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 600, color: "#16a34a" }}>242</td>
-                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(allocThisPeriod)}</td>
+                                <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(allocThisPeriod)}</td>
                                 <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>Chi phí mua ngoài / Phân bổ</td>
                                 <td style={{ padding: "8px", color: "#475569" }}>{cp.dept}</td>
                               </tr>
@@ -13911,7 +13916,7 @@ export default function MisaToolsWorkspace({
                   style={{
                     height: 32,
                     padding: "0 16px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,
@@ -14123,7 +14128,7 @@ export default function MisaToolsWorkspace({
                       borderRadius: 13,
                       background: "#ffffff",
                       fontSize: 12,
-                      color: "#00a862",
+                      color: "var(--brand)",
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
@@ -14163,7 +14168,7 @@ export default function MisaToolsWorkspace({
                           width: "100%",
                           height: 32,
                           padding: "0 10px",
-                          border: "1.5px solid #00a862",
+                          border: "1.5px solid var(--brand)",
                           borderRadius: 4,
                           fontSize: 12.5,
                           outline: "none",
@@ -14173,7 +14178,7 @@ export default function MisaToolsWorkspace({
                       <div style={{ marginTop: 6 }}>
                         <span
                           onClick={() => openReferenceVoucherPicker("DEC_PREPAID")}
-                          style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                          style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                         >
                           Tham chiếu ...
                         </span>
@@ -14219,8 +14224,8 @@ export default function MisaToolsWorkspace({
                       padding: "10px 4px",
                       fontSize: 13,
                       fontWeight: 600,
-                      color: "#00a862",
-                      borderBottom: "2.5px solid #00a862",
+                      color: "var(--brand)",
+                      borderBottom: "2.5px solid var(--brand)",
                       cursor: "pointer",
                     }}
                   >
@@ -14314,7 +14319,7 @@ export default function MisaToolsWorkspace({
                         {/* Dòng tổng */}
                         <tr style={{ background: "#f8fafc", fontWeight: 700, borderBottom: "1px solid #cbd5e1" }}>
                           <td colSpan={3} style={{ padding: "8px 12px", textAlign: "right", borderRight: "1px solid #e2e8f0" }}>Tổng:</td>
-                          <td style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                          <td style={{ padding: "8px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>
                             {formatVND(prepaidDecreaseDetailRows.reduce((s, r) => s + (r.remainingAmount || 0), 0))}
                           </td>
                           <td></td>
@@ -14374,7 +14379,7 @@ export default function MisaToolsWorkspace({
                       transition: "border 0.2s, background 0.2s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "#00a862";
+                      e.currentTarget.style.borderColor = "var(--brand)";
                       e.currentTarget.style.background = "#f0fdf4";
                     }}
                     onMouseLeave={(e) => {
@@ -14394,7 +14399,7 @@ export default function MisaToolsWorkspace({
                     />
                     <Upload size={18} style={{ color: "#64748b", marginBottom: 6 }} />
                     <div style={{ fontSize: 12, color: "#64748b" }}>
-                      <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                      <span style={{ color: "var(--brand)", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                     </div>
                   </div>
                 </div>
@@ -14621,8 +14626,8 @@ export default function MisaToolsWorkspace({
                       <button type="button" title="Xem trước báo cáo" onClick={() => setSelectedReportForPreview(rpt)} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }}>
                         <Eye size={15} />
                       </button>
-                      <button type="button" title="Bỏ yêu thích" onClick={() => toggleFavorite(rpt)} style={{ border: "none", background: "transparent", color: "#00a862", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                        <Star size={15} fill="#00a862" />
+                      <button type="button" title="Bỏ yêu thích" onClick={() => toggleFavorite(rpt)} style={{ border: "none", background: "transparent", color: "var(--brand)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                        <Star size={15} fill="var(--brand)" />
                       </button>
                     </div>
                   </div>
@@ -14656,8 +14661,8 @@ export default function MisaToolsWorkspace({
                         <button type="button" title="Xem trước báo cáo" onClick={() => setSelectedReportForPreview(item.name)} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }}>
                           <Eye size={15} />
                         </button>
-                        <button type="button" title={favoriteReports.includes(item.name) ? "Bỏ yêu thích" : "Thêm vào yêu thích"} onClick={() => toggleFavorite(item.name)} style={{ border: "none", background: "transparent", color: favoriteReports.includes(item.name) ? "#00a862" : "#94a3b8", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                          <Star size={15} fill={favoriteReports.includes(item.name) ? "#00a862" : "none"} />
+                        <button type="button" title={favoriteReports.includes(item.name) ? "Bỏ yêu thích" : "Thêm vào yêu thích"} onClick={() => toggleFavorite(item.name)} style={{ border: "none", background: "transparent", color: favoriteReports.includes(item.name) ? "var(--brand)" : "#94a3b8", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                          <Star size={15} fill={favoriteReports.includes(item.name) ? "var(--brand)" : "none"} />
                         </button>
                       </div>
                     </div>
@@ -14690,8 +14695,8 @@ export default function MisaToolsWorkspace({
                         <button type="button" onClick={() => setSelectedReportForPreview(item.name)} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer" }}>
                           <Eye size={15} />
                         </button>
-                        <button type="button" onClick={() => toggleFavorite(item.name)} style={{ border: "none", background: "transparent", color: favoriteReports.includes(item.name) ? "#00a862" : "#94a3b8", cursor: "pointer" }}>
-                          <Star size={15} fill={favoriteReports.includes(item.name) ? "#00a862" : "none"} />
+                        <button type="button" onClick={() => toggleFavorite(item.name)} style={{ border: "none", background: "transparent", color: favoriteReports.includes(item.name) ? "var(--brand)" : "#94a3b8", cursor: "pointer" }}>
+                          <Star size={15} fill={favoriteReports.includes(item.name) ? "var(--brand)" : "none"} />
                         </button>
                       </div>
                     </div>
@@ -14723,8 +14728,8 @@ export default function MisaToolsWorkspace({
                         <button type="button" onClick={() => setSelectedReportForPreview(item.name)} style={{ border: "none", background: "transparent", color: "#64748b", cursor: "pointer" }}>
                           <Eye size={15} />
                         </button>
-                        <button type="button" onClick={() => toggleFavorite(item.name)} style={{ border: "none", background: "transparent", color: favoriteReports.includes(item.name) ? "#00a862" : "#94a3b8", cursor: "pointer" }}>
-                          <Star size={15} fill={favoriteReports.includes(item.name) ? "#00a862" : "none"} />
+                        <button type="button" onClick={() => toggleFavorite(item.name)} style={{ border: "none", background: "transparent", color: favoriteReports.includes(item.name) ? "var(--brand)" : "#94a3b8", cursor: "pointer" }}>
+                          <Star size={15} fill={favoriteReports.includes(item.name) ? "var(--brand)" : "none"} />
                         </button>
                       </div>
                     </div>

@@ -140,7 +140,7 @@
 }
 
 .misa-analysis-refresh-link {
-  color: #0284c7;
+  color: var(--brand);
   cursor: pointer;
   text-decoration: none;
   font-weight: 500;

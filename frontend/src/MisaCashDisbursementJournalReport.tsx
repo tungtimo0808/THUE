@@ -1,3 +1,5 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
 import {cashDateRange,cashDateValue,isCashDateInRange} from './cash-date';
 import React, { useState, useMemo } from "react";
@@ -224,7 +226,7 @@ export default function MisaCashDisbursementJournalReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -242,7 +244,7 @@ export default function MisaCashDisbursementJournalReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -252,7 +254,7 @@ export default function MisaCashDisbursementJournalReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -335,7 +337,7 @@ export default function MisaCashDisbursementJournalReport({
               style={{
                 position: "absolute",
                 left: 10,
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -430,7 +432,7 @@ export default function MisaCashDisbursementJournalReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />
@@ -725,7 +727,7 @@ export default function MisaCashDisbursementJournalReport({
                       border: "1px solid #e2e8f0",
                       padding: "7px 10px",
                       textAlign: "center",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       cursor: "pointer",
                       fontWeight: 500,
                     }}
@@ -944,7 +946,7 @@ export default function MisaCashDisbursementJournalReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -958,7 +960,7 @@ export default function MisaCashDisbursementJournalReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -969,7 +971,7 @@ export default function MisaCashDisbursementJournalReport({
               <span
                 style={{
                   padding: "2px 8px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   borderRadius: 3,
                   fontSize: 12,
@@ -984,7 +986,7 @@ export default function MisaCashDisbursementJournalReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -998,7 +1000,7 @@ export default function MisaCashDisbursementJournalReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -1110,7 +1112,7 @@ export default function MisaCashDisbursementJournalReport({
                     width: "100%",
                     height: 32,
                     padding: "0 10px",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 13,
                     background: "#ffffff",
@@ -1162,7 +1164,7 @@ export default function MisaCashDisbursementJournalReport({
                         position: "absolute",
                         right: 10,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1201,7 +1203,7 @@ export default function MisaCashDisbursementJournalReport({
                         position: "absolute",
                         right: 10,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1232,7 +1234,7 @@ export default function MisaCashDisbursementJournalReport({
                     style={{
                       height: 32,
                       padding: "0 10px",
-                      border: "1px solid #00a862",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 13,
                       display: "flex",
@@ -1307,7 +1309,7 @@ export default function MisaCashDisbursementJournalReport({
                               <tr
                                 key={acc.code}
                                 style={{
-                                  background: isSelected ? "#00a862" : "#ffffff",
+                                  background: isSelected ? "var(--brand)" : "#ffffff",
                                   color: isSelected ? "#ffffff" : "#1e293b",
                                   cursor: "pointer",
                                   transition: "background 0.15s ease",
@@ -1401,7 +1403,7 @@ export default function MisaCashDisbursementJournalReport({
                     onChange={(e) =>
                       setDraftMergeSameEntries(e.target.checked)
                     }
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Cộng gộp các bút toán giống nhau</span>
                 </label>
@@ -1460,7 +1462,7 @@ export default function MisaCashDisbursementJournalReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

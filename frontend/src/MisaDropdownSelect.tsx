@@ -123,7 +123,7 @@ export default function MisaDropdownSelect({
         position: "relative",
         display: fullWidth ? "flex" : "inline-block",
         width: fullWidth ? "100%" : undefined,
-        fontFamily: "'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "Roboto, Arial, sans-serif",
         ...style,
       }}
     >
@@ -161,7 +161,7 @@ export default function MisaDropdownSelect({
           height: fullWidth ? 38 : 34,
           padding: fullWidth ? "0 12px" : "0 11px",
           background: disabled ? "#f8fafc" : "#ffffff",
-          border: `1px solid ${open ? "#0284c7" : "#cbd5e1"}`,
+          border: `1px solid ${open ? "var(--brand)" : "#cbd5e1"}`,
           borderRadius: fullWidth ? 10 : 8,
           display: "inline-flex",
           alignItems: "center",
@@ -170,7 +170,7 @@ export default function MisaDropdownSelect({
           fontFamily: "inherit",
           fontSize: fullWidth ? 13.5 : 13,
           fontWeight: 500,
-          color: !selectedOption && placeholder ? "#94a3b8" : open ? "#0284c7" : "#1e293b",
+          color: !selectedOption && placeholder ? "#94a3b8" : open ? "var(--brand)" : "#1e293b",
           cursor: disabled ? "not-allowed" : "pointer",
           boxShadow: open
             ? "0 0 0 3px rgba(2, 132, 199, 0.14)"
@@ -240,7 +240,7 @@ export default function MisaDropdownSelect({
         </span>
         <ChevronDown
           size={15}
-          color={open ? "#0284c7" : "#64748b"}
+          color={open ? "var(--brand)" : "#64748b"}
           style={{
             flexShrink: 0,
             transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -429,7 +429,7 @@ export default function MisaDropdownSelect({
                         borderRadius: 8,
                         border: "none",
                         background: isSelected ? "#f0f9ff" : "transparent",
-                        color: isSelected ? "#0284c7" : "#1e293b",
+                        color: isSelected ? "var(--brand)" : "#1e293b",
                         fontFamily: "inherit",
                         fontSize: 13,
                         fontWeight: isSelected ? 600 : 500,
@@ -443,7 +443,7 @@ export default function MisaDropdownSelect({
                       onMouseEnter={(e) => {
                         if (!isSelected) {
                           e.currentTarget.style.background = "#f1f5f9";
-                          e.currentTarget.style.color = "#0284c7";
+                          e.currentTarget.style.color = "var(--brand)";
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -500,7 +500,7 @@ export default function MisaDropdownSelect({
                           </span>
                         )}
                       </div>
-                      {isSelected && <Check size={15} color="#0284c7" style={{ flexShrink: 0 }} />}
+                      {isSelected && <Check size={15} color="var(--brand)" style={{ flexShrink: 0 }} />}
                     </button>
                   </React.Fragment>
                 );

@@ -1,3 +1,4 @@
+import { saveVisibleTable } from "./table-actions";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { request } from "./live-api";
 import { useApiSession } from "./ApiSession";
@@ -505,7 +506,7 @@ export default function MisaTrialBalanceManagementReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo tùy chỉnh thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -514,7 +515,7 @@ export default function MisaTrialBalanceManagementReport({
             style={{
               height: 32,
               padding: "0 16px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -587,7 +588,7 @@ export default function MisaTrialBalanceManagementReport({
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {/* Search Box */}
           <div style={{ position: "relative", width: 240 }}>
-            <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+            <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
             <input
               type="text"
               placeholder="Nhập từ khóa tìm kiếm"
@@ -626,7 +627,7 @@ export default function MisaTrialBalanceManagementReport({
 
           <button
             type="button"
-            style={{ width: 30, height: 30, border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "#0284c7", cursor: "pointer" }}
+            style={{ width: 30, height: 30, border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--brand)", cursor: "pointer" }}
             title="Trợ giúp / Phản hồi"
             onClick={() => notify?.("Hệ thống hỗ trợ kế toán Sổ Việt ERP.")}
           >
@@ -742,7 +743,7 @@ export default function MisaTrialBalanceManagementReport({
                   >
                     {/* Số TK */}
                     <td
-                      style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "#0284c7", fontWeight: 600, cursor: "pointer" }}
+                      style={{ padding: "4px 8px", borderRight: "1px solid #e2e8f0", color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}
                       onClick={() => notify?.(`Mở sổ chi tiết tài khoản ${row.code} - ${row.name}`)}
                       title="Bấm để xem sổ chi tiết tài khoản"
                     >
@@ -875,14 +876,14 @@ export default function MisaTrialBalanceManagementReport({
               <button
                 type="button"
                 disabled
-                style={{ width: 26, height: 26, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 4, color: "#94a3b8", cursor: "not-allowed" }}
+                style={{ width: 26, height: 26, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 4, color: "#64748b", cursor: "not-allowed" }}
               >
                 &lt;&lt;
               </button>
               <button
                 type="button"
                 disabled
-                style={{ width: 26, height: 26, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 4, color: "#94a3b8", cursor: "not-allowed" }}
+                style={{ width: 26, height: 26, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 4, color: "#64748b", cursor: "not-allowed" }}
               >
                 &lt;
               </button>
@@ -894,10 +895,10 @@ export default function MisaTrialBalanceManagementReport({
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  border: "1px solid #00a862",
+                  border: "1px solid var(--brand)",
                   borderRadius: 4,
                   background: "#e6f7ef",
-                  color: "#00a862",
+                  color: "var(--brand)",
                   fontWeight: 700,
                   fontSize: 12,
                 }}
@@ -907,14 +908,14 @@ export default function MisaTrialBalanceManagementReport({
               <button
                 type="button"
                 disabled
-                style={{ width: 26, height: 26, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 4, color: "#94a3b8", cursor: "not-allowed" }}
+                style={{ width: 26, height: 26, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 4, color: "#64748b", cursor: "not-allowed" }}
               >
                 &gt;
               </button>
               <button
                 type="button"
                 disabled
-                style={{ width: 26, height: 26, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 4, color: "#94a3b8", cursor: "not-allowed" }}
+                style={{ width: 26, height: 26, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 4, color: "#64748b", cursor: "not-allowed" }}
               >
                 &gt;&gt;
               </button>
@@ -1161,7 +1162,7 @@ export default function MisaTrialBalanceManagementReport({
                   id="showBothSides"
                   checked={draftShowBothSides}
                   onChange={(e) => setDraftShowBothSides(e.target.checked)}
-                  style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer", margin: 0 }}
+                  style={{ accentColor: "var(--brand)", width: 16, height: 16, cursor: "pointer", margin: 0 }}
                 />
                 <label htmlFor="showBothSides" style={{ cursor: "pointer", color: "#1e293b", fontWeight: 500 }}>
                   Hiển thị số dư hai bên
@@ -1228,7 +1229,7 @@ export default function MisaTrialBalanceManagementReport({
                   style={{
                     height: 34,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     color: "#ffffff",

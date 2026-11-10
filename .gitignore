@@ -37,3 +37,5 @@ test-results/
 playwright-report/
 frontend/tests/screenshots/
 FRONTEND/tests/screenshots/
+screenshot*.png
+frontend/tests/*.png

@@ -129,7 +129,7 @@ export default function LiveAccount() {
                   border: "none",
                   padding: 0,
                   margin: 0,
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   fontWeight: 600,
                   textDecoration: "underline",
                   cursor: "pointer",
@@ -140,8 +140,7 @@ export default function LiveAccount() {
                 }}
               >
                 Điều khoản sử dụng hệ thống
-              </button>
-              .
+              </button>.
             </span>
           </label>
           <label className="auth-checkbox-label">
@@ -160,7 +159,7 @@ export default function LiveAccount() {
                   border: "none",
                   padding: 0,
                   margin: 0,
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   fontWeight: 600,
                   textDecoration: "underline",
                   cursor: "pointer",

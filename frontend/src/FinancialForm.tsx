@@ -353,7 +353,7 @@ export function buildFinancialStatementMisaHtml(opts: {
 <title>${escapeHtml(firstTitle)}</title>
 <style>
   @page { size: A4 ${orientation}; margin: 14mm; }
-  body { font-family: "Times New Roman", Times, serif; color: #000; background: #fff; margin: 0; padding: 24px 32px; font-size: 11pt; line-height: 1.4; }
+  body { font-family: Roboto, Arial, sans-serif; color: #000; background: #fff; margin: 0; padding: 24px 32px; font-size: 11pt; line-height: 1.4; }
   .header-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
   .company-block { max-width: 58%; font-size: 10.5pt; }
   .company-block div { margin-bottom: 2px; }
@@ -554,7 +554,7 @@ export function StatementPrintExportMenu({
                 triggerAction("PRINT", "portrait");
               }}
             >
-              <Printer size={14} color="#0284c7" />
+              <Printer size={14} color="var(--brand)" />
               <span>Xem trước & In bộ báo cáo (Khổ dọc A4)</span>
             </button>
             <button
@@ -565,7 +565,7 @@ export function StatementPrintExportMenu({
                 triggerAction("PRINT", "landscape");
               }}
             >
-              <Printer size={14} color="#0284c7" />
+              <Printer size={14} color="var(--brand)" />
               <span>Xem trước & In bộ báo cáo (Khổ ngang A4)</span>
             </button>
             <div style={{ height: 1, background: "#e2e8f0", margin: "4px 0" }} />
@@ -588,7 +588,7 @@ export function StatementPrintExportMenu({
                 triggerAction("XLSX", "portrait");
               }}
             >
-              <FileSpreadsheet size={14} color="#00a862" />
+              <FileSpreadsheet size={14} color="var(--brand)" />
               <span>Xem trước & Xuất tệp Excel (.xlsx)</span>
             </button>
           </div>
@@ -647,7 +647,7 @@ export function StatementPrintExportMenu({
                 triggerAction("PRINT", "portrait");
               }}
             >
-              <Printer size={14} color="#0284c7" />
+              <Printer size={14} color="var(--brand)" />
               <span>Xem trước & In báo cáo (Khổ dọc A4)</span>
             </button>
             <button
@@ -658,7 +658,7 @@ export function StatementPrintExportMenu({
                 triggerAction("PRINT", "landscape");
               }}
             >
-              <Printer size={14} color="#0284c7" />
+              <Printer size={14} color="var(--brand)" />
               <span>Xem trước & In báo cáo (Khổ ngang A4)</span>
             </button>
           </div>
@@ -724,7 +724,7 @@ export function StatementPrintExportMenu({
                 triggerAction("XLSX", "portrait");
               }}
             >
-              <FileSpreadsheet size={14} color="#00a862" />
+              <FileSpreadsheet size={14} color="var(--brand)" />
               <span>Xem trước & Xuất tệp Excel (.xlsx)</span>
             </button>
             {onExportXml && (
@@ -1013,7 +1013,7 @@ export function MisaBranchTagSelector({
         style={{
           minHeight: 36,
           padding: "4px 10px 4px 6px",
-          border: open ? "1px solid #00a862" : "1px solid #cbd5e1",
+          border: open ? "1px solid var(--brand)" : "1px solid #cbd5e1",
           borderRadius: 4,
           background: "#ffffff",
           display: "flex",
@@ -1100,7 +1100,7 @@ export function MisaBranchTagSelector({
               borderRadius: 3,
               cursor: "pointer",
               background: !selectedBranchId && !tagCleared ? "#e6f7ef" : "transparent",
-              color: !selectedBranchId && !tagCleared ? "#00a862" : "#1e293b",
+              color: !selectedBranchId && !tagCleared ? "var(--brand)" : "#1e293b",
               fontWeight: !selectedBranchId && !tagCleared ? 600 : 400,
             }}
           >
@@ -1121,7 +1121,7 @@ export function MisaBranchTagSelector({
                   borderRadius: 3,
                   cursor: "pointer",
                   background: selected ? "#e6f7ef" : "transparent",
-                  color: selected ? "#00a862" : "#1e293b",
+                  color: selected ? "var(--brand)" : "#1e293b",
                   fontWeight: selected ? 600 : 400,
                 }}
               >
@@ -1152,7 +1152,7 @@ export function MisaAccumulateFromRadioGroup({
     alignItems: "center",
     gap: 10,
     padding: "9px 12px",
-    border: `1px solid ${checked ? "#00a862" : "#e2e8f0"}`,
+    border: `1px solid ${checked ? "var(--brand)" : "#e2e8f0"}`,
     background: checked ? "#f0fdf4" : "#ffffff",
     borderRadius: 6,
     cursor: "pointer",
@@ -1161,7 +1161,7 @@ export function MisaAccumulateFromRadioGroup({
     fontWeight: checked ? 600 : 400,
     transition: "border-color 0.15s, background 0.15s",
   });
-  const radioStyle: React.CSSProperties = { accentColor: "#00a862", width: 16, height: 16, margin: 0, flexShrink: 0, cursor: "pointer" };
+  const radioStyle: React.CSSProperties = { accentColor: "var(--brand)", width: 16, height: 16, margin: 0, flexShrink: 0, cursor: "pointer" };
 
   return (
     <div>

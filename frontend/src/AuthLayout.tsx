@@ -1,6 +1,7 @@
+import { BrandMark } from "./components/BrandMark";
 import { useState, type ComponentType, type InputHTMLAttributes, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, ArrowRight, Building2, CheckCircle2, Eye, EyeOff, FileText, ShieldCheck, X } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, FileText, ShieldCheck, X } from "lucide-react";
 import "./live-account.css";
 
 export type LegalDocTab = "privacy" | "terms";
@@ -63,7 +64,7 @@ export function LegalPolicyModal({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <ShieldCheck size={20} color="#0284c7" />
+            <ShieldCheck size={20} color="var(--brand)" />
             <strong style={{ fontSize: "15px", color: "#0f172a" }}>
               Pháp lý & Bảo vệ dữ liệu cá nhân — SỔ VIỆT ERP
             </strong>
@@ -100,9 +101,9 @@ export function LegalPolicyModal({
             style={{
               padding: "7px 14px",
               borderRadius: "8px",
-              border: openTab === "privacy" ? "1px solid #0284c7" : "1px solid #e2e8f0",
+              border: openTab === "privacy" ? "1px solid var(--brand)" : "1px solid #e2e8f0",
               background: openTab === "privacy" ? "#e0f2fe" : "#ffffff",
-              color: openTab === "privacy" ? "#0369a1" : "#475569",
+              color: openTab === "privacy" ? "var(--brand-hover)" : "#475569",
               fontWeight: 600,
               fontSize: "13px",
               cursor: "pointer",
@@ -120,9 +121,9 @@ export function LegalPolicyModal({
             style={{
               padding: "7px 14px",
               borderRadius: "8px",
-              border: openTab === "terms" ? "1px solid #0284c7" : "1px solid #e2e8f0",
+              border: openTab === "terms" ? "1px solid var(--brand)" : "1px solid #e2e8f0",
               background: openTab === "terms" ? "#e0f2fe" : "#ffffff",
-              color: openTab === "terms" ? "#0369a1" : "#475569",
+              color: openTab === "terms" ? "var(--brand-hover)" : "#475569",
               fontWeight: 600,
               fontSize: "13px",
               cursor: "pointer",
@@ -228,7 +229,7 @@ export function LegalPolicyModal({
               padding: "8px 18px",
               borderRadius: "8px",
               border: "none",
-              background: "#0284c7",
+              background: "var(--brand)",
               color: "#ffffff",
               fontWeight: 600,
               fontSize: "13px",
@@ -258,46 +259,39 @@ type AuthLayoutProps = {
 export function AuthLayout({ title, subtitle, error, message, steps, currentStep = 0, footer, children }: AuthLayoutProps) {
   const [legalTab, setLegalTab] = useState<LegalDocTab | null>(null);
   return (
-    <main className="account-page">
-      <Link to="/" className="auth-branding">
-        <div className="auth-logo-icon"><Building2 size={24} /></div>
+    <main className="account-page sv-auth-page">
+      <Link to="/login" className="auth-branding">
+        <BrandMark />
         <div className="auth-branding-text">
           <span className="auth-branding-title">SỔ VIỆT ERP</span>
-          <span className="auth-branding-sub">Kế toán & Thuế Doanh nghiệp</span>
+          <span className="auth-branding-sub">Kế toán & Thuế doanh nghiệp</span>
         </div>
       </Link>
-      {steps && (
-        <ol className="auth-stepper">
-          {steps.map((label, index) => (
-            <li key={label} className={`auth-step-item${index === currentStep ? " active" : index < currentStep ? " completed" : ""}`}>
-              <span className="auth-step-num">{index + 1}</span>
-              <span>{label}</span>
-            </li>
-          ))}
-        </ol>
-      )}
-      <section className="account-card auth-login-card">
-        <div className="account-card-header">
-          <h1>{title}</h1>
-          {subtitle && <p>{subtitle}</p>}
+      <div className="auth-workspace">
+        <div className="auth-form-panel">
+          {steps && (
+            <ol className="auth-stepper">
+              {steps.map((label, index) => (
+                <li key={label} className={`auth-step-item${index === currentStep ? " active" : index < currentStep ? " completed" : ""}`}>
+                  <span className="auth-step-num">{index + 1}</span>
+                  <span>{label}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+          <section className="account-card auth-login-card">
+            <div className="account-card-header">
+              <h1>{title}</h1>
+              {subtitle && <p>{subtitle}</p>}
+            </div>
+            {error && <div className="account-error" role="alert"><AlertCircle size={18} /><span>{error}</span></div>}
+            {message && <div className="account-message" role="status"><CheckCircle2 size={18} /><span>{message}</span></div>}
+            {children}
+            {footer && <div className="auth-card-footer">{footer}</div>}
+          </section>
         </div>
-        {error && <div className="account-error" role="alert"><AlertCircle size={18} /><span>{error}</span></div>}
-        {message && <div className="account-message" role="status"><CheckCircle2 size={18} /><span>{message}</span></div>}
-        {children}
-        {footer && <div className="auth-card-footer">{footer}</div>}
-      </section>
-      <footer
-        style={{
-          marginTop: "18px",
-          zIndex: 2,
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "14px",
-          justifyContent: "center",
-          fontSize: "12.5px",
-          color: "#64748b",
-        }}
-      >
+      </div>
+      <footer className="auth-legal-footer">
         <button
           type="button"
           onClick={() => setLegalTab("privacy")}
@@ -305,7 +299,7 @@ export function AuthLayout({ title, subtitle, error, message, steps, currentStep
             background: "none",
             border: "none",
             padding: 0,
-            color: "#0369a1",
+            color: "var(--brand-hover)",
             textDecoration: "underline",
             cursor: "pointer",
             fontSize: "12.5px",
@@ -322,7 +316,7 @@ export function AuthLayout({ title, subtitle, error, message, steps, currentStep
             background: "none",
             border: "none",
             padding: 0,
-            color: "#0369a1",
+            color: "var(--brand-hover)",
             textDecoration: "underline",
             cursor: "pointer",
             fontSize: "12.5px",
@@ -352,7 +346,7 @@ export function AuthField({ id, label, icon: Icon, type, ...input }: AuthFieldPr
     <div className="auth-field">
       <label className="auth-label" htmlFor={id}>{label}</label>
       <div className="auth-input-wrap">
-        <span className="auth-input-icon"><Icon size={18} /></span>
+        <span className="auth-input-icon" aria-hidden="true"><Icon size={18} /></span>
         <input id={id} className="auth-input" type={isPassword && revealed ? "text" : type} {...input} />
         {isPassword && (
           <button
@@ -360,6 +354,7 @@ export function AuthField({ id, label, icon: Icon, type, ...input }: AuthFieldPr
             className="auth-input-suffix"
             onClick={() => setRevealed(!revealed)}
             aria-label={revealed ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            aria-pressed={revealed}
           >
             {revealed ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>

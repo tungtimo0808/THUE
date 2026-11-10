@@ -12,6 +12,7 @@ import {
   Upload,
 } from "lucide-react";
 
+import { showPendingFeature } from "./global-popup";
 const CURRENT_YEAR = new Date().getFullYear();
 
 export function formatVND(amount: number): string {
@@ -195,7 +196,7 @@ export function LoanContractModal({
               type="button"
               className="misa-invoice-circle-btn"
               title="Trợ giúp"
-              onClick={() => alert("Hướng dẫn quản lý khế ước cho vay đầu kỳ")}
+              onClick={() => showPendingFeature("Hướng dẫn quản lý khế ước cho vay đầu kỳ")}
             >
               <HelpCircle size={18} />
             </button>
@@ -761,7 +762,7 @@ export function LoanContractModal({
                   <tbody>
                     {interestRows.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ padding: "20px", textAlign: "center", color: "#94a3b8" }}>
+                        <td colSpan={6} style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>
                           Chưa có thông tin lãi suất. Bấm "Thêm dòng" để thiết lập.
                         </td>
                       </tr>
@@ -819,7 +820,7 @@ export function LoanContractModal({
                             <button
                               type="button"
                               onClick={() => handleRemoveInterestRow(r.id)}
-                              style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}
+                              style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer" }}
                               title="Xóa dòng"
                             >
                               <Trash2 size={15} />
@@ -1030,7 +1031,7 @@ export function LoanContractModal({
               >
                 <Upload size={32} style={{ color: "#059669", margin: "0 auto 8px auto" }} />
                 <div style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>
-                  Kéo thả tài liệu khế ước cho vay hoặc <span style={{ color: "#0284c7", textDecoration: "underline" }}>chọn tệp từ máy tính</span>
+                  Kéo thả tài liệu khế ước cho vay hoặc <span style={{ color: "var(--brand)", textDecoration: "underline" }}>chọn tệp từ máy tính</span>
                 </div>
                 <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
                   Hỗ trợ định dạng PDF, Word, Excel, hình ảnh. Dung lượng tối đa 5MB.
@@ -1062,12 +1063,12 @@ export function LoanContractModal({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ color: "#059669", fontWeight: 600 }}>📄</span>
+                        <span style={{ color: "#059669", fontWeight: 600 }}></span>
                         <span style={{ fontWeight: 500, color: "#1e293b" }}>{att.name}</span>
                         <span style={{ fontSize: 11, color: "#64748b" }}>({att.size})</span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{att.time}</span>
+                        <span style={{ fontSize: 11, color: "#64748b" }}>{att.time}</span>
                         <button
                           type="button"
                           onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
@@ -1328,8 +1329,8 @@ export function BorrowingContractModal({
             <button
               type="button"
               className="misa-invoice-help-link"
-              onClick={() => alert("Hướng dẫn lập Khế ước đi vay")}
-              style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "#0284c7", fontSize: 12, cursor: "pointer" }}
+              onClick={() => showPendingFeature("Hướng dẫn lập Khế ước đi vay")}
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "var(--brand)", fontSize: 12, cursor: "pointer" }}
             >
               <HelpCircle size={15} />
               <span>Hướng dẫn sử dụng</span>
@@ -1809,7 +1810,7 @@ export function BorrowingContractModal({
                   <tbody>
                     {interestRows.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ padding: "20px", textAlign: "center", color: "#94a3b8" }}>
+                        <td colSpan={6} style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>
                           Chưa có thông tin lãi suất. Bấm "Thêm dòng" để thiết lập.
                         </td>
                       </tr>
@@ -1867,7 +1868,7 @@ export function BorrowingContractModal({
                             <button
                               type="button"
                               onClick={() => handleRemoveInterestRow(r.id)}
-                              style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}
+                              style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer" }}
                               title="Xóa dòng"
                             >
                               <Trash2 size={15} />
@@ -2076,7 +2077,7 @@ export function BorrowingContractModal({
               >
                 <Upload size={32} style={{ color: "#059669", margin: "0 auto 8px auto" }} />
                 <div style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>
-                  Kéo thả tài liệu khế ước đi vay hoặc <span style={{ color: "#0284c7", textDecoration: "underline" }}>chọn tệp từ máy tính</span>
+                  Kéo thả tài liệu khế ước đi vay hoặc <span style={{ color: "var(--brand)", textDecoration: "underline" }}>chọn tệp từ máy tính</span>
                 </div>
                 <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
                   Hỗ trợ định dạng PDF, Word, Excel, hình ảnh. Dung lượng tối đa 5MB.
@@ -2108,12 +2109,12 @@ export function BorrowingContractModal({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ color: "#059669", fontWeight: 600 }}>📄</span>
+                        <span style={{ color: "#059669", fontWeight: 600 }}></span>
                         <span style={{ fontWeight: 500, color: "#1e293b" }}>{att.name}</span>
                         <span style={{ fontSize: 11, color: "#64748b" }}>({att.size})</span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{att.time}</span>
+                        <span style={{ fontSize: 11, color: "#64748b" }}>{att.time}</span>
                         <button
                           type="button"
                           onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
@@ -2303,7 +2304,7 @@ export function CreditContractModal({
                 name="creditContractType"
                 checked={contractType === "limit"}
                 onChange={() => setContractType("limit")}
-                style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                style={{ accentColor: "var(--brand)", cursor: "pointer" }}
               />
               <span>Hợp đồng tín dụng hạn mức</span>
             </label>
@@ -2313,7 +2314,7 @@ export function CreditContractModal({
                 name="creditContractType"
                 checked={contractType === "principle"}
                 onChange={() => setContractType("principle")}
-                style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                style={{ accentColor: "var(--brand)", cursor: "pointer" }}
               />
               <span>Hợp đồng nguyên tắc</span>
             </label>
@@ -2548,7 +2549,7 @@ export function CreditContractModal({
                 gap: 6,
               }}
             >
-              <Plus size={14} style={{ color: "#00b06b" }} />
+              <Plus size={14} style={{ color: "var(--brand)" }} />
               <span>Thêm dòng</span>
             </button>
             <button
@@ -2592,7 +2593,7 @@ export function CreditContractModal({
             >
               <Upload size={22} style={{ color: "#64748b", margin: "0 auto 6px auto" }} />
               <div style={{ fontSize: 12.5, color: "#475569" }}>
-                <span style={{ color: "#0284c7", textDecoration: "underline" }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                <span style={{ color: "var(--brand)", textDecoration: "underline" }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
               </div>
             </div>
           </div>
@@ -2725,16 +2726,16 @@ export function CreditOverviewView({
               {/* Sparkle top right */}
               <path d="M 195 40 L 197 34 L 199 40 L 205 42 L 199 44 L 197 50 L 195 44 L 189 42 Z" fill="#64748b" />
               {/* Sparkle bottom left */}
-              <path d="M 85 145 L 87 140 L 89 145 L 94 147 L 89 149 L 87 154 L 85 149 L 80 147 Z" fill="#00b06b" />
+              <path d="M 85 145 L 87 140 L 89 145 L 94 147 L 89 149 L 87 154 L 85 149 L 80 147 Z" fill="var(--brand)" />
 
               {/* Top Node: Calendar + Clock */}
               <g transform="translate(120, 20)">
                 <rect x="0" y="4" width="40" height="34" rx="5" fill="#f8fafc" stroke="#94a3b8" strokeWidth="1.5" />
-                <rect x="0" y="4" width="40" height="11" rx="5" fill="#00b06b" />
+                <rect x="0" y="4" width="40" height="11" rx="5" fill="var(--brand)" />
                 <rect x="8" y="0" width="4" height="7" rx="1.5" fill="#1e293b" />
                 <rect x="28" y="0" width="4" height="7" rx="1.5" fill="#1e293b" />
                 {/* Clock circle */}
-                <circle cx="32" cy="30" r="14" fill="#00b06b" />
+                <circle cx="32" cy="30" r="14" fill="var(--brand)" />
                 <path d="M 32 23 V 30 H 36" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
               </g>
 
@@ -2754,7 +2755,7 @@ export function CreditOverviewView({
                 {/* Green signature flourish */}
                 <path
                   d="M 8 36 Q 16 28 24 35 Q 28 39 34 32"
-                  stroke="#00b06b"
+                  stroke="var(--brand)"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   fill="none"
@@ -2764,8 +2765,8 @@ export function CreditOverviewView({
               {/* Right Node: Hand + Dollar Coin */}
               <g transform="translate(165, 95)">
                 {/* Dollar Coin */}
-                <circle cx="28" cy="14" r="14" fill="#00b06b" />
-                <text x="28" y="19" fill="#ffffff" fontSize="15" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">$</text>
+                <circle cx="28" cy="14" r="14" fill="var(--brand)" />
+                <text x="28" y="19" fill="#ffffff" fontSize="15" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">$</text>
                 {/* Hand outline */}
                 <path
                   d="M 0 32 C 8 32 14 36 22 36 H 42 C 44 36 46 34 46 32 C 46 30 42 28 38 28 H 22 C 16 28 10 24 2 24"
@@ -2878,7 +2879,7 @@ export function CreditOverviewView({
                   style={{
                     height: 34,
                     padding: "0 14px",
-                    background: "#00b06b",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     fontSize: 13,
@@ -2894,7 +2895,7 @@ export function CreditOverviewView({
                   style={{
                     height: 34,
                     padding: "0 8px",
-                    background: "#009a5d",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderLeft: "1px solid rgba(255,255,255,0.2)",
@@ -3030,7 +3031,7 @@ export function CreditOverviewView({
               <button
                 type="button"
                 onClick={isLoans ? onOpenLoanModal : onOpenBorrowModal}
-                style={{ height: 32, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 + {isLoans ? "Thêm khế ước cho vay" : "Thêm khế ước đi vay"}
               </button>
@@ -3057,7 +3058,7 @@ export function CreditOverviewView({
                   <tr key={r.id} style={{ background: "#ffffff" }}>
                     <td style={{ textAlign: "center", color: "#6b7280" }}>{i + 1}</td>
                     <td>
-                      <span style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }}>
+                      <span style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}>
                         {r.code}
                       </span>
                     </td>

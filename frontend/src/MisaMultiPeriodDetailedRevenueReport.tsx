@@ -1,3 +1,5 @@
+import { saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import { initialComparisonDates, reportPeriodLabels } from "./report-period-range";
 import ReportPeriodModeFields from "./ReportPeriodModeFields";
 import React, { useState, useMemo } from "react";
@@ -311,9 +313,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() =>
-              notify?.("Đã lưu Báo cáo phân tích chi tiết doanh thu theo nhiều kỳ.")
-            }
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -323,7 +323,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -363,7 +363,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
             style={{
               position: "absolute",
               left: 10,
-              color: "#94a3b8",
+              color: "#64748b",
             }}
           />
           <input
@@ -475,7 +475,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <Download size={15} />
             <ChevronDown size={13} />
@@ -747,7 +747,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                     style={{
                       border: "none",
                       background: "none",
-                      color: "#94a3b8",
+                      color: "#64748b",
                       cursor: "default",
                       fontSize: 13,
                     }}
@@ -759,7 +759,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                     style={{
                       border: "none",
                       background: "none",
-                      color: "#94a3b8",
+                      color: "#64748b",
                       cursor: "default",
                       fontSize: 13,
                     }}
@@ -782,7 +782,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                     style={{
                       border: "none",
                       background: "none",
-                      color: "#94a3b8",
+                      color: "#64748b",
                       cursor: "default",
                       fontSize: 13,
                     }}
@@ -794,7 +794,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                     style={{
                       border: "none",
                       background: "none",
-                      color: "#94a3b8",
+                      color: "#64748b",
                       cursor: "default",
                       fontSize: 13,
                     }}
@@ -916,7 +916,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                       name="periodType"
                       checked={draftPeriodType === "month"}
                       onChange={() => setDraftPeriodType("month")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Tháng</span>
                   </label>
@@ -927,7 +927,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                       name="periodType"
                       checked={draftPeriodType === "quarter"}
                       onChange={() => setDraftPeriodType("quarter")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Quý</span>
                   </label>
@@ -938,7 +938,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                       name="periodType"
                       checked={draftPeriodType === "year"}
                       onChange={() => setDraftPeriodType("year")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Năm</span>
                   </label>
@@ -949,7 +949,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                       name="periodType"
                       checked={draftPeriodType === "custom"}
                       onChange={() => setDraftPeriodType("custom")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Tùy chọn</span>
                   </label>
@@ -1120,7 +1120,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                     type="checkbox"
                     checked={draftCompareSamePeriodLastYear}
                     onChange={(e) => setDraftCompareSamePeriodLastYear(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer" }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16, cursor: "pointer" }}
                   />
                   <span>So sánh với cùng kỳ năm trước</span>
                 </label>
@@ -1147,7 +1147,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                         type="checkbox"
                         checked={draftAnalysisSales}
                         onChange={(e) => setDraftAnalysisSales(e.target.checked)}
-                        style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                        style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                       />
                       <span>Doanh thu bán hàng hóa, dịch vụ</span>
                     </label>
@@ -1157,7 +1157,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                         type="checkbox"
                         checked={draftAnalysisFinance}
                         onChange={(e) => setDraftAnalysisFinance(e.target.checked)}
-                        style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                        style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                       />
                       <span>Doanh thu hoạt động tài chính</span>
                     </label>
@@ -1167,7 +1167,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                         type="checkbox"
                         checked={draftAnalysisOther}
                         onChange={(e) => setDraftAnalysisOther(e.target.checked)}
-                        style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                        style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                       />
                       <span>Thu nhập khác</span>
                     </label>
@@ -1193,7 +1193,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                         type="checkbox"
                         checked={draftByAccount}
                         onChange={(e) => setDraftByAccount(e.target.checked)}
-                        style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                        style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                       />
                       <span>Tài khoản doanh thu</span>
                     </label>
@@ -1203,7 +1203,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                         type="checkbox"
                         checked={draftByCategory}
                         onChange={(e) => setDraftByCategory(e.target.checked)}
-                        style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                        style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                       />
                       <span>Nhóm vật tư hàng hóa</span>
                     </label>
@@ -1213,7 +1213,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                         type="checkbox"
                         checked={draftByItem}
                         onChange={(e) => setDraftByItem(e.target.checked)}
-                        style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                        style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                       />
                       <span>Vật tư hàng hóa</span>
                     </label>
@@ -1273,7 +1273,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,
@@ -1386,7 +1386,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                 <tbody>
                   <tr>
                     <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px", textAlign: "center" }}>05/10/2026</td>
-                    <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>
+                    <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px", textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>
                       BH00012
                     </td>
                     <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px" }}>Công ty Cổ phần Công nghệ Tin học Á Đông</td>
@@ -1414,7 +1414,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
             >
               <button
                 type="button"
-                onClick={() => notify?.("Đã xuất khẩu chứng từ ra Excel.")}
+                onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất khẩu chứng từ"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                 style={{
                   height: 30,
                   padding: "0 14px",
@@ -1433,7 +1433,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                 style={{
                   height: 30,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   fontSize: 12.5,
@@ -1494,7 +1494,7 @@ export default function MisaMultiPeriodDetailedRevenueReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,

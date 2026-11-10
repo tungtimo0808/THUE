@@ -42,7 +42,7 @@ export default function LiveScope() {
 
   return <main className="account-page"><section className="account-card">
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-      <Link to="/" style={{ color: "#0284c7", fontWeight: 600, fontSize: 13, textDecoration: "none" }}>← Bàn làm việc Kế toán</Link>
+      <Link to="/" style={{ color: "var(--brand)", fontWeight: 600, fontSize: 13, textDecoration: "none" }}>← Bàn làm việc Kế toán</Link>
       <Link to="/session" style={{ color: "#64748b", fontSize: 13, textDecoration: "none" }}>Phiên làm việc</Link>
     </div>
     <p className="account-eyebrow">KHÔNG GIAN LÀM VIỆC</p>

@@ -10,6 +10,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 
+import { showNotice, showPendingFeature } from "./global-popup";
 export function formatVND(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount);
 }
@@ -316,7 +317,7 @@ export function SingleCustomerInvoiceCollectionModal({
 
   const handleSubmit = () => {
     if (totalCollectedSum <= 0) {
-      alert("Vui lòng chọn ít nhất một chứng từ công nợ để thu tiền.");
+      showNotice("Vui lòng chọn ít nhất một chứng từ công nợ để thu tiền.");
       return;
     }
     onSubmit({
@@ -349,7 +350,7 @@ export function SingleCustomerInvoiceCollectionModal({
             <button
               type="button"
               className="misa-invoice-help-link"
-              onClick={() => alert("Hướng dẫn sử dụng Thu tiền theo hóa đơn")}
+              onClick={() => showPendingFeature("Hướng dẫn sử dụng Thu tiền theo hóa đơn")}
             >
               <HelpCircle size={15} />
               <span>Hướng dẫn sử dụng</span>
@@ -387,7 +388,7 @@ export function SingleCustomerInvoiceCollectionModal({
                   name="singleCollectMethod"
                   checked={payMethod === "cash"}
                   onChange={() => setPayMethod("cash")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Tiền mặt</span>
               </label>
@@ -397,7 +398,7 @@ export function SingleCustomerInvoiceCollectionModal({
                   name="singleCollectMethod"
                   checked={payMethod === "bank"}
                   onChange={() => setPayMethod("bank")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Tiền gửi</span>
               </label>
@@ -524,10 +525,10 @@ export function SingleCustomerInvoiceCollectionModal({
                 className="misa-invoice-fetch-btn"
                 onClick={() => {
                   if (debtSource) {
-                    if (!customer) { alert("Vui lòng chọn khách hàng."); return; }
+                    if (!customer) { showNotice("Vui lòng chọn khách hàng."); return; }
                     debtSource.load(customer)
                       .then((rows) => { setRecords(rows); setHasFetched(true); })
-                      .catch((error) => alert(`Không lấy được công nợ: ${error instanceof Error ? error.message : String(error)}`));
+                      .catch((error) => showNotice(`Không lấy được công nợ: ${error instanceof Error ? error.message : String(error)}`));
                     return;
                   }
                   if (!customer) {
@@ -610,7 +611,7 @@ export function SingleCustomerInvoiceCollectionModal({
                         type="checkbox"
                         checked={allChecked}
                         onChange={toggleAll}
-                        style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                        style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                       />
                     </th>
                     <th style={{width:110}}>Ngày chứng từ</th>
@@ -641,13 +642,13 @@ export function SingleCustomerInvoiceCollectionModal({
                     <td style={{ textAlign: "right", fontWeight: 700 }}>
                       {hasFetched ? (totalRemainingSum === 0 ? "0" : formatVND(totalRemainingSum)) : "0"}
                     </td>
-                    <td style={{ textAlign: "right", fontWeight: 700, color: totalCollectedSum > 0 ? "#00b06b" : "#111827" }}>
+                    <td style={{ textAlign: "right", fontWeight: 700, color: totalCollectedSum > 0 ? "var(--brand)" : "#111827" }}>
                       {hasFetched ? (totalCollectedSum === 0 ? "0" : formatVND(totalCollectedSum)) : "0"}
                     </td>
                     <td></td>
                     <td></td>
                     <td></td>
-                    <td style={{ textAlign: "right", fontWeight: 700, color: totalDiscountSum > 0 ? "#00b06b" : "#111827" }}>
+                    <td style={{ textAlign: "right", fontWeight: 700, color: totalDiscountSum > 0 ? "var(--brand)" : "#111827" }}>
                       {hasFetched ? (totalDiscountSum === 0 ? "0" : formatVND(totalDiscountSum)) : "0"}
                     </td>
                     <td></td>
@@ -678,14 +679,14 @@ export function SingleCustomerInvoiceCollectionModal({
                             type="checkbox"
                             checked={r.checked}
                             onChange={() => toggleRow(r.id)}
-                            style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                            style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                           />
                         </td>
                         <td>{r.voucherDate}</td>
                         <td>
                           <span
                             style={{
-                              color: "#0284c7",
+                              color: "var(--brand)",
                               fontWeight: 600,
                               cursor: "pointer",
                             }}
@@ -715,10 +716,10 @@ export function SingleCustomerInvoiceCollectionModal({
                               padding: "0 6px",
                               textAlign: "right",
                               borderRadius: 4,
-                              border: r.checked ? "1px solid #00b06b" : "1px solid #d1d5db",
+                              border: r.checked ? "1px solid var(--brand)" : "1px solid #d1d5db",
                               fontSize: 12.5,
                               fontWeight: 600,
-                              color: r.checked ? "#00b06b" : "#374151",
+                              color: r.checked ? "var(--brand)" : "#374151",
                               background: "#ffffff",
                               outline: "none",
                             }}
@@ -760,7 +761,7 @@ export function SingleCustomerInvoiceCollectionModal({
                               border: "1px solid #d1d5db",
                               fontSize: 12.5,
                               fontWeight: 600,
-                              color: r.discountAmount > 0 ? "#00b06b" : "#374151",
+                              color: r.discountAmount > 0 ? "var(--brand)" : "#374151",
                               outline: "none",
                               background: "#ffffff",
                             }}
@@ -1138,7 +1139,7 @@ export function MultiCustomerInvoiceCollectionModal({
 
   const handleSubmit = () => {
     if (totalCollectedSum <= 0) {
-      alert("Vui lòng chọn ít nhất một chứng từ công nợ để thu tiền.");
+      showNotice("Vui lòng chọn ít nhất một chứng từ công nợ để thu tiền.");
       return;
     }
     onSubmit({
@@ -1176,7 +1177,7 @@ export function MultiCustomerInvoiceCollectionModal({
               type="button"
               className="misa-invoice-help-link"
               onClick={() =>
-                alert("Hướng dẫn sử dụng Thu tiền theo hóa đơn nhiều khách hàng")
+                showPendingFeature("Hướng dẫn sử dụng Thu tiền theo hóa đơn nhiều khách hàng")
               }
             >
               <HelpCircle size={15} />
@@ -1215,7 +1216,7 @@ export function MultiCustomerInvoiceCollectionModal({
                   name="multiCollectMethod"
                   checked={payMethod === "cash"}
                   onChange={() => setPayMethod("cash")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Tiền mặt</span>
               </label>
@@ -1225,7 +1226,7 @@ export function MultiCustomerInvoiceCollectionModal({
                   name="multiCollectMethod"
                   checked={payMethod === "bank"}
                   onChange={() => setPayMethod("bank")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Tiền gửi</span>
               </label>
@@ -1453,7 +1454,7 @@ export function MultiCustomerInvoiceCollectionModal({
                   if (!debtSource) { setHasFetched(true); return; }
                   debtSource.load()
                     .then((rows) => { setRecords(rows); setHasFetched(true); })
-                    .catch((error) => alert(`Không lấy được công nợ: ${error instanceof Error ? error.message : String(error)}`));
+                    .catch((error) => showNotice(`Không lấy được công nợ: ${error instanceof Error ? error.message : String(error)}`));
                 }}
               >
                 Lấy dữ liệu
@@ -1530,7 +1531,7 @@ export function MultiCustomerInvoiceCollectionModal({
                         type="checkbox"
                         checked={allChecked}
                         onChange={toggleAll}
-                        style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                        style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                       />
                     </th>
                     <th style={{ width: 110, textAlign: "center" }}>Ngày chứng từ</th>
@@ -1567,13 +1568,13 @@ export function MultiCustomerInvoiceCollectionModal({
                     <td style={{ textAlign: "right", fontWeight: 700 }}>
                       {hasFetched ? (totalRemainingSum === 0 ? "0" : formatVND(totalRemainingSum)) : ""}
                     </td>
-                    <td style={{ textAlign: "right", fontWeight: 700, color: totalCollectedSum > 0 ? "#00b06b" : "#111827" }}>
+                    <td style={{ textAlign: "right", fontWeight: 700, color: totalCollectedSum > 0 ? "var(--brand)" : "#111827" }}>
                       {hasFetched ? (totalCollectedSum === 0 ? "0" : formatVND(totalCollectedSum)) : ""}
                     </td>
                     <td></td>
                     <td></td>
                     <td></td>
-                    <td style={{ textAlign: "right", fontWeight: 700, color: totalDiscountSum > 0 ? "#00b06b" : "#111827" }}>
+                    <td style={{ textAlign: "right", fontWeight: 700, color: totalDiscountSum > 0 ? "var(--brand)" : "#111827" }}>
                       {hasFetched ? (totalDiscountSum === 0 ? "0" : formatVND(totalDiscountSum)) : ""}
                     </td>
                     <td></td>
@@ -1604,7 +1605,7 @@ export function MultiCustomerInvoiceCollectionModal({
                             type="checkbox"
                             checked={r.checked}
                             onChange={() => toggleRow(r.id)}
-                            style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                            style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                           />
                         </td>
                         <td style={{ textAlign: "center", color: "#374151" }}>
@@ -1613,7 +1614,7 @@ export function MultiCustomerInvoiceCollectionModal({
                         <td>
                           <span
                             style={{
-                              color: "#0284c7",
+                              color: "var(--brand)",
                               fontWeight: 600,
                               cursor: "pointer",
                             }}
@@ -1622,7 +1623,7 @@ export function MultiCustomerInvoiceCollectionModal({
                           </span>
                         </td>
                         <td style={{ color: "#374151" }}>{r.invoiceCode || "—"}</td>
-                        <td style={{ fontWeight: 600, color: "#0284c7" }}>{r.customerCode}</td>
+                        <td style={{ fontWeight: 600, color: "var(--brand)" }}>{r.customerCode}</td>
                         <td style={{ color: "#111827" }}>{r.customerName}</td>
                         <td style={{ color: "#4b5563" }}>{r.customerGroup}</td>
                         <td style={{ color: "#111827" }}>{r.description}</td>
@@ -1646,10 +1647,10 @@ export function MultiCustomerInvoiceCollectionModal({
                               padding: "0 6px",
                               textAlign: "right",
                               borderRadius: 4,
-                              border: r.checked ? "1px solid #00b06b" : "1px solid #d1d5db",
+                              border: r.checked ? "1px solid var(--brand)" : "1px solid #d1d5db",
                               fontSize: 12.5,
                               fontWeight: 600,
-                              color: r.checked ? "#00b06b" : "#374151",
+                              color: r.checked ? "var(--brand)" : "#374151",
                               background: "#ffffff",
                               outline: "none",
                             }}
@@ -1691,7 +1692,7 @@ export function MultiCustomerInvoiceCollectionModal({
                               border: "1px solid #d1d5db",
                               fontSize: 12.5,
                               fontWeight: 600,
-                              color: r.discountAmount > 0 ? "#00b06b" : "#374151",
+                              color: r.discountAmount > 0 ? "var(--brand)" : "#374151",
                               outline: "none",
                               background: "#ffffff",
                             }}

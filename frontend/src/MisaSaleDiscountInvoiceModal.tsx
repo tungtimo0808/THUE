@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Pin,
   X,
   HelpCircle,
   ChevronDown,
@@ -266,7 +267,7 @@ export function SaleInvoiceDiscountModal({
         alignItems: "center",
         justifyContent: "center",
         zIndex: 1050,
-        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "Roboto, Arial, sans-serif",
       }}
     >
       <div
@@ -333,7 +334,7 @@ export function SaleInvoiceDiscountModal({
                 alignItems: "center",
                 gap: 5,
                 fontSize: 12.5,
-                color: "#0284c7",
+                color: "var(--brand)",
                 textDecoration: "none",
                 marginLeft: 10,
                 cursor: "pointer",
@@ -451,7 +452,7 @@ export function SaleInvoiceDiscountModal({
                           if (onOpenCustomerModal) onOpenCustomerModal();
                           else notify("Thêm nhanh đối tượng mới");
                         }}
-                        style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                        style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                       >
                         <Plus size={13} />
                       </button>
@@ -555,7 +556,7 @@ export function SaleInvoiceDiscountModal({
                       onChange={(e) => setTaxCode(e.target.value)}
                       style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
                     />
-                    <Globe size={13} style={{ color: "#94a3b8", cursor: "pointer" }} />
+                    <Globe size={13} style={{ color: "#64748b", cursor: "pointer" }} />
                   </div>
                 </div>
 
@@ -600,7 +601,7 @@ export function SaleInvoiceDiscountModal({
                       onChange={(e) => setIdCardNumber(e.target.value)}
                       style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
                     />
-                    <Search size={13} style={{ color: "#94a3b8", cursor: "pointer" }} />
+                    <Search size={13} style={{ color: "#64748b", cursor: "pointer" }} />
                   </div>
                 </div>
 
@@ -630,7 +631,7 @@ export function SaleInvoiceDiscountModal({
                 <div>
                   <label style={{ fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 4, marginBottom: 3, fontWeight: 500 }}>
                     <span>Người mua hàng</span>
-                    <Info size={12} style={{ color: "#0284c7" }} />
+                    <Info size={12} style={{ color: "var(--brand)" }} />
                   </label>
                   <input
                     type="text"
@@ -733,7 +734,7 @@ export function SaleInvoiceDiscountModal({
                     <button
                       type="button"
                       onClick={() => notify("Thêm nhân viên bán hàng")}
-                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                      style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <Plus size={13} />
                     </button>
@@ -787,7 +788,7 @@ export function SaleInvoiceDiscountModal({
                       onChange={(e) => setRegistryDate(e.target.value)}
                       style={{ border: "none", outline: "none", width: "100%", fontSize: 12 }}
                     />
-                    <Calendar size={12} style={{ color: "#94a3b8" }} />
+                    <Calendar size={12} style={{ color: "#64748b" }} />
                   </div>
                 </div>
               </div>
@@ -895,7 +896,7 @@ export function SaleInvoiceDiscountModal({
                       e.preventDefault();
                       notify("Mở danh sách chứng từ tham chiếu...");
                     }}
-                    style={{ fontSize: 12, color: "#00a862", textDecoration: "none", fontWeight: 500 }}
+                    style={{ fontSize: 12, color: "var(--brand)", textDecoration: "none", fontWeight: 500 }}
                   >
                     Tham chiếu ...
                   </a>
@@ -994,7 +995,7 @@ export function SaleInvoiceDiscountModal({
               <div>
                 <label style={{ fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 4, marginBottom: 3, fontWeight: 500 }}>
                   <span>Ngày HĐ</span>
-                  <Info size={12} style={{ color: "#0284c7" }} />
+                  <Info size={12} style={{ color: "var(--brand)" }} />
                 </label>
                 <div
                   style={{
@@ -1013,7 +1014,7 @@ export function SaleInvoiceDiscountModal({
                     onChange={(e) => setInvoiceDate(e.target.value)}
                     style={{ border: "none", outline: "none", width: "100%", fontSize: 12 }}
                   />
-                  <Calendar size={12} style={{ color: "#94a3b8" }} />
+                  <Calendar size={12} style={{ color: "#64748b" }} />
                 </div>
               </div>
             </div>
@@ -1039,8 +1040,8 @@ export function SaleInvoiceDiscountModal({
               onClick={() => setActiveTab("items")}
               style={{
                 padding: "8px 4px",
-                borderBottom: activeTab === "items" ? "2px solid #00b06b" : "2px solid transparent",
-                color: activeTab === "items" ? "#00b06b" : "#64748b",
+                borderBottom: activeTab === "items" ? "2px solid var(--brand)" : "2px solid transparent",
+                color: activeTab === "items" ? "var(--brand)" : "#64748b",
                 fontWeight: activeTab === "items" ? 600 : 500,
                 fontSize: 13,
                 cursor: "pointer",
@@ -1052,8 +1053,8 @@ export function SaleInvoiceDiscountModal({
               onClick={() => setActiveTab("related")}
               style={{
                 padding: "8px 4px",
-                borderBottom: activeTab === "related" ? "2px solid #00b06b" : "2px solid transparent",
-                color: activeTab === "related" ? "#00b06b" : "#64748b",
+                borderBottom: activeTab === "related" ? "2px solid var(--brand)" : "2px solid transparent",
+                color: activeTab === "related" ? "var(--brand)" : "#64748b",
                 fontWeight: activeTab === "related" ? 600 : 500,
                 fontSize: 13,
                 cursor: "pointer",
@@ -1070,7 +1071,7 @@ export function SaleInvoiceDiscountModal({
                 type="checkbox"
                 checked={autoCalculate}
                 onChange={(e) => setAutoCalculate(e.target.checked)}
-                style={{ accentColor: "#00b06b", width: 14, height: 14, cursor: "pointer" }}
+                style={{ accentColor: "var(--brand)", width: 14, height: 14, cursor: "pointer" }}
               />
               <span>Tự động tính toán số liệu</span>
             </label>
@@ -1133,7 +1134,7 @@ export function SaleInvoiceDiscountModal({
                   <tr style={{ background: "#e8f2ec", color: "#1e293b", height: 32 }}>
                     <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>#</th>
                     <th style={{ width: 130, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
-                      📌 Mã hàng
+                      <Pin size={14} className="ui-inline-icon" aria-hidden="true" /> Mã hàng
                     </th>
                     <th style={{ minWidth: 200, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
                       Tên hàng
@@ -1281,7 +1282,7 @@ export function SaleInvoiceDiscountModal({
             </div>
           ) : (
             <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, padding: 30, background: "#ffffff", textAlign: "center", color: "#64748b" }}>
-              <FileText size={32} style={{ color: "#00b06b", marginBottom: 8 }} />
+              <FileText size={32} style={{ color: "var(--brand)", marginBottom: 8 }} />
               <div style={{ fontSize: 13.5, fontWeight: 600, color: "#1e293b", marginBottom: 4 }}>Bảng kê các hóa đơn liên quan</div>
               <div style={{ fontSize: 12 }}>Chưa có hóa đơn liên quan nào được chọn. Nhấn nút "Chọn hóa đơn liên quan" để thêm hóa đơn.</div>
             </div>
@@ -1319,7 +1320,7 @@ export function SaleInvoiceDiscountModal({
                     color: "#1e293b",
                   }}
                 >
-                  <Plus size={14} style={{ color: "#00b06b" }} />
+                  <Plus size={14} style={{ color: "var(--brand)" }} />
                   <span>Thêm dòng</span>
                 </button>
 
@@ -1475,8 +1476,8 @@ export function SaleInvoiceDiscountModal({
                       gap: 6,
                     }}
                   >
-                    <UploadCloud size={20} style={{ color: "#00a862" }} />
-                    <span style={{ fontSize: 12, color: "#0284c7" }}>
+                    <UploadCloud size={20} style={{ color: "var(--brand)" }} />
+                    <span style={{ fontSize: 12, color: "var(--brand)" }}>
                       Chọn tệp hoặc kéo và thả tệp vào đây
                     </span>
                   </div>
@@ -1604,7 +1605,7 @@ export function SaleInvoiceDiscountModal({
             style={{
               height: 30,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
