@@ -481,7 +481,7 @@ export default function MisaDatasetManagementModal({
                 height: 38,
                 borderRadius: 10,
                 background: "#e0f2fe",
-                color: "#0284c7",
+                color: "var(--brand)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -585,7 +585,7 @@ export default function MisaDatasetManagementModal({
                         borderRadius: 6,
                         border: "none",
                         background: yearFilter === "ALL" ? "#ffffff" : "transparent",
-                        color: yearFilter === "ALL" ? "#0284c7" : "#475569",
+                        color: yearFilter === "ALL" ? "var(--brand)" : "#475569",
                         fontWeight: yearFilter === "ALL" ? 700 : 500,
                         fontSize: 12,
                         cursor: "pointer",
@@ -605,7 +605,7 @@ export default function MisaDatasetManagementModal({
                           borderRadius: 6,
                           border: "none",
                           background: yearFilter === String(yr) ? "#ffffff" : "transparent",
-                          color: yearFilter === String(yr) ? "#0284c7" : "#475569",
+                          color: yearFilter === String(yr) ? "var(--brand)" : "#475569",
                           fontWeight: yearFilter === String(yr) ? 700 : 500,
                           fontSize: 12,
                           cursor: "pointer",
@@ -647,8 +647,8 @@ export default function MisaDatasetManagementModal({
                       height: 36,
                       padding: "0 14px",
                       borderRadius: 8,
-                      border: "1px solid #0284c7",
-                      background: "#0284c7",
+                      border: "1px solid var(--brand)",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       fontSize: 13,
                       fontWeight: 600,
@@ -751,7 +751,7 @@ export default function MisaDatasetManagementModal({
                             background: isCurrent ? "#f0f9ff" : "#ffffff",
                           }}
                         >
-                          <td style={{ padding: "10px 10px", fontWeight: 700, color: "#0284c7", whiteSpace: "nowrap" }}>
+                          <td style={{ padding: "10px 10px", fontWeight: 700, color: "var(--brand)", whiteSpace: "nowrap" }}>
                             {item.code}
                           </td>
                           <td style={{ padding: "10px 10px" }}>
@@ -894,7 +894,7 @@ export default function MisaDatasetManagementModal({
                                     gap: 4,
                                     fontSize: 12,
                                     fontWeight: 700,
-                                    color: "#0284c7",
+                                    color: "var(--brand)",
                                     background: "#e0f2fe",
                                     border: "1px solid #bae6fd",
                                     padding: "5px 10px",
@@ -916,7 +916,7 @@ export default function MisaDatasetManagementModal({
                                     borderRadius: 6,
                                     border: "1px solid #bae6fd",
                                     background: "#f0f9ff",
-                                    color: "#0284c7",
+                                    color: "var(--brand)",
                                     fontSize: 12,
                                     fontWeight: 600,
                                     cursor: "pointer",
@@ -992,12 +992,12 @@ export default function MisaDatasetManagementModal({
                 }}
               >
                 <div>
-                  <strong style={{ fontSize: 14, color: "#0369a1" }}>
+                  <strong style={{ fontSize: 14, color: "var(--brand-hover)" }}>
                     {editingItem
                       ? `Chỉnh sửa bộ dữ liệu: ${editingItem.label}`
                       : "Khởi tạo bộ dữ liệu kế toán mới theo Năm tài chính"}
                   </strong>
-                  <p style={{ margin: "2px 0 0", fontSize: 12, color: "#0284c7" }}>
+                  <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--brand)" }}>
                     Hệ thống tự động khởi tạo 12 kỳ kế toán tháng (K1 → K12) và hỗ trợ kết chuyển số dư đầu kỳ từ năm trước.
                   </p>
                 </div>
@@ -1050,8 +1050,8 @@ export default function MisaDatasetManagementModal({
                       color: "#0f172a",
                     }}
                   >
-                    <option value="FINANCIAL">📘 Sổ Tài chính &amp; Thuế (Báo cáo Thuế &amp; BCTC)</option>
-                    <option value="MANAGEMENT">🟣 Sổ Quản trị nội bộ (Phân tích &amp; Quản trị DN)</option>
+                    <option value="FINANCIAL">Sổ Tài chính &amp; Thuế (Báo cáo Thuế &amp; BCTC)</option>
+                    <option value="MANAGEMENT">Sổ Quản trị nội bộ (Phân tích &amp; Quản trị DN)</option>
                   </select>
                 </div>
 
@@ -1230,7 +1230,7 @@ export default function MisaDatasetManagementModal({
               </div>
 
               {!editingItem && (
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: "#0284c7", cursor: "pointer" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: "var(--brand)", cursor: "pointer" }}>
                   <input
                     type="checkbox"
                     checked={formSwitchImmediately}
@@ -1268,8 +1268,8 @@ export default function MisaDatasetManagementModal({
                     height: 36,
                     padding: "0 18px",
                     borderRadius: 8,
-                    border: "1px solid #0284c7",
-                    background: "#0284c7",
+                    border: "1px solid var(--brand)",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     fontSize: 13,
                     fontWeight: 600,

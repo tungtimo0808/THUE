@@ -20,10 +20,10 @@
   color: #64748b;
 }
 .erp3-eyebrow {
-  font-size: 9px !important;
+  font-size: 10px !important;
   letter-spacing: 0.12em;
   font-weight: 700;
-  color: #0284c7 !important;
+  color: var(--brand) !important;
 }
 .erp3-header-actions,
 .erp3-list-toolbar,
@@ -47,7 +47,7 @@
 }
 .erp3-workspace button:hover:not(:disabled),
 .erp3-document button:hover {
-  border-color: #0284c7;
+  border-color: var(--brand);
   background: #f0f9ff;
 }
 .erp3-workspace button:disabled {
@@ -55,9 +55,9 @@
   cursor: not-allowed;
 }
 .erp3-primary {
-  background: #0284c7 !important;
+  background: var(--brand) !important;
   color: #fff !important;
-  border-color: #0284c7 !important;
+  border-color: var(--brand) !important;
   font-weight: 650;
 }
 .erp3-kpis {
@@ -107,11 +107,11 @@
   background: white;
   padding: 0 9px;
   border-radius: 5px;
-  color: #0284c7;
+  color: var(--brand);
 }
 .erp3-search:focus-within {
   outline: 2px solid rgba(96, 108, 56, 0.25);
-  border-color: #0284c7;
+  border-color: var(--brand);
 }
 .erp3-search input {
   border: 0 !important;
@@ -142,10 +142,10 @@
 .erp3-count,
 .erp3-view-chips span {
   background: #eff6ff;
-  color: #4d572d;
+  color: var(--brand-hover);
   border-radius: 10px;
   padding: 1px 5px;
-  font-size: 9px;
+  font-size: 10px;
 }
 .erp3-bulk,
 .erp3-view-chips,
@@ -240,7 +240,7 @@
   padding: 4px 8px;
 }
 .erp3-pagination button.active {
-  background: #0284c7;
+  background: var(--brand);
   color: #fff;
 }
 .erp3-quick-detail {
@@ -307,7 +307,7 @@
 .erp3-progress span {
   display: block;
   height: 100%;
-  background: #0284c7;
+  background: var(--brand);
 }
 .erp3-full {
   width: 100%;
@@ -366,8 +366,8 @@
 }
 .erp3-tabs button[aria-selected="true"],
 .erp3-opening-tabs button[aria-selected="true"] {
-  color: #0284c7;
-  border-bottom-color: #0284c7;
+  color: var(--brand);
+  border-bottom-color: var(--brand);
   font-weight: 700;
 }
 .erp3-document-bottom {
@@ -382,7 +382,7 @@
   gap: 7px;
 }
 .erp3-related {
-  color: #0284c7;
+  color: var(--brand);
 }
 .erp3-summary {
   margin: 0;
@@ -588,8 +588,8 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ecfdf5;
-  color: #059669;
+  background: var(--warning-soft);
+  color: var(--warning);
   margin-right: 5px;
 }
 .erp3-warn {
@@ -605,7 +605,7 @@
   background: #f8fafc;
 }
 .erp3-report-hero {
-  background: #0284c7;
+  background: var(--brand);
   color: white;
   border-radius: 9px;
   padding: 22px;
@@ -614,7 +614,7 @@
 .erp3-report-hero label {
   height: 42px;
   background: white;
-  color: #606c38;
+  color: var(--brand);
   border-radius: 6px;
   padding: 0 13px;
   display: flex;
@@ -639,7 +639,7 @@
 }
 .erp3-report-hero button.active {
   background: #eff6ff;
-  color: #0284c7;
+  color: var(--brand);
   border-color: #ffe8d6;
 }
 .erp3-report-grid {
@@ -689,7 +689,7 @@
   width: 26px;
   height: 30px;
   background: #eff6ff;
-  color: #0284c7;
+  color: var(--brand);
   border-radius: 3px;
 }
 .erp3-master-layout {
@@ -720,7 +720,7 @@
 .erp3-master-layout [role="treeitem"].active {
   background: #eff6ff;
   font-weight: 700;
-  color: #0284c7;
+  color: var(--brand);
 }
 .erp3-opening-tabs {
   background: #ffffff;
@@ -743,7 +743,7 @@
   margin-left: 7px;
 }
 .erp3-balance-summary .balanced {
-  color: #0284c7;
+  color: var(--brand);
   font-weight: 700;
 }
 @media (max-width: 1050px) {
@@ -827,7 +827,7 @@
   height: 30px;
   border: 1px solid #e2e8f0;
   background: #ffffff;
-  color: #0284c7;
+  color: var(--brand);
   border-radius: 15px;
   padding: 0 8px;
   font-family: inherit;
@@ -841,7 +841,7 @@
 .ref-work-mode:hover {
   background: #f0f9ff;
   border-color: #bae6fd;
-  color: #0369a1;
+  color: var(--brand-hover);
   transform: translateY(-1px);
   box-shadow: 0 2px 6px rgba(2, 132, 199, 0.12);
 }
@@ -910,7 +910,7 @@
 }
 .erp3-search-groups button:hover {
   background: #f0f9ff;
-  color: #0284c7;
+  color: var(--brand);
 }
 .erp3-search-groups button span {
   display: grid;
@@ -930,7 +930,7 @@
 .erp3-smart-results > footer button {
   border: 0;
   background: transparent;
-  color: #0284c7;
+  color: var(--brand);
   cursor: pointer;
   font-weight: 600;
 }
@@ -961,11 +961,11 @@
 }
 .erp3-mode-list button.active {
   background: #f0f9ff;
-  border-color: #0284c7;
-  box-shadow: 0 0 0 1px #0284c7;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand);
 }
 .erp3-mode-list button.active svg {
-  color: #0284c7;
+  color: var(--brand);
 }
 .erp3-mode-list button span {
   display: grid;
@@ -983,7 +983,7 @@
   line-height: 1.4;
 }
 .erp3-mode-list b {
-  color: #0284c7;
+  color: var(--brand);
   font-size: 18px;
   font-weight: 700;
 }
@@ -1034,8 +1034,8 @@
   cursor: pointer;
 }
 .erp3-tab-setting button:hover:not(:disabled) {
-  border-color: #0284c7;
-  color: #0284c7;
+  border-color: var(--brand);
+  color: var(--brand);
   background: #f0f9ff;
 }
 .erp3-tab-settings footer {
@@ -1054,8 +1054,8 @@
   cursor: pointer;
 }
 .erp3-tab-settings .erp3-primary {
-  background: #0284c7;
-  border-color: #0284c7;
+  background: var(--brand);
+  border-color: var(--brand);
   color: white;
 }
 @media (max-width: 1280px) {

@@ -1,3 +1,5 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
 import {cashDateRange,cashDateValue,isCashDateInRange} from './cash-date';
 import React, { useState, useMemo } from "react";
@@ -208,7 +210,7 @@ export default function MisaCashReceiptJournalReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -226,7 +228,7 @@ export default function MisaCashReceiptJournalReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -236,7 +238,7 @@ export default function MisaCashReceiptJournalReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -319,7 +321,7 @@ export default function MisaCashReceiptJournalReport({
               style={{
                 position: "absolute",
                 left: 10,
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -414,7 +416,7 @@ export default function MisaCashReceiptJournalReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />
@@ -690,8 +692,8 @@ export default function MisaCashReceiptJournalReport({
                   <rect x="26" y="20" width="30" height="34" rx="3" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" />
                   <line x1="32" y1="28" x2="48" y2="28" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" />
                   <line x1="32" y1="34" x2="44" y2="34" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" />
-                  <circle cx="48" cy="38" r="8" fill="#ffffff" stroke="#00a862" strokeWidth="2.5" />
-                  <line x1="54" y1="44" x2="62" y2="52" stroke="#00a862" strokeWidth="2.5" strokeLinecap="round" />
+                  <circle cx="48" cy="38" r="8" fill="#ffffff" stroke="var(--brand)" strokeWidth="2.5" />
+                  <line x1="54" y1="44" x2="62" y2="52" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
               </div>
               <div style={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>
@@ -783,7 +785,7 @@ export default function MisaCashReceiptJournalReport({
                     width: "100%",
                     height: 32,
                     padding: "0 10px",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 13,
                     background: "#ffffff",
@@ -816,7 +818,7 @@ export default function MisaCashReceiptJournalReport({
                         background: "#ffffff",
                       }}
                     />
-                    <Calendar size={14} style={{ position: "absolute", right: 10, top: 9, color: "#94a3b8" }} />
+                    <Calendar size={14} style={{ position: "absolute", right: 10, top: 9, color: "#64748b" }} />
                   </div>
                 </div>
 
@@ -840,7 +842,7 @@ export default function MisaCashReceiptJournalReport({
                         background: "#ffffff",
                       }}
                     />
-                    <Calendar size={14} style={{ position: "absolute", right: 10, top: 9, color: "#94a3b8" }} />
+                    <Calendar size={14} style={{ position: "absolute", right: 10, top: 9, color: "#64748b" }} />
                   </div>
                 </div>
               </div>
@@ -856,7 +858,7 @@ export default function MisaCashReceiptJournalReport({
                     style={{
                       height: 32,
                       padding: "0 10px",
-                      border: "1px solid #00a862",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 13,
                       display: "flex",
@@ -905,7 +907,7 @@ export default function MisaCashReceiptJournalReport({
                               <tr
                                 key={acc.code}
                                 style={{
-                                  background: isSelected ? "#00a862" : "#ffffff",
+                                  background: isSelected ? "var(--brand)" : "#ffffff",
                                   color: isSelected ? "#ffffff" : "#1e293b",
                                   cursor: "pointer",
                                   transition: "background 0.15s ease",
@@ -981,7 +983,7 @@ export default function MisaCashReceiptJournalReport({
                     onChange={(e) =>
                       setDraftMergeSameEntries(e.target.checked)
                     }
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Cộng gộp các bút toán giống nhau</span>
                 </label>
@@ -1040,7 +1042,7 @@ export default function MisaCashReceiptJournalReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

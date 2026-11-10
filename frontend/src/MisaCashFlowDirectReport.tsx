@@ -1,3 +1,4 @@
+import { saveVisibleTable } from "./table-actions";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
@@ -663,7 +664,7 @@ export default function MisaCashFlowDirectReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu báo cáo B03-DN kỳ tháng 10/2026 thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -673,7 +674,7 @@ export default function MisaCashFlowDirectReport({
             style={{
               height: 32,
               padding: "0 16px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -721,7 +722,7 @@ export default function MisaCashFlowDirectReport({
               notify?.("Kiểm tra tính khớp dòng tiền với bảng cân đối tài khoản...")
             }
           >
-            <FileCheck size={15} color="#00a862" />
+            <FileCheck size={15} color="var(--brand)" />
             <span>Kiểm tra số liệu</span>
           </button>
         </div>
@@ -735,7 +736,7 @@ export default function MisaCashFlowDirectReport({
                 left: 10,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -810,7 +811,7 @@ export default function MisaCashFlowDirectReport({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#0284c7",
+              color: "var(--brand)",
               cursor: "pointer",
             }}
             title="Trợ giúp"
@@ -1186,7 +1187,7 @@ export default function MisaCashFlowDirectReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -1201,7 +1202,7 @@ export default function MisaCashFlowDirectReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -1215,10 +1216,10 @@ export default function MisaCashFlowDirectReport({
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  border: "1px solid #00a862",
+                  border: "1px solid var(--brand)",
                   borderRadius: 4,
                   background: "#e6f7ef",
-                  color: "#00a862",
+                  color: "var(--brand)",
                   fontWeight: 700,
                   fontSize: 12,
                 }}
@@ -1234,7 +1235,7 @@ export default function MisaCashFlowDirectReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -1249,7 +1250,7 @@ export default function MisaCashFlowDirectReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -1474,7 +1475,7 @@ export default function MisaCashFlowDirectReport({
                     type="checkbox"
                     checked={draftFetchFromSaved}
                     onChange={(e) => setDraftFetchFromSaved(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Lấy dữ liệu từ báo cáo tài chính đã lập</span>
                 </label>
@@ -1492,7 +1493,7 @@ export default function MisaCashFlowDirectReport({
                     type="checkbox"
                     checked={draftHideZero}
                     onChange={(e) => setDraftHideZero(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Không hiển thị các chỉ tiêu có số liệu = 0</span>
                 </label>
@@ -1554,7 +1555,7 @@ export default function MisaCashFlowDirectReport({
                   style={{
                     height: 34,
                     padding: "0 22px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     color: "#ffffff",
@@ -1616,7 +1617,7 @@ export default function MisaCashFlowDirectReport({
                 <span
                   style={{
                     background: "#e0f2fe",
-                    color: "#0369a1",
+                    color: "var(--brand-hover)",
                     padding: "2px 8px",
                     borderRadius: 4,
                     fontSize: 11,
@@ -1663,7 +1664,7 @@ export default function MisaCashFlowDirectReport({
                 <span>Thời gian: Từ <strong>{fromDate}</strong> đến <strong>{toDate}</strong></span>
                 <span>
                   Tổng phát sinh:{" "}
-                  <strong style={{ color: (drilldownItem.currentPeriod || 0) < 0 ? "#dc2626" : "#00a862" }}>
+                  <strong style={{ color: (drilldownItem.currentPeriod || 0) < 0 ? "#dc2626" : "var(--brand)" }}>
                     {formatNumber(drilldownItem.currentPeriod).text} đ
                   </strong>
                 </span>
@@ -1690,7 +1691,7 @@ export default function MisaCashFlowDirectReport({
                   {drilldownItem.code === "02" && (
                     <tr>
                       <td style={{ padding: "8px 10px" }}>10/10/2026</td>
-                      <td style={{ padding: "8px 10px", color: "#0284c7", fontWeight: 600 }}>UNC001</td>
+                      <td style={{ padding: "8px 10px", color: "var(--brand)", fontWeight: 600 }}>UNC001</td>
                       <td style={{ padding: "8px 10px" }}>Ủy nhiệm chi trả tiền mua hàng cho NCC</td>
                       <td style={{ padding: "8px 10px" }}>331 / 1121</td>
                       <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#dc2626" }}>
@@ -1702,7 +1703,7 @@ export default function MisaCashFlowDirectReport({
                   {drilldownItem.code === "07" && (
                     <tr>
                       <td style={{ padding: "8px 10px" }}>18/10/2026</td>
-                      <td style={{ padding: "8px 10px", color: "#0284c7", fontWeight: 600 }}>PC0002</td>
+                      <td style={{ padding: "8px 10px", color: "var(--brand)", fontWeight: 600 }}>PC0002</td>
                       <td style={{ padding: "8px 10px" }}>Phiếu chi tiền mặt dịch vụ mua ngoài khác</td>
                       <td style={{ padding: "8px 10px" }}>6427 / 1111</td>
                       <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: "#dc2626" }}>
@@ -1718,7 +1719,7 @@ export default function MisaCashFlowDirectReport({
                         style={{
                           padding: "24px",
                           textAlign: "center",
-                          color: "#94a3b8",
+                          color: "#64748b",
                           fontStyle: "italic",
                         }}
                       >
@@ -1744,7 +1745,7 @@ export default function MisaCashFlowDirectReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,
@@ -1859,7 +1860,7 @@ export default function MisaCashFlowDirectReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,

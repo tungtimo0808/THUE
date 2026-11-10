@@ -1,0 +1,694 @@
+﻿Tệp,Dòng khi quét ban đầu,Nội dung cũ,Phân loại,Trạng thái
+DetailedWorkspaces.tsx,57,Đã làm mới dữ liệu thành công.,reload-page,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+DetailedWorkspaces.tsx,96,Sẵn sàng nhận tệp Excel mẫu.,review,Cần kiểm tra ngữ cảnh
+DetailedWorkspaces.tsx,102,Đã chuẩn bị tệp xuất dữ liệu.,review,Cần kiểm tra ngữ cảnh
+DetailedWorkspaces.tsx,232,Bản in mẫu đã sẵn sàng.,review,Cần kiểm tra ngữ cảnh
+DetailedWorkspaces.tsx,236,Đã nhân bản đơn mua hàng trong trình duyệt.,review,Cần kiểm tra ngữ cảnh
+DetailedWorkspaces.tsx,245,Thay đổi chỉ được lưu trong bản giao diện.,review,Cần kiểm tra ngữ cảnh
+DetailedWorkspaces.tsx,2205,Đã kiểm tra cân đối số liệu thành công.,review,Cần kiểm tra ngữ cảnh
+DetailedWorkspaces.tsx,2210,Sẵn sàng nhận tệp Excel mẫu.,review,Cần kiểm tra ngữ cảnh
+LiveProfile.tsx,139,Đã ghi nhận yêu cầu quyền chủ thể dữ liệu. Bộ phận Bảo vệ Dữ liệu Cá nhân (dpo@soviet-erp.vn) sẽ phản hồi xác nhận trong vòng 02 ngày làm việc theo Điều 5 Nghị định 356/2025/NĐ-CP.,review,Cần kiểm tra ngữ cảnh
+MisaAssetCapitalStructureAnalysisReport.tsx,389,Mở hướng dẫn báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaAssetCapitalStructureAnalysisReport.tsx,492,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaAssetCapitalStructureAnalysisReport.tsx,507,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaAssetCapitalStructureAnalysisReport.tsx,522,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaAssetCapitalStructureAnalysisReport.tsx,556,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaAssetsWorkspace.tsx,5787,Hướng dẫn: Ghi tăng tài sản cố định mua mới về sử dụng,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,7076,"Chỉ cho phép cập nhật thông tin nhận diện và hồ sơ bổ sung. Các chỉ tiêu kế toán, nguyên giá, khấu hao, loại tài sản và đơn vị sử dụng được khóa bảo vệ.",review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,8338,Hướng dẫn: Khai báo số dư và hồ sơ tài sản cố định đầu kỳ,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,8403,Thêm nhanh Loại tài sản cố định mới,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,9040,Hướng dẫn: Chọn kỳ tháng và năm cần trích khấu hao tài sản cố định,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,9192,Tùy chọn thiết lập mẫu chứng từ tính khấu hao,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,9200,Hướng dẫn lập chứng từ tính khấu hao TSCĐ theo Thông tư 99/2025/TT-BTC,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,9262,Đã chuẩn hóa diễn giải chứng từ tính khấu hao,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,10390,Tùy biến mẫu chứng từ đánh giá lại,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,10393,Hướng dẫn: Đánh giá lại tài sản cố định,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,11612,Hướng dẫn: Điều chuyển tài sản cố định,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,11974,Tùy chọn mẫu chứng từ ghi giảm,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,11977,Hướng dẫn: Ghi giảm tài sản cố định,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,12654,Hướng dẫn: Bảng kiểm kê tài sản cố định,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,15074,Tiện ích: Nhập khẩu chứng từ ghi tăng TSCĐ từ file Excel,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,15150,Nhập khẩu chứng từ ghi tăng từ Excel...,review,Cần kiểm tra ngữ cảnh
+MisaAssetsWorkspace.tsx,15167,Đang xuất khẩu danh sách chứng từ ghi tăng ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaAssetsWorkspace.tsx,15368,Đang xuất khẩu danh sách chứng từ trích khấu hao ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaAssetsWorkspace.tsx,15601,Đang xuất khẩu danh sách chứng từ đánh giá lại TSCĐ ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaAssetsWorkspace.tsx,15744,Đang xuất khẩu danh sách chứng từ điều chuyển TSCĐ ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaAssetsWorkspace.tsx,15889,Đang xuất khẩu danh sách chứng từ ghi giảm TSCĐ ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBalanceSheetGrowthAnalysisReport.tsx,1016,Đang tải xuống dữ liệu báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaBalanceSheetGrowthAnalysisReport.tsx,1096,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaBalanceSheetGrowthAnalysisReport.tsx,1115,Mở hộp thoại gửi email,review,Cần kiểm tra ngữ cảnh
+MisaBalanceSheetGrowthAnalysisReport.tsx,1134,Mở bảng trao đổi nội bộ,review,Cần kiểm tra ngữ cảnh
+MisaBalanceSheetGrowthAnalysisReport.tsx,1153,Đang tải dữ liệu in báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaBalanceSheetGrowthAnalysisReport.tsx,1172,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBankBalanceStatementReport.tsx,353,Mở bộ lọc...,review,Cần kiểm tra ngữ cảnh
+MisaBankBalanceStatementReport.tsx,372,Tùy chỉnh hiển thị cột...,review,Cần kiểm tra ngữ cảnh
+MisaBankBalanceStatementReport.tsx,438,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaBankBalanceStatementReport.tsx,453,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaBankWorkspace.tsx,1619,Mở phân tích chuyên sâu Dòng tiền thuần...,review,Cần kiểm tra ngữ cảnh
+MisaBankWorkspace.tsx,1635,Mở phân tích chuyên sâu Rủi ro & Khuyến nghị...,review,Cần kiểm tra ngữ cảnh
+MisaBankWorkspace.tsx,1897,Đã cập nhật danh sách tiền gửi.,reload-api,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBankWorkspace.tsx,1917,Tùy chọn hiển thị chứng từ.,review,Cần kiểm tra ngữ cảnh
+MisaBorrowContractSummaryReport.tsx,240,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBorrowContractSummaryReport.tsx,258,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBorrowContractSummaryReport.tsx,312,Mở bộ lọc...,review,Cần kiểm tra ngữ cảnh
+MisaBorrowContractSummaryReport.tsx,331,Tùy chỉnh hiển thị cột...,review,Cần kiểm tra ngữ cảnh
+MisaBorrowContractSummaryReport.tsx,382,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaBorrowContractSummaryReport.tsx,397,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaBorrowContractSummaryReport.tsx,412,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaBorrowContractSummaryReport.tsx,446,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBorrowRepaymentScheduleSummaryReport.tsx,242,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaBorrowRepaymentScheduleSummaryReport.tsx,272,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBorrowRepaymentScheduleSummaryReport.tsx,287,Mở hộp thoại gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaBorrowRepaymentScheduleSummaryReport.tsx,313,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBorrowRepaymentScheduleSummaryReport.tsx,331,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBorrowVoucherStatementReport.tsx,229,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBorrowVoucherStatementReport.tsx,247,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBorrowVoucherStatementReport.tsx,364,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaBorrowVoucherStatementReport.tsx,394,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBorrowVoucherStatementReport.tsx,409,Mở hộp thoại gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaBudgetWorkspace.tsx,923,Đã xuất danh sách kế hoạch ngân sách ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBudgetWorkspace.tsx,1021,Đã xuất mẫu kế hoạch ngân sách ra Excel.,review,Cần kiểm tra ngữ cảnh
+MisaBudgetWorkspace.tsx,1197,Đang tra cứu nhanh danh mục báo cáo ngân sách...,review,Cần kiểm tra ngữ cảnh
+MisaBudgetWorkspace.tsx,1221,Tùy chọn ẩn/hiện danh mục báo cáo ngân sách.,review,Cần kiểm tra ngữ cảnh
+MisaBudgetWorkspace.tsx,1392,"Kỳ lập kế hoạch có thể theo Tháng, Quý hoặc Năm áp dụng cho toàn đơn vị hoặc từng chi nhánh.",review,Cần kiểm tra ngữ cảnh
+MisaBudgetWorkspace.tsx,1716,Đã xuất báo cáo ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBudgetWorkspace.tsx,1725,Đang chuẩn bị trang in...,review,Cần kiểm tra ngữ cảnh
+MisaBusinessResultGrowthAnalysisReport.tsx,344,Mở trợ giúp...,review,Cần kiểm tra ngữ cảnh
+MisaBusinessResultGrowthAnalysisReport.tsx,447,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaBusinessResultGrowthAnalysisReport.tsx,462,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaBusinessResultGrowthAnalysisReport.tsx,477,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaBusinessResultGrowthAnalysisReport.tsx,511,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaBusinessResultReport.tsx,956,Mở hộp thoại gửi báo cáo qua email.,review,Cần kiểm tra ngữ cảnh
+MisaBusinessResultReport.tsx,976,Hệ thống hướng dẫn nghiệp vụ kế toán.,review,Cần kiểm tra ngữ cảnh
+MisaBusinessResultReport.tsx,1004,Mở thiết lập cột báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaBusinessResultReport.tsx,1451,Xem hướng dẫn lập báo cáo kết quả hoạt động kinh doanh B02-DN / B02-DNKLT.,review,Cần kiểm tra ngữ cảnh
+MisaCashDisbursementJournalReport.tsx,227,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashDisbursementJournalReport.tsx,245,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashDisbursementJournalReport.tsx,299,Mở bộ lọc...,review,Cần kiểm tra ngữ cảnh
+MisaCashDisbursementJournalReport.tsx,318,Tùy chỉnh hiển thị cột...,review,Cần kiểm tra ngữ cảnh
+MisaCashDisbursementJournalReport.tsx,369,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaCashDisbursementJournalReport.tsx,384,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaCashDisbursementJournalReport.tsx,399,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaCashDisbursementJournalReport.tsx,433,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashDisbursementJournalReport.tsx,449,Mở cài đặt...,review,Cần kiểm tra ngữ cảnh
+MisaCashFlowDirectReport.tsx,666,Đã lưu báo cáo B03-DN kỳ tháng 10/2026 thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashFlowDirectReport.tsx,720,Kiểm tra tính khớp dòng tiền với bảng cân đối tài khoản...,review,Cần kiểm tra ngữ cảnh
+MisaCashFlowDirectReport.tsx,797,Mở hộp thoại gửi báo cáo qua email.,review,Cần kiểm tra ngữ cảnh
+MisaCashFlowDirectReport.tsx,817,Hệ thống hướng dẫn nghiệp vụ kế toán.,review,Cần kiểm tra ngữ cảnh
+MisaCashFlowDirectReport.tsx,845,Mở cài đặt cột hiển thị.,review,Cần kiểm tra ngữ cảnh
+MisaCashFlowDirectReport.tsx,1314,Xem hướng dẫn lập Báo cáo lưu chuyển tiền tệ (PP trực tiếp) B03-DN.,review,Cần kiểm tra ngữ cảnh
+MisaCashFlowIndirectReport.tsx,733,Đã lưu báo cáo B03-DN-GT kỳ tháng 10/2026 thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashFlowIndirectReport.tsx,787,Kiểm tra sự khớp nối giữa lợi nhuận và lưu chuyển tiền thuần...,review,Cần kiểm tra ngữ cảnh
+MisaCashFlowIndirectReport.tsx,864,Mở hộp thoại gửi báo cáo qua email.,review,Cần kiểm tra ngữ cảnh
+MisaCashFlowIndirectReport.tsx,884,Hệ thống hướng dẫn nghiệp vụ kế toán.,review,Cần kiểm tra ngữ cảnh
+MisaCashFlowIndirectReport.tsx,912,Mở cài đặt cột hiển thị.,review,Cần kiểm tra ngữ cảnh
+MisaCashFlowIndirectReport.tsx,1382,Xem hướng dẫn lập Báo cáo lưu chuyển tiền tệ (PP gián tiếp) B03-DN-GT.,review,Cần kiểm tra ngữ cảnh
+MisaCashGenerationAnalysisReport.tsx,272,Mở trợ giúp...,review,Cần kiểm tra ngữ cảnh
+MisaCashGenerationAnalysisReport.tsx,375,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaCashGenerationAnalysisReport.tsx,390,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaCashGenerationAnalysisReport.tsx,405,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaCashGenerationAnalysisReport.tsx,439,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashMovementReport.tsx,227,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashMovementReport.tsx,245,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashMovementReport.tsx,326,Đã làm mới dữ liệu Dòng tiền.,review,Cần kiểm tra ngữ cảnh
+MisaCashMovementReport.tsx,341,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaCashMovementReport.tsx,356,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaCashMovementReport.tsx,390,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashMovementReport.tsx,406,Mở cài đặt...,review,Cần kiểm tra ngữ cảnh
+MisaCashReceiptJournalReport.tsx,211,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashReceiptJournalReport.tsx,229,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashReceiptJournalReport.tsx,283,Mở bộ lọc...,review,Cần kiểm tra ngữ cảnh
+MisaCashReceiptJournalReport.tsx,302,Tùy chỉnh hiển thị cột...,review,Cần kiểm tra ngữ cảnh
+MisaCashReceiptJournalReport.tsx,353,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaCashReceiptJournalReport.tsx,368,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaCashReceiptJournalReport.tsx,383,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaCashReceiptJournalReport.tsx,417,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashReceiptJournalReport.tsx,433,Mở cài đặt...,review,Cần kiểm tra ngữ cảnh
+MisaCashWorkspace.tsx,304,Hướng dẫn sử dụng Nộp thuế,review,Cần kiểm tra ngữ cảnh
+MisaCashWorkspace.tsx,790,Hướng dẫn sử dụng Trả tiền nhà cung cấp theo hóa đơn,review,Cần kiểm tra ngữ cảnh
+MisaCashWorkspace.tsx,4814,Hệ thống kiểm tra định khoản Sổ Việt ERP,review,Cần kiểm tra ngữ cảnh
+MisaCashWorkspace.tsx,5923,Đang kết xuất tệp Excel báo cáo chuẩn Thông tư 99/2025/TT-BTC...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashWorkspace.tsx,6732,Đang xuất kế hoạch dòng tiền ra tệp Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashWorkspace.tsx,11315,Đã mở phiếu tạo biên bản kiểm kê quỹ mới.,review,Cần kiểm tra ngữ cảnh
+MisaCashWorkspace.tsx,11322,Đang in biên bản kiểm kê quỹ tiền mặt...,print,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCashWorkspace.tsx,11329,Không có chênh lệch quỹ cần xử lý.,review,Cần kiểm tra ngữ cảnh
+MisaCondensedBalanceSheetGrowthReport.tsx,406,Mở trợ giúp...,review,Cần kiểm tra ngữ cảnh
+MisaCondensedBalanceSheetGrowthReport.tsx,482,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaCondensedBalanceSheetGrowthReport.tsx,497,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaCondensedBalanceSheetGrowthReport.tsx,512,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaCondensedBalanceSheetGrowthReport.tsx,546,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCostWorkspace.tsx,4002,Lấy số lượng thành phẩm hoàn thành từ Kho,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,4017,Thêm dòng thống kê,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,4307,Lập chứng từ chuyển công đoạn mới,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,4601,Thực hiện phân bổ chi phí chung,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,5789,Nhập dự toán công trình từ Excel,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,5977,Mở bảng theo dõi lũy kế phát sinh cho đơn hàng các kỳ trước,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,6600,Mở bảng theo dõi lũy kế phát sinh cho hợp đồng các kỳ trước,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,7217,Đang lọc danh mục báo cáo giá thành...,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,7262,Mở tùy chỉnh Ẩn/hiện danh mục báo cáo,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,8992,"Hướng dẫn khai báo thông tin vật tư, hàng hóa, dịch vụ",review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,9244,Thêm nhóm VTHH mới,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,9303,Thêm đơn vị tính mới,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,9340,Tải ảnh sản phẩm/vật tư,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,9347,Đã xóa ảnh,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,9398,Mở tiện ích tra cứu giảm thuế GTGT theo Nghị quyết,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,10142,Hướng dẫn tính khấu hao TSCĐ,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,10292,Hướng dẫn phân bổ công cụ dụng cụ,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,10454,Hướng dẫn phân bổ chi phí trả trước (TK 242),review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,10965,Đã kiểm tra tính hợp lệ của chứng từ,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,11141,Đã mở hộp thoại tải tệp đính kèm chứng từ,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,11292,Hướng dẫn thêm kỳ tính giá thành sản xuất giản đơn,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,11690,Hướng dẫn chọn kỳ tính giá thành để kết chuyển chi phí,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,11926,Hướng dẫn thêm kỳ tính giá thành phân bước,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,12475,Hướng dẫn khai báo quy trình sản xuất phân bước,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,12611,Hướng dẫn chọn kỳ tính giá thành phân bước để kết chuyển chi phí,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,12843,Hướng dẫn chọn kỳ tính giá thành để thống kê số lượng TP/BTP,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,13196,Hướng dẫn chọn kỳ tính giá thành để chuyển công đoạn,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,13547,Hướng dẫn chọn kỳ tính giá thành để phân bổ chi phí chung,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,14058,Hướng dẫn khai báo chi phí dở dang đầu kỳ,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,14081,Đã xuất khẩu dữ liệu chi phí dở dang ra file Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaCostWorkspace.tsx,14088,Mở giao diện nhập khẩu số dư từ Excel,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,14232,"Hướng dẫn thiết lập hệ số, tỷ lệ định mức giá thành",review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,14384,Hướng dẫn khai báo định mức phân bổ chi phí,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,14528,Hướng dẫn khai báo giá thành kế hoạch sản phẩm,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,14671,Hướng dẫn thêm kỳ tính giá thành công trình,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,14929,Xem hướng dẫn khai báo đối tượng công trình,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,15024,Hướng dẫn chọn kỳ tính giá thành để kết chuyển,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,15153,Hướng dẫn nghiệm thu công trình,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,15193,Đã lấy dữ liệu công trình sẵn sàng nghiệm thu!,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,15614,Hướng dẫn lập và theo dõi dự toán công trình,review,Cần kiểm tra ngữ cảnh
+MisaCostWorkspace.tsx,16267,Hướng dẫn chọn đơn hàng nghiệm thu sang TK 632,review,Cần kiểm tra ngữ cảnh
+MisaCreditModals.tsx,198,Hướng dẫn quản lý khế ước cho vay đầu kỳ,review,Cần kiểm tra ngữ cảnh
+MisaCreditModals.tsx,1331,Hướng dẫn lập Khế ước đi vay,review,Cần kiểm tra ngữ cảnh
+MisaCustomerModal.tsx,356,Hướng dẫn thêm mới Khách hàng theo chuẩn Sổ Việt ERP,review,Cần kiểm tra ngữ cảnh
+MisaCustomerModal.tsx,592,Thêm nhanh nhóm khách hàng,review,Cần kiểm tra ngữ cảnh
+MisaCustomerModal.tsx,682,Thêm nhanh nhân viên bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaCustomerModal.tsx,886,Thêm nhanh nhóm khách hàng,review,Cần kiểm tra ngữ cảnh
+MisaCustomerModal.tsx,998,Thêm nhanh nhân viên bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaDailyCashBalanceReport.tsx,237,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDailyCashBalanceReport.tsx,255,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDailyCashBalanceReport.tsx,327,Đã làm mới Bảng kê số dư tiền theo ngày.,review,Cần kiểm tra ngữ cảnh
+MisaDailyCashBalanceReport.tsx,342,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaDailyCashBalanceReport.tsx,357,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaDailyCashBalanceReport.tsx,391,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDebtReconciliationReport.tsx,272,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDebtReconciliationReport.tsx,290,Đã lưu báo cáo.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDebtReconciliationReport.tsx,330,Mở thiết lập người ký...,review,Cần kiểm tra ngữ cảnh
+MisaDebtReconciliationReport.tsx,351,Mở chức năng Đối chiếu công nợ với NCC...,review,Cần kiểm tra ngữ cảnh
+MisaDebtReconciliationReport.tsx,388,Đã nạp lại dữ liệu.,review,Cần kiểm tra ngữ cảnh
+MisaDebtReconciliationReport.tsx,403,Gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaDebtReconciliationReport.tsx,419,Mở trao đổi...,review,Cần kiểm tra ngữ cảnh
+MisaDebtReconciliationReport.tsx,449,Đang xuất khẩu báo cáo...,export-xlsx,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDetailedBorrowLedgerReport.tsx,208,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDetailedBorrowLedgerReport.tsx,226,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDetailedBorrowLedgerReport.tsx,275,Thiết lập người ký mẫu báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaDetailedBorrowLedgerReport.tsx,286,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaDetailedBorrowLedgerReport.tsx,294,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaDetailedBorrowLedgerReport.tsx,320,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDetailedBorrowLedgerReport.tsx,329,Mở cài đặt...,review,Cần kiểm tra ngữ cảnh
+MisaDetailedCashLedgerReport.tsx,301,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDetailedCashLedgerReport.tsx,319,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDetailedCashLedgerReport.tsx,373,Mở bộ lọc...,review,Cần kiểm tra ngữ cảnh
+MisaDetailedCashLedgerReport.tsx,392,Tùy chỉnh hiển thị cột...,review,Cần kiểm tra ngữ cảnh
+MisaDetailedCashLedgerReport.tsx,443,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaDetailedCashLedgerReport.tsx,458,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaDetailedCashLedgerReport.tsx,473,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaDetailedPurchaseLedgerReport.tsx,315,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDetailedPurchaseLedgerReport.tsx,333,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaDetailedPurchaseLedgerReport.tsx,456,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaDetailedPurchaseLedgerReport.tsx,474,Mở hộp thoại gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaDetailedPurchaseLedgerReport.tsx,496,Mở hỗ trợ trực tuyến.,review,Cần kiểm tra ngữ cảnh
+MisaDirectCashFlowTimePeriodicReport.tsx,396,Mở trợ giúp...,review,Cần kiểm tra ngữ cảnh
+MisaDirectCashFlowTimePeriodicReport.tsx,499,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaDirectCashFlowTimePeriodicReport.tsx,514,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaDirectCashFlowTimePeriodicReport.tsx,529,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaDirectCashFlowTimePeriodicReport.tsx,563,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaFinancialBundleWorkspace.tsx,1447,Hướng dẫn chọn tham số lập và xem Bộ Báo cáo tài chính theo Thông tư 99/2025/TT-BTC.,review,Cần kiểm tra ngữ cảnh
+MisaFinancialNotesReport.tsx,1740,Xem hướng dẫn chọn tham số Bản thuyết minh BCTC (B09-DN).,review,Cần kiểm tra ngữ cảnh
+MisaFinancialPositionReport.tsx,1692,Chọn kỳ báo cáo và các điều kiện tổng hợp Báo cáo tình hình tài chính.,review,Cần kiểm tra ngữ cảnh
+MisaIncomeRatioAnalysisReport.tsx,359,Đang tải xuống dữ liệu báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaIncomeRatioAnalysisReport.tsx,474,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaIncomeRatioAnalysisReport.tsx,493,Mở hộp thoại gửi email,review,Cần kiểm tra ngữ cảnh
+MisaIncomeRatioAnalysisReport.tsx,512,Mở bảng trao đổi nội bộ,review,Cần kiểm tra ngữ cảnh
+MisaIncomeRatioAnalysisReport.tsx,531,Đang tải dữ liệu in báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaIncomeRatioAnalysisReport.tsx,550,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInterimBusinessResultReport.tsx,782,Đang xuất khẩu tệp XML theo chuẩn TCT...,xml-unavailable,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInterimBusinessResultReport.tsx,801,Kết nối cổng nộp thuế điện tử Sổ Việt eTax...,review,Cần kiểm tra ngữ cảnh
+MisaInterimBusinessResultReport.tsx,853,Hệ thống hướng dẫn nghiệp vụ kế toán.,review,Cần kiểm tra ngữ cảnh
+MisaInterimBusinessResultReport.tsx,873,Đang chuẩn bị lệnh in...,review,Cần kiểm tra ngữ cảnh
+MisaInterimBusinessResultReport.tsx,915,Mở thiết lập cột báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaInterimBusinessResultReport.tsx,1359,Xem hướng dẫn lập B02a-DN / B02b-DN: Báo cáo kết quả hoạt động kinh doanh giữa niên độ.,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowDirectReport.tsx,319,Đã lưu B03a - DN kỳ quý 4/2026 thành công.,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowDirectReport.tsx,370,Đang xuất khẩu tệp XML theo chuẩn TCT...,xml-unavailable,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInterimCashFlowDirectReport.tsx,389,Kết nối cổng nộp thuế điện tử Sổ Việt eTax...,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowDirectReport.tsx,441,Hệ thống hướng dẫn nghiệp vụ kế toán.,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowDirectReport.tsx,461,Đang chuẩn bị lệnh in...,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowDirectReport.tsx,482,Đã xuất khẩu báo cáo B03a - DN ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInterimCashFlowDirectReport.tsx,503,Mở thiết lập cột báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowDirectReport.tsx,918,Xem hướng dẫn lập B03a - DN: Báo cáo lưu chuyển tiền tệ giữa niên độ.,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowIndirectReport.tsx,469,Đã lưu B03a - DN - GT kỳ quý 4/2026 thành công.,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowIndirectReport.tsx,520,Đang xuất khẩu tệp XML theo chuẩn TCT...,xml-unavailable,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInterimCashFlowIndirectReport.tsx,539,Kết nối cổng nộp thuế điện tử Sổ Việt eTax...,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowIndirectReport.tsx,591,Hệ thống hướng dẫn nghiệp vụ kế toán.,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowIndirectReport.tsx,611,Đang chuẩn bị lệnh in...,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowIndirectReport.tsx,632,Đã xuất khẩu báo cáo B03a - DN - GT ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInterimCashFlowIndirectReport.tsx,653,Mở thiết lập cột báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaInterimCashFlowIndirectReport.tsx,1097,Xem hướng dẫn lập B03a - DN - GT: Báo cáo lưu chuyển tiền tệ giữa niên độ.,review,Cần kiểm tra ngữ cảnh
+MisaInterimFinancialPositionReport.tsx,776,Đang xuất khẩu báo cáo định dạng XML chuẩn Tổng cục Thuế...,xml-unavailable,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInterimFinancialPositionReport.tsx,795,Kết nối cổng nộp thuế điện tử Sổ Việt eTax...,review,Cần kiểm tra ngữ cảnh
+MisaInterimFinancialPositionReport.tsx,847,Đã làm mới dữ liệu báo cáo giữa niên độ.,review,Cần kiểm tra ngữ cảnh
+MisaInterimFinancialPositionReport.tsx,867,Mở hộp thoại gửi báo cáo qua email.,review,Cần kiểm tra ngữ cảnh
+MisaInterimFinancialPositionReport.tsx,887,Hệ thống hướng dẫn nghiệp vụ kế toán.,review,Cần kiểm tra ngữ cảnh
+MisaInterimFinancialPositionReport.tsx,907,Đang chuẩn bị lệnh in...,review,Cần kiểm tra ngữ cảnh
+MisaInterimFinancialPositionReport.tsx,949,Mở thiết lập cột báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaInterimFinancialPositionReport.tsx,1693,Xem hướng dẫn lập báo cáo tài chính giữa niên độ.,review,Cần kiểm tra ngữ cảnh
+MisaInternalFundTransferDetailReport.tsx,186,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInternalFundTransferDetailReport.tsx,204,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInternalFundTransferDetailReport.tsx,258,Mở bộ lọc...,review,Cần kiểm tra ngữ cảnh
+MisaInternalFundTransferDetailReport.tsx,277,Tùy chỉnh hiển thị cột...,review,Cần kiểm tra ngữ cảnh
+MisaInternalFundTransferDetailReport.tsx,328,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaInternalFundTransferDetailReport.tsx,343,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaInternalFundTransferDetailReport.tsx,358,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaInternalFundTransferDetailReport.tsx,392,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInventoryItemModal.tsx,615,"Hướng dẫn lập danh mục Hàng hóa, dịch vụ chuẩn Sổ Việt ERP",review,Cần kiểm tra ngữ cảnh
+MisaInventoryItemModal.tsx,848,Thêm mới đơn vị tính,review,Cần kiểm tra ngữ cảnh
+MisaInventoryItemModal.tsx,899,Mở bảng tra cứu chính sách giảm thuế GTGT,review,Cần kiểm tra ngữ cảnh
+MisaInventoryItemModal.tsx,2946,Mở thiết lập theo dõi quy cách,review,Cần kiểm tra ngữ cảnh
+MisaInventoryItemModal.tsx,2958,Mở thiết lập phân bổ doanh thu nhận trước,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,1896,Đã cập nhật số liệu,reload-api,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInventoryWorkspace.tsx,1963,Đã cập nhật số liệu tồn kho,reload-api,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInventoryWorkspace.tsx,2089,Đang tải biểu mẫu Excel nhập kho...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2158,Đang chuẩn bị nhập Excel phiếu nhập kho...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2185,Đã làm mới danh sách phiếu nhập kho,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2322,Đang tải biểu mẫu Excel xuất kho...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2340,"Tiện ích xuất kho: Xuất theo định mức, In phiếu hàng loạt...",review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2409,Đang tải Excel xuất kho...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInventoryWorkspace.tsx,2416,Các tiện ích xuất kho,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2443,Đã làm mới danh sách phiếu xuất kho,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2582,Đang chuẩn bị mẫu Excel chuyển kho...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2600,Các tiện ích điều chuyển kho,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2669,Đang tải Excel chuyển kho...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2676,Tiện ích chuyển kho,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2703,Đã làm mới danh sách phiếu chuyển kho,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2847,Đang tải biểu mẫu Excel Lệnh sản xuất...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,2916,Đang chuẩn bị nhập Excel Lệnh sản xuất...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInventoryWorkspace.tsx,2943,Đã làm mới danh sách lệnh sản xuất,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,3107,Đang tải mẫu Excel lắp ráp / tháo dỡ...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,3171,Đang tải Excel lắp ráp...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,3198,Đã làm mới danh sách lệnh lắp ráp,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,3488,"Bạn có thể gõ 'Tồn kho theo kho', 'Hàng sắp hết', 'Thẻ kho 152' để tìm tức thì!",review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,3512,Đang chuyển đổi hiển thị danh sách báo cáo,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,3967,Tùy biến cột hiển thị,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,3975,Quét mã vạch sản phẩm,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,3983,Nhân bản hàng hóa,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,3991,Cấu hình danh mục,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,3999,Bộ lọc nâng cao,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,4048,"Tiện ích danh mục: Nhập từ Excel, Xuất ra Excel, Gộp mã...",export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInventoryWorkspace.tsx,4225,Xem lịch sử chứng từ NK00001,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,4307,Mở tài liệu hướng dẫn lập phiếu nhập kho,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,4347,Thêm nhanh người giao hàng,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,4415,Thêm nhanh khách hàng,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,4465,Thêm nhân viên bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,4522,Thêm đối tượng mới,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,4683,Đang kiểm tra tính hợp lệ của hồ sơ chứng từ...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,4992,Đã thêm dòng ghi chú kế toán,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,5029,Đã mở hộp thoại chọn tệp đính kèm,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,5152,Mở tùy chọn mẫu in chứng từ,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,5187,Xem lịch sử chứng từ XK00001,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,5284,Mở tài liệu hướng dẫn lập phiếu xuất kho,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,5324,Thêm nhanh khách hàng,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,5374,Thêm nhân viên bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,5431,Thêm nhanh người nhận,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,5664,Đang kiểm tra định mức và tồn kho xuất...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,6011,Đã thêm dòng ghi chú kế toán,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,6481,Xem lịch sử chứng từ Chuyển kho,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,6541,Mở tài liệu hướng dẫn lập phiếu chuyển kho,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,6662,Thêm đơn vị nhận,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,6828,Thêm đại lý mới,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,7156,Đang kiểm tra hồ sơ điều chuyển kho...,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,7937,Đã mở form thêm kho mới,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,7981,Kiểm tra định mức lệnh sản xuất,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,8021,Xem lịch sử chứng từ Lệnh sản xuất,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,8139,"Chọn chứng từ tham chiếu (Đơn đặt hàng, Báo giá...)",review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,8403,Đã mở hộp thoại chọn tệp đính kèm lệnh sản xuất,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,8686,"Chọn mẫu in Lệnh sản xuất (Mẫu A4, Mẫu kèm định mức NVL...)",review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,8742,Kiểm tra định mức lắp ráp,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,8786,Mở hướng dẫn sử dụng Lệnh lắp ráp,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,8868,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,9113,Đã mở hộp thoại chọn tệp đính kèm lệnh lắp ráp,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,9345,"Chọn mẫu in Lệnh lắp ráp (Mẫu A4, Bảng kê linh kiện...)",review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,9400,Kiểm tra định mức tháo dỡ,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,9444,Mở hướng dẫn sử dụng Lệnh tháo dỡ,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,9526,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,9784,Đã mở hộp thoại chọn tệp đính kèm lệnh tháo dỡ,review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,10015,"Chọn mẫu in Lệnh tháo dỡ (Mẫu A4, Bảng kê linh kiện thu hồi...)",review,Cần kiểm tra ngữ cảnh
+MisaInventoryWorkspace.tsx,10154,Đã xuất báo cáo ra file Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInvoiceCollectionModals.tsx,352,Hướng dẫn sử dụng Thu tiền theo hóa đơn,review,Cần kiểm tra ngữ cảnh
+MisaInvoiceCollectionModals.tsx,1178,Hướng dẫn sử dụng Thu tiền theo hóa đơn nhiều khách hàng,review,Cần kiểm tra ngữ cảnh
+MisaInvoicePayablesDetailReport.tsx,291,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInvoicePayablesDetailReport.tsx,309,Đã lưu báo cáo.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaInvoicePayablesDetailReport.tsx,411,Mở chức năng Đối chiếu công nợ với NCC...,review,Cần kiểm tra ngữ cảnh
+MisaInvoicePayablesDetailReport.tsx,479,Đã nạp lại dữ liệu.,review,Cần kiểm tra ngữ cảnh
+MisaInvoicePayablesDetailReport.tsx,494,Gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaInvoicePayablesDetailReport.tsx,510,Mở trao đổi...,review,Cần kiểm tra ngữ cảnh
+MisaItemNatureDrawer.tsx,130,"Hướng dẫn thiết lập tính chất hàng hóa, dịch vụ chuẩn Sổ Việt ERP",review,Cần kiểm tra ngữ cảnh
+MisaItemPayablesDetailReport.tsx,167,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaItemPayablesDetailReport.tsx,185,Đã lưu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaItemPayablesDetailReport.tsx,236,Mở thiết lập người ký báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaItemPayablesDetailReport.tsx,248,Đã nạp lại dữ liệu.,review,Cần kiểm tra ngữ cảnh
+MisaItemPayablesDetailReport.tsx,257,Mở hộp thoại gửi mail...,review,Cần kiểm tra ngữ cảnh
+MisaItemPayablesDetailReport.tsx,279,Mở hỗ trợ trực tuyến.,review,Cần kiểm tra ngữ cảnh
+MisaItemPayablesDetailReport.tsx,297,Xuất file báo cáo thành công.,review,Cần kiểm tra ngữ cảnh
+MisaItemPayablesDynamicReport.tsx,260,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaItemPayablesDynamicReport.tsx,278,Đã lưu báo cáo.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaItemPayablesDynamicReport.tsx,412,Đã nạp lại dữ liệu.,review,Cần kiểm tra ngữ cảnh
+MisaItemPayablesDynamicReport.tsx,427,Gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaItemPayablesDynamicReport.tsx,443,Mở trao đổi...,review,Cần kiểm tra ngữ cảnh
+MisaItemPayablesDynamicReport.tsx,649,Xem chứng từ NK00001,review,Cần kiểm tra ngữ cảnh
+MisaItemPayablesDynamicReport.tsx,766,Xem chứng từ UNC00001,review,Cần kiểm tra ngữ cảnh
+MisaLedgerWorkspace.tsx,8081,Xuất Excel danh sách chứng từ nghiệp vụ khác,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaLedgerWorkspace.tsx,8903,Xuất Excel danh sách chứng từ kết chuyển,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaLedgerWorkspace.tsx,9433,Đã xuất danh sách Báo cáo tài chính ra file Excel!,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaLedgerWorkspace.tsx,13233,Hệ thống kiểm tra cân đối định khoản Nợ / Có đã sẵn sàng!,review,Cần kiểm tra ngữ cảnh
+MisaLedgerWorkspace.tsx,14508,Hệ thống kiểm tra hồ sơ quyết toán tạm ứng đã sẵn sàng!,review,Cần kiểm tra ngữ cảnh
+MisaLedgerWorkspace.tsx,15279,Mở danh sách chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaLedgerWorkspace.tsx,15669,Đã mở hộp thoại chọn tệp đính kèm,review,Cần kiểm tra ngữ cảnh
+MisaLendContractSummaryReport.tsx,264,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaLendContractSummaryReport.tsx,282,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaLendContractSummaryReport.tsx,405,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaLendContractSummaryReport.tsx,423,Mở hộp thoại gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaLendContractSummaryReport.tsx,445,Mở hỗ trợ trực tuyến.,review,Cần kiểm tra ngữ cảnh
+MisaLendContractSummaryReport.tsx,478,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaLendVoucherStatementReport.tsx,251,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaLendVoucherStatementReport.tsx,269,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaLendVoucherStatementReport.tsx,386,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaLendVoucherStatementReport.tsx,416,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaLendVoucherStatementReport.tsx,431,Mở hộp thoại gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBalanceSheetReport.tsx,561,Đã lưu Bảng cân đối kế toán theo nhiều chi nhánh.,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBalanceSheetReport.tsx,637,Mở hộp thoại gửi email,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBalanceSheetReport.tsx,656,Mở bảng trao đổi nội bộ,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBalanceSheetReport.tsx,675,Đang tải dữ liệu in báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBalanceSheetReport.tsx,694,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchBalanceSheetReport.tsx,714,Tùy chỉnh cột hiển thị,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBalanceSheetReport.tsx,1400,Đã xuất khẩu chứng từ ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchBusinessResultReport.tsx,463,Đã lưu Báo cáo kết quả hoạt động kinh doanh theo nhiều chi nhánh.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchBusinessResultReport.tsx,519,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBusinessResultReport.tsx,538,Mở hộp thoại gửi email,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBusinessResultReport.tsx,557,Mở bảng trao đổi nội bộ,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBusinessResultReport.tsx,576,Đang tải dữ liệu in báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBusinessResultReport.tsx,595,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchBusinessResultReport.tsx,615,Tùy chỉnh cột hiển thị,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchBusinessResultReport.tsx,1300,Đã xuất khẩu chứng từ ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchDetailedExpenseReport.tsx,269,Đã lưu Báo cáo phân tích chi tiết chi phí theo nhiều chi nhánh.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchDetailedExpenseReport.tsx,356,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchDetailedExpenseReport.tsx,375,Mở hộp thoại gửi báo cáo qua Email,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchDetailedExpenseReport.tsx,394,Mở bảng trao đổi nội bộ về báo cáo,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchDetailedExpenseReport.tsx,413,Đang tải dữ liệu in báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchDetailedExpenseReport.tsx,433,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchDetailedExpenseReport.tsx,454,Tùy chỉnh cột hiển thị,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchDetailedExpenseReport.tsx,1312,Đã xuất khẩu chứng từ ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchDetailedRevenueReport.tsx,290,Đã lưu Báo cáo phân tích chi tiết doanh thu theo nhiều chi nhánh.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchDetailedRevenueReport.tsx,377,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchDetailedRevenueReport.tsx,396,Mở hộp thoại gửi báo cáo qua Email,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchDetailedRevenueReport.tsx,415,Mở bảng trao đổi nội bộ về báo cáo,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchDetailedRevenueReport.tsx,434,Đang tải dữ liệu in báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchDetailedRevenueReport.tsx,454,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchDetailedRevenueReport.tsx,475,Tùy chỉnh cột hiển thị,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchDetailedRevenueReport.tsx,1405,Đã xuất khẩu chứng từ ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchRevenueExpenseReport.tsx,370,Đã lưu Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo nhiều chi nhánh.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchRevenueExpenseReport.tsx,427,Mở bảng lọc dữ liệu nâng cao,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchRevenueExpenseReport.tsx,446,Tùy chỉnh các cột chi nhánh hiển thị,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchRevenueExpenseReport.tsx,500,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchRevenueExpenseReport.tsx,519,Mở hộp thoại gửi báo cáo qua Email,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchRevenueExpenseReport.tsx,538,Mở bảng trao đổi nội bộ về báo cáo,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchRevenueExpenseReport.tsx,557,Đang tải dữ liệu in báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchRevenueExpenseReport.tsx,576,Đang xuất khẩu báo cáo ra file Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchRevenueExpenseReport.tsx,1334,Đã xuất khẩu chứng từ ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchTrialBalanceReport.tsx,314,Đã lưu Bảng cân đối tài khoản theo nhiều chi nhánh.,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchTrialBalanceReport.tsx,418,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchTrialBalanceReport.tsx,438,Mở chức năng gửi email báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchTrialBalanceReport.tsx,458,Hệ thống hướng dẫn nghiệp vụ kế toán.,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchTrialBalanceReport.tsx,478,Đang chuẩn bị lệnh in...,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchTrialBalanceReport.tsx,499,Đã xuất khẩu báo cáo ra Excel thành công.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiBranchTrialBalanceReport.tsx,520,Mở thiết lập cột báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiBranchTrialBalanceReport.tsx,929,Xem hướng dẫn lập Bảng cân đối tài khoản theo nhiều chi nhánh.,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodDetailedExpenseReport.tsx,268,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiPeriodDetailedExpenseReport.tsx,286,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiPeriodDetailedExpenseReport.tsx,334,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodDetailedExpenseReport.tsx,349,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodDetailedExpenseReport.tsx,364,Mở cửa sổ phản hồi hỗ trợ...,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodDetailedExpenseReport.tsx,398,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiPeriodDetailedExpenseReport.tsx,414,Mở cấu hình hiển thị cột...,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodDetailedRevenueReport.tsx,314,Đã lưu Báo cáo phân tích chi tiết doanh thu theo nhiều kỳ.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiPeriodDetailedRevenueReport.tsx,401,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodDetailedRevenueReport.tsx,420,Mở hộp thoại gửi báo cáo qua Email,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodDetailedRevenueReport.tsx,439,Mở bảng trao đổi nội bộ về báo cáo,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodDetailedRevenueReport.tsx,458,Đang tải dữ liệu in báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodDetailedRevenueReport.tsx,478,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiPeriodDetailedRevenueReport.tsx,499,Tùy chỉnh cột hiển thị,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodDetailedRevenueReport.tsx,1417,Đã xuất khẩu chứng từ ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiPeriodRevenueExpenseReport.tsx,321,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodRevenueExpenseReport.tsx,336,Mở gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodRevenueExpenseReport.tsx,351,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaMultiPeriodRevenueExpenseReport.tsx,385,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiPeriodRevenueExpenseReport.tsx,401,Mở cấu hình cột...,review,Cần kiểm tra ngữ cảnh
+MisaMultiUnitRevenueExpenseReport.tsx,390,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaMultiUnitRevenueExpenseReport.tsx,405,Mở hộp thoại gửi email...,review,Cần kiểm tra ngữ cảnh
+MisaMultiUnitRevenueExpenseReport.tsx,420,Mở phản hồi...,review,Cần kiểm tra ngữ cảnh
+MisaMultiUnitRevenueExpenseReport.tsx,454,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiUnitRevenueExpenseReport.tsx,470,Mở cấu hình cột...,review,Cần kiểm tra ngữ cảnh
+MisaMultiUnitRevenueExpenseReport.tsx,488,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaMultiUnitRevenueExpenseReport.tsx,506,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaOpeningBalanceWorkspace.tsx,1300,Hướng dẫn sử dụng nhập số dư ban đầu.,review,Cần kiểm tra ngữ cảnh
+MisaOpeningBalanceWorkspace.tsx,3681,Thêm nhanh loại tài sản...,review,Cần kiểm tra ngữ cảnh
+MisaOpeningBalanceWorkspace.tsx,4892,Thêm nhanh nhà cung cấp...,review,Cần kiểm tra ngữ cảnh
+MisaOpeningBalanceWorkspace.tsx,5019,Mở hộp thoại chọn tệp đính kèm...,review,Cần kiểm tra ngữ cảnh
+MisaPayablesAgingAnalysisReport.tsx,186,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPayablesAgingAnalysisReport.tsx,204,Đã lưu báo cáo.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPayablesAgingAnalysisReport.tsx,246,Mở thiết lập người ký...,review,Cần kiểm tra ngữ cảnh
+MisaPayablesAgingAnalysisReport.tsx,266,Mở chức năng Đối chiếu công nợ với NCC...,review,Cần kiểm tra ngữ cảnh
+MisaPayablesAgingAnalysisReport.tsx,397,Đã nạp lại dữ liệu.,review,Cần kiểm tra ngữ cảnh
+MisaPayablesAgingAnalysisReport.tsx,412,Gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaPayablesAgingAnalysisReport.tsx,428,Mở trao đổi...,review,Cần kiểm tra ngữ cảnh
+MisaPayablesAgingAnalysisReport.tsx,467,Đang xuất khẩu báo cáo...,export-xlsx,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPayablesAgingAnalysisReport.tsx,820,Xem chứng từ NK00001,review,Cần kiểm tra ngữ cảnh
+MisaPayablesAgingAnalysisReport.tsx,1105,Tùy chọn cấu hình khoảng nợ...,review,Cần kiểm tra ngữ cảnh
+MisaPayrollWorkspace.tsx,635,Xuất danh sách nhân viên ra Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPayrollWorkspace.tsx,993,Xuất bảng tính lương sang file Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPayrollWorkspace.tsx,1077,Đang gửi lệnh in báo cáo ra máy in...,print,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPayrollWorkspace.tsx,1084,Xuất báo cáo thành công (dạng Excel XLSX),export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPayrollWorkspace.tsx,1213,Hướng dẫn lập bảng chấm công chi tiết theo buổi hoặc theo giờ,review,Cần kiểm tra ngữ cảnh
+MisaPayrollWorkspace.tsx,1615,Hướng dẫn lập và quản lý bảng tổng hợp chấm công,review,Cần kiểm tra ngữ cảnh
+MisaPayrollWorkspace.tsx,1970,Hướng dẫn lập và tính toán bảng lương cố định hoặc theo thời gian,review,Cần kiểm tra ngữ cảnh
+MisaPayrollWorkspace.tsx,3714,Đang đồng bộ dữ liệu từ máy chấm công vân tay...,review,Cần kiểm tra ngữ cảnh
+MisaPayrollWorkspace.tsx,3721,Xuất bảng chấm công chi tiết ra Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPayrollWorkspace.tsx,4636,Đang in sổ nhật ký chứng từ hạch toán...,print,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPayrollWorkspace.tsx,4860,Lập tờ khai thuế TNCN mẫu 05/KK-TNCN thành công!,review,Cần kiểm tra ngữ cảnh
+MisaPayrollWorkspace.tsx,4867,Kết xuất file XML tờ khai thuế nộp Cổng Tổng cục Thuế,review,Cần kiểm tra ngữ cảnh
+MisaPayrollWorkspace.tsx,5074,"Sẵn sàng tra cứu, tổng hợp quỹ lương và biểu mẫu báo cáo tiền lương",review,Cần kiểm tra ngữ cảnh
+MisaPayrollWorkspace.tsx,5420,Tiện ích trợ giúp & Báo cáo nâng cao Sổ Việt ERP,review,Cần kiểm tra ngữ cảnh
+MisaProjectPurchasesReports.tsx,158,Đã nạp lại.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseJournalReport.tsx,241,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPurchaseJournalReport.tsx,259,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPurchaseJournalReport.tsx,382,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseJournalReport.tsx,399,Mở hộp thoại gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseJournalReport.tsx,421,Mở hỗ trợ trực tuyến.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseModals.tsx,1490,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseOrderReports.tsx,158,Đã nạp lại.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseReconciliationReports.tsx,158,Đã nạp lại.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseSummaryByItemAndSupplierReport.tsx,405,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPurchaseSummaryByItemAndSupplierReport.tsx,423,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPurchaseSummaryByItemAndSupplierReport.tsx,570,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseSummaryByItemAndSupplierReport.tsx,587,Mở hộp thoại gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseSummaryByItemAndSupplierReport.tsx,609,Mở hỗ trợ trực tuyến.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseSummaryByItemReport.tsx,258,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPurchaseSummaryByItemReport.tsx,276,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPurchaseSummaryByItemReport.tsx,399,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseSummaryByItemReport.tsx,417,Mở hộp thoại gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseSummaryByItemReport.tsx,439,Mở hỗ trợ trực tuyến.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseSummaryBySupplierReport.tsx,278,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPurchaseSummaryBySupplierReport.tsx,296,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPurchaseSummaryBySupplierReport.tsx,419,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseSummaryBySupplierReport.tsx,436,Mở hộp thoại gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseSummaryBySupplierReport.tsx,458,Mở hỗ trợ trực tuyến.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseUtilityModals.tsx,137,Hướng dẫn đối trừ chứng từ thanh toán và hóa đơn công nợ.,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,1998,"Đã lấy lại toàn bộ danh mục hàng hóa, dịch vụ.",review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,2078,Làm mới danh sách,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,2312,Xem danh sách toàn bộ chứng từ công nợ...,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,2750,Tính năng Nhập từ Excel đang được tải...,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,3448,Đã xuất danh sách hóa đơn mua hàng ra Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaPurchaseWorkspace.tsx,3723,Xem tất cả danh mục,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,3958,Đã làm mới danh sách nhà cung cấp,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,3977,Tùy chỉnh giao diện & cột hiển thị,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,3996,Thiết lập danh mục nhà cung cấp,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,4015,Mở bộ lọc nhà cung cấp,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,4034,Đang đồng bộ và cập nhật địa chỉ nhà cung cấp,review,Cần kiểm tra ngữ cảnh
+MisaPurchaseWorkspace.tsx,4254,Tùy chọn khác,review,Cần kiểm tra ngữ cảnh
+MisaSaleCommercialInvoiceModal.tsx,293,Đang tải lại dữ liệu...,review,Cần kiểm tra ngữ cảnh
+MisaSaleCommercialInvoiceModal.tsx,334,Mở hướng dẫn sử dụng hóa đơn thương mại,review,Cần kiểm tra ngữ cảnh
+MisaSaleCommercialInvoiceModal.tsx,491,Xem số dư công nợ khách hàng,review,Cần kiểm tra ngữ cảnh
+MisaSaleCommercialInvoiceModal.tsx,1716,Chọn tệp tài liệu đính kèm...,review,Cần kiểm tra ngữ cảnh
+MisaSaleDiscountInvoiceModal.tsx,305,Làm mới thông tin hóa đơn chiết khấu,review,Cần kiểm tra ngữ cảnh
+MisaSaleDiscountInvoiceModal.tsx,354,"Phím tắt: F3 (Tìm kiếm), F9 (Thêm dòng), Ctrl+S (Lưu)",review,Cần kiểm tra ngữ cảnh
+MisaSaleDiscountInvoiceModal.tsx,374,Cài đặt mẫu hóa đơn chiết khấu,review,Cần kiểm tra ngữ cảnh
+MisaSaleDiscountInvoiceModal.tsx,736,Thêm nhân viên bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSaleDiscountInvoiceModal.tsx,1465,Chọn tệp tài liệu đính kèm...,review,Cần kiểm tra ngữ cảnh
+MisaSaleDiscountModal.tsx,441,Đang tải lại dữ liệu chứng từ...,review,Cần kiểm tra ngữ cảnh
+MisaSaleDiscountModal.tsx,567,Mở hướng dẫn sử dụng chứng từ giảm giá hàng bán,review,Cần kiểm tra ngữ cảnh
+MisaSaleDiscountModal.tsx,1432,Diễn giải đề xuất 'Chi tiền giảm giá hàng bán',review,Cần kiểm tra ngữ cảnh
+MisaSaleDiscountModal.tsx,2078,Đã kiểm tra hồ sơ chứng từ giảm giá.,review,Cần kiểm tra ngữ cảnh
+MisaSaleDiscountModal.tsx,2796,Chọn tệp tài liệu đính kèm...,review,Cần kiểm tra ngữ cảnh
+MisaSaleInvoiceModal.tsx,335,Làm mới thông tin hóa đơn,review,Cần kiểm tra ngữ cảnh
+MisaSaleInvoiceModal.tsx,441,Hướng dẫn lập và phát hành hóa đơn điện tử,review,Cần kiểm tra ngữ cảnh
+MisaSaleInvoiceModal.tsx,464,"Phím tắt: F3 (Tìm kiếm), F9 (Thêm dòng), Ctrl+S (Lưu)",review,Cần kiểm tra ngữ cảnh
+MisaSaleInvoiceModal.tsx,485,Cài đặt mẫu hóa đơn,review,Cần kiểm tra ngữ cảnh
+MisaSaleInvoiceModal.tsx,924,Thêm nhân viên bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSaleReturnModal.tsx,471,Đang tải lại dữ liệu chứng từ...,review,Cần kiểm tra ngữ cảnh
+MisaSaleReturnModal.tsx,597,Mở hướng dẫn sử dụng chứng từ bán hàng bị trả lại,review,Cần kiểm tra ngữ cảnh
+MisaSaleReturnModal.tsx,1107,Diễn giải đề xuất 'Trả lại hàng bán - giảm trừ công nợ',review,Cần kiểm tra ngữ cảnh
+MisaSaleReturnModal.tsx,2520,Đã kiểm tra hồ sơ chứng từ giảm trừ.,review,Cần kiểm tra ngữ cảnh
+MisaSaleReturnModal.tsx,4238,Chọn tệp tài liệu đính kèm...,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,387,Mở tài liệu Hướng dẫn lập Báo giá bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,400,Cấu hình trường thông tin mẫu Báo giá,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,779,Thêm nhân viên kinh doanh,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,819,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,1247,Chọn tài liệu đính kèm,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,1919,Mở tài liệu Hướng dẫn lập Đơn đặt hàng bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,1932,Cấu hình trường thông tin mẫu Đơn đặt hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,2324,Thêm nhân viên bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,2363,Thêm điều khoản thanh toán,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,2478,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,3903,Mở tài liệu Hướng dẫn quản lý Hợp đồng bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,3916,Cấu hình trường thông tin mẫu Hợp đồng bán,review,Cần kiểm tra ngữ cảnh
+MisaSalesModals.tsx,4198,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,590,Làm mới thông tin chứng từ bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,770,Mở tài liệu Hướng dẫn quản lý Chứng từ bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,793,"Phím tắt: F3 (Tìm nhanh), F9 (Thêm nhanh), Ctrl+F3 (Tra cứu giảm thuế)",review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,815,Cài đặt trường mẫu chứng từ bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,1259,Lấy thông tin từ cơ quan thuế,review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,1355,Thêm nhân viên bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,1475,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,1782,Thêm nhân viên bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,1852,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,2113,Lấy thông tin từ cơ quan thuế,review,Cần kiểm tra ngữ cảnh
+MisaSalesVoucherModal.tsx,2429,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,2538,Chọn tệp Excel danh sách báo giá mẫu để nhập khẩu,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,2636,Chọn tệp Excel để nhập khẩu,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,2667,Đã làm mới danh sách báo giá,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,3006,Chọn tệp Excel danh sách đơn đặt hàng để nhập khẩu,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,3030,Mở danh mục tiện ích đơn đặt hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,3128,Chọn tệp Excel để nhập khẩu,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,3146,Tiện ích xử lý hàng loạt,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,3177,Đã làm mới danh sách đơn đặt hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,3535,Chọn file Excel danh sách hợp đồng bán để nhập khẩu,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,3639,Chọn tệp Excel để nhập khẩu,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,3670,Đã làm mới danh sách hợp đồng bán,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,4180,Chọn file Excel danh sách chứng từ bán hàng để nhập khẩu,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,4202,Mở danh mục tiện ích mở rộng bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,4449,Chọn tệp Excel để nhập khẩu,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,4480,Đã làm mới danh sách chứng từ bán hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,4816,Đang chuẩn bị mẫu Excel hóa đơn bán hàng...,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5017,Đang mở chức năng nhập hóa đơn từ file Excel...,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5063,Đã làm mới danh sách hóa đơn,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5231,Đã làm mới danh sách trả lại hàng bán,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5361,Đã làm mới danh sách giảm giá hàng bán,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5530,Đã làm mới công nợ khách hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5584,Đang tạo kỳ đối chiếu công nợ mới...,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5687,Đang lấy lại danh mục...,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5708,Đang lọc danh sách hàng hóa sắp hết hàng...,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5790,Đã làm mới danh mục hàng hóa dịch vụ,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5798,Tùy chỉnh cột hiển thị,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5806,Toàn màn hình / Thu nhỏ,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5814,Nhân bản hàng hóa dịch vụ,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5822,Thiết lập hàng hóa dịch vụ,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5830,Bộ lọc nâng cao,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,5863,Tùy chọn khác,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,6012,Quay lại Tất cả danh mục,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,6029,Nhập khẩu danh sách khách hàng từ Excel...,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,6041,Đã làm mới danh sách khách hàng,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,6080,Mở danh sách chứng từ bán hàng liên quan...,review,Cần kiểm tra ngữ cảnh
+MisaSalesWorkspace.tsx,6110,Kết nối Cổng Hóa đơn điện tử tự động hạch toán...,review,Cần kiểm tra ngữ cảnh
+MisaStaffPurchasesReports.tsx,205,Đã nạp lại.,review,Cần kiểm tra ngữ cảnh
+MisaStateObligationsReport.tsx,286,Xem danh sách báo cáo mẫu đã lưu.,review,Cần kiểm tra ngữ cảnh
+MisaStateObligationsReport.tsx,303,Đã lưu mẫu báo cáo tùy chỉnh thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaStateObligationsReport.tsx,376,Tùy biến hiển thị các cột báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaStateObligationsReport.tsx,419,Mở hộp thoại gửi báo cáo qua email.,review,Cần kiểm tra ngữ cảnh
+MisaStateObligationsReport.tsx,428,Hệ thống hỗ trợ kế toán Sổ Việt ERP.,review,Cần kiểm tra ngữ cảnh
+MisaStateObligationsReport.tsx,457,Thiết lập báo cáo nâng cao.,review,Cần kiểm tra ngữ cảnh
+MisaStateObligationsReport.tsx,769,Xem hướng dẫn lập báo cáo tình hình thực hiện nghĩa vụ với nhà nước.,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesLedgerReport.tsx,295,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaSupplierPayablesLedgerReport.tsx,313,Đã lưu báo cáo.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaSupplierPayablesLedgerReport.tsx,415,Mở chức năng Đối chiếu công nợ với NCC...,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesLedgerReport.tsx,483,Đã nạp lại dữ liệu.,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesLedgerReport.tsx,498,Gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesLedgerReport.tsx,514,Mở trao đổi...,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesLedgerReport.tsx,553,Đang xuất khẩu báo cáo...,export-xlsx,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaSupplierPayablesLedgerReport.tsx,872,Xem chứng từ NK00001,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesLedgerReport.tsx,921,Xem chứng từ NK00001,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesLedgerReport.tsx,970,Xem chứng từ UNC00001,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesSummaryReport.tsx,333,Xem danh sách báo cáo đã lưu...,open-saved-reports,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaSupplierPayablesSummaryReport.tsx,351,Đã lưu mẫu báo cáo thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaSupplierPayablesSummaryReport.tsx,437,Mở chức năng Đối chiếu công nợ với NCC...,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesSummaryReport.tsx,494,Đã nạp lại dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesSummaryReport.tsx,509,Mở hộp thoại gửi email báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaSupplierPayablesSummaryReport.tsx,531,Mở hỗ trợ trực tuyến.,review,Cần kiểm tra ngữ cảnh
+MisaTaxWorkspace.tsx,632,Dịch vụ thuế điện tử Sổ Việt eTax đang ở chế độ xem trước.,review,Cần kiểm tra ngữ cảnh
+MisaTaxWorkspace.tsx,757,Mở trang thông tin giới thiệu chi tiết Sổ Việt eTax,review,Cần kiểm tra ngữ cảnh
+MisaTaxWorkspace.tsx,827,Đang đồng bộ dữ liệu tra cứu rủi ro nhà cung cấp từ Tổng cục Thuế...,review,Cần kiểm tra ngữ cảnh
+MisaTaxWorkspace.tsx,845,Xuất danh sách nhà cung cấp rủi ro ra Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaTaxWorkspace.tsx,1000,Kiểm tra nhanh định khoản để tìm kiếm và lập báo cáo thuế thông minh,review,Cần kiểm tra ngữ cảnh
+MisaTaxWorkspace.tsx,1045,Thiết lập ẩn/hiện các cột báo cáo thuế,review,Cần kiểm tra ngữ cảnh
+MisaTimePeriodicTrialBalanceReport.tsx,321,Đang tải xuống dữ liệu báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaTimePeriodicTrialBalanceReport.tsx,401,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaTimePeriodicTrialBalanceReport.tsx,420,Mở hộp thoại gửi email,review,Cần kiểm tra ngữ cảnh
+MisaTimePeriodicTrialBalanceReport.tsx,439,Mở bảng trao đổi nội bộ,review,Cần kiểm tra ngữ cảnh
+MisaTimePeriodicTrialBalanceReport.tsx,458,Đang tải dữ liệu in báo cáo...,review,Cần kiểm tra ngữ cảnh
+MisaTimePeriodicTrialBalanceReport.tsx,477,Đang xuất khẩu báo cáo ra Excel...,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaTimePeriodicTrialBalanceReport.tsx,1434,Đã xuất khẩu chứng từ ra Excel.,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaToolsWorkspace.tsx,1745,Lịch sử chứng từ Ghi tăng CCDC,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,1971,Thêm loại CCDC mới,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,2446,Lịch sử chứng từ Ghi tăng CCDC hàng loạt,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,3544,Hướng dẫn: Chọn Tháng và Năm kỳ phân bổ chi phí CCDC. Hệ thống sẽ xác định ngày cuối tháng và tổng hợp các CCDC đủ điều kiện phân bổ.,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,3798,Lịch sử chứng từ phân bổ CCDC,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,3811,Tùy chọn thiết lập mẫu chứng từ,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,3819,Hướng dẫn lập chứng từ phân bổ CCDC,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,3872,Đã chuẩn hóa diễn giải chứng từ phân bổ CCDC,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,4514,Tùy chọn mẫu in chứng từ phân bổ CCDC,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,4654,Mở danh sách chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,5142,Tính năng tải đính kèm tài liệu chứng từ điều chỉnh,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,5479,Mở danh sách chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,5872,Tính năng tải đính kèm tài liệu chứng từ điều chuyển,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,6494,Tính năng tải đính kèm tài liệu chứng từ ghi giảm,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,7268,Tính năng tải đính kèm tài liệu biên bản kiểm kê,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,8322,Đang chuẩn bị biểu mẫu nhập CCDC từ Excel...,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,8679,Đã xuất danh sách chứng từ phân bổ ra file Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaToolsWorkspace.tsx,9105,Đã xuất danh sách chứng từ điều chỉnh CCDC ra file Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaToolsWorkspace.tsx,9535,Đã xuất danh sách chứng từ điều chuyển CCDC ra file Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaToolsWorkspace.tsx,9980,Đã xuất danh sách chứng từ ghi giảm CCDC ra file Excel,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaToolsWorkspace.tsx,10999,Xuất danh sách chi phí trả trước ra file Excel thành công,export,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaToolsWorkspace.tsx,11581,Trợ giúp: Chọn tháng và năm để hệ thống tổng hợp các khoản chi phí trả trước cần phân bổ.,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,11812,Hướng dẫn sử dụng: Thêm và phân bổ chi phí trả trước nhiều kỳ,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,12013,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,12489,Hướng dẫn sử dụng: Khai báo số dư chi phí trả trước đầu kỳ,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,12683,Chọn chứng từ tham chiếu,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,13003,Trợ giúp: Hướng dẫn nhập khẩu danh mục chi phí trả trước từ Excel,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,13071,Đang tải xuống tệp Excel mẫu: Mau_Chi_Phi_Tra_Truoc.xlsx,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,13277,Lịch sử chứng từ phân bổ chi phí trả trước,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,13289,Hướng dẫn sử dụng: Lập chứng từ phân bổ chi phí trả trước,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,13312,Tùy chọn thiết lập mẫu chứng từ,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,13365,Đã chuẩn hóa diễn giải chứng từ phân bổ chi phí trả trước,review,Cần kiểm tra ngữ cảnh
+MisaToolsWorkspace.tsx,14122,Hướng dẫn sử dụng: Lập chứng từ ghi giảm chi phí trả trước,review,Cần kiểm tra ngữ cảnh
+MisaTrialBalanceManagementReport.tsx,491,Xem danh sách báo cáo mẫu đã lưu.,review,Cần kiểm tra ngữ cảnh
+MisaTrialBalanceManagementReport.tsx,508,Đã lưu mẫu báo cáo tùy chỉnh thành công.,save-local-snapshot,Đã chỉnh mã; xem báo cáo về phạm vi kiểm thử
+MisaTrialBalanceManagementReport.tsx,581,Tùy biến hiển thị các cột báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaTrialBalanceManagementReport.tsx,613,Đã làm mới dữ liệu báo cáo.,review,Cần kiểm tra ngữ cảnh
+MisaTrialBalanceManagementReport.tsx,622,Mở hộp thoại gửi báo cáo qua email.,review,Cần kiểm tra ngữ cảnh
+MisaTrialBalanceManagementReport.tsx,631,Hệ thống hỗ trợ kế toán Sổ Việt ERP.,review,Cần kiểm tra ngữ cảnh
+MisaTrialBalanceManagementReport.tsx,674,Thiết lập báo cáo nâng cao.,review,Cần kiểm tra ngữ cảnh
+MisaTrialBalanceManagementReport.tsx,971,Xem hướng dẫn lập bảng cân đối tài khoản quản trị.,review,Cần kiểm tra ngữ cảnh
+ReferencePages.tsx,509,Đã làm mới dữ liệu thành công.,review,Cần kiểm tra ngữ cảnh
+ReferencePages.tsx,522,Đang xem toàn bộ dữ liệu của doanh nghiệp đã chọn.,review,Cần kiểm tra ngữ cảnh
+ReferencePages.tsx,807,Đã cập nhật danh sách từ dữ liệu trình duyệt.,review,Cần kiểm tra ngữ cảnh
+ReferenceWorkspace.tsx,2677,"Hướng dẫn quy trình Tổng hợp, kết chuyển lãi lỗ và lập Báo cáo tài chính chuẩn Thông tư 99/2025/TT-BTC",review,Cần kiểm tra ngữ cảnh
+ReferenceWorkspace.tsx,2781,Kiến thức và chính sách thuế mới nhất 2026,review,Cần kiểm tra ngữ cảnh
+ReferenceWorkspace.tsx,2804,Mở kết nối Ngân hàng điện tử Sổ Việt eBanking...,review,Cần kiểm tra ngữ cảnh

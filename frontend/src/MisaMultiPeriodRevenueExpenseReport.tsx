@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import { initialComparisonDates, reportPeriodLabels } from "./report-period-range";
 import ReportPeriodModeFields from "./ReportPeriodModeFields";
 import React, { useState, useMemo } from "react";
@@ -382,7 +383,7 @@ export default function MisaMultiPeriodRevenueExpenseReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />
@@ -408,7 +409,7 @@ export default function MisaMultiPeriodRevenueExpenseReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -965,7 +966,7 @@ export default function MisaMultiPeriodRevenueExpenseReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

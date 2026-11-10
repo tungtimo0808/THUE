@@ -1,3 +1,4 @@
+import { BrandMark } from "./components/BrandMark";
 import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -13,10 +14,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useApiSession } from "./ApiSession";
-import { request } from "./live-api";
+import { ApiError, request } from "./live-api";
 import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import "./live-account.css";
+import "./company-select.css";
 
 export default function LiveCompanySelect() {
   const {
@@ -67,40 +69,37 @@ export default function LiveCompanySelect() {
     }
   }, [restoring, token, navigate, params]);
 
-  // Handle selecting a company and entering workspace
-  async function handleSelectAndEnter(targetCompanyId: string) {
+  // Switch the server-side scope first; only enter the workspace when the backend accepted it,
+  // otherwise the user lands on Tổng quan with an access error (the API layer already shows the reason).
+  async function switchScope(targetCompanyId: string): Promise<boolean> {
+    const previousCompanyId = companyId;
     setEntering(true);
     selectCompany(targetCompanyId);
-    if (token) {
-      try {
-        await request("/api/v1/common/companies/switch/", token, {
-          method: "POST",
-          body: JSON.stringify({ company: targetCompanyId, company_id: targetCompanyId, all_branches: true }),
-        });
-      } catch {
-        // Fallback or ignore if offline/switched locally
-      }
+    if (!token) return true;
+    try {
+      await request("/api/v1/common/companies/switch/", token, {
+        method: "POST",
+        body: JSON.stringify({ company: targetCompanyId, company_id: targetCompanyId, all_branches: true }),
+      });
+      return true;
+    } catch (caught) {
+      // Offline (status 0): keep the local selection so the user can still work with cached data.
+      if (caught instanceof ApiError && caught.status === 0) return true;
+      if (previousCompanyId) selectCompany(previousCompanyId);
+      setEntering(false);
+      return false;
     }
+  }
 
-    const redirectTarget = params.get("redirect") || "/";
-    navigate(redirectTarget);
+  // Handle selecting a company and entering workspace
+  async function handleSelectAndEnter(targetCompanyId: string) {
+    if (!await switchScope(targetCompanyId)) return;
+    navigate(params.get("redirect") || "/");
   }
 
   // Handle selecting a company and going straight to Company Admin
   async function handleSelectAndGoAdmin(targetCompanyId: string) {
-    setEntering(true);
-    selectCompany(targetCompanyId);
-    if (token) {
-      try {
-        await request("/api/v1/common/companies/switch/", token, {
-          method: "POST",
-          body: JSON.stringify({ company: targetCompanyId, company_id: targetCompanyId, all_branches: true }),
-        });
-      } catch {
-        // Fallback or ignore if offline/switched locally
-      }
-    }
-
+    if (!await switchScope(targetCompanyId)) return;
     navigate("/admin");
   }
 
@@ -268,6 +267,7 @@ export default function LiveCompanySelect() {
     const q = companySearch.toLowerCase();
     return (
       c.name.toLowerCase().includes(q) ||
+      (c.tax_code && c.tax_code.toLowerCase().includes(q)) ||
       (c.code && c.code.toLowerCase().includes(q))
     );
   });
@@ -290,20 +290,18 @@ export default function LiveCompanySelect() {
   // While restoring session, show simple loading placeholder
   if (restoring) {
     return (
-      <main className="company-portal-page" style={{ alignItems: "center", justifyContent: "center" }}>
+      <main className="company-portal-page sv-company-page" style={{ alignItems: "center", justifyContent: "center" }}>
         <div className="entering-spinner" />
       </main>
     );
   }
 
   return (
-    <div className="company-portal-page">
+    <div className="company-portal-page sv-company-page">
       {/* Top Navbar */}
       <header className="company-portal-header">
         <Link to="/" className="auth-branding" style={{ margin: 0 }}>
-          <div className="auth-logo-icon">
-            <Building2 size={24} />
-          </div>
+          <BrandMark />
           <div className="auth-branding-text">
             <span className="auth-branding-title">SỔ VIỆT ERP</span>
             <span className="auth-branding-sub">Kế toán & Thuế Doanh nghiệp</span>
@@ -311,7 +309,7 @@ export default function LiveCompanySelect() {
         </Link>
 
         {/* User Account Controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div className="company-account-controls">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div className="user-profile-avatar" style={{ width: 36, height: 36, fontSize: 14 }}>
               {userDisplayName.charAt(0).toUpperCase()}
@@ -388,9 +386,9 @@ export default function LiveCompanySelect() {
         )}
 
         <div className="company-portal-hero">
-          <h1>Không gian làm việc Doanh nghiệp</h1>
+          <h1>Chọn doanh nghiệp</h1>
           <p>
-            Chọn đơn vị bạn muốn truy cập để bắt đầu ghi chép, lập báo cáo và quản lý hóa đơn.
+            Chọn doanh nghiệp để bắt đầu làm việc.
           </p>
         </div>
 
@@ -403,7 +401,9 @@ export default function LiveCompanySelect() {
             <input
               value={companySearch}
               onChange={(e) => setCompanySearch(e.target.value)}
-              placeholder="Tìm theo tên công ty hoặc mã số thuế…"
+              aria-label="Tìm doanh nghiệp"
+              type="search"
+              placeholder="Tìm theo tên hoặc mã số thuế"
             />
           </div>
 
@@ -415,7 +415,7 @@ export default function LiveCompanySelect() {
               onClick={() => setShowCreateForm(!showCreateForm)}
             >
               <Plus size={16} />
-              <span>Thêm doanh nghiệp mới</span>
+              <span>Thêm doanh nghiệp</span>
             </button>
 
             <Link
@@ -432,6 +432,7 @@ export default function LiveCompanySelect() {
               className="company-action-card-btn btn-create-new"
               style={{ height: 42, width: 42, padding: 0 }}
               onClick={() => refreshCompanies()}
+              aria-label="Làm mới danh sách doanh nghiệp"
               title="Làm mới danh sách doanh nghiệp"
             >
               <RefreshCw size={15} />
@@ -721,7 +722,7 @@ export default function LiveCompanySelect() {
                       label: "Thông tư 133/2016/TT-BTC — Chế độ kế toán Doanh nghiệp nhỏ & vừa (SME)",
                       badge: "8 Vai trò + 13 dự phòng",
                       badgeBg: "#f0f9ff",
-                      badgeColor: "#0284c7",
+                      badgeColor: "var(--brand)",
                     },
                     {
                       value: "TT58",
@@ -793,120 +794,43 @@ export default function LiveCompanySelect() {
         {/* Company Cards Grid */}
         {companies.length > 0 ? (
           filteredCompanies.length > 0 ? (
-            <div className="company-portal-grid">
+            <section className="company-list" aria-label="Danh sách doanh nghiệp">
+              <div className="company-list-heading">
+                <h2>Doanh nghiệp của bạn</h2>
+                <span>{filteredCompanies.length} doanh nghiệp</span>
+              </div>
               {filteredCompanies.map((c) => {
                 const isSelected = companyId === c.id;
-                const rawReg = String(c.accounting_regime || "TT99").toUpperCase();
-                const regCode = rawReg.includes("58")
-                  ? "TT58"
-                  : rawReg.includes("133")
-                  ? "TT133"
-                  : rawReg.includes("200")
-                  ? "TT200"
-                  : "TT99";
-                const regBadgeLabel =
-                  regCode === "TT58"
-                    ? "TT 58/2026 (Siêu nhỏ)"
-                    : regCode === "TT133"
-                    ? "TT 133/2016 (SME)"
-                    : regCode === "TT200"
-                    ? "TT 200/2014"
-                    : "TT 99/2025";
-                const regBadgeColor =
-                  regCode === "TT58"
-                    ? { bg: "#ecfdf5", fg: "#047857", border: "#6ee7b7" }
-                    : regCode === "TT133"
-                    ? { bg: "#fef3c7", fg: "#b45309", border: "#fde68a" }
-                    : regCode === "TT200"
-                    ? { bg: "#e0e7ff", fg: "#1d4ed8", border: "#c7d2fe" }
-                    : { bg: "#dcfce7", fg: "#047857", border: "#a7f3d0" };
+                const regime = String(c.accounting_regime || "").toUpperCase();
                 return (
-                  <div
-                    key={c.id}
-                    className={`company-portal-card ${isSelected ? "active-selected" : ""}`}
-                    onClick={() => handleSelectAndEnter(c.id)}
-                  >
-                    <div>
-                      <div className="company-portal-card-top">
-                        <div className="company-portal-card-icon">
-                          <Building2 size={24} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div className="company-portal-card-title" title={c.name}>
-                            {c.name}
-                          </div>
-                          <div className="company-portal-card-badges" style={{ flexWrap: "wrap", gap: 6 }}>
-                            <span className="company-tax-badge">
-                              {c.tax_code ? `MST: ${c.tax_code}` : `MÃ: ${c.code || "SOVIET"}`}
-                            </span>
-                            <span
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 700,
-                                padding: "2px 8px",
-                                borderRadius: 999,
-                                background: regBadgeColor.bg,
-                                color: regBadgeColor.fg,
-                                border: `1px solid ${regBadgeColor.border}`,
-                              }}
-                            >
-                              {regBadgeLabel}
-                            </span>
-                            <span className="company-status-pill">
-                              ● Hoạt động
-                            </span>
-                          </div>
-                        </div>
+                  <article key={c.id} className={`company-list-row${isSelected ? " is-current" : ""}`}>
+                    <div className="company-list-icon" aria-hidden="true"><Building2 size={24} /></div>
+                    <div className="company-list-details">
+                      <h3>{c.name}</h3>
+                      <div className="company-list-meta">
+                        <span>{c.tax_code ? `Mã số thuế: ${c.tax_code}` : `Mã doanh nghiệp: ${c.code || "—"}`}</span>
+                        {regime && <span>Chế độ kế toán: {regime}</span>}
                       </div>
-
-                      <div className="company-portal-card-body">
-                        {regCode === "TT58"
-                          ? "Hệ thống TK rút gọn chuẩn TT58/2026/TT-BTC (Doanh nghiệp siêu nhỏ - 3 Role tinh gọn) & BCTC B01-DNSN."
-                          : regCode === "TT133"
-                          ? "Hệ thống 101 TK chuẩn TT133 (TK 154, 6421/6422, 2111..2113 - 8 Role SME) & Bộ BCTC B01a/B01b-DNN."
-                          : regCode === "TT200"
-                          ? "Hệ thống 135 TK chuẩn TT200 (TK 621/622/627, 641/642 - 14 Role) & Bộ BCTC B01/B02/B03/B09-DN."
-                          : "Hệ thống 138 TK chuẩn TT99/2025/TT-BTC (bổ sung TK 215, 332, 158 - 21 Role) & Bộ BCTC B01/B02/B03/B09-DN."}
-                      </div>
+                      {isSelected && <span className="company-current-label">Doanh nghiệp đang chọn</span>}
                     </div>
-
-                    <div className="company-portal-card-footer">
-                      <div className={`company-portal-card-status-line ${isSelected ? "current" : ""}`}>
-                        <span className={`company-portal-status-dot ${isSelected ? "active" : ""}`} />
-                        <span>{isSelected ? "Doanh nghiệp hiện tại" : "Sẵn sàng làm việc"}</span>
-                      </div>
-                      <div className="company-portal-card-btn-group">
-                        {isCompanyOrSuperAdmin && (
-                          <button
-                            type="button"
-                            className="company-portal-admin-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectAndGoAdmin(c.id);
-                            }}
-                            title={`Truy cập Quản trị Doanh nghiệp: ${c.name}`}
-                          >
-                            <ShieldCheck size={14} color="#0052cc" />
-                            <span>Quản trị</span>
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="company-portal-enter-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectAndEnter(c.id);
-                          }}
-                        >
-                          <span>Vào làm việc</span>
-                          <ArrowRight size={15} />
+                    <div className="company-list-buttons">
+                      {isCompanyOrSuperAdmin && (
+                        <button type="button" className="company-portal-admin-btn"
+                          disabled={entering} onClick={() => handleSelectAndGoAdmin(c.id)}
+                          aria-label={`Quản trị ${c.name}`}>
+                          <ShieldCheck size={16} /><span>Quản trị</span>
                         </button>
-                      </div>
+                      )}
+                      <button type="button" className="company-portal-enter-btn"
+                        disabled={entering} onClick={() => handleSelectAndEnter(c.id)}
+                        aria-label={`Vào làm việc tại ${c.name}`}>
+                        <span>Vào làm việc</span><ArrowRight size={16} />
+                      </button>
                     </div>
-                  </div>
+                  </article>
                 );
               })}
-            </div>
+            </section>
           ) : (
             <div style={{ textAlign: "center", padding: "48px 0", color: "#64748b" }}>
               <p style={{ fontSize: 15, margin: "0 0 14px 0" }}>

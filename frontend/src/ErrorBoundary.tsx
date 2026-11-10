@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
             alignItems: "center",
             justifyContent: "center",
             padding: 32,
-            fontFamily: "'Be Vietnam Pro', sans-serif",
+            fontFamily: "Roboto, Arial, sans-serif",
           }}
         >
           <div
@@ -118,7 +118,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   padding: "7px 16px",
                   borderRadius: 4,
                   border: "none",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 12.5,
                   fontWeight: 600,

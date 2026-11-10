@@ -1,3 +1,5 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import ReportCustomizationMenu from "./ReportCustomizationMenu";
 import { templateColumnLabels } from "./report-template-columns";
 import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
@@ -223,7 +225,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
               style={{
                 position: "absolute",
                 right: 8,
-                color: "#94a3b8",
+                color: "#64748b",
                 pointerEvents: "none",
               }}
             />
@@ -269,7 +271,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
               padding: 4,
             }}
             title="Xuất khẩu ra Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <Download size={15} />
           </button>
@@ -310,7 +312,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -328,7 +330,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -338,7 +340,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -582,12 +584,12 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
                           cy="58"
                           r="14"
                           fill="#ffffff"
-                          stroke="#00a862"
+                          stroke="var(--brand)"
                           strokeWidth="2.5"
                         />
                         <path
                           d="M68 68L78 78"
-                          stroke="#00a862"
+                          stroke="var(--brand)"
                           strokeWidth="2.5"
                           strokeLinecap="round"
                         />
@@ -647,7 +649,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#94a3b8",
+                    color: "#64748b",
                     cursor: "pointer",
                   }}
                   title="Trợ giúp"
@@ -870,7 +872,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
                       onChange={(e) =>
                         setDraftPartnerCode(e.target.checked ? "NCC00001" : "")
                       }
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                   </label>
@@ -897,7 +899,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
                         position: "absolute",
                         right: 6,
                         top: 6,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -926,7 +928,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
                             onChange={(e) =>
                               setDraftPartnerCode(e.target.checked ? "NCC00001" : "")
                             }
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th
@@ -971,7 +973,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={() => {}}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td
@@ -1062,7 +1064,7 @@ export default function MisaBorrowRepaymentScheduleSummaryReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

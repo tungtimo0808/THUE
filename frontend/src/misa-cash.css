@@ -3,9 +3,9 @@
    ========================================================================== */
 
 :root {
-  --misa-green: #00b06b;
-  --misa-green-hover: #02985b;
-  --misa-green-light: #e6f7f0;
+  --misa-green: var(--brand);
+  --misa-green-hover: var(--brand-hover);
+  --misa-green-light: var(--brand-soft);
   --misa-blue: #2563eb;
   --misa-dark: #1e222d;
   --misa-dark-surface: #252a36;
@@ -80,7 +80,7 @@
 
 /* Active style for Tiền mặt / Active Module */
 .ref-nav-item.misa-active {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%) !important;
   color: #ffffff !important;
   border-radius: 8px !important;
   margin: 2px 6px !important;
@@ -982,7 +982,7 @@
   min-height: 1123px;
   padding: 50px 60px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  font-family: "Times New Roman", Times, serif;
+  font-family: Roboto, Arial, sans-serif;
   color: #000000;
   display: flex;
   flex-direction: column;
@@ -999,7 +999,7 @@
 .misa-paper-company-left {
   line-height: 1.35;
   font-size: 13.5px;
-  font-family: "Times New Roman", Times, serif;
+  font-family: Roboto, Arial, sans-serif;
 }
 
 .misa-paper-company-left div:first-child {
@@ -1017,7 +1017,7 @@
   font-weight: 700;
   margin: 0;
   letter-spacing: 0.5px;
-  font-family: "Times New Roman", Times, serif;
+  font-family: Roboto, Arial, sans-serif;
   color: #000000;
 }
 
@@ -1027,7 +1027,7 @@
   font-size: 14px;
   margin-bottom: 14px;
   line-height: 1.5;
-  font-family: "Times New Roman", Times, serif;
+  font-family: Roboto, Arial, sans-serif;
   color: #000000;
 }
 
@@ -1066,7 +1066,7 @@
   border-collapse: collapse;
   margin: 10px 0 14px 0;
   font-size: 13.5px;
-  font-family: "Times New Roman", Times, serif;
+  font-family: Roboto, Arial, sans-serif;
 }
 
 .misa-paper-table th,
@@ -1098,7 +1098,7 @@
 .misa-paper-words {
   font-size: 14px;
   margin-bottom: 8px;
-  font-family: "Times New Roman", Times, serif;
+  font-family: Roboto, Arial, sans-serif;
   color: #000000;
 }
 
@@ -1112,7 +1112,7 @@
   margin-bottom: 36px;
   display: flex;
   align-items: baseline;
-  font-family: "Times New Roman", Times, serif;
+  font-family: Roboto, Arial, sans-serif;
   color: #000000;
 }
 
@@ -1134,7 +1134,7 @@
 .misa-signature-block {
   text-align: center;
   min-width: 180px;
-  font-family: "Times New Roman", Times, serif;
+  font-family: Roboto, Arial, sans-serif;
 }
 
 .misa-signature-block strong {
@@ -1191,7 +1191,7 @@
 
 .misa-voucher-export-item:hover {
   background: #f1f5f9;
-  color: #00b06b;
+  color: var(--brand);
 }
 
 /* Print Styles */
@@ -1350,7 +1350,7 @@
   width: 100px;
   height: 140px;
   background: #ffffff;
-  border: 2px solid #00b06b;
+  border: 2px solid var(--brand);
   border-radius: 4px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
   padding: 8px 6px;
@@ -1466,7 +1466,7 @@
 }
 
 .misa-form-badge-vnd svg {
-  color: #00b06b;
+  color: var(--brand);
 }
 
 .misa-fetch-btn {
@@ -1598,7 +1598,7 @@
 }
 
 .misa-reports-card li:hover {
-  color: #0284c7;
+  color: var(--brand);
 }
 
 .misa-reports-card li::before {
@@ -1613,7 +1613,7 @@
   margin-top: auto;
   padding-top: 24px;
   text-align: center;
-  color: #0284c7;
+  color: var(--brand);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -1653,7 +1653,7 @@
 
 .misa-quick-item:hover {
   background: #f1f5f9;
-  color: #00b06b;
+  color: var(--brand);
 }
 
 /* AMIS Quy trình Banner */
@@ -1679,7 +1679,7 @@
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: #0284c7;
+  background: var(--brand);
   color: #ffffff;
   display: grid;
   place-items: center;
@@ -1701,7 +1701,7 @@
 }
 
 .misa-promo-btn {
-  background: #00b06b;
+  background: var(--brand);
   color: #ffffff;
   border: none;
   border-radius: 6px;
@@ -1718,7 +1718,7 @@
 }
 
 .misa-promo-btn:hover {
-  background: #02985b;
+  background: var(--brand-hover);
 }
 
 /* Flowchart Visual Elements */
@@ -1876,7 +1876,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #0284c7;
+  background: var(--brand);
   color: #ffffff;
   border: none;
   border-radius: 6px;
@@ -1888,7 +1888,7 @@
 }
 
 .misa-ebank-header-btn:hover {
-  background: #0369a1;
+  background: var(--brand-hover);
 }
 
 .misa-ebank-badge-dot {
@@ -2031,11 +2031,11 @@
 
 .misa-voucher-type-item:hover {
   background: #e8f5e9;
-  color: #00b06b;
+  color: var(--brand);
 }
 
 .misa-voucher-type-item.active {
-  background: #00b06b !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
   font-weight: 600;
 }
@@ -2050,7 +2050,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #00b06b;
+  color: var(--brand);
   font-size: 12.5px;
   font-weight: 500;
   text-decoration: none;
@@ -2123,7 +2123,7 @@
 }
 
 .misa-voucher-input:focus {
-  border-color: #00b06b;
+  border-color: var(--brand);
   box-shadow: 0 0 0 2px rgba(0, 176, 107, 0.15);
 }
 
@@ -2165,7 +2165,7 @@
   justify-content: center;
   border: none;
   background: transparent;
-  color: #00b06b;
+  color: var(--brand);
   cursor: pointer;
   border-radius: 4px;
 }
@@ -2196,8 +2196,8 @@
 
 .misa-voucher-circle-icon-btn:hover {
   background: #f0f9ff;
-  border-color: #0284c7;
-  color: #0284c7;
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 .misa-voucher-partner-dropdown {
@@ -2414,8 +2414,8 @@
   padding: 8px 16px;
   font-size: 13.5px;
   font-weight: 600;
-  color: #00b06b;
-  border-bottom: 2px solid #00b06b;
+  color: var(--brand);
+  border-bottom: 2px solid var(--brand);
   cursor: pointer;
   margin-bottom: -1px;
 }
@@ -2508,9 +2508,9 @@
 }
 
 .misa-voucher-cell-input:focus {
-  border-color: #00b06b;
+  border-color: var(--brand);
   background: #ffffff;
-  box-shadow: 0 0 0 1px #00b06b;
+  box-shadow: 0 0 0 1px var(--brand);
 }
 
 .misa-voucher-table tfoot td {
@@ -2565,8 +2565,8 @@
 
 .misa-voucher-tool-btn:hover {
   background: #f8fafc;
-  border-color: #00b06b;
-  color: #00b06b;
+  border-color: var(--brand);
+  color: var(--brand);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
@@ -2648,8 +2648,8 @@
 
 .misa-voucher-dropzone:hover {
   background: #f8fafc;
-  border-color: #00b06b;
-  color: #00b06b;
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 /* Footer Action Bar */
@@ -2707,7 +2707,7 @@
 }
 
 .misa-voucher-ios-toggle input:checked + .misa-voucher-ios-slider {
-  background: #00b06b;
+  background: var(--brand);
 }
 
 .misa-voucher-ios-toggle input:checked + .misa-voucher-ios-slider::before {
@@ -2747,7 +2747,7 @@
 .misa-voucher-btn-green {
   height: 32px;
   padding: 0 14px;
-  background: #00b06b;
+  background: var(--brand);
   color: #ffffff;
   border: none;
   border-radius: 4px;
@@ -2761,7 +2761,7 @@
 }
 
 .misa-voucher-btn-green:hover {
-  background: #00965b;
+  background: var(--brand);
 }
 
 .misa-voucher-split-caret:hover {
@@ -2854,7 +2854,7 @@
 
 .misa-reports-search-box input:focus {
   background: #ffffff;
-  border-color: #107e3e;
+  border-color: var(--brand);
   box-shadow: 0 0 0 2px rgba(16, 126, 62, 0.15);
 }
 
@@ -2891,7 +2891,7 @@
 
 .misa-reports-chip.active {
   background: #e8f5e9;
-  color: #107e3e;
+  color: var(--brand);
   border-color: #a7f3d0;
   font-weight: 600;
 }
@@ -2919,7 +2919,7 @@
 }
 
 .misa-report-card:hover {
-  border-color: #107e3e;
+  border-color: var(--brand);
   box-shadow: 0 6px 20px rgba(16, 126, 62, 0.08);
   transform: translateY(-2px);
 }
@@ -2936,7 +2936,7 @@
   height: 40px;
   border-radius: 8px;
   background: #ecfdf5;
-  color: #107e3e;
+  color: var(--brand);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3008,7 +3008,7 @@
 
 .misa-report-category-badge {
   font-size: 11.5px;
-  color: #0369a1;
+  color: var(--brand-hover);
   background: #e0f2fe;
   padding: 2px 8px;
   border-radius: 12px;
@@ -3021,7 +3021,7 @@
   gap: 6px;
   font-size: 12.5px;
   font-weight: 600;
-  color: #107e3e;
+  color: var(--brand);
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
   padding: 4px 10px;
@@ -3031,9 +3031,9 @@
 }
 
 .misa-report-view-btn:hover {
-  background: #107e3e;
+  background: var(--brand);
   color: #ffffff;
-  border-color: #107e3e;
+  border-color: var(--brand);
 }
 
 /* Report Viewer Layout */
@@ -3188,7 +3188,7 @@
 
 .misa-report-mode-btn.active {
   background: #ffffff;
-  color: #107e3e;
+  color: var(--brand);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
@@ -3258,7 +3258,7 @@
 
 .misa-bar-in {
   width: 13px;
-  background: #107e3e;
+  background: var(--brand);
   border-radius: 3px 3px 0 0;
   transition: height 0.3s ease;
 }
@@ -3281,7 +3281,7 @@
 }
 
 .misa-monthly-bar-group.current .misa-monthly-bar-label {
-  color: #107e3e;
+  color: var(--brand);
   font-weight: 700;
 }
 
@@ -3360,7 +3360,7 @@
   padding: 3px 8px;
   font-size: 11.5px;
   font-weight: 600;
-  color: #0284c7;
+  color: var(--brand);
   background: #f0f9ff;
   border: 1px solid #bae6fd;
   border-radius: 4px;
@@ -3369,7 +3369,7 @@
 }
 
 .misa-drilldown-btn:hover {
-  background: #0284c7;
+  background: var(--brand);
   color: #ffffff;
 }
 
@@ -3480,7 +3480,7 @@
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: #107e3e;
+  background: var(--brand);
   color: #ffffff;
   display: grid;
   place-items: center;
@@ -3585,7 +3585,7 @@
 
 .misa-fbar-in {
   width: 12px;
-  background: #107e3e;
+  background: var(--brand);
   border-radius: 3px 3px 0 0;
   transition: height 0.3s ease;
 }
@@ -3599,7 +3599,7 @@
 
 .misa-fbar-balance {
   width: 8px;
-  background: #0284c7;
+  background: var(--brand);
   border-radius: 3px 3px 0 0;
   opacity: 0.6;
 }
@@ -3644,7 +3644,7 @@
 
 .misa-forecast-prob-high {
   background: #e0f2fe;
-  color: #0369a1;
+  color: var(--brand-hover);
 }
 
 .misa-forecast-prob-medium {
@@ -3708,7 +3708,7 @@
   top: 40%;
   width: 14px;
   height: 36px;
-  background: #0284c7;
+  background: var(--brand);
   color: #ffffff;
   border: none;
   border-radius: 4px 0 0 4px;
@@ -3748,7 +3748,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #00b06b;
+  color: var(--brand);
   font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
@@ -3761,7 +3761,7 @@
 
 .misa-invoice-help-link:hover {
   background: rgba(0, 176, 107, 0.08);
-  border-color: #00b06b;
+  border-color: var(--brand);
 }
 
 .misa-invoice-circle-btn {
@@ -3861,7 +3861,7 @@
 
 .misa-invoice-field select:focus,
 .misa-invoice-field input:focus {
-  border-color: #00b06b;
+  border-color: var(--brand);
 }
 
 .misa-invoice-fetch-btn {
@@ -3987,7 +3987,7 @@
 .misa-invoice-btn-submit {
   height: 32px;
   padding: 0 22px;
-  background: #00b06b;
+  background: var(--brand);
   border: none;
   border-radius: 4px;
   font-size: 13px;
@@ -3998,7 +3998,7 @@
 }
 
 .misa-invoice-btn-submit:hover {
-  background: #009a5d;
+  background: var(--brand);
 }
 
 /* ==========================================================================
@@ -4077,7 +4077,7 @@
 }
 
 .misa-purchase-header-search:focus-within {
-  border-color: #00b06b;
+  border-color: var(--brand);
   background: #ffffff;
 }
 
@@ -4149,7 +4149,7 @@
 }
 
 .misa-purchase-table input:focus {
-  outline: 1px solid #00b06b;
+  outline: 1px solid var(--brand);
   background: #ffffff;
 }
 
@@ -4215,7 +4215,7 @@
 }
 
 .misa-po-input:focus {
-  border-color: #00a862 !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 0 0 2px rgba(0, 168, 98, 0.18) !important;
 }
 
@@ -4240,7 +4240,7 @@
 }
 
 .misa-po-select:focus {
-  border-color: #00a862 !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 0 0 2px rgba(0, 168, 98, 0.18) !important;
 }
 
@@ -4254,14 +4254,14 @@
   display: grid;
   place-items: center;
   cursor: pointer;
-  color: #00a862;
+  color: var(--brand);
   transition: all 0.15s;
   box-sizing: border-box;
 }
 
 .misa-po-btn-icon:hover {
   background: #f0fdf4;
-  border-color: #00a862;
+  border-color: var(--brand);
 }
 
 .misa-po-btn-icon.secondary {
@@ -4318,7 +4318,7 @@
 .tax-output-preview h2 { text-align: center; margin: 28px 0; }
 .tax-output-preview table { width: 100%; border-collapse: collapse; margin: 24px 0; }
 .tax-output-preview th, .tax-output-preview td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
-.tax-output-preview button { background: #00a862; color: white; border: 0; padding: 7px 14px; border-radius: 4px; cursor: pointer; }
+.tax-output-preview button { background: var(--brand); color: white; border: 0; padding: 7px 14px; border-radius: 4px; cursor: pointer; }
 @media print { body:has(.tax-output-preview) #root { visibility: hidden; } .tax-output-preview-backdrop, .tax-output-preview-backdrop * { visibility: visible; } .tax-output-preview-backdrop { position: fixed; inset: 0; display: block; background: white; } .tax-output-preview { width: 100%; max-height: none; overflow: visible; box-shadow: none; } .tax-output-preview button { display: none; } }
 
 /* ==========================================================================
@@ -4345,7 +4345,7 @@
 }
 
 .misa-row-action-link.print {
-  color: #00a862;
+  color: var(--brand);
 }
 
 .misa-row-action-link.print:hover {
@@ -4423,7 +4423,7 @@
 
 .misa-row-action-item:hover {
   background: #f0fdf4 !important;
-  color: #00a862 !important;
+  color: var(--brand) !important;
 }
 
 .misa-row-action-item.danger {

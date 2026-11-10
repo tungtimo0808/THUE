@@ -473,7 +473,7 @@ export function WorkModeModal({
                   alignItems: "flex-start",
                   padding: "10px 12px",
                   borderRadius: 8,
-                  border: isActive ? "2px solid #00a862" : "1px solid #e2e8f0",
+                  border: isActive ? "2px solid var(--brand)" : "1px solid #e2e8f0",
                   background: isActive ? "#f0fdf4" : "#ffffff",
                   display: "flex",
                   gap: 10,
@@ -517,7 +517,7 @@ export function WorkModeModal({
                     {role.capabilitiesSummary}
                   </small>
                 </div>
-                {isActive && <b style={{ color: "#00a862", fontSize: 16 }}>✓</b>}
+                {isActive && <b style={{ color: "var(--brand)", fontSize: 16 }}>✓</b>}
               </button>
             );
           })}
@@ -611,7 +611,7 @@ export function TabSettingsModal({
                 padding: "4px 8px",
                 fontSize: 12,
                 cursor: "pointer",
-                color: "#0284c7",
+                color: "var(--brand)",
               }}
             >
               Chọn tất cả
@@ -652,7 +652,7 @@ export function TabSettingsModal({
                     aria-label={`Hiển thị ${label}`}
                   />{" "}
                   {label}
-                  {isChecked && <span style={{ fontSize: 10, color: "#0284c7", background: "#f0f9ff", padding: "1px 6px", borderRadius: 4, marginLeft: 4 }}>Hiển thị trên thanh</span>}
+                  {isChecked && <span style={{ fontSize: 10, color: "var(--brand)", background: "#f0f9ff", padding: "1px 6px", borderRadius: 4, marginLeft: 4 }}>Hiển thị trên thanh</span>}
                 </label>
                 <button
                   type="button"

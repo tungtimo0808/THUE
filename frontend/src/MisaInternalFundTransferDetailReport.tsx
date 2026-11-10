@@ -1,3 +1,5 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import ReportCustomizationMenu from "./ReportCustomizationMenu";
 import { templateColumnLabels } from "./report-template-columns";
 import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
@@ -183,7 +185,7 @@ export default function MisaInternalFundTransferDetailReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -201,7 +203,7 @@ export default function MisaInternalFundTransferDetailReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -211,7 +213,7 @@ export default function MisaInternalFundTransferDetailReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -294,7 +296,7 @@ export default function MisaInternalFundTransferDetailReport({
               style={{
                 position: "absolute",
                 left: 10,
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -389,7 +391,7 @@ export default function MisaInternalFundTransferDetailReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />
@@ -647,7 +649,7 @@ export default function MisaInternalFundTransferDetailReport({
                       border: "1px solid #e2e8f0",
                       padding: "7px 10px",
                       textAlign: "center",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       cursor: "pointer",
                     }}
                     onClick={() => notify?.(`Mở chứng từ ${row.voucherNo}`)}
@@ -799,7 +801,7 @@ export default function MisaInternalFundTransferDetailReport({
                     cy="38"
                     r="8"
                     fill="#ffffff"
-                    stroke="#00a862"
+                    stroke="var(--brand)"
                     strokeWidth="2.5"
                   />
                   <line
@@ -807,7 +809,7 @@ export default function MisaInternalFundTransferDetailReport({
                     y1="44"
                     x2="62"
                     y2="52"
-                    stroke="#00a862"
+                    stroke="var(--brand)"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                   />
@@ -866,7 +868,7 @@ export default function MisaInternalFundTransferDetailReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -880,7 +882,7 @@ export default function MisaInternalFundTransferDetailReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -891,7 +893,7 @@ export default function MisaInternalFundTransferDetailReport({
               <span
                 style={{
                   padding: "2px 8px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   borderRadius: 3,
                   fontSize: 12,
@@ -906,7 +908,7 @@ export default function MisaInternalFundTransferDetailReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -920,7 +922,7 @@ export default function MisaInternalFundTransferDetailReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -1033,7 +1035,7 @@ export default function MisaInternalFundTransferDetailReport({
                     width: "100%",
                     height: 32,
                     padding: "0 10px",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     fontSize: 13,
                     background: "#ffffff",
@@ -1085,7 +1087,7 @@ export default function MisaInternalFundTransferDetailReport({
                         position: "absolute",
                         right: 10,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1124,7 +1126,7 @@ export default function MisaInternalFundTransferDetailReport({
                         position: "absolute",
                         right: 10,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1147,7 +1149,7 @@ export default function MisaInternalFundTransferDetailReport({
                     type="checkbox"
                     checked={draftMergeSame}
                     onChange={(e) => setDraftMergeSame(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Cộng gộp các bút toán giống nhau</span>
                 </label>
@@ -1206,7 +1208,7 @@ export default function MisaInternalFundTransferDetailReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

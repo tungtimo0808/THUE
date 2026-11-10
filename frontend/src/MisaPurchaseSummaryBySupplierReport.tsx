@@ -1,3 +1,4 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
 import ReportOutputMenu from "./ReportOutputMenu";
 import React, { useState, useMemo } from "react";
 import ReportCustomizationMenu from "./ReportCustomizationMenu";
@@ -275,7 +276,7 @@ export default function MisaPurchaseSummaryBySupplierReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -293,7 +294,7 @@ export default function MisaPurchaseSummaryBySupplierReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -303,7 +304,7 @@ export default function MisaPurchaseSummaryBySupplierReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -445,7 +446,7 @@ export default function MisaPurchaseSummaryBySupplierReport({
               width: 22,
               height: 22,
               borderRadius: "50%",
-              background: "#0284c7",
+              background: "var(--brand)",
               border: "none",
               color: "#ffffff",
               cursor: "pointer",
@@ -790,12 +791,12 @@ export default function MisaPurchaseSummaryBySupplierReport({
                             cy="58"
                             r="14"
                             fill="#ffffff"
-                            stroke="#00a862"
+                            stroke="var(--brand)"
                             strokeWidth="2.5"
                           />
                           <path
                             d="M68 68L78 78"
-                            stroke="#00a862"
+                            stroke="var(--brand)"
                             strokeWidth="2.5"
                             strokeLinecap="round"
                           />
@@ -846,8 +847,8 @@ export default function MisaPurchaseSummaryBySupplierReport({
                 <option value="50">50</option>
               </select>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>|&lt;</span>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>|&lt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
                 <span
                   style={{
                     display: "inline-flex",
@@ -857,14 +858,14 @@ export default function MisaPurchaseSummaryBySupplierReport({
                     height: 22,
                     borderRadius: 3,
                     background: "#e8f5ec",
-                    color: "#00a862",
+                    color: "var(--brand)",
                     fontWeight: 700,
                   }}
                 >
                   1
                 </span>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;|</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;|</span>
               </div>
             </div>
           </div>
@@ -914,7 +915,7 @@ export default function MisaPurchaseSummaryBySupplierReport({
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#94a3b8",
+                    color: "#64748b",
                     cursor: "pointer",
                   }}
                   title="Trợ giúp"
@@ -1166,7 +1167,7 @@ export default function MisaPurchaseSummaryBySupplierReport({
                           setDraftSupplierCodes([]);
                         }
                       }}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                   </label>
@@ -1230,7 +1231,7 @@ export default function MisaPurchaseSummaryBySupplierReport({
                                 setDraftSupplierCodes([]);
                               }
                             }}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th
@@ -1279,7 +1280,7 @@ export default function MisaPurchaseSummaryBySupplierReport({
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={() => {}}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td
@@ -1328,8 +1329,8 @@ export default function MisaPurchaseSummaryBySupplierReport({
                         <option value="30">30</option>
                       </select>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>|&lt;</span>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>|&lt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
                         <span
                           style={{
                             display: "inline-flex",
@@ -1339,14 +1340,14 @@ export default function MisaPurchaseSummaryBySupplierReport({
                             height: 18,
                             borderRadius: 2,
                             background: "#e8f5ec",
-                            color: "#00a862",
+                            color: "var(--brand)",
                             fontWeight: 700,
                           }}
                         >
                           1
                         </span>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;|</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;|</span>
                       </div>
                     </div>
                   </div>
@@ -1406,7 +1407,7 @@ export default function MisaPurchaseSummaryBySupplierReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import { useState, useEffect } from "react";
 import { formatMoneyInput, formatVnDecimal, parseMoneyInput } from "./formatMoney";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +13,7 @@ import MisaInventoryMultiWarehouseReport from "./MisaInventoryMultiWarehouseRepo
 import MisaInventoryDetailLedgerReport from "./MisaInventoryDetailLedgerReport";
 import MisaInventoryCostingModal from "./MisaInventoryCostingModal";
 import {
+  Bot,
   Search,
   Plus,
   RefreshCw,
@@ -163,12 +165,12 @@ export default function MisaInventoryWorkspace({
   };
 
   // View modes for landing/list tabs
-  const [receiptViewMode, setReceiptViewMode] = useState<"landing" | "list">("landing");
-  const [issueViewMode, setIssueViewMode] = useState<"landing" | "list">("landing");
-  const [transferViewMode, setTransferViewMode] = useState<"landing" | "list">("landing");
-  const [productionOrderViewMode, setProductionOrderViewMode] = useState<"landing" | "list">("landing");
-  const [assemblyViewMode, setAssemblyViewMode] = useState<"landing" | "list">("landing");
-  const [stocktakeViewMode, setStocktakeViewMode] = useState<"landing" | "list">("landing");
+  const [receiptViewMode, setReceiptViewMode] = useState<"landing" | "list">("list");
+  const [issueViewMode, setIssueViewMode] = useState<"landing" | "list">("list");
+  const [transferViewMode, setTransferViewMode] = useState<"landing" | "list">("list");
+  const [productionOrderViewMode, setProductionOrderViewMode] = useState<"landing" | "list">("list");
+  const [assemblyViewMode, setAssemblyViewMode] = useState<"landing" | "list">("list");
+  const [stocktakeViewMode, setStocktakeViewMode] = useState<"landing" | "list">("list");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Modals state
@@ -1135,7 +1137,7 @@ export default function MisaInventoryWorkspace({
     const party = (apiRows.parties || []).find((row: any) => row.id === record.supplier);
     const cell = "border:1px solid #000;padding:4px 6px";
     const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Phiếu xuất kho ${escapeHtml(record.number)}</title>
-<style>body{font-family:"Times New Roman",serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%}
+<style>body{font-family: Roboto, Arial, sans-serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%}
 .num{text-align:right}.center{text-align:center}h1{font-size:18px;margin:4px 0}.muted{font-style:italic}</style></head><body>
 <table><tr><td><strong>${escapeHtml(_company.name)}</strong></td><td class="center" style="width:260px"><strong>Mẫu số 02 - VT</strong></td></tr></table>
 <div class="center"><h1>PHIẾU XUẤT KHO</h1><div class="muted">Ngày ${escapeHtml(day)} tháng ${escapeHtml(month)} năm ${escapeHtml(year)}</div>
@@ -1341,7 +1343,7 @@ ${withPrice ? `<p>- Tổng số tiền (viết bằng chữ): <em>${escapeHtml(c
 - Họ tên người vận chuyển: ${escapeHtml(record.delivery_person)}<br>- Diễn giải: ${escapeHtml(record.reason)}`
       : `- Họ tên người vận chuyển: ${escapeHtml(record.delivery_person)}<br>- Diễn giải: ${escapeHtml(record.reason)}`;
     const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(heading.title)} ${escapeHtml(record.number)}</title>
-<style>body{font-family:"Times New Roman",serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%}
+<style>body{font-family: Roboto, Arial, sans-serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%}
 .num{text-align:right}.center{text-align:center}h1{font-size:18px;margin:4px 0}.muted{font-style:italic}</style></head><body>
 <table><tr><td><strong>${escapeHtml(_company.name)}</strong></td><td class="center" style="width:260px"><strong>${escapeHtml(heading.form)}</strong></td></tr></table>
 <div class="center"><h1>${escapeHtml(heading.title)}</h1><div class="muted">Ngày ${escapeHtml(day)} tháng ${escapeHtml(month)} năm ${escapeHtml(year)}</div>
@@ -1475,7 +1477,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             {/* Interactive Flowchart Diagram */}
             <div style={{ position: "relative", margin: "20px 0 40px 0" }}>
               {/* Connecting Horizontal Line with Right Arrow */}
-              <div
+              <div className="sv-flow-connector"
                 style={{
                   position: "absolute",
                   top: "50%",
@@ -1503,9 +1505,9 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               </div>
 
               {/* TOP ROW: Lệnh sản xuất | Xuất kho | Chuyển kho */}
-              <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 65, position: "relative", zIndex: 2 }}>
+              <div className="sv-flow-nodes" style={{ display: "flex", justifyContent: "space-around", marginBottom: 65, position: "relative", zIndex: 2 }}>
                 {/* 1. Lệnh sản xuất */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => navigateTo("production-orders")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 110 }}
                 >
@@ -1531,11 +1533,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     Lệnh sản xuất
                   </span>
                   {/* Vertical connecting line down to main horizontal line */}
-                  <div style={{ position: "absolute", top: 48, width: 1.5, height: 48, background: "#cbd5e1", zIndex: -1 }} />
+                  <div className="sv-flow-connector" style={{ position: "absolute", top: 48, width: 1.5, height: 48, background: "#cbd5e1", zIndex: -1 }} />
                 </div>
 
                 {/* 2. Xuất kho */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => navigateTo("issues")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 110 }}
                 >
@@ -1560,11 +1562,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>
                     Xuất kho
                   </span>
-                  <div style={{ position: "absolute", top: 48, width: 1.5, height: 48, background: "#cbd5e1", zIndex: -1 }} />
+                  <div className="sv-flow-connector" style={{ position: "absolute", top: 48, width: 1.5, height: 48, background: "#cbd5e1", zIndex: -1 }} />
                 </div>
 
                 {/* 3. Chuyển kho */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => navigateTo("transfers")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 110 }}
                 >
@@ -1589,14 +1591,14 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>
                     Chuyển kho
                   </span>
-                  <div style={{ position: "absolute", top: 48, width: 1.5, height: 48, background: "#cbd5e1", zIndex: -1 }} />
+                  <div className="sv-flow-connector" style={{ position: "absolute", top: 48, width: 1.5, height: 48, background: "#cbd5e1", zIndex: -1 }} />
                 </div>
               </div>
 
               {/* BOTTOM ROW: Lắp ráp, tháo dỡ | Nhập kho | Tính giá xuất kho | Kiểm kê */}
-              <div style={{ display: "flex", justifyContent: "space-between", position: "relative", zIndex: 2 }}>
+              <div className="sv-flow-nodes" style={{ display: "flex", justifyContent: "space-between", position: "relative", zIndex: 2 }}>
                 {/* 4. Lắp ráp, tháo dỡ */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => navigateTo("assembly")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 105 }}
                 >
@@ -1624,7 +1626,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 </div>
 
                 {/* 5. Nhập kho */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => navigateTo("receipts")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 105 }}
                 >
@@ -1652,7 +1654,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 </div>
 
                 {/* 6. Tính giá xuất kho */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => setShowCalculateCostModal(true)}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 105 }}
                 >
@@ -1680,7 +1682,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 </div>
 
                 {/* 7. Kiểm kê */}
-                <div
+                <div className="sv-flow-node"
                   onClick={() => navigateTo("stocktake")}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", width: 105 }}
                 >
@@ -1723,7 +1725,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 onClick={() => setShowWarehouseListModal(true)}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}
               >
-                <Building2 size={20} style={{ color: "#00a862" }} />
+                <Building2 size={20} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 12.5, color: "#475569" }}>Kho</span>
               </div>
               <div
@@ -1737,21 +1739,21 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 onClick={() => navigate((href ? href("/directory") : "/reference/directory") + "?directory=" + encodeURIComponent("Đơn vị tính"))}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}
               >
-                <Boxes size={20} style={{ color: "#00a862" }} />
+                <Boxes size={20} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 12.5, color: "#475569" }}>Đơn vị tính</span>
               </div>
               <div
                 onClick={() => navigate(href ? href("/opening") : "/reference/opening")}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}
               >
-                <Lightbulb size={20} style={{ color: "#00a862" }} />
+                <Lightbulb size={20} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 12.5, color: "#475569" }}>Tiện ích</span>
               </div>
               <div
                 onClick={() => navigate("/admin?tab=config")}
                 style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}
               >
-                <SlidersHorizontal size={20} style={{ color: "#00a862" }} />
+                <SlidersHorizontal size={20} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 12.5, color: "#475569" }}>Tùy chọn</span>
               </div>
             </div>
@@ -1800,7 +1802,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       cursor: "pointer",
                       lineHeight: 1.45,
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = "#00a862"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--brand)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = "#334155"; }}
                   >
                     <span style={{ color: "#64748b", fontWeight: 700 }}>•</span>
@@ -1817,7 +1819,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -1851,13 +1853,13 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 <Package size={22} style={{ color: "#ea580c" }} />
               </div>
               <div>
-                <span style={{ fontSize: 26, fontWeight: 700, color: "#0284c7", display: "block", lineHeight: 1.1 }}>{stockAlerts?.low_count ?? "—"}</span>
+                <span style={{ fontSize: 26, fontWeight: 700, color: "var(--brand)", display: "block", lineHeight: 1.1 }}>{stockAlerts?.low_count ?? "—"}</span>
                 <span style={{ fontSize: 13, color: "#475569", marginTop: 4, display: "block" }}>Hàng hóa sắp hết hàng</span>
               </div>
             </div>
             <div style={{ fontSize: 11.5, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
               <span>Số liệu tính đến: {alertUpdatedAt}</span>
-              <button type="button" disabled={stockAlertsLoading} onClick={reloadStockAlerts} style={{ border: "none", background: "transparent", color: "#0284c7", cursor: "pointer", padding: 0 }}>Tải lại</button>
+              <button type="button" disabled={stockAlertsLoading} onClick={reloadStockAlerts} style={{ border: "none", background: "transparent", color: "var(--brand)", cursor: "pointer", padding: 0 }}>Tải lại</button>
             </div>
           </div>
 
@@ -1867,7 +1869,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               <Package size={22} style={{ color: "#dc2626" }} />
             </div>
             <div>
-                <span style={{ fontSize: 26, fontWeight: 700, color: "#0284c7", display: "block", lineHeight: 1.1 }}>{stockAlerts?.out_count ?? "—"}</span>
+                <span style={{ fontSize: 26, fontWeight: 700, color: "var(--brand)", display: "block", lineHeight: 1.1 }}>{stockAlerts?.out_count ?? "—"}</span>
               <span style={{ fontSize: 13, color: "#475569", marginTop: 4, display: "block" }}>Hàng hóa hết hàng</span>
             </div>
           </div>
@@ -1892,14 +1894,14 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             </div>
             <div style={{ fontSize: 11.5, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
               <span>Số liệu tính đến: 11:57</span>
-              <button type="button" onClick={() => notify("Đã cập nhật số liệu")} style={{ border: "none", background: "transparent", color: "#0284c7", cursor: "pointer", padding: 0 }}>Tải lại</button>
+              <button type="button" onClick={reloadApi} style={{ border: "none", background: "transparent", color: "var(--brand)", cursor: "pointer", padding: 0 }}>Tải lại</button>
             </div>
           </div>
 
           {/* Card 4: Số ngày lưu kho bình quân */}
           <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: "16px", display: "flex", alignItems: "center", gap: 16, minHeight: 110 }}>
             <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#e0f2fe", display: "grid", placeItems: "center" }}>
-              <Calendar size={22} style={{ color: "#0284c7" }} />
+              <Calendar size={22} style={{ color: "var(--brand)" }} />
             </div>
             <div>
               <span style={{ fontSize: 26, fontWeight: 700, color: "#1e293b", display: "block", lineHeight: 1.1 }}>0</span>
@@ -1959,9 +1961,9 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid #f1f5f9", paddingTop: 10, marginTop: 20 }}>
               <div style={{ fontSize: 11.5, color: "#94a3b8" }}>
-                Số liệu tính đến: 11:57 <button type="button" onClick={() => notify("Đã cập nhật số liệu tồn kho")} style={{ border: "none", background: "transparent", color: "#0284c7", cursor: "pointer", padding: 0 }}>Tải lại</button>
+                Số liệu tính đến: 11:57 <button type="button" onClick={reloadApi} style={{ border: "none", background: "transparent", color: "var(--brand)", cursor: "pointer", padding: 0 }}>Tải lại</button>
               </div>
-              <button type="button" onClick={() => navigateTo("items")} style={{ border: "none", background: "transparent", color: "#0284c7", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>Xem thêm</button>
+              <button type="button" onClick={() => navigateTo("items")} style={{ border: "none", background: "transparent", color: "var(--brand)", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>Xem thêm</button>
             </div>
           </div>
 
@@ -1990,7 +1992,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             </div>
 
             <div style={{ fontSize: 11.5, color: "#94a3b8", borderTop: "1px solid #f1f5f9", paddingTop: 10, marginTop: 20 }}>
-              Số liệu tính đến: {alertUpdatedAt} <button type="button" disabled={stockAlertsLoading} onClick={reloadStockAlerts} style={{ border: "none", background: "transparent", color: "#0284c7", cursor: "pointer", padding: 0 }}>Tải lại</button>
+              Số liệu tính đến: {alertUpdatedAt} <button type="button" disabled={stockAlertsLoading} onClick={reloadStockAlerts} style={{ border: "none", background: "transparent", color: "var(--brand)", cursor: "pointer", padding: 0 }}>Tải lại</button>
             </div>
           </div>
         </div>
@@ -2017,15 +2019,15 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               <line x1="65" y1="102" x2="140" y2="102" stroke="#cbd5e1" strokeWidth="2" />
               {/* Green boxes */}
               <rect x="75" y="48" width="22" height="18" rx="3" fill="#10b981" />
-              <rect x="105" y="48" width="25" height="18" rx="3" fill="#00a862" />
+              <rect x="105" y="48" width="25" height="18" rx="3" fill="var(--brand)" />
               <rect x="75" y="78" width="26" height="18" rx="3" fill="#059669" />
               {/* Receipt Doc */}
-              <rect x="125" y="32" width="48" height="64" rx="4" fill="#ffffff" stroke="#00a862" strokeWidth="1.5" />
+              <rect x="125" y="32" width="48" height="64" rx="4" fill="#ffffff" stroke="var(--brand)" strokeWidth="1.5" />
               <circle cx="149" cy="50" r="10" fill="#e6f4ea" />
-              <path d="M149 45 V55 M144 50 H154" stroke="#00a862" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M149 45 V55 M144 50 H154" stroke="var(--brand)" strokeWidth="1.8" strokeLinecap="round" />
               {/* Girl with laptop */}
               <circle cx="178" cy="84" r="14" fill="#64748b" />
-              <path d="M164 122 C164 105 192 105 192 122 Z" fill="#00a862" />
+              <path d="M164 122 C164 105 192 105 192 122 Z" fill="var(--brand)" />
               <rect x="156" y="108" width="36" height="20" rx="3" fill="#cbd5e1" />
               <path d="M152 130 H196" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -2069,7 +2071,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 36,
                 padding: "0 22px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 5,
@@ -2110,11 +2112,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               height: 32,
               padding: "0 20px",
               background: "#ffffff",
-              border: "1px solid #00a862",
+              border: "1px solid var(--brand)",
               borderRadius: 16,
               fontSize: 12.5,
               fontWeight: 600,
-              color: "#00a862",
+              color: "var(--brand)",
               cursor: "pointer",
             }}
           >
@@ -2137,7 +2139,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 32,
                 padding: "0 14px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -2211,13 +2213,13 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 .map((row) => (
                   <tr key={row.id} style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }} onClick={() => openOtherReceipt(row.id)}>
                     <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{row.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.date}</td>
                     <td style={{ padding: "8px 10px", color: "#475569" }}>{row.type}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.warehouse}</td>
                     <td style={{ padding: "8px 10px" }}>{row.partner}</td>
                     <td style={{ padding: "8px 10px", color: "#64748b" }}>{row.description}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(row.amount)} đ</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(row.amount)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
                       <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }} onClick={(event) => event.stopPropagation()}>{apiStatus("transactions", row.id, row.status)}</span>
                     </td>
@@ -2229,7 +2231,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
 
         <div style={{ padding: "8px 16px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12.5, color: "#64748b" }}>
           <div>Tổng số: <strong>{receipts.length}</strong> chứng từ</div>
-          <div>Tổng tiền nhập kho: <strong style={{ color: "#00a862" }}>{formatVND(receipts.reduce((s, r) => s + r.amount, 0))} đ</strong></div>
+          <div>Tổng tiền nhập kho: <strong style={{ color: "var(--brand)" }}>{formatVND(receipts.reduce((s, r) => s + r.amount, 0))} đ</strong></div>
         </div>
 
         {renderModals()}
@@ -2253,15 +2255,15 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               <line x1="65" y1="102" x2="140" y2="102" stroke="#cbd5e1" strokeWidth="2" />
               <rect x="75" y="78" width="26" height="18" rx="3" fill="#10b981" />
               {/* Outgoing box */}
-              <rect x="100" y="52" width="28" height="20" rx="3" fill="#00a862" />
-              <path d="M128 62 H148 M144 58 L148 62 L144 66" stroke="#00a862" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <rect x="100" y="52" width="28" height="20" rx="3" fill="var(--brand)" />
+              <path d="M128 62 H148 M144 58 L148 62 L144 66" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               {/* Doc with outgoing badge */}
-              <rect x="140" y="32" width="48" height="64" rx="4" fill="#ffffff" stroke="#00a862" strokeWidth="1.5" />
+              <rect x="140" y="32" width="48" height="64" rx="4" fill="#ffffff" stroke="var(--brand)" strokeWidth="1.5" />
               <circle cx="164" cy="50" r="10" fill="#e6f4ea" />
-              <path d="M160 50 H168 M165 47 L168 50 L165 53" stroke="#00a862" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M160 50 H168 M165 47 L168 50 L165 53" stroke="var(--brand)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               {/* Person at laptop */}
               <circle cx="178" cy="84" r="14" fill="#64748b" />
-              <path d="M164 122 C164 105 192 105 192 122 Z" fill="#00a862" />
+              <path d="M164 122 C164 105 192 105 192 122 Z" fill="var(--brand)" />
               <rect x="156" y="108" width="36" height="20" rx="3" fill="#cbd5e1" />
               <path d="M152 130 H196" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -2303,7 +2305,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 36,
                 padding: "0 22px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 5,
@@ -2361,11 +2363,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               height: 32,
               padding: "0 20px",
               background: "#ffffff",
-              border: "1px solid #00a862",
+              border: "1px solid var(--brand)",
               borderRadius: 16,
               fontSize: 12.5,
               fontWeight: 600,
-              color: "#00a862",
+              color: "var(--brand)",
               cursor: "pointer",
             }}
           >
@@ -2388,7 +2390,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 32,
                 padding: "0 14px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -2405,7 +2407,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             </button>
             <button
               type="button"
-              onClick={() => notify("Đang tải Excel xuất kho...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đang tải Excel xuất kho"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               style={{ height: 32, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#334155", cursor: "pointer" }}
             >
               Nhập từ Excel
@@ -2469,13 +2471,13 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 .map((row) => (
                   <tr key={row.id} style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }} onClick={() => openIssueRecord(row.id)}>
                     <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{row.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.date}</td>
                     <td style={{ padding: "8px 10px", color: "#475569" }}>{row.type}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.warehouse}</td>
                     <td style={{ padding: "8px 10px" }}>{row.partner}</td>
                     <td style={{ padding: "8px 10px", color: "#64748b" }}>{row.description}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(row.amount)} đ</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(row.amount)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
                       <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("issues", row.id, row.status)}</span>
                     </td>
@@ -2487,7 +2489,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
 
         <div style={{ padding: "8px 16px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12.5, color: "#64748b" }}>
           <div>Tổng số: <strong>{issues.length}</strong> chứng từ</div>
-          <div>Tổng tiền xuất kho: <strong style={{ color: "#00a862" }}>{formatVND(issues.reduce((s, r) => s + r.amount, 0))} đ</strong></div>
+          <div>Tổng tiền xuất kho: <strong style={{ color: "var(--brand)" }}>{formatVND(issues.reduce((s, r) => s + r.amount, 0))} đ</strong></div>
         </div>
 
         {renderModals()}
@@ -2506,23 +2508,23 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             <svg width="260" height="170" viewBox="0 0 260 170" fill="none">
               <ellipse cx="130" cy="148" rx="100" ry="14" fill="#f1f5f9" />
               {/* Warehouse 1 (Source) */}
-              <rect x="55" y="52" width="55" height="66" rx="4" fill="#ffffff" stroke="#00a862" strokeWidth="2" />
-              <path d="M55 70 H110" stroke="#00a862" strokeWidth="1.5" />
-              <path d="M72 118 V90 H93 V118" fill="#e6f4ea" stroke="#00a862" strokeWidth="1.5" />
+              <rect x="55" y="52" width="55" height="66" rx="4" fill="#ffffff" stroke="var(--brand)" strokeWidth="2" />
+              <path d="M55 70 H110" stroke="var(--brand)" strokeWidth="1.5" />
+              <path d="M72 118 V90 H93 V118" fill="#e6f4ea" stroke="var(--brand)" strokeWidth="1.5" />
               {/* Transfer arrow between warehouses */}
-              <path d="M116 75 H136 M132 71 L136 75 L132 79" stroke="#00a862" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M116 75 H136 M132 71 L136 75 L132 79" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M136 85 H116 M120 81 L116 85 L120 89" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               {/* Warehouse 2 (Dest) */}
-              <rect x="142" y="52" width="55" height="66" rx="4" fill="#ffffff" stroke="#00a862" strokeWidth="2" />
-              <path d="M142 70 H197" stroke="#00a862" strokeWidth="1.5" />
-              <path d="M159 118 V90 H180 V118" fill="#e6f4ea" stroke="#00a862" strokeWidth="1.5" />
+              <rect x="142" y="52" width="55" height="66" rx="4" fill="#ffffff" stroke="var(--brand)" strokeWidth="2" />
+              <path d="M142 70 H197" stroke="var(--brand)" strokeWidth="1.5" />
+              <path d="M159 118 V90 H180 V118" fill="#e6f4ea" stroke="var(--brand)" strokeWidth="1.5" />
               {/* Transfer document */}
               <rect x="175" y="32" width="44" height="58" rx="3" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
               <circle cx="197" cy="46" r="8" fill="#e6f4ea" />
-              <path d="M194 46 H200 M197 43 L200 46 L197 49" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M194 46 H200 M197 43 L200 46 L197 49" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               {/* Girl with laptop */}
               <circle cx="215" cy="84" r="13" fill="#64748b" />
-              <path d="M202 120 C202 105 228 105 228 120 Z" fill="#00a862" />
+              <path d="M202 120 C202 105 228 105 228 120 Z" fill="var(--brand)" />
               <rect x="196" y="106" width="34" height="18" rx="3" fill="#cbd5e1" />
             </svg>
           </div>
@@ -2563,7 +2565,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 36,
                 padding: "0 22px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 5,
@@ -2621,11 +2623,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               height: 32,
               padding: "0 20px",
               background: "#ffffff",
-              border: "1px solid #00a862",
+              border: "1px solid var(--brand)",
               borderRadius: 16,
               fontSize: 12.5,
               fontWeight: 600,
-              color: "#00a862",
+              color: "var(--brand)",
               cursor: "pointer",
             }}
           >
@@ -2648,7 +2650,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 32,
                 padding: "0 14px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -2728,18 +2730,18 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 .map((row) => (
                   <tr key={row.id} style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }} onClick={() => openTransferRecord(row.id)}>
                     <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{row.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.date}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.sourceWarehouse}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.destWarehouse}</td>
                     <td style={{ padding: "8px 10px", color: "#64748b" }}>{row.description}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatVND(row.amount)} đ</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(row.amount)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
                       <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("transfers", row.id, row.status)}</span>
                       {(() => {
                         // Section 6: delivery status is shown apart from the posting status.
                         const receipt = (apiRows.transactions || []).find((entry: any) => entry.id === row.id)?.document_metadata?.receipt_status;
-                        return receipt ? <div style={{ marginTop: 3, fontSize: 11, color: receipt === "IN_TRANSIT" ? "#b45309" : "#0369a1" }}>{TRANSFER_RECEIPT_LABELS[receipt]}</div> : null;
+                        return receipt ? <div style={{ marginTop: 3, fontSize: 11, color: receipt === "IN_TRANSIT" ? "#b45309" : "var(--brand-hover)" }}>{TRANSFER_RECEIPT_LABELS[receipt]}</div> : null;
                       })()}
                     </td>
                   </tr>
@@ -2750,7 +2752,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
 
         <div style={{ padding: "8px 16px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12.5, color: "#64748b" }}>
           <div>Tổng số: <strong>{transfers.length}</strong> chứng từ</div>
-          <div>Tổng giá trị điều chuyển: <strong style={{ color: "#00a862" }}>{formatVND(transfers.reduce((s, r) => s + r.amount, 0))} đ</strong></div>
+          <div>Tổng giá trị điều chuyển: <strong style={{ color: "var(--brand)" }}>{formatVND(transfers.reduce((s, r) => s + r.amount, 0))} đ</strong></div>
         </div>
 
         {renderModals()}
@@ -2770,8 +2772,8 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             <svg width="260" height="170" viewBox="0 0 260 170" fill="none">
               <ellipse cx="130" cy="148" rx="100" ry="14" fill="#f1f5f9" />
               {/* Raw material input */}
-              <circle cx="50" cy="80" r="16" fill="#e6f4ea" stroke="#00a862" strokeWidth="1.5" />
-              <path d="M44 80 L48 84 L57 75" stroke="#00a862" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="50" cy="80" r="16" fill="#e6f4ea" stroke="var(--brand)" strokeWidth="1.5" />
+              <path d="M44 80 L48 84 L57 75" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M68 80 H88" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="3 3" />
               {/* Conveyor belt with rollers */}
               <rect x="90" y="70" width="70" height="24" rx="4" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
@@ -2779,16 +2781,16 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               <circle cx="125" cy="82" r="5" fill="#94a3b8" />
               <circle cx="148" cy="82" r="5" fill="#94a3b8" />
               {/* Small raw cubes on conveyor */}
-              <rect x="94" y="52" width="16" height="16" rx="2" fill="#00a862" />
+              <rect x="94" y="52" width="16" height="16" rx="2" fill="var(--brand)" />
               <rect x="114" y="52" width="16" height="16" rx="2" fill="#10b981" />
               <rect x="134" y="50" width="18" height="18" rx="3" fill="#059669" />
               {/* Arrow from conveyor to packaged finished product */}
-              <path d="M162 82 H178 M174 78 L178 82 L174 86" stroke="#00a862" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M162 82 H178 M174 78 L178 82 L174 86" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               {/* Packaged finished box */}
-              <rect x="184" y="60" width="34" height="34" rx="4" fill="#00a862" />
+              <rect x="184" y="60" width="34" height="34" rx="4" fill="var(--brand)" />
               <path d="M184 72 H218 M201 60 V94" stroke="#ffffff" strokeWidth="1.5" />
               <circle cx="212" cy="66" r="6" fill="#ffffff" />
-              <path d="M212 63 V69 M209 66 H215" stroke="#00a862" strokeWidth="1.2" strokeLinecap="round" />
+              <path d="M212 63 V69 M209 66 H215" stroke="var(--brand)" strokeWidth="1.2" strokeLinecap="round" />
             </svg>
           </div>
 
@@ -2828,7 +2830,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 36,
                 padding: "0 22px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 5,
@@ -2868,11 +2870,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               height: 32,
               padding: "0 20px",
               background: "#ffffff",
-              border: "1px solid #00a862",
+              border: "1px solid var(--brand)",
               borderRadius: 16,
               fontSize: 12.5,
               fontWeight: 600,
-              color: "#00a862",
+              color: "var(--brand)",
               cursor: "pointer",
             }}
           >
@@ -2895,7 +2897,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 32,
                 padding: "0 14px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -2912,7 +2914,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             </button>
             <button
               type="button"
-              onClick={() => notify("Đang chuẩn bị nhập Excel Lệnh sản xuất...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đang chuẩn bị nhập Excel Lệnh sản xuất"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               style={{ height: 32, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#334155", cursor: "pointer" }}
             >
               Nhập từ Excel
@@ -2969,10 +2971,10 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 .map((row) => (
                   <tr key={row.id} style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }} onClick={() => setShowProductionOrderModal(true)}>
                     <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{row.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.date}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.productName}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{row.qty}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{row.qty}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.unit}</td>
                     <td style={{ padding: "8px 10px", color: "#64748b" }}>{row.dept}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center", color: "#64748b" }}>{row.dueDate}</td>
@@ -3016,19 +3018,19 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               <ellipse cx="130" cy="148" rx="100" ry="14" fill="#f1f5f9" />
               {/* Left components */}
               <rect x="52" y="48" width="22" height="22" rx="3" fill="#10b981" />
-              <rect x="52" y="78" width="22" height="22" rx="3" fill="#00a862" />
+              <rect x="52" y="78" width="22" height="22" rx="3" fill="var(--brand)" />
               <rect x="52" y="108" width="22" height="22" rx="3" fill="#059669" />
               {/* Merging arrows */}
               <path d="M82 59 L108 78" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="3 3" />
               <path d="M82 89 H108" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="3 3" />
               <path d="M82 119 L108 100" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="3 3" />
               {/* Central Assemble Icon */}
-              <circle cx="128" cy="89" r="22" fill="#e6f4ea" stroke="#00a862" strokeWidth="2" />
-              <path d="M120 89 H136 M128 81 V97" stroke="#00a862" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="128" cy="89" r="22" fill="#e6f4ea" stroke="var(--brand)" strokeWidth="2" />
+              <path d="M120 89 H136 M128 81 V97" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" />
               {/* Arrow to assembled product */}
-              <path d="M156 89 H176 M172 85 L176 89 L172 93" stroke="#00a862" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M156 89 H176 M172 85 L176 89 L172 93" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               {/* Assembled Product Box */}
-              <rect x="184" y="66" width="46" height="46" rx="6" fill="#00a862" />
+              <rect x="184" y="66" width="46" height="46" rx="6" fill="var(--brand)" />
               <path d="M184 82 H230 M207 66 V112" stroke="#ffffff" strokeWidth="1.5" />
             </svg>
           </div>
@@ -3069,7 +3071,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 36,
                 padding: "0 20px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 5,
@@ -3088,7 +3090,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 36,
                 padding: "0 20px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 5,
@@ -3128,11 +3130,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               height: 32,
               padding: "0 20px",
               background: "#ffffff",
-              border: "1px solid #00a862",
+              border: "1px solid var(--brand)",
               borderRadius: 16,
               fontSize: 12.5,
               fontWeight: 600,
-              color: "#00a862",
+              color: "var(--brand)",
               cursor: "pointer",
             }}
           >
@@ -3152,7 +3154,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             <button
               type="button"
               onClick={() => setShowAssemblyModal(true)}
-              style={{ height: 32, padding: "0 14px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+              style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={15} />
               <span>Thêm lệnh lắp ráp</span>
@@ -3160,7 +3162,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             <button
               type="button"
               onClick={() => setShowDisassemblyModal(true)}
-              style={{ height: 32, padding: "0 14px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+              style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={15} />
               <span>Thêm lệnh tháo dỡ</span>
@@ -3224,12 +3226,12 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 .map((row) => (
                   <tr key={row.id} style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }} onClick={() => row.type === "Lắp ráp" ? setShowAssemblyModal(true) : setShowDisassemblyModal(true)}>
                     <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{row.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.date}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
                       <span style={{
                         background: row.type === "Lắp ráp" ? "#dcfce7" : "#e0f2fe",
-                        color: row.type === "Lắp ráp" ? "#15803d" : "#0369a1",
+                        color: row.type === "Lắp ráp" ? "#15803d" : "var(--brand-hover)",
                         padding: "2px 8px",
                         borderRadius: 10,
                         fontSize: 11,
@@ -3239,7 +3241,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       </span>
                     </td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.productName}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{row.qty}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{row.qty}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.unit}</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{formatVND(row.amount)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
@@ -3253,7 +3255,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
 
         <div style={{ padding: "8px 16px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12.5, color: "#64748b" }}>
           <div>Tổng số: <strong>{assemblyOrders.length}</strong> chứng từ</div>
-          <div>Tổng giá trị: <strong style={{ color: "#00a862" }}>{formatVND(assemblyOrders.reduce((s, r) => s + r.amount, 0))} đ</strong></div>
+          <div>Tổng giá trị: <strong style={{ color: "var(--brand)" }}>{formatVND(assemblyOrders.reduce((s, r) => s + r.amount, 0))} đ</strong></div>
         </div>
 
         {renderModals()}
@@ -3274,26 +3276,26 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               <ellipse cx="130" cy="148" rx="100" ry="14" fill="#f1f5f9" />
               {/* Stack of boxes on the left */}
               <rect x="68" y="70" width="24" height="22" rx="3" fill="#10b981" />
-              <rect x="94" y="70" width="24" height="22" rx="3" fill="#00a862" />
+              <rect x="94" y="70" width="24" height="22" rx="3" fill="var(--brand)" />
               <rect x="80" y="46" width="26" height="22" rx="3" fill="#059669" />
               {/* Dotted path to clipboard */}
               <path d="M122 68 H138" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="3 3" />
               {/* Clipboard with math symbols */}
-              <rect x="140" y="36" width="46" height="62" rx="4" fill="#ffffff" stroke="#00a862" strokeWidth="1.5" />
+              <rect x="140" y="36" width="46" height="62" rx="4" fill="#ffffff" stroke="var(--brand)" strokeWidth="1.5" />
               <circle cx="163" cy="36" r="6" fill="#cbd5e1" />
               <rect x="156" y="32" width="14" height="6" rx="2" fill="#64748b" />
               {/* Math signs on clipboard */}
-              <path d="M152 52 H160 M156 48 V56" stroke="#00a862" strokeWidth="1.8" strokeLinecap="round" />
-              <path d="M168 52 H176" stroke="#00a862" strokeWidth="1.8" strokeLinecap="round" />
-              <path d="M152 70 L160 78 M160 70 L152 78" stroke="#00a862" strokeWidth="1.8" strokeLinecap="round" />
-              <path d="M168 74 H176 M172 70 A1 1 0 0 1 172 72 M172 76 A1 1 0 0 1 172 78" stroke="#00a862" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M152 52 H160 M156 48 V56" stroke="var(--brand)" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M168 52 H176" stroke="var(--brand)" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M152 70 L160 78 M160 70 L152 78" stroke="var(--brand)" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M168 74 H176 M172 70 A1 1 0 0 1 172 72 M172 76 A1 1 0 0 1 172 78" stroke="var(--brand)" strokeWidth="1.8" strokeLinecap="round" />
               {/* Girl with laptop on the right */}
               <circle cx="198" cy="84" r="14" fill="#64748b" />
-              <path d="M184 122 C184 105 212 105 212 122 Z" fill="#00a862" />
+              <path d="M184 122 C184 105 212 105 212 122 Z" fill="var(--brand)" />
               <rect x="176" y="108" width="36" height="20" rx="3" fill="#cbd5e1" />
               <path d="M172 130 H216" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
               {/* Plus badge */}
-              <circle cx="178" cy="116" r="7" fill="#00a862" />
+              <circle cx="178" cy="116" r="7" fill="var(--brand)" />
               <path d="M178 113 V119 M175 116 H181" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </div>
@@ -3334,7 +3336,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 36,
                 padding: "0 22px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 5,
@@ -3356,11 +3358,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               height: 32,
               padding: "0 20px",
               background: "#ffffff",
-              border: "1px solid #00a862",
+              border: "1px solid var(--brand)",
               borderRadius: 16,
               fontSize: 12.5,
               fontWeight: 600,
-              color: "#00a862",
+              color: "var(--brand)",
               cursor: "pointer",
             }}
           >
@@ -3383,7 +3385,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{
                 height: 32,
                 padding: "0 14px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -3433,7 +3435,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               {stocktakes.map((row) => (
                 <tr key={row.id} style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }} onClick={() => openStocktake(row.id)}>
                   <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
-                  <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{row.code}</td>
+                  <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>{row.date}</td>
                   <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.warehouse}</td>
                   <td style={{ padding: "8px 10px" }}>{row.purpose}</td>
@@ -3488,7 +3490,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#7c3aed", fontWeight: 600, cursor: "pointer" }}
             >
               <span>Tìm kiếm nhanh báo cáo</span>
-              <span>🤖</span>
+              <span><Bot size={14} className="ui-inline-icon" aria-hidden="true" /></span>
             </div>
           </div>
 
@@ -3549,7 +3551,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     cursor: "pointer",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e2e8f0"; }}
                 >
                   <span style={{ fontSize: 13, color: "#1e293b", fontWeight: 500 }}>{rep.title}</span>
@@ -3808,7 +3810,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               setShowFullDemoCatalog(!showFullDemoCatalog);
               notify(showFullDemoCatalog ? "Đã hiển thị theo danh mục mặc định (như ảnh)" : "Đã nạp toàn bộ danh mục hàng hóa mẫu!");
             }}
-            style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontWeight: 500 }}
+            style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontWeight: 500 }}
           >
             <ChevronLeft size={15} />
             <span>Lấy lại danh mục</span>
@@ -4011,7 +4013,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 style={{
                   height: 32,
                   padding: "0 14px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontSize: 13,
@@ -4028,7 +4030,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 style={{
                   height: 32,
                   padding: "0 8px",
-                  background: "#009657",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderLeft: "1px solid rgba(255,255,255,0.25)",
@@ -4044,7 +4046,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             {/* More Options Button: ... */}
             <button
               type="button"
-              onClick={() => notify("Tiện ích danh mục: Nhập từ Excel, Xuất ra Excel, Gộp mã...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Tiện ích danh mục: Nhập từ Excel, Xuất"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               title="Chức năng khác"
               style={{ width: 30, height: 30, border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#64748b" }}
             >
@@ -4103,7 +4105,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   <td style={{ padding: "8px 10px", color: "#475569" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span>{item.vatPolicy}</span>
-                      <FileText size={14} style={{ color: "#00a862" }} />
+                      <FileText size={14} style={{ color: "var(--brand)" }} />
                     </div>
                   </td>
                   <td style={{ padding: "8px 10px", color: "#475569" }}>{item.nature || (item as any).type || "Hàng hóa"}</td>
@@ -4121,7 +4123,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         setSelectedNature(item.nature || (item as any).type || "Hàng hóa");
                         setShowItemModal(true);
                       }}
-                      style={{ border: "none", background: "transparent", color: "#0284c7", fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 2 }}
+                      style={{ border: "none", background: "transparent", color: "var(--brand)", fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 2 }}
                     >
                       <span>Sửa</span>
                       <ChevronDown size={13} />
@@ -4188,7 +4190,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
         <button
           type="button"
           onClick={() => navigateTo("process")}
-          style={{ height: 32, padding: "0 14px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+          style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
         >
           Quay lại sơ đồ quy trình
         </button>
@@ -4258,7 +4260,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     buttonStyle={{
                       height: 28,
                       padding: "0 10px",
-                      border: "1px solid #00a862",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 12.5,
                       fontWeight: 600,
@@ -4392,7 +4394,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
                             <span>Tham chiếu</span>
-                            <span style={{ color: "#0284c7", cursor: "pointer", fontWeight: 700 }}>...</span>
+                            <span style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}>...</span>
                           </div>
                         </div>
                       </>
@@ -4497,7 +4499,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
                             <span>Tham chiếu</span>
-                            <span style={{ color: "#0284c7", cursor: "pointer", fontWeight: 700 }}>...</span>
+                            <span style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}>...</span>
                           </div>
                         </div>
                       </>
@@ -4585,7 +4587,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
                             <span>Tham chiếu</span>
-                            <span style={{ color: "#0284c7", cursor: "pointer", fontWeight: 700 }}>...</span>
+                            <span style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}>...</span>
                           </div>
                         </div>
                       </>
@@ -4644,7 +4646,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               <div style={{ background: "#ffffff", borderBottom: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
                 {/* Active tab */}
                 <div style={{ display: "flex", alignItems: "center" }}>
-                  <div style={{ padding: "8px 16px", borderBottom: "2px solid #00a862", fontWeight: 700, fontSize: 13, color: "#0f172a", cursor: "pointer" }}>
+                  <div style={{ padding: "8px 16px", borderBottom: "2px solid var(--brand)", fontWeight: 700, fontSize: 13, color: "#0f172a", cursor: "pointer" }}>
                     Hàng tiền
                   </div>
                 </div>
@@ -4695,7 +4697,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       cursor: "pointer",
                     }}
                   >
-                    <span>🤖</span>
+                    <span><Bot size={14} className="ui-inline-icon" aria-hidden="true" /></span>
                     <span>Gợi ý hồ sơ</span>
                   </button>
                 </div>
@@ -4766,7 +4768,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               );
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                           {idx === 0 && receiptType.startsWith("3.") && apiConnected && <datalist id="other-receipt-items">
@@ -4782,7 +4784,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               setReceiptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, itemName: val } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                         </td>
@@ -4813,7 +4815,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setReceiptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, debitAcc: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "center", borderRadius: 3, padding: "0 2px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                               {idx === 0 && <datalist id="other-receipt-accounts">{(apiRows.accounts || []).filter((account: any) => account.status === "ACTIVE" && account.is_postable).map((account: any) => <option key={account.id} value={account.code}>{account.name}</option>)}</datalist>}
@@ -4828,7 +4830,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setReceiptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, creditAcc: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "center", borderRadius: 3, padding: "0 2px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -4855,7 +4857,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               setReceiptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, qty, amount: qty * r.price } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                         </td>
@@ -4869,7 +4871,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               setReceiptRows((prev) => prev.map((r, i) => (i === idx ? { ...r, price, amount: r.qty * price } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                         </td>
@@ -5040,7 +5042,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   }}
                 >
                   <Upload size={18} style={{ color: "#64748b" }} />
-                  <span style={{ fontSize: 12.5, color: "#0284c7" }}>
+                  <span style={{ fontSize: 12.5, color: "var(--brand)" }}>
                     Chọn tệp <span style={{ color: "#64748b" }}>hoặc kéo và thả tệp vào đây</span>
                   </span>
                 </div>
@@ -5056,7 +5058,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       width: 32,
                       height: 18,
                       borderRadius: 10,
-                      background: receiptShowAccounts ? "#00a862" : "#cbd5e1",
+                      background: receiptShowAccounts ? "var(--brand)" : "#cbd5e1",
                       position: "relative",
                       transition: "background 0.2s",
                       cursor: "pointer",
@@ -5137,7 +5139,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         padding: "0 18px",
                         border: "none",
                         borderRadius: "4px 0 0 4px",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         fontWeight: 600,
                         fontSize: 13,
@@ -5155,7 +5157,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         border: "none",
                         borderLeft: "1px solid rgba(255,255,255,0.3)",
                         borderRadius: "0 4px 4px 0",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         cursor: "pointer",
                         display: "grid",
@@ -5220,7 +5222,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     buttonStyle={{
                       height: 28,
                       padding: "0 10px",
-                      border: "1px solid #00a862",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 12.5,
                       fontWeight: 600,
@@ -5266,7 +5268,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   </div>
                   {issueType.startsWith("1.") && apiConnected && <button type="button" onClick={openSalePicker}
                     disabled={Boolean(editingIssueId && issueSaleId)}
-                    style={{ height: 28, padding: "0 12px", border: "1px solid #00a862", borderRadius: 4, background: "#f0fdf4", color: "#047857", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+                    style={{ height: 28, padding: "0 12px", border: "1px solid var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "#047857", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
                     Chọn chứng từ bán hàng
                   </button>}
                   {apiConnected && (issueType.startsWith("1.") || issueType.startsWith("3.")) && <span data-testid="issue-status"
@@ -5408,7 +5410,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
                             <span>Tham chiếu</span>
-                            <span style={{ color: "#0284c7", cursor: "pointer", fontWeight: 700 }}>...</span>
+                            <span style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}>...</span>
                           </div>
                         </div>
                       </>
@@ -5487,7 +5489,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
                             <span>Tham chiếu</span>
-                            <span style={{ color: "#0284c7", cursor: "pointer", fontWeight: 700 }}>...</span>
+                            <span style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}>...</span>
                           </div>
                         </div>
                       </>
@@ -5590,7 +5592,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                             <span>Tham chiếu</span>
                             <button type="button" aria-label="Chọn chứng từ tham chiếu" disabled={issueReadOnly}
                               onClick={() => setRefPicker({ search: "", target: "issue" })}
-                              style={{ border: "none", background: "none", padding: 0, color: "#0284c7", cursor: "pointer", fontWeight: 700 }}>...</button>
+                              style={{ border: "none", background: "none", padding: 0, color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}>...</button>
                             {issueRefSearch && <span style={{ color: "#0f172a", fontWeight: 600 }}>{issueRefSearch}</span>}
                           </div>
                         </div>
@@ -5650,7 +5652,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               <div style={{ background: "#ffffff", borderBottom: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
                 {/* Active tab */}
                 <div style={{ display: "flex", alignItems: "center" }}>
-                  <div style={{ padding: "8px 16px", borderBottom: "2px solid #00a862", fontWeight: 700, fontSize: 13, color: "#0f172a", cursor: "pointer" }}>
+                  <div style={{ padding: "8px 16px", borderBottom: "2px solid var(--brand)", fontWeight: 700, fontSize: 13, color: "#0f172a", cursor: "pointer" }}>
                     Hàng tiền
                   </div>
                 </div>
@@ -5676,7 +5678,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       cursor: "pointer",
                     }}
                   >
-                    <span>🤖</span>
+                    <span><Bot size={14} className="ui-inline-icon" aria-hidden="true" /></span>
                     <span>Gợi ý hồ sơ</span>
                   </button>
                 </div>
@@ -5762,7 +5764,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               );
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                           {idx === 0 && issueType !== "2. Sản xuất" && apiConnected && <datalist id="other-issue-items">
@@ -5781,7 +5783,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               setIssueRows((prev) => prev.map((r, i) => (i === idx ? { ...r, itemName: val } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                         </td>
@@ -5821,7 +5823,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setIssueRows((prev) => prev.map((r, i) => (i === idx ? { ...r, debitAcc: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "center", borderRadius: 3, padding: "0 2px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -5835,7 +5837,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setIssueRows((prev) => prev.map((r, i) => (i === idx ? { ...r, creditAcc: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "center", borderRadius: 3, padding: "0 2px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -5863,7 +5865,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               setIssueRows((prev) => prev.map((r, i) => (i === idx ? { ...r, qty, amount: qty * r.price } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                           {row.saleLineId && row.remaining !== undefined && (
@@ -5886,7 +5888,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               setIssueRows((prev) => prev.map((r, i) => (i === idx ? { ...r, price, amount: r.qty * price } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                         </td>
@@ -6073,7 +6075,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       width: 32,
                       height: 18,
                       borderRadius: 10,
-                      background: issueShowAccounts ? "#00a862" : "#cbd5e1",
+                      background: issueShowAccounts ? "var(--brand)" : "#cbd5e1",
                       position: "relative",
                       transition: "background 0.2s",
                       cursor: "pointer",
@@ -6117,7 +6119,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     type="button"
                     disabled={issueLocked}
                     onClick={() => handleSaveIssue(issueFormData(), true)}
-                    style={{ height: 32, padding: "0 20px", border: "1px solid #00a862", borderRadius: 4, background: "#ffffff", color: "#047857", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+                    style={{ height: 32, padding: "0 20px", border: "1px solid var(--brand)", borderRadius: 4, background: "#ffffff", color: "#047857", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
                   >Ghi sổ</button>}
 
                   <div style={{ display: "flex", position: "relative" }}>
@@ -6133,7 +6135,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         padding: "0 18px",
                         border: "none",
                         borderRadius: "4px 0 0 4px",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         fontWeight: 600,
                         fontSize: 13,
@@ -6154,7 +6156,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         border: "none",
                         borderLeft: "1px solid rgba(255,255,255,0.3)",
                         borderRadius: "0 4px 4px 0",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         cursor: "pointer",
                         display: "grid",
@@ -6242,7 +6244,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                 </div>
                 <div style={{ height: 48, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "0 14px", borderTop: "1px solid #cbd5e1", background: "#f8fafc", flexShrink: 0 }}>
                   <button type="button" onClick={() => setReceiveDialog(null)} style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#334155", fontSize: 13, cursor: "pointer" }}>Hủy</button>
-                  <button type="button" onClick={confirmReceive} style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Xác nhận đã nhận</button>
+                  <button type="button" onClick={confirmReceive} style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Xác nhận đã nhận</button>
                 </div>
               </div>
             </div>
@@ -6286,7 +6288,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               </div>
               <div style={{ height: 48, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "0 14px", borderTop: "1px solid #cbd5e1", background: "#f8fafc" }}>
                 <button type="button" onClick={() => setPartyQuickAdd(null)} style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#334155", fontSize: 13, cursor: "pointer" }}>Hủy</button>
-                <button type="submit" disabled={partyQuickAdd.saving} style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                <button type="submit" disabled={partyQuickAdd.saving} style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   {partyQuickAdd.saving ? "Đang lưu..." : "Lưu đối tượng"}
                 </button>
               </div>
@@ -6329,7 +6331,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     <tbody>
                       {documents.map((row) => (
                         <tr key={row.id} onClick={() => { (refPicker.target === "transfer" ? setTransferRefSearch : setIssueRefSearch)(String(row.number || "")); setRefPicker(null); }} style={{ borderBottom: "1px solid #e2e8f0", cursor: "pointer" }}>
-                          <td style={{ ...cell, fontWeight: 600, color: "#0284c7" }}>{row.number}</td>
+                          <td style={{ ...cell, fontWeight: 600, color: "var(--brand)" }}>{row.number}</td>
                           <td style={cell}>{toViDate(row.date)}</td>
                           <td style={cell}>{row.kind}</td>
                           <td style={cell}>{row.description}</td>
@@ -6374,7 +6376,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   <label style={{ fontSize: 12, color: "#475569", display: "grid", gap: 3 }}>Đến ngày
                     <input aria-label="Đến ngày" type="date" value={salePicker.to} onChange={(e) => setFilter({ to: e.target.value })} style={{ ...input, width: 140 }} />
                   </label>
-                  <button type="submit" disabled={salePicker.loading} style={{ height: 28, padding: "0 16px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontWeight: 600, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                  <button type="submit" disabled={salePicker.loading} style={{ height: 28, padding: "0 16px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontWeight: 600, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                     <Search size={13} /> {salePicker.loading ? "Đang tìm..." : "Tìm kiếm"}
                   </button>
                 </form>
@@ -6395,7 +6397,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         <tr key={sale.id} onClick={() => setFilter({ saleId: sale.id, lineIds: sale.lines.filter((line: any) => Number(line.remaining_quantity) > 0).map((line: any) => line.id) })}
                           style={{ borderBottom: "1px solid #e2e8f0", cursor: "pointer", background: sale.id === salePicker.saleId ? "#ecfdf5" : "#ffffff" }}>
                           <td style={{ ...cell, textAlign: "center" }}><input type="radio" aria-label={`Chọn ${sale.number}`} readOnly checked={sale.id === salePicker.saleId} /></td>
-                          <td style={{ ...cell, fontWeight: 600, color: "#0284c7" }}>{sale.number}</td>
+                          <td style={{ ...cell, fontWeight: 600, color: "var(--brand)" }}>{sale.number}</td>
                           <td style={cell}>{toViDate(sale.posting_date)}</td>
                           <td style={cell}>{sale.customer_code} · {sale.customer_name}</td>
                           <td style={cell}>{sale.description}</td>
@@ -6456,7 +6458,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   <button type="button" onClick={() => setSalePicker(null)} style={{ height: 32, padding: "0 18px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#334155", fontSize: 13, cursor: "pointer" }}>Hủy</button>
                   <button type="button" disabled={!picked}
                     onClick={() => { if (picked && applySaleSelection(picked, salePicker.lineIds)) setSalePicker(null); }}
-                    style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: picked ? "#00a862" : "#94a3b8", color: "#ffffff", fontWeight: 600, fontSize: 13, cursor: picked ? "pointer" : "default" }}>
+                    style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: picked ? "var(--brand)" : "#94a3b8", color: "#ffffff", fontWeight: 600, fontSize: 13, cursor: picked ? "pointer" : "default" }}>
                     Đồng ý
                   </button>
                 </div>
@@ -6577,7 +6579,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           destWarehouse: crossesConsignment ? "" : row.destWarehouse,
                           destWarehouseAddress: crossesConsignment ? "" : row.destWarehouseAddress })));
                       }}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span style={{ fontWeight: transferType === type ? 600 : 400 }}>{type}</span>
                   </label>
@@ -6601,7 +6603,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               type="text"
                               value={transferOrderNo}
                               onChange={(e) => setTransferOrderNo(e.target.value)}
-                              style={{ width: "100%", height: 26, border: "1px solid #00a862", borderRadius: 3, padding: "0 6px", fontSize: 12, outline: "none", boxSizing: "border-box" }}
+                              style={{ width: "100%", height: 26, border: "1px solid var(--brand)", borderRadius: 3, padding: "0 6px", fontSize: 12, outline: "none", boxSizing: "border-box" }}
                             />
                           </div>
                           <div>
@@ -6767,7 +6769,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           <span>Tham chiếu</span>
                           <button type="button" aria-label="Chọn chứng từ tham chiếu chuyển kho" disabled={transferReadOnly}
                             onClick={() => setRefPicker({ search: "", target: "transfer" })}
-                            style={{ border: "none", background: "none", padding: 0, color: "#0284c7", cursor: "pointer", fontWeight: 700 }}>...</button>
+                            style={{ border: "none", background: "none", padding: 0, color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}>...</button>
                           {transferRefSearch && <span style={{ color: "#0f172a", fontWeight: 600 }}>{transferRefSearch}</span>}
                         </div>
                       </div>
@@ -6950,7 +6952,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           <span>Tham chiếu</span>
                           <button type="button" aria-label="Chọn chứng từ tham chiếu chuyển kho" disabled={transferReadOnly}
                             onClick={() => setRefPicker({ search: "", target: "transfer" })}
-                            style={{ border: "none", background: "none", padding: 0, color: "#0284c7", cursor: "pointer", fontWeight: 700 }}>...</button>
+                            style={{ border: "none", background: "none", padding: 0, color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}>...</button>
                           {transferRefSearch && <span style={{ color: "#0f172a", fontWeight: 600 }}>{transferRefSearch}</span>}
                         </div>
                       </div>
@@ -6963,7 +6965,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 10 }}>
                           <div>
                             <label style={{ display: "block", fontSize: 12, color: "#475569", marginBottom: 2 }}>Mã người vận chuyển</label>
-                            <div style={{ display: "flex", height: 26, border: "1px solid #00a862", borderRadius: 3, overflow: "hidden", background: "#ffffff" }}>
+                            <div style={{ display: "flex", height: 26, border: "1px solid var(--brand)", borderRadius: 3, overflow: "hidden", background: "#ffffff" }}>
                               <input
                                 type="text"
                                 value={transferTransporterCode}
@@ -7011,7 +7013,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           <span>Tham chiếu</span>
                           <button type="button" aria-label="Chọn chứng từ tham chiếu chuyển kho" disabled={transferReadOnly}
                             onClick={() => setRefPicker({ search: "", target: "transfer" })}
-                            style={{ border: "none", background: "none", padding: 0, color: "#0284c7", cursor: "pointer", fontWeight: 700 }}>...</button>
+                            style={{ border: "none", background: "none", padding: 0, color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}>...</button>
                           {transferRefSearch && <span style={{ color: "#0f172a", fontWeight: 600 }}>{transferRefSearch}</span>}
                         </div>
                       </div>
@@ -7143,7 +7145,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               <div style={{ background: "#ffffff", borderBottom: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
                 {/* Active tab */}
                 <div style={{ display: "flex", alignItems: "center" }}>
-                  <div style={{ padding: "8px 16px", borderBottom: "2px solid #00a862", fontWeight: 700, fontSize: 13, color: "#0f172a", cursor: "pointer" }}>
+                  <div style={{ padding: "8px 16px", borderBottom: "2px solid var(--brand)", fontWeight: 700, fontSize: 13, color: "#0f172a", cursor: "pointer" }}>
                     Hàng tiền
                   </div>
                 </div>
@@ -7168,7 +7170,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       cursor: "pointer",
                     }}
                   >
-                    <span>🤖</span>
+                    <span><Bot size={14} className="ui-inline-icon" aria-hidden="true" /></span>
                     <span>Gợi ý hồ sơ</span>
                   </button>
                 </div>
@@ -7207,7 +7209,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         {transferType === "Xuất chuyển kho nội bộ" ? (
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 3, justifyContent: "flex-end" }}>
                             <span>Đơn giá</span>
-                            <HelpCircle size={12} style={{ color: "#00a862" }} />
+                            <HelpCircle size={12} style={{ color: "var(--brand)" }} />
                           </div>
                         ) : (
                           "Đơn giá"
@@ -7217,7 +7219,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         {transferType === "Xuất chuyển kho nội bộ" ? (
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 3, justifyContent: "flex-end" }}>
                             <span>Thành tiền</span>
-                            <HelpCircle size={12} style={{ color: "#00a862" }} />
+                            <HelpCircle size={12} style={{ color: "var(--brand)" }} />
                           </div>
                         ) : (
                           "Thành tiền"
@@ -7268,7 +7270,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               );
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                         </td>
@@ -7281,7 +7283,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               setTransferRows((prev) => prev.map((r, i) => (i === idx ? { ...r, itemName: val } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                         </td>
@@ -7372,7 +7374,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setTransferRows((prev) => prev.map((r, i) => (i === idx ? { ...r, debitAcc: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "center", borderRadius: 3, padding: "0 2px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -7388,7 +7390,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setTransferRows((prev) => prev.map((r, i) => (i === idx ? { ...r, creditAcc: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "center", borderRadius: 3, padding: "0 2px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -7416,7 +7418,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               setTransferRows((prev) => prev.map((r, i) => (i === idx ? { ...r, qty, amount: qty * (r.price || 0) } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                         </td>
@@ -7433,7 +7435,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                               setTransferRows((prev) => prev.map((r, i) => (i === idx ? { ...r, price, amount: (r.qty || 0) * price } : r)));
                             }}
                             style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                             onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                           />
                         </td>
@@ -7623,7 +7625,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       width: 32,
                       height: 18,
                       borderRadius: 10,
-                      background: transferShowAccounts ? "#00a862" : "#cbd5e1",
+                      background: transferShowAccounts ? "var(--brand)" : "#cbd5e1",
                       position: "relative",
                       transition: "background 0.2s",
                       cursor: "pointer",
@@ -7663,7 +7665,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   )}
                   {apiConnected && transferReceipt === "IN_TRANSIT" && (
                     <button type="button" onClick={openReceiveDialog}
-                      style={{ height: 32, padding: "0 16px", border: "1px solid #0284c7", borderRadius: 4, background: "#eff6ff", color: "#0369a1", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                      style={{ height: 32, padding: "0 16px", border: "1px solid var(--brand)", borderRadius: 4, background: "#eff6ff", color: "var(--brand-hover)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                       Xác nhận nhận hàng
                     </button>
                   )}
@@ -7689,7 +7691,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         padding: "0 18px",
                         border: "none",
                         borderRadius: "4px 0 0 4px",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         fontWeight: 600,
                         fontSize: 13,
@@ -7709,7 +7711,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         border: "none",
                         borderLeft: "1px solid rgba(255,255,255,0.3)",
                         borderRadius: "0 4px 4px 0",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         cursor: "pointer",
                         display: "grid",
@@ -7756,7 +7758,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             <div style={{ background: "#ffffff", borderRadius: 6, width: 860, maxWidth: "96vw", maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 40px rgba(0,0,0,0.2)", overflow: "hidden" }}>
               <div style={{ padding: "12px 18px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <ClipboardCheck size={18} style={{ color: "#00a862" }} />
+                  <ClipboardCheck size={18} style={{ color: "var(--brand)" }} />
                   <strong style={{ fontSize: 15, color: "#1e293b" }}>Biên bản kiểm kê kho {selectedCount?.number || "mới"}</strong>
                 </div>
                 <button type="button" onClick={() => setShowStocktakeModal(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#64748b" }}><X size={18} /></button>
@@ -7803,7 +7805,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         stock: apiNumber(line.system_quantity), actual: apiNumber(line.actual_quantity),
                       })) : stocktakeDisplayItems).map((it: any) => (
                         <tr key={it.code} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                          <td style={{ padding: "6px 8px", fontWeight: 600, color: "#0284c7" }}>{it.code}</td>
+                          <td style={{ padding: "6px 8px", fontWeight: 600, color: "var(--brand)" }}>{it.code}</td>
                           <td style={{ padding: "6px 8px" }}>{it.name}</td>
                           <td style={{ padding: "6px 8px", textAlign: "center" }}>{it.unit}</td>
                           <td style={{ padding: "6px 8px", textAlign: "right" }}>{it.stock}</td>
@@ -7820,9 +7822,9 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   {selectedCount?.status === "DRAFT" && <button type="button" onClick={() => { void apiSave(async (writer) => {
                     await writer.post(`/api/v1/inventory/counts/${selectedCountId}/confirm/`, {});
                     return { message: "Đã xác nhận biên bản kiểm kê." };
-                  }); }} style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontWeight: 600, cursor: "pointer" }}>Xác nhận biên bản</button>}
-                  {selectedCount && ["COUNTED", "ADJUSTED"].includes(selectedCount.status) && <button type="button" onClick={() => { setShowStocktakeModal(false); openCountResolution(); }} style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontWeight: 600, cursor: "pointer" }}>Xử lý chênh lệch</button>}
-                  {!selectedCount && <button type="button" onClick={() => { void handleSaveStocktake(); }} style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontWeight: 600, cursor: "pointer" }}>Lưu biên bản</button>}
+                  }); }} style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontWeight: 600, cursor: "pointer" }}>Xác nhận biên bản</button>}
+                  {selectedCount && ["COUNTED", "ADJUSTED"].includes(selectedCount.status) && <button type="button" onClick={() => { setShowStocktakeModal(false); openCountResolution(); }} style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontWeight: 600, cursor: "pointer" }}>Xử lý chênh lệch</button>}
+                  {!selectedCount && <button type="button" onClick={() => { void handleSaveStocktake(); }} style={{ height: 32, padding: "0 20px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontWeight: 600, cursor: "pointer" }}>Lưu biên bản</button>}
                 </div>
               </div>
             </div>
@@ -7847,7 +7849,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       <td style={{ padding: 8 }}>{item?.code}</td><td>{item?.name}</td>
                       <td>{apiNumber(line.system_quantity)}</td><td>{apiNumber(line.actual_quantity)}</td>
                       <td>{apiNumber(line.variance_quantity)}</td><td>{countLineResolved(line.id)}</td><td>{remaining}</td>
-                      <td>{remaining > 0 && selectedCount.status === "COUNTED" && <button type="button" onClick={() => { setEditingResolutionId(""); setSelectedCountLineId(line.id); setResolutionQuantity(remaining); setResolutionCause(apiNumber(line.variance_quantity) > 0 ? "SURPLUS" : "OTHER"); }} style={{ border: "1px solid #00a862", color: "#008c52", background: "white", borderRadius: 4, cursor: "pointer" }}>Lập phương án</button>}</td>
+                      <td>{remaining > 0 && selectedCount.status === "COUNTED" && <button type="button" onClick={() => { setEditingResolutionId(""); setSelectedCountLineId(line.id); setResolutionQuantity(remaining); setResolutionCause(apiNumber(line.variance_quantity) > 0 ? "SURPLUS" : "OTHER"); }} style={{ border: "1px solid var(--brand)", color: "#008c52", background: "white", borderRadius: 4, cursor: "pointer" }}>Lập phương án</button>}</td>
                     </tr>;
                   })}</tbody>
                 </table>
@@ -7862,7 +7864,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     <label style={{ gridColumn: "span 2" }}>Diễn giải nguyên nhân<input value={resolutionExplanation} onChange={(e) => setResolutionExplanation(e.target.value)} style={{ display: "block", width: "100%", height: 30 }} /></label>
                     <label>Căn cứ xác định giá trị<input value={resolutionBasis} onChange={(e) => setResolutionBasis(e.target.value)} style={{ display: "block", width: "100%", height: 30 }} /></label>
                   </div>
-                  <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span>Giá trị dự kiến: {(resolutionQuantity * resolutionPrice).toLocaleString("vi-VN")} đ</span><button type="button" onClick={() => { void saveResolution(); }} style={{ background: "#00a862", color: "#fff", border: 0, borderRadius: 4, padding: "7px 14px", cursor: "pointer" }}>Lưu phương án</button></div>
+                  <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span>Giá trị dự kiến: {(resolutionQuantity * resolutionPrice).toLocaleString("vi-VN")} đ</span><button type="button" onClick={() => { void saveResolution(); }} style={{ background: "var(--brand)", color: "#fff", border: 0, borderRadius: 4, padding: "7px 14px", cursor: "pointer" }}>Lưu phương án</button></div>
                 </div>}
                 <strong>Các phương án đã lập</strong>
                 {countResolutions.length === 0 && <p style={{ color: "#64748b" }}>Chưa có phương án xử lý.</p>}
@@ -7903,7 +7905,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             <div style={{ background: "#ffffff", borderRadius: 6, width: 680, maxWidth: "95vw", display: "flex", flexDirection: "column", boxShadow: "0 20px 40px rgba(0,0,0,0.2)", overflow: "hidden" }}>
               <div style={{ padding: "12px 18px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Building2 size={18} style={{ color: "#00a862" }} />
+                  <Building2 size={18} style={{ color: "var(--brand)" }} />
                   <strong style={{ fontSize: 15, color: "#1e293b" }}>Danh sách kho hàng</strong>
                 </div>
                 <button type="button" onClick={() => setShowWarehouseListModal(false)} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#64748b" }}><X size={18} /></button>
@@ -7921,7 +7923,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   <tbody>
                     {SAMPLE_WAREHOUSES.map((w) => (
                       <tr key={w.code} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{w.code}</td>
+                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{w.code}</td>
                         <td style={{ padding: "8px 10px", fontWeight: 500 }}>{w.name}</td>
                         <td style={{ padding: "8px 10px", color: "#64748b" }}>{w.address}</td>
                       </tr>
@@ -7934,7 +7936,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   <button
                     type="button"
                     onClick={() => notify("Đã mở form thêm kho mới")}
-                    style={{ height: 32, padding: "0 18px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontWeight: 600, cursor: "pointer" }}
+                    style={{ height: 32, padding: "0 18px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontWeight: 600, cursor: "pointer" }}
                   >
                     Thêm kho mới
                   </button>
@@ -7985,7 +7987,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   top: "45%",
                   width: 14,
                   height: 44,
-                  background: "#0284c7",
+                  background: "var(--brand)",
                   borderRadius: "6px 0 0 6px",
                   display: "grid",
                   placeItems: "center",
@@ -8136,7 +8138,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       <span>Tham chiếu</span>
                       <span
                         onClick={() => notify("Chọn chứng từ tham chiếu (Đơn đặt hàng, Báo giá...)")}
-                        style={{ color: "#0284c7", cursor: "pointer", fontWeight: 700 }}
+                        style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}
                       >
                         ...
                       </span>
@@ -8252,7 +8254,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   }
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -8265,7 +8267,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setProdOrderProductRows((prev) => prev.map((r, i) => (i === idx ? { ...r, productName: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -8290,7 +8292,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setProdOrderProductRows((prev) => prev.map((r, i) => (i === idx ? { ...r, qty } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -8414,7 +8416,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       }}
                     >
                       <Upload size={18} style={{ color: "#64748b" }} />
-                      <span style={{ fontSize: 12.5, color: "#0284c7" }}>
+                      <span style={{ fontSize: 12.5, color: "var(--brand)" }}>
                         Chọn tệp <span style={{ color: "#64748b" }}>hoặc kéo và thả tệp vào đây</span>
                       </span>
                     </div>
@@ -8494,7 +8496,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   );
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -8507,7 +8509,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setProdOrderMaterialRows((prev) => prev.map((r, i) => (i === idx ? { ...r, materialName: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -8671,7 +8673,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         padding: "0 18px",
                         border: "none",
                         borderRadius: "4px 0 0 4px",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         fontWeight: 600,
                         fontSize: 13,
@@ -8689,7 +8691,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                         border: "none",
                         borderLeft: "1px solid rgba(255, 255, 255, 0.3)",
                         borderRadius: "0 4px 4px 0",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         cursor: "pointer",
                         display: "grid",
@@ -8746,7 +8748,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   top: "45%",
                   width: 14,
                   height: 44,
-                  background: "#0284c7",
+                  background: "var(--brand)",
                   borderRadius: "6px 0 0 6px",
                   display: "grid",
                   placeItems: "center",
@@ -8842,7 +8844,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           rows={2}
                           style={{
                             width: "100%",
-                            border: "1px solid #00a862",
+                            border: "1px solid var(--brand)",
                             borderRadius: 4,
                             padding: "6px 30px 6px 8px",
                             fontSize: 12,
@@ -8865,7 +8867,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       <span>Tham chiếu</span>
                       <span
                         onClick={() => notify("Chọn chứng từ tham chiếu")}
-                        style={{ color: "#0284c7", cursor: "pointer", fontWeight: 700 }}
+                        style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}
                       >
                         ...
                       </span>
@@ -8973,7 +8975,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   }
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -8986,7 +8988,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setAssemblyProductRows((prev) => prev.map((r, i) => (i === idx ? { ...r, itemName: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -9013,7 +9015,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   );
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -9029,7 +9031,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   );
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -9124,7 +9126,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       }}
                     >
                       <Upload size={18} style={{ color: "#64748b" }} />
-                      <span style={{ fontSize: 12.5, color: "#0284c7" }}>
+                      <span style={{ fontSize: 12.5, color: "var(--brand)" }}>
                         Chọn tệp <span style={{ color: "#64748b" }}>hoặc kéo và thả tệp vào đây</span>
                       </span>
                     </div>
@@ -9205,7 +9207,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   );
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -9218,7 +9220,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setAssemblyComponentRows((prev) => prev.map((r, i) => (i === idx ? { ...r, description: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -9330,7 +9332,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       padding: "0 18px",
                       border: "none",
                       borderRadius: "4px 0 0 4px",
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       fontWeight: 600,
                       fontSize: 13,
@@ -9348,7 +9350,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       border: "none",
                       borderLeft: "1px solid rgba(255, 255, 255, 0.3)",
                       borderRadius: "0 4px 4px 0",
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       cursor: "pointer",
                       display: "grid",
@@ -9404,7 +9406,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   top: "45%",
                   width: 14,
                   height: 44,
-                  background: "#0284c7",
+                  background: "var(--brand)",
                   borderRadius: "6px 0 0 6px",
                   display: "grid",
                   placeItems: "center",
@@ -9500,7 +9502,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                           rows={2}
                           style={{
                             width: "100%",
-                            border: "1px solid #00a862",
+                            border: "1px solid var(--brand)",
                             borderRadius: 4,
                             padding: "6px 30px 6px 8px",
                             fontSize: 12,
@@ -9523,7 +9525,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       <span>Tham chiếu</span>
                       <span
                         onClick={() => notify("Chọn chứng từ tham chiếu")}
-                        style={{ color: "#0284c7", cursor: "pointer", fontWeight: 700 }}
+                        style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 700 }}
                       >
                         ...
                       </span>
@@ -9644,7 +9646,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   }
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -9657,7 +9659,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setDisassemblyGoodRows((prev) => prev.map((r, i) => (i === idx ? { ...r, itemName: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -9684,7 +9686,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   );
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -9700,7 +9702,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   );
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", textAlign: "right", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -9795,7 +9797,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       }}
                     >
                       <Upload size={18} style={{ color: "#64748b" }} />
-                      <span style={{ fontSize: 12.5, color: "#0284c7" }}>
+                      <span style={{ fontSize: 12.5, color: "var(--brand)" }}>
                         Chọn tệp <span style={{ color: "#64748b" }}>hoặc kéo và thả tệp vào đây</span>
                       </span>
                     </div>
@@ -9876,7 +9878,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   );
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -9889,7 +9891,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                                   setDisassemblyOutputRows((prev) => prev.map((r, i) => (i === idx ? { ...r, itemName: val } : r)));
                                 }}
                                 style={{ width: "100%", height: 26, border: "1px solid transparent", borderRadius: 3, padding: "0 4px", fontSize: 12, outline: "none" }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = "#00a862"; }}
+                                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--brand)"; }}
                                 onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                               />
                             </td>
@@ -10000,7 +10002,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       padding: "0 18px",
                       border: "none",
                       borderRadius: "4px 0 0 4px",
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       fontWeight: 600,
                       fontSize: 13,
@@ -10018,7 +10020,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       border: "none",
                       borderLeft: "1px solid rgba(255, 255, 255, 0.3)",
                       borderRadius: "0 4px 4px 0",
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       cursor: "pointer",
                       display: "grid",
@@ -10082,7 +10084,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             <div style={{ background: "#ffffff", borderRadius: 8, width: 920, maxWidth: "95vw", maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}>
               <div style={{ padding: "14px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <FileSpreadsheet size={18} style={{ color: "#00a862" }} />
+                  <FileSpreadsheet size={18} style={{ color: "var(--brand)" }} />
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>{previewReportTitle}</h3>
                 </div>
                 <button type="button" onClick={() => setPreviewReportTitle(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><X size={18} /></button>
@@ -10108,7 +10110,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                   </thead>
                   <tbody>
                     <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>VO-MSB-01</td>
+                      <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>VO-MSB-01</td>
                       <td style={{ padding: "8px 10px" }}>Vỏ tủ điện hạ thế MSB 2200x1200x800</td>
                       <td style={{ padding: "8px 10px", textAlign: "center" }}>Bộ</td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>5</td>
@@ -10118,7 +10120,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>98.000.000</td>
                     </tr>
                     <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>ACB-3200A</td>
+                      <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>ACB-3200A</td>
                       <td style={{ padding: "8px 10px" }}>Máy cắt không khí ACB 3P 3200A Schneider</td>
                       <td style={{ padding: "8px 10px", textAlign: "center" }}>Cái</td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>2</td>
@@ -10128,7 +10130,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                       <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>246.000.000</td>
                     </tr>
                     <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>CAP-CXV-4X120</td>
+                      <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>CAP-CXV-4X120</td>
                       <td style={{ padding: "8px 10px" }}>Cáp điện lực đồng CU/XLPE/PVC 0.6/1kV 4x120mm2 CADIVI</td>
                       <td style={{ padding: "8px 10px", textAlign: "center" }}>Mét</td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>200</td>
@@ -10142,7 +10144,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
                     <tr style={{ background: "#f8fafc", fontWeight: 700, borderTop: "2px solid #cbd5e1" }}>
                       <td colSpan={6} style={{ padding: "10px", textAlign: "right" }}>Tổng cộng:</td>
                       <td style={{ padding: "10px", textAlign: "right" }}>260</td>
-                      <td style={{ padding: "10px", textAlign: "right", color: "#00a862" }}>731.500.000</td>
+                      <td style={{ padding: "10px", textAlign: "right", color: "var(--brand)" }}>731.500.000</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -10150,11 +10152,11 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               <div style={{ padding: "12px 20px", background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 12, color: "#64748b" }}>Trích xuất theo chuẩn kế toán & TT 99/2025/TT-BTC</span>
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button type="button" onClick={() => notify("Đã xuất báo cáo ra file Excel")} style={{ height: 32, padding: "0 14px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
+                  <button type="button" onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất báo cáo ra file Excel"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }} style={{ height: 32, padding: "0 14px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
                     <FileSpreadsheet size={14} style={{ color: "#16a34a" }} />
                     <span>Xuất Excel</span>
                   </button>
-                  <button type="button" onClick={() => setPreviewReportTitle(null)} style={{ height: 32, padding: "0 18px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontWeight: 600, cursor: "pointer", fontSize: 12.5 }}>
+                  <button type="button" onClick={() => setPreviewReportTitle(null)} style={{ height: 32, padding: "0 18px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontWeight: 600, cursor: "pointer", fontSize: 12.5 }}>
                     Đóng
                   </button>
                 </div>

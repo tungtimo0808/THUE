@@ -1,3 +1,5 @@
+import { saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -367,11 +369,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() =>
-              notify?.(
-                "Đã lưu Báo cáo kết quả hoạt động kinh doanh chi tiết doanh thu và chi phí theo nhiều chi nhánh."
-              )
-            }
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -381,7 +379,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -462,7 +460,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
               style={{
                 position: "absolute",
                 left: 10,
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -573,7 +571,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra file Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo ra file Excel"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <Download size={15} />
           </button>
@@ -1028,7 +1026,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
                       checked={draftExpenseAnalysisBy === "item"}
                       onChange={() => setDraftExpenseAnalysisBy("item")}
                       style={{
-                        accentColor: "#00a862",
+                        accentColor: "var(--brand)",
                         width: 16,
                         height: 16,
                         cursor: "pointer",
@@ -1053,7 +1051,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
                       checked={draftExpenseAnalysisBy === "account"}
                       onChange={() => setDraftExpenseAnalysisBy("account")}
                       style={{
-                        accentColor: "#00a862",
+                        accentColor: "var(--brand)",
                         width: 16,
                         height: 16,
                         cursor: "pointer",
@@ -1163,7 +1161,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,
@@ -1286,7 +1284,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
                         border: "1px solid #e2e8f0",
                         padding: "8px 10px",
                         textAlign: "center",
-                        color: "#0284c7",
+                        color: "var(--brand)",
                         fontWeight: 600,
                       }}
                     >
@@ -1331,7 +1329,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
             >
               <button
                 type="button"
-                onClick={() => notify?.("Đã xuất khẩu chứng từ ra Excel.")}
+                onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất khẩu chứng từ"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                 style={{
                   height: 30,
                   padding: "0 14px",
@@ -1350,7 +1348,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
                 style={{
                   height: 30,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   fontSize: 12.5,
@@ -1431,7 +1429,7 @@ export default function MisaMultiBranchRevenueExpenseReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,

@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
@@ -48,7 +49,7 @@ export type MisaBudgetWorkspaceProps = {
 // Semicircle Half Gauge Component matching Screenshot 2
 function SemicircleGauge({
   percent = 0,
-  color = "#00a862",
+  color = "var(--brand)",
   size = 180,
 }: {
   percent: number;
@@ -151,7 +152,7 @@ function SemicircleGauge({
 function MonthlyComparisonChart({
   title,
   unit = "Triệu đồng",
-  actualColor = "#00a862",
+  actualColor = "var(--brand)",
   planColor = "#94a3b8",
   periodLabel = "Theo tháng",
   actualLabel = "Thực hiện",
@@ -280,7 +281,7 @@ function MonthlyComparisonChart({
 function UnitComparisonChart({
   title,
   unit = "Triệu đồng",
-  actualColor = "#00a862",
+  actualColor = "var(--brand)",
   planColor = "#94a3b8",
   lastUpdated,
   onRefresh,
@@ -382,7 +383,7 @@ export default function MisaBudgetWorkspace({
   }, [token, company?.id]);
 
   // Tab 2 Planning View State
-  const [planningViewMode, setPlanningViewMode] = useState<"landing" | "list" | "editor">("landing");
+  const [planningViewMode, setPlanningViewMode] = useState<"landing" | "list" | "editor">("list");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
 
@@ -603,12 +604,12 @@ export default function MisaBudgetWorkspace({
                 <div className="misa-budget-card-body">
                   <div className="misa-budget-gauge-layout">
                     <div className="misa-budget-gauge-left">
-                      <SemicircleGauge percent={0} color="#00a862" size={175} />
+                      <SemicircleGauge percent={0} color="var(--brand)" size={175} />
                     </div>
                     <div className="misa-budget-gauge-right">
                       <div className="misa-budget-metric-item">
                         <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#00a862" }} />
+                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "var(--brand)" }} />
                           <span>Thực hiện</span>
                         </span>
                         <span className="misa-budget-metric-val">0</span>
@@ -662,12 +663,12 @@ export default function MisaBudgetWorkspace({
                 <div className="misa-budget-card-body">
                   <div className="misa-budget-gauge-layout">
                     <div className="misa-budget-gauge-left">
-                      <SemicircleGauge percent={0} color="#0284c7" size={175} />
+                      <SemicircleGauge percent={0} color="var(--brand)" size={175} />
                     </div>
                     <div className="misa-budget-gauge-right">
                       <div className="misa-budget-metric-item">
                         <span className="misa-budget-metric-label">
-                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "#0284c7" }} />
+                          <span className="misa-budget-metric-badge" style={{ backgroundColor: "var(--brand)" }} />
                           <span>Thực hiện</span>
                         </span>
                         <span className="misa-budget-metric-val">0</span>
@@ -769,7 +770,7 @@ export default function MisaBudgetWorkspace({
               {/* Card 4: Doanh thu thực hiện so với kế hoạch */}
               <MonthlyComparisonChart
                 title="Doanh thu thực hiện so với kế hoạch"
-                actualColor="#00a862"
+                actualColor="var(--brand)"
                 planColor="#94a3b8"
                 lastUpdated={lastUpdated}
                 onRefresh={handleRefreshData}
@@ -778,7 +779,7 @@ export default function MisaBudgetWorkspace({
               {/* Card 5: Chi phí thực hiện so với kế hoạch */}
               <MonthlyComparisonChart
                 title="Chi phí thực hiện so với kế hoạch"
-                actualColor="#0284c7"
+                actualColor="var(--brand)"
                 planColor="#94a3b8"
                 lastUpdated={lastUpdated}
                 onRefresh={handleRefreshData}
@@ -799,7 +800,7 @@ export default function MisaBudgetWorkspace({
               {/* Card 7: Tình hình thực hiện doanh thu theo đơn vị */}
               <UnitComparisonChart
                 title="Tình hình thực hiện doanh thu theo đơn vị"
-                actualColor="#00a862"
+                actualColor="var(--brand)"
                 planColor="#94a3b8"
                 lastUpdated={lastUpdated}
                 onRefresh={handleRefreshData}
@@ -826,30 +827,30 @@ export default function MisaBudgetWorkspace({
                   {/* Document Page Base */}
                   <rect x="52" y="32" width="68" height="92" rx="6" fill="#ffffff" stroke="#cbd5e1" strokeWidth="2" />
                   {/* Folded Top-Right Corner */}
-                  <path d="M102 32 L120 50 L102 50 Z" fill="#00a862" opacity="0.15" />
+                  <path d="M102 32 L120 50 L102 50 Z" fill="var(--brand)" opacity="0.15" />
                   <path d="M102 32 L102 50 L120 50" fill="none" stroke="#cbd5e1" strokeWidth="2" />
                   
                   {/* Document lines */}
-                  <rect x="62" y="60" width="34" height="4" rx="2" fill="#00a862" />
-                  <rect x="62" y="72" width="24" height="4" rx="2" fill="#00a862" />
+                  <rect x="62" y="60" width="34" height="4" rx="2" fill="var(--brand)" />
+                  <rect x="62" y="72" width="24" height="4" rx="2" fill="var(--brand)" />
                   <rect x="62" y="84" width="30" height="4" rx="2" fill="#cbd5e1" />
 
                   {/* Upward Line Chart Path */}
                   <path
                     d="M 60 106 L 85 92 L 105 82 L 132 54"
                     fill="none"
-                    stroke="#00a862"
+                    stroke="var(--brand)"
                     strokeWidth="3.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                   {/* Chart Points */}
-                  <circle cx="85" cy="92" r="4.5" fill="#00a862" />
-                  <circle cx="105" cy="82" r="4.5" fill="#00a862" />
-                  <circle cx="132" cy="54" r="5" fill="#00a862" />
+                  <circle cx="85" cy="92" r="4.5" fill="var(--brand)" />
+                  <circle cx="105" cy="82" r="4.5" fill="var(--brand)" />
+                  <circle cx="132" cy="54" r="5" fill="var(--brand)" />
 
                   {/* Circular Dollar Badge */}
-                  <circle cx="126" cy="100" r="16" fill="#00a862" />
+                  <circle cx="126" cy="100" r="16" fill="var(--brand)" />
                   <text x="126" y="106" textAnchor="middle" fill="#ffffff" fontSize="16" fontWeight="bold">
                     $
                   </text>
@@ -857,8 +858,8 @@ export default function MisaBudgetWorkspace({
                   {/* Sparkles / Plus decorative points */}
                   <path d="M 40 50 L 44 50 M 42 48 L 42 52" stroke="#94a3b8" strokeWidth="1.5" />
                   <path d="M 148 38 L 152 38 M 150 36 L 150 40" stroke="#94a3b8" strokeWidth="1.5" />
-                  <circle cx="48" cy="96" r="2" fill="#00a862" />
-                  <circle cx="152" cy="86" r="2.5" fill="#00a862" />
+                  <circle cx="48" cy="96" r="2" fill="var(--brand)" />
+                  <circle cx="152" cy="86" r="2.5" fill="var(--brand)" />
                 </svg>
               </div>
 
@@ -920,7 +921,7 @@ export default function MisaBudgetWorkspace({
                   <button
                     type="button"
                     className="misa-budget-btn-secondary"
-                    onClick={() => notify?.("Đã xuất danh sách kế hoạch ngân sách ra Excel.")}
+                    onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất danh sách kế hoạch ngân sách"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                     style={{ display: "flex", alignItems: "center", gap: 6 }}
                   >
                     <Download size={14} />
@@ -950,7 +951,7 @@ export default function MisaBudgetWorkspace({
                   <tbody>
                     {budgetPlans.map((plan) => (
                       <tr key={plan.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "10px 14px", fontWeight: 600, color: "#00a862" }}>{plan.code}</td>
+                        <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--brand)" }}>{plan.code}</td>
                         <td style={{ padding: "10px 14px" }}>{plan.date}</td>
                         <td style={{ padding: "10px 14px" }}>{plan.description}</td>
                         <td style={{ padding: "10px 14px" }}>{plan.year}</td>
@@ -958,7 +959,7 @@ export default function MisaBudgetWorkspace({
                         <td style={{ padding: "10px 14px" }}>{plan.unit}</td>
                         <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600 }}>{plan.totalRevenue.toLocaleString("vi-VN")}</td>
                         <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600 }}>{plan.totalCost.toLocaleString("vi-VN")}</td>
-                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{plan.totalProfit.toLocaleString("vi-VN")}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{plan.totalProfit.toLocaleString("vi-VN")}</td>
                         <td style={{ padding: "10px 14px", textAlign: "center" }}>
                           <span style={{ padding: "2px 8px", background: "#f0fdf4", color: "#166534", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
                             {plan.status}
@@ -969,7 +970,7 @@ export default function MisaBudgetWorkspace({
                             <button
                               type="button"
                               onClick={() => setPlanningViewMode("editor")}
-                              style={{ background: "none", border: "none", color: "#0284c7", cursor: "pointer", padding: 2 }}
+                              style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: 2 }}
                               title="Xem / Sửa chi tiết"
                             >
                               <Edit3 size={15} />
@@ -1144,7 +1145,7 @@ export default function MisaBudgetWorkspace({
                     <tr style={{ background: "#f8fafc", fontWeight: 700, color: "#0f172a", borderTop: "2px solid #cbd5e1" }}>
                       <td style={{ padding: "9px 12px", position: "sticky", left: 0, background: "#f8fafc" }}>III. LỢI NHUẬN DỰ KIẾN (I - II)</td>
                       <td style={{ padding: "9px 12px", textAlign: "center" }}>20</td>
-                      <td style={{ padding: "9px 12px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>
+                      <td style={{ padding: "9px 12px", textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>
                         {(
                           matrixTargets.rev511.reduce((a, b) => a + b, 0) +
                           matrixTargets.rev515.reduce((a, b) => a + b, 0) -
@@ -1157,7 +1158,7 @@ export default function MisaBudgetWorkspace({
                         const mRev = matrixTargets.rev511[i] + matrixTargets.rev515[i];
                         const mCost = matrixTargets.cost632[i] + matrixTargets.cost641[i] + matrixTargets.cost642[i];
                         return (
-                          <td key={i} style={{ padding: "9px 10px", textAlign: "right", color: "#00a862", fontWeight: 600 }}>
+                          <td key={i} style={{ padding: "9px 10px", textAlign: "right", color: "var(--brand)", fontWeight: 600 }}>
                             {(mRev - mCost).toLocaleString("vi-VN")}
                           </td>
                         );
@@ -1197,7 +1198,7 @@ export default function MisaBudgetWorkspace({
                 onClick={() => notify?.("Đang tra cứu nhanh danh mục báo cáo ngân sách...")}
               >
                 <span>Tìm kiếm nhanh báo cáo</span>
-                <span style={{ fontSize: 14 }}>🤖</span>
+                <span style={{ fontSize: 14 }}><Bot size={14} className="ui-inline-icon" aria-hidden="true" /></span>
               </button>
             </div>
 
@@ -1501,7 +1502,7 @@ export default function MisaBudgetWorkspace({
                   type="checkbox"
                   checked={modalDetailByUnit}
                   onChange={(e) => setModalDetailByUnit(e.target.checked)}
-                  style={{ width: 16, height: 16, accentColor: "#00a862", cursor: "pointer" }}
+                  style={{ width: 16, height: 16, accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Kế hoạch ngân sách chi tiết theo đơn vị</span>
               </label>
@@ -1678,7 +1679,7 @@ export default function MisaBudgetWorkspace({
                     <td style={{ padding: "8px 12px", textAlign: "center" }}>10</td>
                     <td style={{ padding: "8px 12px", textAlign: "right" }}>16.500</td>
                     <td style={{ padding: "8px 12px", textAlign: "right" }}>0</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", color: "#00a862" }}>-16.500</td>
+                    <td style={{ padding: "8px 12px", textAlign: "right", color: "var(--brand)" }}>-16.500</td>
                     <td style={{ padding: "8px 12px", textAlign: "right" }}>0%</td>
                   </tr>
                   <tr>
@@ -1686,7 +1687,7 @@ export default function MisaBudgetWorkspace({
                     <td style={{ padding: "6px 12px", textAlign: "center", color: "#64748b" }}>632</td>
                     <td style={{ padding: "6px 12px", textAlign: "right" }}>11.800</td>
                     <td style={{ padding: "6px 12px", textAlign: "right" }}>0</td>
-                    <td style={{ padding: "6px 12px", textAlign: "right", color: "#00a862" }}>-11.800</td>
+                    <td style={{ padding: "6px 12px", textAlign: "right", color: "var(--brand)" }}>-11.800</td>
                     <td style={{ padding: "6px 12px", textAlign: "right" }}>0%</td>
                   </tr>
                   <tr>
@@ -1694,7 +1695,7 @@ export default function MisaBudgetWorkspace({
                     <td style={{ padding: "6px 12px", textAlign: "center", color: "#64748b" }}>641, 642</td>
                     <td style={{ padding: "6px 12px", textAlign: "right" }}>4.700</td>
                     <td style={{ padding: "6px 12px", textAlign: "right" }}>0</td>
-                    <td style={{ padding: "6px 12px", textAlign: "right", color: "#00a862" }}>-4.700</td>
+                    <td style={{ padding: "6px 12px", textAlign: "right", color: "var(--brand)" }}>-4.700</td>
                     <td style={{ padding: "6px 12px", textAlign: "right" }}>0%</td>
                   </tr>
                   <tr style={{ background: "#f0fdf4", fontWeight: 700, borderTop: "2px solid #cbd5e1" }}>
@@ -1713,7 +1714,7 @@ export default function MisaBudgetWorkspace({
               <button
                 type="button"
                 className="misa-budget-btn-secondary"
-                onClick={() => notify?.("Đã xuất báo cáo ra Excel.")}
+                onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                 style={{ display: "flex", alignItems: "center", gap: 6 }}
               >
                 <Download size={14} />

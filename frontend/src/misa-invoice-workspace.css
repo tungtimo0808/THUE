@@ -37,7 +37,10 @@
 }
 .iw-flow {
   position: relative;
-  height: 350px;
+  /* Must match FLOW_W / FLOW_H in MisaInvoiceWorkspace.tsx so nodes and connectors share one scale. */
+  aspect-ratio: 1000 / 460;
+  max-width: 900px;
+  margin: 0 auto;
 }
 .iw-flow > svg {
   position: absolute;
@@ -48,7 +51,8 @@
 }
 .iw-flow > a {
   position: absolute;
-  transform: translate(-50%, -25%);
+  /* Anchor the node on its icon center (icon is 58px tall). */
+  transform: translate(-50%, -29px);
   width: 110px;
   text-align: center;
   color: #232b32;
@@ -60,8 +64,14 @@
   align-items: center;
   gap: 10px;
 }
+.iw-flow > a.label-above {
+  flex-direction: column-reverse;
+  /* Label sits above the icon: anchor on the icon center from the bottom edge. */
+  transform: translate(-50%, calc(-100% + 29px));
+}
 .iw-flow-icon {
   position: relative;
+  flex-shrink: 0;
   background: #e9f5f1;
   border-radius: 16px;
   width: 58px;

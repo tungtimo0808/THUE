@@ -235,14 +235,17 @@ export async function request<T>(path: string, token?: string, options?: Request
       }
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      throw new ApiError("Không kết nối được backend. Hãy kiểm tra server ở cổng 8080.", 0);
+      throw new ApiError("Không kết nối được máy chủ. Kiểm tra kết nối và thử lại.", 0);
     }
 
     const body: unknown = await response.json().catch(() => null);
     if (!response.ok) {
       let detail = "";
       if ([502, 503, 504].includes(response.status)) {
-        detail = "Máy chủ đang khởi động hoặc cập nhật dữ liệu. Vui lòng đợi giây lát rồi thử lại.";
+        const serverDetail = body && typeof body === "object" && "detail" in body ? (body as { detail: unknown }).detail : null;
+        detail = typeof serverDetail === "string" && serverDetail.trim()
+          ? humanizeErrorMessage(serverDetail, response.status)
+          : "Máy chủ tạm thời chưa xử lý được yêu cầu. Vui lòng thử lại.";
       } else if (response.status === 401 && !body) {
         detail = "Tài khoản hoặc mật khẩu không chính xác, hoặc phiên làm việc đã hết hạn.";
       } else {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 
 export type GlobalPopupType = "error" | "success" | "warning" | "info";
@@ -266,6 +266,16 @@ export function showGlobalPopup(payload: GlobalPopupPayload) {
   window.dispatchEvent(event);
 }
 
+/** Thông báo không chặn thao tác — thay cho window.alert(). Tự phân loại nếu không truyền type. */
+export function showNotice(message: string, type?: GlobalPopupType) {
+  showGlobalPopup({ type: type ?? classifyNoticeType(message), message });
+}
+
+/** Dùng cho nút/tính năng chưa có backend hoặc tài liệu: nói rõ thay vì giả lập kết quả. */
+export function showPendingFeature(feature: string) {
+  showGlobalPopup({ type: "info", title: "Chưa tích hợp", message: `${feature}: chức năng này chưa được tích hợp trong phiên bản hiện tại.` });
+}
+
 export function classifyNoticeType(message: string): GlobalPopupType {
   const lower = message.toLowerCase();
   if (
@@ -307,262 +317,37 @@ export function classifyNoticeType(message: string): GlobalPopupType {
   if (lower.includes("cảnh báo") || lower.includes("lưu ý") || lower.includes("chú ý")) {
     return "warning";
   }
-  return "success";
+  if (/thành công|^đã (lưu|cập nhật|xóa|huỷ|hủy|tạo|ghi sổ|gửi|hoàn tất)/.test(lower)) return "success";
+  return "info";
 }
 
 export function GlobalFeedbackPopupHost() {
   const [popup, setPopup] = useState<GlobalPopupPayload | null>(null);
-  const cardRef = React.useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
-    const handler = (e: Event) => {
-      const custom = e as CustomEvent<GlobalPopupPayload>;
-      if (custom.detail && custom.detail.message) {
-        setPopup(custom.detail);
-      }
+    const handler = (event: Event) => {
+      const payload = (event as CustomEvent<GlobalPopupPayload>).detail;
+      if (payload?.message) setPopup(payload);
     };
     window.addEventListener(POPUP_EVENT_NAME, handler);
     return () => window.removeEventListener(POPUP_EVENT_NAME, handler);
   }, []);
-
   useEffect(() => {
     if (!popup) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setPopup(null);
-      }
-    };
-    const handlePointerDownOutside = (e: MouseEvent) => {
-      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
-        setPopup(null);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("mousedown", handlePointerDownOutside, true);
-
-    const duration =
-      popup.autoCloseMs ??
-      (popup.type === "success" || popup.type === "info" ? 3500 : 6500);
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    if (duration > 0) {
-      timer = setTimeout(() => {
-        setPopup(null);
-      }, duration);
-    }
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("mousedown", handlePointerDownOutside, true);
-      if (timer) clearTimeout(timer);
-    };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setPopup(null); };
+    window.addEventListener("keydown", onKey);
+    const duration = popup.autoCloseMs ?? (popup.type === "success" || popup.type === "info" ? 5000 : 0);
+    const timer = duration > 0 ? setTimeout(() => setPopup(null), duration) : null;
+    return () => { window.removeEventListener("keydown", onKey); if (timer) clearTimeout(timer); };
   }, [popup]);
-
   if (!popup) return null;
-
-  const isError = popup.type === "error";
-  const isWarning = popup.type === "warning";
-  const isSuccess = popup.type === "success";
-
-  const accentColor = isError
-    ? "#dc2626"
-    : isWarning
-    ? "#d97706"
-    : isSuccess
-    ? "#059669"
-    : "#0284c7";
-
-  const lightBg = isError
-    ? "#fef2f2"
-    : isWarning
-    ? "#fffbeb"
-    : isSuccess
-    ? "#ecfdf5"
-    : "#f0f9ff";
-
-  const borderColor = isError
-    ? "#fecaca"
-    : isWarning
-    ? "#fde68a"
-    : isSuccess
-    ? "#a7f3d0"
-    : "#bae6fd";
-
-  const defaultTitle = isError
-    ? "Thông báo lỗi dữ liệu"
-    : isWarning
-    ? "Cảnh báo kiểm tra"
-    : isSuccess
-    ? "Thực hiện thành công"
-    : "Thông báo hệ thống";
-
-  const lines = popup.message
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-
+  const urgent = popup.type === "error" || popup.type === "warning";
+  const Icon = popup.type === "error" ? XCircle : popup.type === "warning" ? AlertTriangle : popup.type === "success" ? CheckCircle2 : Info;
+  const title = popup.title || (popup.type === "error" ? "Không thực hiện được" : popup.type === "warning" ? "Cần kiểm tra" : popup.type === "success" ? "Đã hoàn tất" : "Thông báo");
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="sv-global-popup-title"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 999999,
-        backgroundColor: "rgba(15, 23, 42, 0.32)",
-        backdropFilter: "blur(2px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20,
-        pointerEvents: "none",
-        animation: "svPopupFadeIn 0.16s ease-out",
-        fontFamily: "'Be Vietnam Pro', Inter, system-ui, sans-serif",
-      }}
-    >
-      <div
-        ref={cardRef}
-        style={{
-          width: "100%",
-          maxWidth: 460,
-          backgroundColor: "#ffffff",
-          borderRadius: 16,
-          boxShadow: "0 24px 48px -12px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(15, 23, 42, 0.08)",
-          overflow: "hidden",
-          pointerEvents: "auto",
-          animation: "svPopupScaleIn 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
-        }}
-      >
-        {/* Top Accent Strip */}
-        <div style={{ height: 5, backgroundColor: accentColor }} />
-
-        <div style={{ padding: "22px 24px 20px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                backgroundColor: lightBg,
-                border: `1px solid ${borderColor}`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              {isError ? (
-                <XCircle size={24} color={accentColor} />
-              ) : isWarning ? (
-                <AlertTriangle size={24} color={accentColor} />
-              ) : isSuccess ? (
-                <CheckCircle2 size={24} color={accentColor} />
-              ) : (
-                <Info size={24} color={accentColor} />
-              )}
-            </div>
-
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <h3
-                  id="sv-global-popup-title"
-                  style={{
-                    margin: 0,
-                    fontSize: 16,
-                    fontWeight: 700,
-                    color: "#0f172a",
-                    lineHeight: 1.35,
-                  }}
-                >
-                  {popup.title || defaultTitle}
-                </h3>
-                <button
-                  type="button"
-                  aria-label="Đóng"
-                  onClick={() => setPopup(null)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "#94a3b8",
-                    cursor: "pointer",
-                    padding: 4,
-                    borderRadius: 6,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 10,
-                  padding: "11px 14px",
-                  borderRadius: 10,
-                  backgroundColor: lightBg,
-                  border: `1px solid ${borderColor}`,
-                  color: "#1e293b",
-                  fontSize: 13.5,
-                  lineHeight: 1.55,
-                  fontWeight: 500,
-                }}
-              >
-                {lines.length <= 1 ? (
-                  <span>{lines[0] || popup.message}</span>
-                ) : (
-                  <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 5 }}>
-                    {lines.map((line, idx) => (
-                      <li key={idx}>{line}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div
-            style={{
-              marginTop: 20,
-              display: "flex",
-               justifyContent: "flex-end",
-              gap: 10,
-            }}
-          >
-            <button
-              type="button"
-              autoFocus
-              onClick={() => setPopup(null)}
-              style={{
-                minWidth: 112,
-                height: 38,
-                padding: "0 20px",
-                borderRadius: 9,
-                border: "none",
-                backgroundColor: accentColor,
-                color: "#ffffff",
-                fontSize: 13.5,
-                fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(15, 23, 42, 0.12)",
-              }}
-            >
-              {isError ? "Đã hiểu" : "Đóng"}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes svPopupFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes svPopupScaleIn {
-          from { opacity: 0; transform: scale(0.94) translateY(8px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-      `}</style>
-    </div>
+    <section className={`feedback-toast ${popup.type}`} role={urgent ? "alert" : "status"} aria-live={urgent ? "assertive" : "polite"}>
+      <Icon size={18} aria-hidden="true" />
+      <div><strong>{title}</strong><p>{popup.message}</p></div>
+      <button type="button" aria-label="Đóng thông báo" onClick={() => setPopup(null)}><X size={16} /></button>
+    </section>
   );
 }

@@ -50,11 +50,11 @@
 }
 
 .misa-reports-subtab-btn:hover {
-  color: #00a862;
+  color: var(--brand);
 }
 
 .misa-reports-subtab-btn.active {
-  color: #00a862;
+  color: var(--brand);
   font-weight: 600;
 }
 
@@ -65,7 +65,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: #00a862;
+  background: var(--brand);
   border-radius: 2px 2px 0 0;
 }
 
@@ -109,7 +109,7 @@
 }
 
 .misa-reports-search-wrap input:focus {
-  border-color: #00a862;
+  border-color: var(--brand);
   box-shadow: 0 0 0 2px rgba(0, 168, 98, 0.1);
 }
 
@@ -188,13 +188,15 @@
 
 .misa-reports-cat-btn.active {
   background: #e6f7ef;
-  color: #00a862;
+  color: var(--brand);
   font-weight: 600;
 }
 
 /* Right Reports Grid */
 .misa-reports-content {
   flex: 1;
+  /* <main> inherits `margin: auto` from App.css, which vertically centers it inside the flex body. */
+  margin: 0;
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
@@ -269,7 +271,7 @@
 }
 
 .misa-reports-item-link:hover {
-  color: #00a862;
+  color: var(--brand);
 }
 
 .misa-reports-item-actions {
@@ -293,7 +295,7 @@
 }
 
 .misa-reports-action-icon:hover {
-  color: #00a862;
+  color: var(--brand);
   background: #f1f5f9;
 }
 
@@ -311,7 +313,7 @@
 }
 
 .misa-reports-star-btn.starred {
-  color: #00a862;
+  color: var(--brand);
 }
 
 .misa-reports-star-btn:hover {

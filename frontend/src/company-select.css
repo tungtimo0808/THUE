@@ -1,0 +1,110 @@
+/* Company selection follows the same blue and white template as sign-in. */
+.company-portal-page.sv-company-page {
+  background: var(--canvas);
+  color: var(--ink);
+  min-height: 100dvh;
+}
+.sv-company-page .company-portal-header {
+  padding: 16px 28px;
+  box-shadow: none;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.sv-company-page .auth-branding { text-decoration: none; }
+.sv-company-page .auth-branding-title { font-size: 22px; }
+.sv-company-page .auth-branding-sub { font-size: 11px; }
+.company-account-controls { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sv-company-page .user-profile-avatar { background: var(--brand); box-shadow: none; }
+.sv-company-page .signout-inline-btn { color: #475569; background: white; border-color: #d6e0e8; }
+.sv-company-page .company-portal-content {
+  flex: none;
+  width: calc(100% - 48px);
+  max-width: 1080px;
+  margin: 48px auto;
+  padding: 28px 32px 32px;
+  background: #fff;
+  border: 1px solid #dce4eb;
+  border-top: 3px solid var(--brand);
+  border-radius: 10px;
+}
+.sv-company-page .company-portal-hero { margin-bottom: 24px; }
+.sv-company-page .company-portal-hero h1 { font-size: 26px; font-weight: 700; letter-spacing: normal; }
+.sv-company-page .company-portal-hero p { font-size: 14px; }
+.sv-company-page .company-portal-toolbar { gap: 12px; margin-bottom: 24px; }
+.sv-company-page .company-portal-search { min-width: 220px; max-width: none; }
+.sv-company-page .company-portal-search input { height: 42px; border-radius: 6px; box-shadow: none; }
+.sv-company-page .company-portal-actions { gap: 8px; }
+.sv-company-page .company-portal-actions button,
+.sv-company-page .company-portal-actions a,
+.sv-company-page .company-list-buttons button {
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: none;
+  transform: none;
+  text-decoration: none;
+}
+.sv-company-page .auth-submit-btn,
+.sv-company-page .company-portal-enter-btn { background: var(--brand); box-shadow: none; }
+.sv-company-page .company-portal-actions .auth-submit-btn { box-shadow: none !important; }
+.sv-company-page .auth-submit-btn:hover,
+.sv-company-page .company-portal-enter-btn:hover { background: var(--brand-hover); transform: none; }
+.sv-company-page .company-portal-admin-btn { background: white; color: var(--brand); border-color: #cbd5e1; }
+.sv-company-page .company-portal-admin-btn:hover { background: #f0f7fc; transform: none; }
+.company-list { border: 1px solid #dce4eb; border-radius: 6px; overflow: hidden; }
+.company-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #f7f9fb;
+  border-bottom: 1px solid #dce4eb;
+}
+.company-list-heading h2 { font-size: 14px; font-weight: 600; margin: 0; }
+.company-list-heading > span { font-size: 13px; color: #64748b; }
+.company-list-row { display: flex; align-items: center; gap: 16px; padding: 24px 20px; }
+.company-list-row + .company-list-row { border-top: 1px solid #e2e8f0; }
+.company-list-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  color: var(--brand);
+  border-radius: 8px;
+  background: var(--brand-soft);
+}
+.company-list-details { min-width: 0; flex: 1; }
+.company-list-details h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.company-list-meta { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; line-height: 1.5; color: #64748b; }
+.company-current-label { display: block; margin-top: 8px; color: var(--brand); font-size: 12px; }
+.company-list-buttons { display: flex; gap: 8px; flex-shrink: 0; }
+.sv-company-page .company-list-buttons button { flex: none; height: 40px; }
+.sv-company-page button:focus-visible,
+.sv-company-page a:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.sv-company-page .inline-form-box { max-width: none !important; box-shadow: none; border-radius: 6px; }
+.sv-company-page .inline-form-box select { max-width: 100%; }
+@media (max-width: 800px) {
+  .sv-company-page .company-portal-header { padding: 16px 20px; }
+  .sv-company-page .company-portal-content { margin: 28px auto; padding: 24px; }
+  .sv-company-page .company-portal-search { flex-basis: 100%; }
+  .company-list-row { flex-wrap: wrap; }
+  .company-list-buttons { width: 100%; padding-left: 64px; }
+}
+@media (max-width: 480px) {
+  .sv-company-page .company-portal-header { gap: 20px; }
+  .company-account-controls { gap: 12px; width: 100%; }
+  .sv-company-page .company-portal-content { width: calc(100% - 24px); margin: 20px auto; padding: 20px 16px; }
+  .sv-company-page .company-portal-hero h1 { font-size: 24px; }
+  .sv-company-page .company-portal-actions { width: 100%; }
+  .sv-company-page .company-portal-actions > .auth-submit-btn { flex: 1 1 100%; }
+  .company-list-heading { padding: 12px; }
+  .company-list-row { padding: 20px 12px; gap: 12px; align-items: flex-start; }
+  .company-list-icon { width: 36px; height: 36px; }
+  .company-list-details { flex-basis: calc(100% - 48px); }
+  .company-list-buttons { padding-left: 0; }
+  .sv-company-page .company-list-buttons button { flex: 1; padding: 0 8px; }
+  .sv-company-page .inline-form-box > div[style*="grid"] > div { grid-column: 1 / -1 !important; min-width: 0; }
+  .sv-company-page .inline-form-box input { min-width: 0; }
+}

@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo, useEffect } from "react";
 import { apiClient, getSelectedCompanyId } from "./apiClient";
 import {
@@ -326,7 +327,7 @@ export default function MisaInterimCashFlowDirectReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -354,7 +355,7 @@ export default function MisaInterimCashFlowDirectReport({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <button
+          <button disabled title="Chưa tích hợp xuất XML cho báo cáo này."
             type="button"
             style={{
               background: "transparent",
@@ -367,11 +368,11 @@ export default function MisaInterimCashFlowDirectReport({
               cursor: "pointer",
               fontWeight: 500,
             }}
-            onClick={() => notify?.("Đang xuất khẩu tệp XML theo chuẩn TCT...")}
+            onClick={undefined}
           >
             <FileText size={15} color="#64748b" />
             <span>Xuất XML</span>
-          </button>
+          <small className="pending-integration-label">Chưa tích hợp</small></button>
 
           <button
             type="button"
@@ -382,13 +383,13 @@ export default function MisaInterimCashFlowDirectReport({
               alignItems: "center",
               gap: 6,
               fontSize: 13,
-              color: "#0284c7",
+              color: "var(--brand)",
               cursor: "pointer",
               fontWeight: 600,
             }}
             onClick={() => notify?.("Kết nối cổng nộp thuế điện tử Sổ Việt eTax...")}
           >
-            <Send size={15} color="#0284c7" />
+            <Send size={15} color="var(--brand)" />
             <span>Nộp báo cáo qua Sổ Việt eTax</span>
           </button>
         </div>
@@ -402,7 +403,7 @@ export default function MisaInterimCashFlowDirectReport({
                 left: 10,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -479,7 +480,7 @@ export default function MisaInterimCashFlowDirectReport({
               fontSize: 12.5,
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã xuất khẩu báo cáo B03a - DN ra Excel.")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất khẩu báo cáo B03a - DN"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <Download size={14} />
             <ChevronDown size={12} />
@@ -791,7 +792,7 @@ export default function MisaInterimCashFlowDirectReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -806,7 +807,7 @@ export default function MisaInterimCashFlowDirectReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -820,10 +821,10 @@ export default function MisaInterimCashFlowDirectReport({
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  border: "1px solid #00a862",
+                  border: "1px solid var(--brand)",
                   borderRadius: 4,
                   background: "#e6f7ef",
-                  color: "#00a862",
+                  color: "var(--brand)",
                   fontWeight: 700,
                   fontSize: 12,
                 }}
@@ -839,7 +840,7 @@ export default function MisaInterimCashFlowDirectReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -854,7 +855,7 @@ export default function MisaInterimCashFlowDirectReport({
                   border: "1px solid #e2e8f0",
                   background: "#f8fafc",
                   borderRadius: 4,
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                 }}
               >
@@ -1084,7 +1085,7 @@ export default function MisaInterimCashFlowDirectReport({
                     type="checkbox"
                     checked={draftFetchFromSaved}
                     onChange={(e) => setDraftFetchFromSaved(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Lấy dữ liệu từ báo cáo tài chính đã lập</span>
                 </label>
@@ -1094,7 +1095,7 @@ export default function MisaInterimCashFlowDirectReport({
                     type="checkbox"
                     checked={draftHideZero}
                     onChange={(e) => setDraftHideZero(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Không hiển thị các chỉ tiêu có số liệu = 0</span>
                 </label>
@@ -1153,7 +1154,7 @@ export default function MisaInterimCashFlowDirectReport({
                   style={{
                     height: 34,
                     padding: "0 22px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     color: "#ffffff",
@@ -1215,7 +1216,7 @@ export default function MisaInterimCashFlowDirectReport({
                 <span
                   style={{
                     background: "#e0f2fe",
-                    color: "#0369a1",
+                    color: "var(--brand-hover)",
                     padding: "2px 8px",
                     borderRadius: 4,
                     fontSize: 11,
@@ -1240,7 +1241,7 @@ export default function MisaInterimCashFlowDirectReport({
             <div style={{ padding: "16px 20px", flex: 1, overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 12.5, color: "#64748b" }}>
                 <span>Kỳ: <strong>Quý 4/{year}</strong> (Từ {fromDate} đến {toDate})</span>
-                <span>Số phát sinh: <strong style={{ color: "#00a862" }}>{formatValue(drilldownItem.val).text} đ</strong></span>
+                <span>Số phát sinh: <strong style={{ color: "var(--brand)" }}>{formatValue(drilldownItem.val).text} đ</strong></span>
               </div>
 
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #e2e8f0" }}>
@@ -1257,16 +1258,16 @@ export default function MisaInterimCashFlowDirectReport({
                   {drilldownItem.val && drilldownItem.val !== 0 ? (
                     <tr>
                       <td style={{ padding: "8px 10px" }}>15/10/2026</td>
-                      <td style={{ padding: "8px 10px", color: "#0284c7", fontWeight: 600 }}>CT002</td>
+                      <td style={{ padding: "8px 10px", color: "var(--brand)", fontWeight: 600 }}>CT002</td>
                       <td style={{ padding: "8px 10px" }}>Phát sinh lưu chuyển tiền chỉ tiêu {drilldownItem.name}</td>
                       <td style={{ padding: "8px 10px" }}>111 / 331</td>
-                      <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: drilldownItem.val < 0 ? "#dc2626" : "#00a862" }}>
+                      <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600, color: drilldownItem.val < 0 ? "#dc2626" : "var(--brand)" }}>
                         {formatValue(drilldownItem.val).text}
                       </td>
                     </tr>
                   ) : (
                     <tr>
-                      <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: "#94a3b8", fontStyle: "italic" }}>
+                      <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: "#64748b", fontStyle: "italic" }}>
                         Không có chứng từ phát sinh trong kỳ.
                       </td>
                     </tr>
@@ -1281,7 +1282,7 @@ export default function MisaInterimCashFlowDirectReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,
@@ -1344,7 +1345,7 @@ export default function MisaInterimCashFlowDirectReport({
                 style={{
                   height: 32,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,

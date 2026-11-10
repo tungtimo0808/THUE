@@ -13,7 +13,7 @@ type Order = { id: string; number: string; status: string; total_amount: string;
   lines: { obligation: string; amount: string }[] };
 const rows = <T,>(data: T[] | { results: T[] }): T[] => Array.isArray(data) ? data : data.results || [];
 const money = (value: string | number) => Number(value).toLocaleString("vi-VN");
-const buttonStyle = { border: "1px solid #00a862", borderRadius: 4, padding: "7px 12px", color: "#008a50", background: "white", cursor: "pointer" };
+const buttonStyle = { border: "1px solid var(--brand)", borderRadius: 4, padding: "7px 12px", color: "var(--brand-hover)", background: "white", cursor: "pointer" };
 
 export default function TaxObligationPanel({ companyId, token, notify, onPay, reloadKey }: {
   companyId: string; token?: string; notify: (message: string) => void;
@@ -80,7 +80,7 @@ export default function TaxObligationPanel({ companyId, token, notify, onPay, re
       <label>Hạn nộp theo căn cứ<input aria-label="Hạn nộp" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
         style={{ display: "block", height: 32, border: "1px solid #cbd5e1", borderRadius: 4 }} /></label>
       <button type="button" disabled={!declarationId || !dueDate || busy} onClick={() => void recognize()}
-        style={{ ...buttonStyle, background: "#00a862", color: "white" }}>Ghi nhận nghĩa vụ</button>
+        style={{ ...buttonStyle, background: "var(--brand)", color: "white" }}>Ghi nhận nghĩa vụ</button>
       <label>Loại thuế<select aria-label="Lọc loại thuế" value={filter} onChange={(e) => setFilter(e.target.value)}
         style={{ display: "block", height: 34, border: "1px solid #cbd5e1", borderRadius: 4 }}>
         <option value="ALL">Tất cả</option><option value="VAT">GTGT</option><option value="CIT">TNDN</option>

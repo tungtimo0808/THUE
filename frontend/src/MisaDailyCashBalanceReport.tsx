@@ -1,3 +1,5 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import ReportCustomizationMenu from "./ReportCustomizationMenu";
 import { templateColumnLabels } from "./report-template-columns";
 import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
@@ -234,7 +236,7 @@ export default function MisaDailyCashBalanceReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -252,7 +254,7 @@ export default function MisaDailyCashBalanceReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -262,7 +264,7 @@ export default function MisaDailyCashBalanceReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -388,7 +390,7 @@ export default function MisaDailyCashBalanceReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />
@@ -596,7 +598,7 @@ export default function MisaDailyCashBalanceReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -610,7 +612,7 @@ export default function MisaDailyCashBalanceReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -621,7 +623,7 @@ export default function MisaDailyCashBalanceReport({
               <span
                 style={{
                   padding: "2px 8px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   borderRadius: 3,
                   fontSize: 12,
@@ -636,7 +638,7 @@ export default function MisaDailyCashBalanceReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -650,7 +652,7 @@ export default function MisaDailyCashBalanceReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -777,7 +779,7 @@ export default function MisaDailyCashBalanceReport({
                       position: "absolute",
                       right: 8,
                       top: 9,
-                      color: "#94a3b8",
+                      color: "#64748b",
                     }}
                   />
                 </div>
@@ -799,7 +801,7 @@ export default function MisaDailyCashBalanceReport({
                     type="checkbox"
                     checked={draftCompareEnabled}
                     onChange={(e) => setDraftCompareEnabled(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 15, height: 15 }}
+                    style={{ accentColor: "var(--brand)", width: 15, height: 15 }}
                   />
                   <span>So sánh với</span>
                 </label>
@@ -883,7 +885,7 @@ export default function MisaDailyCashBalanceReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

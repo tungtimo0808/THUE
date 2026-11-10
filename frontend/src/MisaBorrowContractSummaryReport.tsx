@@ -1,3 +1,5 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import ReportCustomizationMenu from "./ReportCustomizationMenu";
 import { templateColumnLabels } from "./report-template-columns";
 import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
@@ -237,7 +239,7 @@ export default function MisaBorrowContractSummaryReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -255,7 +257,7 @@ export default function MisaBorrowContractSummaryReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -265,7 +267,7 @@ export default function MisaBorrowContractSummaryReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -348,7 +350,7 @@ export default function MisaBorrowContractSummaryReport({
               style={{
                 position: "absolute",
                 left: 10,
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -443,7 +445,7 @@ export default function MisaBorrowContractSummaryReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />
@@ -735,7 +737,7 @@ export default function MisaBorrowContractSummaryReport({
                       border: "1px solid #e2e8f0",
                       padding: "7px 10px",
                       textAlign: "center",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       cursor: "pointer",
                       fontWeight: 500,
                     }}
@@ -916,7 +918,7 @@ export default function MisaBorrowContractSummaryReport({
                     cy="38"
                     r="8"
                     fill="#ffffff"
-                    stroke="#00a862"
+                    stroke="var(--brand)"
                     strokeWidth="2.5"
                   />
                   <line
@@ -924,7 +926,7 @@ export default function MisaBorrowContractSummaryReport({
                     y1="44"
                     x2="62"
                     y2="52"
-                    stroke="#00a862"
+                    stroke="var(--brand)"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                   />
@@ -983,7 +985,7 @@ export default function MisaBorrowContractSummaryReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -997,7 +999,7 @@ export default function MisaBorrowContractSummaryReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -1008,7 +1010,7 @@ export default function MisaBorrowContractSummaryReport({
               <span
                 style={{
                   padding: "2px 8px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   borderRadius: 3,
                   fontSize: 12,
@@ -1023,7 +1025,7 @@ export default function MisaBorrowContractSummaryReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -1037,7 +1039,7 @@ export default function MisaBorrowContractSummaryReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -1157,7 +1159,7 @@ export default function MisaBorrowContractSummaryReport({
                       width: "100%",
                       height: 32,
                       padding: "0 10px",
-                      border: "1px solid #00a862",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 13,
                       background: "#ffffff",
@@ -1201,7 +1203,7 @@ export default function MisaBorrowContractSummaryReport({
                         position: "absolute",
                         right: 8,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1240,7 +1242,7 @@ export default function MisaBorrowContractSummaryReport({
                         position: "absolute",
                         right: 8,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1269,7 +1271,7 @@ export default function MisaBorrowContractSummaryReport({
                   >
                     <input
                       type="checkbox" aria-label="Chọn tất cả tài khoản" checked={filteredAccounts.length>0&&filteredAccounts.every(account=>draftAccCode.split(",").includes(account.code))} onChange={event=>setDraftAccCode(event.target.checked?filteredAccounts.map(account=>account.code).join(","):"")}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                   </label>
@@ -1280,7 +1282,7 @@ export default function MisaBorrowContractSummaryReport({
                         position: "absolute",
                         left: 8,
                         top: 7,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                     <input
@@ -1331,7 +1333,7 @@ export default function MisaBorrowContractSummaryReport({
                             type="checkbox"
                             aria-label="Chọn tất cả tài khoản đang lọc" checked={filteredAccounts.length>0&&filteredAccounts.every(account=>draftAccCode.split(",").includes(account.code))}
                             onChange={event=>setDraftAccCode(event.target.checked?filteredAccounts.map(account=>account.code).join(","):"")}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th
@@ -1390,7 +1392,7 @@ export default function MisaBorrowContractSummaryReport({
                               type="checkbox"
                               aria-label={`Chọn tài khoản ${acc.code}`} checked={draftAccCode.split(",").includes(acc.code)}
                               onClick={event=>event.stopPropagation()} onChange={() => toggleAccount(acc.code)}
-                              style={{ accentColor: "#00a862" }}
+                              style={{ accentColor: "var(--brand)" }}
                             />
                           </td>
                           <td
@@ -1477,7 +1479,7 @@ export default function MisaBorrowContractSummaryReport({
                   >
                     <input
                       type="checkbox" aria-label="Chọn tất cả đối tượng" checked={Boolean(draftPartnerCode)} onChange={event=>setDraftPartnerCode(event.target.checked?"NCC00001":"")}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                   </label>
@@ -1488,7 +1490,7 @@ export default function MisaBorrowContractSummaryReport({
                         position: "absolute",
                         left: 8,
                         top: 7,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                     <input
@@ -1537,7 +1539,7 @@ export default function MisaBorrowContractSummaryReport({
                             type="checkbox"
                             checked={draftPartnerCode === "NCC00001"}
                             onChange={event=>setDraftPartnerCode(event.target.checked?"NCC00001":"")}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th
@@ -1608,7 +1610,7 @@ export default function MisaBorrowContractSummaryReport({
                               type="checkbox"
                               checked={draftPartnerCode === partner.code}
                               onClick={event=>event.stopPropagation()} onChange={event=>setDraftPartnerCode(event.target.checked?partner.code:"")}
-                              style={{ accentColor: "#00a862" }}
+                              style={{ accentColor: "var(--brand)" }}
                             />
                           </td>
                           <td
@@ -1733,7 +1735,7 @@ export default function MisaBorrowContractSummaryReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

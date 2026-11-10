@@ -461,7 +461,7 @@ export function MisaSystemUtilitiesModal({
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#fff" }}>
                 {utilityName}
               </h2>
-              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
                 Doanh nghiệp: <strong style={{ color: "#e2e8f0" }}>{companyName}</strong> • Đồng bộ dữ liệu hệ thống
               </div>
             </div>
@@ -543,9 +543,9 @@ export function MisaSystemUtilitiesModal({
                         fontSize: 12.5,
                         fontWeight: 600,
                         border:
-                          statusFilter === st ? "1px solid #0284c7" : "1px solid #cbd5e1",
+                          statusFilter === st ? "1px solid var(--brand)" : "1px solid #cbd5e1",
                         background: statusFilter === st ? "#e0f2fe" : "#ffffff",
-                        color: statusFilter === st ? "#0369a1" : "#475569",
+                        color: statusFilter === st ? "var(--brand-hover)" : "#475569",
                         cursor: "pointer",
                       }}
                     >
@@ -566,7 +566,7 @@ export function MisaSystemUtilitiesModal({
                     style={{
                       padding: "7px 14px",
                       borderRadius: 6,
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       fontSize: 12.5,
@@ -678,7 +678,7 @@ export function MisaSystemUtilitiesModal({
                               }
                             />
                           </td>
-                          <td style={{ padding: "10px 12px", fontWeight: 600, color: "#0284c7" }}>
+                          <td style={{ padding: "10px 12px", fontWeight: 600, color: "var(--brand)" }}>
                             {row.number}
                           </td>
                           <td style={{ padding: "10px 12px", color: "#475569" }}>{row.date}</td>
@@ -775,7 +775,7 @@ export function MisaSystemUtilitiesModal({
                   style={{
                     padding: "8px 16px",
                     borderRadius: 6,
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     fontSize: 13,
@@ -858,10 +858,10 @@ export function MisaSystemUtilitiesModal({
                               }}
                             />
                           </td>
-                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "#0284c7" }}>
+                          <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--brand)" }}>
                             {rule.next_number || 1}
                           </td>
-                          <td style={{ padding: "10px 14px", fontFamily: "monospace" }}>
+                          <td style={{ padding: "10px 14px", fontFamily: "Roboto, Arial, sans-serif" }}>
                             {`${rule.prefix || "CT"}${String(rule.next_number || 1).padStart(
                               rule.padding || 5,
                               "0"
@@ -933,7 +933,7 @@ export function MisaSystemUtilitiesModal({
                   }}
                 >
                   <div style={{ fontSize: 12, color: "#64748b" }}>Mã hàng tồn kho theo dõi</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7", marginTop: 4 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)", marginTop: 4 }}>
                     {stockBalances.length} mặt hàng
                   </div>
                 </div>
@@ -981,7 +981,7 @@ export function MisaSystemUtilitiesModal({
                       style={{
                         padding: "6px 12px",
                         borderRadius: 6,
-                        background: "#00a862",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         border: "none",
                         fontSize: 12.5,
@@ -1001,7 +1001,7 @@ export function MisaSystemUtilitiesModal({
                         padding: "6px 12px",
                         borderRadius: 6,
                         background: "#f1f5f9",
-                        color: "#0284c7",
+                        color: "var(--brand)",
                         border: "1px solid #cbd5e1",
                         fontSize: 12.5,
                         fontWeight: 600,
@@ -1082,7 +1082,7 @@ export function MisaSystemUtilitiesModal({
                             background: "#ffffff",
                             fontSize: 12,
                             fontWeight: 600,
-                            color: "#0284c7",
+                            color: "var(--brand)",
                             cursor: "pointer",
                           }}
                         >
@@ -1180,7 +1180,7 @@ export function MisaSystemUtilitiesModal({
                     style={{
                       padding: "8px 14px",
                       borderRadius: 6,
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       fontSize: 12.5,
@@ -1311,7 +1311,7 @@ export function MisaSystemUtilitiesModal({
                     style={{
                       padding: "8px 14px",
                       borderRadius: 6,
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       fontSize: 12.5,
@@ -1381,10 +1381,10 @@ export function MisaSystemUtilitiesModal({
                       .slice(0, 10)
                       .map((p: any) => (
                         <tr key={p.id} style={{ borderTop: "1px solid #f1f5f9" }}>
-                          <td style={{ padding: "8px 12px", fontWeight: 600, color: "#0284c7" }}>
+                          <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>
                             {p.code}
                           </td>
-                          <td style={{ padding: "8px 12px", fontFamily: "monospace" }}>
+                          <td style={{ padding: "8px 12px", fontFamily: "Roboto, Arial, sans-serif" }}>
                             {p.tax_code || "—"}
                           </td>
                           <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
@@ -1429,7 +1429,7 @@ export function MisaSystemUtilitiesModal({
               >
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <ShieldCheck size={20} color="#00a862" />
+                    <ShieldCheck size={20} color="var(--brand)" />
                     <span style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>
                       Chế độ kế toán hiện hành: Thông tư 99/2025/TT-BTC
                     </span>
@@ -1454,7 +1454,7 @@ export function MisaSystemUtilitiesModal({
                     style={{
                       padding: "8px 14px",
                       borderRadius: 6,
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       fontSize: 12.5,
@@ -1523,7 +1523,7 @@ export function MisaSystemUtilitiesModal({
                     style={{
                       padding: "7px 14px",
                       borderRadius: 6,
-                      background: "#00a862",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       fontSize: 12.5,
@@ -1600,7 +1600,7 @@ export function MisaSystemUtilitiesModal({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <Activity size={16} color="#00a862" />
+                        <Activity size={16} color="var(--brand)" />
                         <span style={{ fontWeight: 600, fontSize: 13 }}>{job.name}</span>
                       </div>
                       <span
@@ -1653,7 +1653,7 @@ export function MisaSystemUtilitiesModal({
                   style={{
                     padding: "7px 14px",
                     borderRadius: 6,
-                    background: "#0284c7",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     fontSize: 12.5,
@@ -1770,7 +1770,7 @@ export function MisaSystemUtilitiesModal({
                         background: "#f8fafc",
                         fontSize: 12,
                         fontWeight: 600,
-                        color: "#0284c7",
+                        color: "var(--brand)",
                         cursor: "pointer",
                       }}
                     >
@@ -1900,7 +1900,7 @@ export function MisaSystemUtilitiesModal({
                         padding: "8px 20px",
                         borderRadius: 6,
                         border: "none",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         fontSize: 13,
                         fontWeight: 700,
                         color: "#ffffff",

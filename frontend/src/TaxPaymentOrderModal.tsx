@@ -88,7 +88,7 @@ export default function TaxPaymentOrderModal({ companyId, token, obligations, in
     <div style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "end", gap: 8 }}>
       <button type="button" onClick={onClose}>Hủy</button>
       <button type="button" disabled={busy || !selected.length || total <= 0} onClick={() => void save()}
-        style={{ border: 0, borderRadius: 4, background: "#00a862", color: "white", padding: "8px 16px" }}>Lập giấy nộp tiền</button>
+        style={{ border: 0, borderRadius: 4, background: "var(--brand)", color: "white", padding: "8px 16px" }}>Lập giấy nộp tiền</button>
     </div>
   </div></div>;
 }

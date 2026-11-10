@@ -805,11 +805,11 @@ export default function MisaFinancialPositionReport({
                 height: 34,
                 padding: "0 12px",
                 background: "#ffffff",
-                border: "1px solid #00a862",
+                border: "1px solid var(--brand)",
                 borderRadius: 6,
                 fontSize: 12.5,
                 fontWeight: 600,
-                color: "#00a862",
+                color: "var(--brand)",
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
@@ -829,7 +829,7 @@ export default function MisaFinancialPositionReport({
               style={{
                 height: 34,
                 padding: "0 12px",
-                background: "#0284c7",
+                background: "var(--brand)",
                 border: "none",
                 borderRadius: 6,
                 fontSize: 12.5,
@@ -853,7 +853,7 @@ export default function MisaFinancialPositionReport({
             style={{
               height: 34,
               padding: "0 14px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 6,
               fontSize: 13,
@@ -893,7 +893,7 @@ export default function MisaFinancialPositionReport({
             style={{ background: "transparent", border: "none", padding: "4px 6px", display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}
             onClick={() => void handleRunValidation()}
           >
-            <FileCheck size={15} color="#00a862" />
+            <FileCheck size={15} color="var(--brand)" />
             <span>Kiểm tra cân đối (12 quy tắc)</span>
           </button>
 
@@ -908,10 +908,10 @@ export default function MisaFinancialPositionReport({
 
           <button
             type="button"
-            style={{ background: "transparent", border: "none", padding: "4px 6px", display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}
+            style={{ background: "transparent", border: "none", padding: "4px 6px", display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}
             onClick={() => void handleExportReport("XML")}
           >
-            <Send size={15} color="#0284c7" />
+            <Send size={15} color="var(--brand)" />
             <span>Nộp báo cáo qua Sổ Việt eTax</span>
           </button>
 
@@ -920,7 +920,7 @@ export default function MisaFinancialPositionReport({
               type="checkbox"
               checked={hideZeroRows}
               onChange={(e) => setHideZeroRows(e.target.checked)}
-              style={{ accentColor: "#00a862", width: 15, height: 15, margin: 0, padding: 0, flexShrink: 0 }}
+              style={{ accentColor: "var(--brand)", width: 15, height: 15, margin: 0, padding: 0, flexShrink: 0 }}
             />
             <span>Ẩn chỉ tiêu bằng 0 ở cả hai cột</span>
           </label>
@@ -928,7 +928,7 @@ export default function MisaFinancialPositionReport({
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <div style={{ position: "relative", width: 195 }}>
-            <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+            <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
             <input
               type="text"
               placeholder="Tìm mã số, tên chỉ tiêu..."
@@ -1178,7 +1178,7 @@ export default function MisaFinancialPositionReport({
                           }
                           style={{
                             background: row.noteStatus === "MISSING_NOTE" ? "#fef3c7" : "#eff6ff",
-                            color: row.noteStatus === "MISSING_NOTE" ? "#b45309" : "#0284c7",
+                            color: row.noteStatus === "MISSING_NOTE" ? "#b45309" : "var(--brand)",
                             border: "1px solid #bfdbfe",
                             borderRadius: 4,
                             padding: "1px 6px",
@@ -1372,7 +1372,7 @@ export default function MisaFinancialPositionReport({
                   padding: "6px 14px",
                   borderRadius: 4,
                   border: "1px solid #cbd5e1",
-                  background: lineModalTab === "CALCULATION" ? "#00a862" : "#fff",
+                  background: lineModalTab === "CALCULATION" ? "var(--brand)" : "#fff",
                   color: lineModalTab === "CALCULATION" ? "#fff" : "#334155",
                   fontWeight: 600,
                   fontSize: 12.5,
@@ -1389,7 +1389,7 @@ export default function MisaFinancialPositionReport({
                   padding: "6px 14px",
                   borderRadius: 4,
                   border: "1px solid #cbd5e1",
-                  background: lineModalTab === "DRILLDOWN" ? "#00a862" : "#fff",
+                  background: lineModalTab === "DRILLDOWN" ? "var(--brand)" : "#fff",
                   color: lineModalTab === "DRILLDOWN" ? "#fff" : "#334155",
                   fontWeight: 600,
                   fontSize: 12.5,
@@ -1473,7 +1473,7 @@ export default function MisaFinancialPositionReport({
                           padding: "4px 12px",
                           borderRadius: 4,
                           border: "1px solid #cbd5e1",
-                          background: drilldownColumn === "CLOSING" ? "#0284c7" : "#fff",
+                          background: drilldownColumn === "CLOSING" ? "var(--brand)" : "#fff",
                           color: drilldownColumn === "CLOSING" ? "#fff" : "#334155",
                           fontWeight: 600,
                           cursor: "pointer",
@@ -1488,7 +1488,7 @@ export default function MisaFinancialPositionReport({
                           padding: "4px 12px",
                           borderRadius: 4,
                           border: "1px solid #cbd5e1",
-                          background: drilldownColumn === "OPENING" ? "#0284c7" : "#fff",
+                          background: drilldownColumn === "OPENING" ? "var(--brand)" : "#fff",
                           color: drilldownColumn === "OPENING" ? "#fff" : "#334155",
                           fontWeight: 600,
                           cursor: "pointer",
@@ -1548,7 +1548,7 @@ export default function MisaFinancialPositionReport({
                     <tbody>
                       {(drilldownDetail?.vouchers || []).map((v: any) => (
                         <tr key={v.journal_line_id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                          <td style={{ padding: 6, fontWeight: 600, color: "#0284c7" }}>{v.voucher_number}</td>
+                          <td style={{ padding: 6, fontWeight: 600, color: "var(--brand)" }}>{v.voucher_number}</td>
                           <td style={{ padding: 6, textAlign: "center" }}>{v.posting_date}</td>
                           <td style={{ padding: 6, textAlign: "center", fontWeight: 600 }}>{v.account_code}</td>
                           <td style={{ padding: 6 }}>{v.party_code || v.party_name || "—"}</td>
@@ -1608,7 +1608,7 @@ export default function MisaFinancialPositionReport({
                             setIsHistoryModalOpen(false);
                             void loadReportFromBackend({ targetRunId: v.id });
                           }}
-                          style={{ padding: "4px 10px", background: "#00a862", color: "#fff", border: "none", borderRadius: 4, fontSize: 12, cursor: "pointer" }}
+                          style={{ padding: "4px 10px", background: "var(--brand)", color: "#fff", border: "none", borderRadius: 4, fontSize: 12, cursor: "pointer" }}
                         >
                           Xem phiên bản này
                         </button>
@@ -1811,7 +1811,7 @@ export default function MisaFinancialPositionReport({
                     type="checkbox"
                     checked={fetchFromSaved}
                     onChange={(e) => setFetchFromSaved(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16, margin: 0 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16, margin: 0 }}
                   />
                   <span>Chỉ lấy dữ liệu từ phiên bản báo cáo đã lưu</span>
                 </label>
@@ -1821,7 +1821,7 @@ export default function MisaFinancialPositionReport({
                     type="checkbox"
                     checked={hideZeroRows}
                     onChange={(e) => setHideZeroRows(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16, margin: 0 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16, margin: 0 }}
                   />
                   <span>Không hiển thị chỉ tiêu có số liệu bằng 0 ở cả hai cột</span>
                 </label>
@@ -1848,7 +1848,7 @@ export default function MisaFinancialPositionReport({
                 </button>
                 <button
                   type="button"
-                  style={{ height: 34, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                  style={{ height: 34, padding: "0 22px", background: "var(--brand)", border: "none", borderRadius: 4, color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                   onClick={handleApplyParams}
                 >
                   Xem báo cáo

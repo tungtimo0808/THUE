@@ -442,7 +442,7 @@ class SwitchCompanyView(APIView):
         company = Company.objects.filter(pk=company_id).first()
         if not company:
             raise NotFound("Không tìm thấy doanh nghiệp.")
-        if company.status != "ACTIVE":
+        if company.status not in services.WORKABLE_COMPANY_STATUSES:
             raise PermissionDenied("Doanh nghiệp đã ngừng hoạt động hoặc phạm vi không khả dụng.")
 
         branch = None
@@ -783,7 +783,7 @@ class NotificationViewSet(ReadOnlyModelViewSet):
         account = services.iam_user(request)
         if item.company:
             services.require_membership(account, item.company)
-            if item.company.status != ActiveStatus.ACTIVE:
+            if item.company.status not in services.WORKABLE_COMPANY_STATUSES:
                 raise PermissionDenied("Doanh nghiệp đã ngừng hoạt động hoặc phạm vi không khả dụng.")
             if item.permission_code and not has_effective_permission(
                 account, item.company, item.permission_code
@@ -872,7 +872,7 @@ class GlobalSearchView(APIView):
         if not company_id:
             raise PermissionDenied("Bạn chưa có phạm vi làm việc hợp lệ. Vui lòng chọn doanh nghiệp.")
         company = Company.objects.filter(pk=company_id).first()
-        if not company or company.status != ActiveStatus.ACTIVE:
+        if not company or company.status not in services.WORKABLE_COMPANY_STATUSES:
             raise PermissionDenied("Doanh nghiệp đã ngừng hoạt động hoặc phạm vi không khả dụng.")
 
         branch_id = serializer.validated_data.get("branch")
@@ -927,7 +927,7 @@ class GlobalSearchOpenView(APIView):
         if not company_id:
             raise PermissionDenied("Bạn chưa có phạm vi làm việc hợp lệ. Vui lòng chọn doanh nghiệp.")
         company = Company.objects.filter(pk=company_id).first()
-        if not company or company.status != ActiveStatus.ACTIVE:
+        if not company or company.status not in services.WORKABLE_COMPANY_STATUSES:
             raise PermissionDenied("Doanh nghiệp đã ngừng hoạt động hoặc phạm vi không khả dụng.")
 
         try:
@@ -969,7 +969,7 @@ class WorkItemViewSet(ReadOnlyModelViewSet):
         if not company_id:
             return WorkItem.objects.none()
         company = Company.objects.filter(pk=company_id).first()
-        if not company or company.status != ActiveStatus.ACTIVE:
+        if not company or company.status not in services.WORKABLE_COMPANY_STATUSES:
             raise PermissionDenied("Doanh nghiệp đã ngừng hoạt động hoặc phạm vi không khả dụng.")
         services.synchronize_work_items(company)
         queryset = services.visible_work_items(account, company, self.request.query_params.get("branch_id"))

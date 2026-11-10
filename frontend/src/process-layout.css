@@ -1,0 +1,145 @@
+/* Size the diagram from its workspace, including the space used by the sidebar. */
+.ref-process-wrapper {
+  container: process-workspace / inline-size;
+  min-width: 0;
+}
+
+.ref-process-wrapper > * {
+  flex-shrink: 0;
+}
+
+.sv-payroll-integration {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.sv-payroll-integration > :first-child {
+  flex: 1 1 420px;
+  max-width: 100% !important;
+}
+
+.sv-payroll-integration > :last-child {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.ref-process-layout {
+  width: 100%;
+  min-width: 0;
+  align-self: stretch;
+}
+
+.ref-process-layout > * {
+  min-width: 0;
+}
+
+.ref-process-layout > :first-child {
+  container: process-diagram / inline-size;
+}
+
+.ref-overview .card {
+  min-width: 0;
+}
+
+.sv-dashboard-table-scroll {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+  .sv-dashboard-work {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@container process-workspace (max-width: 1000px) {
+  .ref-process-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@container process-workspace (max-width: 600px) {
+  .sv-process-shortcuts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Keep the original illustrated nodes, but use normal flow when space is tight. */
+@container process-diagram (max-width: 640px) {
+  .sv-cost-flow-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    margin-bottom: 24px !important;
+  }
+
+  .sv-cost-flow-node {
+    min-width: 0;
+  }
+
+  .sv-flow-nodes {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 12px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 20px 12px !important;
+    box-sizing: border-box;
+  }
+
+  .sv-flow-node {
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0;
+    min-height: 100px;
+    align-self: start;
+    justify-content: flex-start !important;
+  }
+
+  .sv-flow-node > span:last-of-type {
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.5 !important;
+  }
+
+  .sv-flow-connector,
+  .ref-flow-lines {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .sv-dashboard-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .sv-dashboard-work .card > div:first-child {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .sv-dashboard-work .card > div:first-child > div:last-child {
+    flex-wrap: wrap;
+  }
+
+  .sv-dashboard-filters > div {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sv-dashboard-filters .misa-dropdown-container {
+    flex: 1;
+    min-width: 0 !important;
+  }
+
+  .sv-dashboard-filters .misa-dropdown-container > button {
+    width: 100%;
+    min-width: 0 !important;
+  }
+}

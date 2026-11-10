@@ -632,7 +632,7 @@ export default function SuperAdminWorkspace() {
   if (restoring) {
     return (
       <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", zIndex: 9999 }}>
-        <div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTopColor: "#00b06b", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
+        <div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTopColor: "var(--brand)", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
         <span style={{ marginTop: 12, fontSize: 13, color: "#64748b", fontWeight: 500 }}>Đang tải trung tâm điều hành nền tảng...</span>
         <style>{`@keyframes sv-spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -650,7 +650,7 @@ export default function SuperAdminWorkspace() {
           justifyContent: "center",
           background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)",
           padding: 20,
-          fontFamily: "Inter, system-ui, sans-serif",
+          fontFamily: "Roboto, Arial, sans-serif",
         }}
       >
         <div
@@ -1112,7 +1112,7 @@ export default function SuperAdminWorkspace() {
                         <td>
                           {c.admin ? (
                             <div>
-                              <strong style={{ color: "#0369a1" }}>{c.admin.display_name}</strong>
+                              <strong style={{ color: "var(--brand-hover)" }}>{c.admin.display_name}</strong>
                               <div style={{ fontSize: "12px", color: "#64748b" }}>{c.admin.email || c.admin.phone}</div>
                             </div>
                           ) : (
@@ -1788,7 +1788,7 @@ export default function SuperAdminWorkspace() {
                     options={[
                       { value: "TT99", label: "Thông tư 99/2025/TT-BTC (Chuẩn mực mới - 21 Vai trò)", badge: "21 Vai trò", badgeBg: "#fffbeb", badgeColor: "#b45309" },
                       { value: "TT200", label: "Thông tư 200/2014/TT-BTC (Doanh nghiệp vừa & lớn - 14 Vai trò)", badge: "14 Vai trò", badgeBg: "#f5f3ff", badgeColor: "#7c3aed" },
-                      { value: "TT133", label: "Thông tư 133/2016/TT-BTC (Doanh nghiệp nhỏ & vừa SME - 8 Vai trò)", badge: "8 Vai trò", badgeBg: "#f0f9ff", badgeColor: "#0284c7" },
+                      { value: "TT133", label: "Thông tư 133/2016/TT-BTC (Doanh nghiệp nhỏ & vừa SME - 8 Vai trò)", badge: "8 Vai trò", badgeBg: "#f0f9ff", badgeColor: "var(--brand)" },
                       { value: "TT58", label: "Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ - 3 Vai trò)", badge: "3 Vai trò", badgeBg: "#ecfdf5", badgeColor: "#047857" },
                       { value: "TT88", label: "Thông tư 88/2021/TT-BTC (Hộ kinh doanh cá thể)", badge: "HKD", badgeBg: "#f1f5f9", badgeColor: "#475569" },
                     ]}

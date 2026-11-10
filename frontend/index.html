@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#142b49" />
+    <meta name="theme-color" content="#2f78a8" />
     <meta
       name="description"
       content="Sổ Việt — Không gian làm việc kế toán và thuế doanh nghiệp."
@@ -13,9 +13,9 @@
   </head>
   <body>
     <div id="root">
-      <div id="app-splash" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;font-family:'Be Vietnam Pro',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;z-index:99999;">
+      <div id="app-splash" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;font-family: Roboto, Arial, sans-serif;z-index:99999;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
-          <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#00b06b 0%,#008751 100%);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:22px;font-weight:800;box-shadow:0 4px 12px rgba(0,176,107,0.25);">
+          <div style="width:44px;height:44px;border-radius:10px;background:#2f78a8;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:22px;font-weight:800;box-shadow:0 4px 12px rgba(47,120,168,0.25);">
             SV
           </div>
           <div>
@@ -24,10 +24,11 @@
           </div>
         </div>
         <div style="width:160px;height:4px;background:#e2e8f0;border-radius:999px;overflow:hidden;position:relative;">
-          <div style="position:absolute;top:0;bottom:0;width:40%;background:#00b06b;border-radius:999px;animation:sv-indeterminate 1.4s ease-in-out infinite;"></div>
+          <div style="position:absolute;top:0;bottom:0;width:40%;background:#2f78a8;border-radius:999px;animation:sv-indeterminate 1.4s ease-in-out infinite;"></div>
         </div>
-        <div style="margin-top:14px;font-size:12.5px;color:#94a3b8;font-weight:500;">Đang tải ứng dụng...</div>
+        <div style="margin-top:14px;font-size:12.5px;color:#64748b;font-weight:500;" role="status" aria-live="polite">Đang tải ứng dụng…</div>
         <style>
+          @media (prefers-reduced-motion: reduce) { #app-splash * { animation: none !important; } }
           @keyframes sv-indeterminate {
             0% { left: -40%; width: 40%; }
             50% { left: 40%; width: 60%; }

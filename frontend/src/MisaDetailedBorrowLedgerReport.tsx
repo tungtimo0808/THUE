@@ -1,3 +1,5 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
 import {cashDateValue} from "./cash-date";
 import { useState, useMemo } from "react";
@@ -205,7 +207,7 @@ export default function MisaDetailedBorrowLedgerReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -223,7 +225,7 @@ export default function MisaDetailedBorrowLedgerReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -233,7 +235,7 @@ export default function MisaDetailedBorrowLedgerReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -317,7 +319,7 @@ export default function MisaDetailedBorrowLedgerReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />
@@ -350,7 +352,7 @@ export default function MisaDetailedBorrowLedgerReport({
             background: "#ffffff",
             boxShadow: "0 4px 18px rgba(0,0,0,0.12)",
             padding: "40px 48px",
-            fontFamily: "'Times New Roman', Times, serif",
+            fontFamily: "Roboto, Arial, sans-serif",
             color: "#0f172a",
             minHeight: 1100,
             display: "flex",
@@ -680,7 +682,7 @@ export default function MisaDetailedBorrowLedgerReport({
                       width: "100%",
                       height: 32,
                       padding: "0 10px",
-                      border: "1px solid #00a862",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 13,
                       background: "#ffffff",
@@ -724,7 +726,7 @@ export default function MisaDetailedBorrowLedgerReport({
                         position: "absolute",
                         right: 8,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -763,7 +765,7 @@ export default function MisaDetailedBorrowLedgerReport({
                         position: "absolute",
                         right: 8,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -786,7 +788,7 @@ export default function MisaDetailedBorrowLedgerReport({
                     type="checkbox"
                     checked={draftViewDetail}
                     onChange={(e) => setDraftViewDetail(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Xem chi tiết theo khế ước vay</span>
                 </label>
@@ -814,7 +816,7 @@ export default function MisaDetailedBorrowLedgerReport({
                   >
                     <input
                       type="checkbox" aria-label="Chọn tất cả tài khoản vay" checked={filteredAccounts.length>0&&filteredAccounts.every(account=>draftAccCode.split(",").includes(account.code))} onChange={event=>setDraftAccCode(event.target.checked?filteredAccounts.map(account=>account.code).join(","):"")}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                   </label>
@@ -825,7 +827,7 @@ export default function MisaDetailedBorrowLedgerReport({
                         position: "absolute",
                         left: 8,
                         top: 7,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                     <input
@@ -874,7 +876,7 @@ export default function MisaDetailedBorrowLedgerReport({
                             type="checkbox"
                             aria-label="Chọn tất cả tài khoản vay đang lọc" checked={filteredAccounts.length>0&&filteredAccounts.every(account=>draftAccCode.split(",").includes(account.code))}
                             onChange={event=>setDraftAccCode(event.target.checked?filteredAccounts.map(account=>account.code).join(","):"")}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th
@@ -933,7 +935,7 @@ export default function MisaDetailedBorrowLedgerReport({
                               type="checkbox"
                               aria-label={`Chọn tài khoản vay ${acc.code}`} checked={draftAccCode.split(",").includes(acc.code)}
                               onClick={event=>event.stopPropagation()} onChange={() => toggleAccount(acc.code)}
-                              style={{ accentColor: "#00a862" }}
+                              style={{ accentColor: "var(--brand)" }}
                             />
                           </td>
                           <td
@@ -1020,7 +1022,7 @@ export default function MisaDetailedBorrowLedgerReport({
                   >
                     <input
                       type="checkbox"
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                   </label>
@@ -1031,7 +1033,7 @@ export default function MisaDetailedBorrowLedgerReport({
                         position: "absolute",
                         left: 8,
                         top: 7,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                     <input
@@ -1080,7 +1082,7 @@ export default function MisaDetailedBorrowLedgerReport({
                             type="checkbox"
                             checked={draftPartnerCode === "NCC00001"}
                             onChange={() => {}}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th
@@ -1151,7 +1153,7 @@ export default function MisaDetailedBorrowLedgerReport({
                               type="checkbox"
                               checked={draftPartnerCode === partner.code}
                               onChange={() => setDraftPartnerCode(partner.code)}
-                              style={{ accentColor: "#00a862" }}
+                              style={{ accentColor: "var(--brand)" }}
                             />
                           </td>
                           <td
@@ -1276,7 +1278,7 @@ export default function MisaDetailedBorrowLedgerReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

@@ -245,7 +245,7 @@ export default function VoucherChoiceTable<T extends VoucherChoice>({
             style={{
               border: 0,
               background: "transparent",
-              color: "#00b06b",
+              color: "var(--brand)",
               fontWeight: 600,
               cursor: "pointer",
               padding: 0,

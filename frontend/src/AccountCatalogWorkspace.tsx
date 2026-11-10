@@ -92,7 +92,7 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
     {onBack && <button type="button" onClick={onBack} style={{ marginBottom: 10, padding: "5px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#f8fafc", cursor: "pointer", fontWeight: 600 }}>← Danh mục</button>}
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
       <div>
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: "#0284c7", textTransform: "uppercase" }}>DANH MỤC HỆ THỐNG TÀI KHOẢN</div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--brand)", textTransform: "uppercase" }}>DANH MỤC HỆ THỐNG TÀI KHOẢN</div>
         <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "2px 0 0" }}>Hệ thống tài khoản kế toán ({activeRegime}) — Tổng số: {chartAccounts.length} tài khoản</h1>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -119,9 +119,9 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
         <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Tìm theo số hiệu hoặc tên tài khoản (VD: 154, 215, 332, 6421...)" style={{ width: 380, height: 34, borderRadius: 6, border: "1px solid #cbd5e1", padding: "0 12px", fontSize: 13 }} />
         <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" onClick={() => open("create")} disabled={!chartId} style={{ height: 34, padding: "0 14px", borderRadius: 6, background: "#00a862", color: "#fff", border: "none", fontWeight: 600, cursor: "pointer" }}>+ Thêm tài khoản</button>
+          <button type="button" onClick={() => open("create")} disabled={!chartId} style={{ height: 34, padding: "0 14px", borderRadius: 6, background: "var(--brand)", color: "#fff", border: "none", fontWeight: 600, cursor: "pointer" }}>+ Thêm tài khoản</button>
           <button type="button" onClick={() => setReload(value => value + 1)} style={{ height: 34, padding: "0 12px", borderRadius: 6, background: "#f8fafc", color: "#334155", border: "1px solid #cbd5e1", fontWeight: 600, cursor: "pointer" }}>Làm mới</button>
-          <button type="button" onClick={exportExcel} disabled={!chartId} style={{ height: 34, padding: "0 12px", borderRadius: 6, background: "#f8fafc", color: "#0284c7", border: "1px solid #bae6fd", fontWeight: 600, cursor: "pointer" }}>Xuất Excel</button>
+          <button type="button" onClick={exportExcel} disabled={!chartId} style={{ height: 34, padding: "0 12px", borderRadius: 6, background: "#f8fafc", color: "var(--brand)", border: "1px solid #bae6fd", fontWeight: 600, cursor: "pointer" }}>Xuất Excel</button>
         </div>
       </div>
       <div style={{ maxHeight: 460, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
@@ -140,7 +140,7 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
           <tbody>
             {filteredAccounts.map(item => (
               <tr key={item.id} style={{ borderBottom: "1px solid #f1f5f9", background: item.account_level === 1 ? "#f8fafc" : "#ffffff", fontWeight: item.account_level === 1 ? 700 : 400 }}>
-                <td style={{ padding: "7px 12px", paddingLeft: `${12 + (item.account_level - 1) * 14}px`, color: "#00a862", fontWeight: 700 }}>{item.code}</td>
+                <td style={{ padding: "7px 12px", paddingLeft: `${12 + (item.account_level - 1) * 14}px`, color: "var(--brand)", fontWeight: 700 }}>{item.code}</td>
                 <td style={{ padding: "7px 12px", color: "#0f172a" }}>{item.name}</td>
                 <td style={{ padding: "7px 12px", color: "#64748b", fontSize: 12 }}>{item.name_en}</td>
                 <td style={{ padding: "7px 12px", color: "#334155" }}>{balances.find(pair => pair[0] === item.normal_balance)?.[1]}</td>

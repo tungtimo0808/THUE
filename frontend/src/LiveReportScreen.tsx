@@ -3,6 +3,8 @@ import { ArrowLeft, Calendar, Download, FileSpreadsheet, FileText, Filter, HelpC
 import { apiClient, getSelectedCompanyId } from "./apiClient";
 import { clearLiveApiGetCache, request } from "./live-api";
 import { useApiSession } from "./ApiSession";
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { showGlobalPopup } from "./global-popup";
 import {
   MISA_REPORT_PERIOD_OPTIONS,
   MisaBranchTagSelector,
@@ -664,8 +666,8 @@ export default function LiveReportScreen({
             style={{
               ...btnBaseStyle,
               padding: "0 10px",
-              background: "#00b06b",
-              borderColor: "#00b06b",
+              background: "var(--brand)",
+              borderColor: "var(--brand)",
               color: "#ffffff",
             }}
           >
@@ -678,13 +680,20 @@ export default function LiveReportScreen({
               ...btnBaseStyle,
               padding: "0 10px",
               background: "#ffffff",
-              borderColor: "#00a862",
-              color: "#00a862",
+              borderColor: "var(--brand)",
+              color: "var(--brand)",
             }}
             title="Mở bảng Chọn tham số báo cáo"
           >
             <Filter size={14} /> Chọn tham số
           </button>
+          <button type="button" style={btnBaseStyle} onClick={openSavedTableReports}>Báo cáo đã lưu</button>
+          <button type="button" style={btnBaseStyle} disabled={!report || loading} onClick={(event) => {
+            try {
+              saveVisibleTable(event.currentTarget, title);
+              showGlobalPopup({ type: "success", message: "Đã lưu báo cáo trên trình duyệt này." });
+            } catch (cause) { setError(errorText(cause)); }
+          }}>Lưu báo cáo</button>
           <button
             type="button"
             onClick={() => void handleExport("XLSX")}
@@ -1138,7 +1147,7 @@ export default function LiveReportScreen({
                   type="checkbox"
                   checked={draftShowTwoSideBalance}
                   onChange={(e) => setDraftShowTwoSideBalance(e.target.checked)}
-                  style={{ width: 16, height: 16, accentColor: "#00a862", cursor: "pointer" }}
+                  style={{ width: 16, height: 16, accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Hiển thị số dư hai bên</span>
               </label>
@@ -1199,7 +1208,7 @@ export default function LiveReportScreen({
                     padding: "0 18px",
                     border: "none",
                     borderRadius: 4,
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     fontSize: 13,
                     fontWeight: 600,

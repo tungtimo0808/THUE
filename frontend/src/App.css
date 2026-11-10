@@ -235,7 +235,7 @@
   border-radius: 4px;
   background: #fafbfd;
   white-space: nowrap;
-  font-size: 9px;
+  font-size: 10px;
   padding: 0 4px;
 }
 .notification-button {
@@ -283,7 +283,7 @@
   background: #edf1f7;
   border: 1px solid #dde4ee;
   color: #586980;
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.4;
   border-radius: 4px;
   padding: 3px 7px;
@@ -418,7 +418,7 @@ main {
   font-variant-numeric: tabular-nums;
 }
 .metric-value small {
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0;
   color: #586980;
   font-weight: 400;
@@ -427,7 +427,7 @@ main {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 9px;
+  font-size: 10px;
   color: #586980;
   white-space: nowrap;
 }
@@ -553,7 +553,7 @@ main {
   display: block;
 }
 .task-item small {
-  font-size: 9px;
+  font-size: 10px;
   display: block;
   margin-top: 4px;
   color: #586980;
@@ -582,7 +582,7 @@ main {
   color: #4b6384;
 }
 .period-note p {
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.7;
   margin-top: 3px;
   color: #586980;
@@ -651,7 +651,7 @@ main {
 .dashboard-bottom {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: 10px;
   color: #586980;
   margin-top: 20px;
 }
@@ -952,7 +952,7 @@ main {
   padding: 12px 16px;
   background: #f0f9ff;
   border: 1px solid #bae6fd;
-  color: #0369a1;
+  color: var(--brand-hover);
   border-radius: 8px;
   font-size: 13.5px;
   line-height: 1.6;
@@ -1286,7 +1286,7 @@ main {
     font-size: 25px;
   }
   .metric-hint {
-    font-size: 8px;
+    font-size: 10px;
   }
   .dashboard-grid {
     gap: 17px;
@@ -1351,7 +1351,7 @@ main {
     font-size: 10px;
   }
   .task-item small {
-    font-size: 8px;
+    font-size: 10px;
   }
   .period-note {
     margin-top: 13px;
@@ -1416,7 +1416,7 @@ main {
   .company-monogram {
     width: 27px;
     height: 28px;
-    font-size: 9px;
+    font-size: 10px;
   }
   .header-actions {
     gap: 6px;
@@ -1427,14 +1427,14 @@ main {
   .avatar {
     width: 29px;
     height: 29px;
-    font-size: 9px;
+    font-size: 10px;
   }
   main {
     padding: 20px 16px 15px;
   }
   .breadcrumb {
     margin-bottom: 20px;
-    font-size: 9px;
+    font-size: 10px;
   }
   .page-heading {
     display: block;
@@ -1497,10 +1497,10 @@ main {
     margin-top: 12px;
   }
   .metric-value small {
-    font-size: 8px;
+    font-size: 10px;
   }
   .metric-hint {
-    font-size: 8px;
+    font-size: 10px;
     white-space: normal;
     align-items: flex-start;
   }
@@ -1563,7 +1563,7 @@ main {
     font-size: 10px;
   }
   .dashboard-bottom {
-    font-size: 8px;
+    font-size: 10px;
     gap: 10px;
   }
   .dashboard-bottom > span:last-child {
@@ -1699,13 +1699,13 @@ main {
     gap: 2px;
   }
   .metric-top {
-    font-size: 9px;
+    font-size: 10px;
   }
   .metric-value {
     font-size: 21px;
   }
   .metric-hint {
-    font-size: 7.5px;
+    font-size: 10px;
   }
 }
 @media print {

@@ -1,3 +1,5 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import ReportCustomizationMenu from "./ReportCustomizationMenu";
 import { templateColumnLabels } from "./report-template-columns";
 import { MISA_REPORT_DEFINITIONS } from "./misa-report-definitions";
@@ -261,7 +263,7 @@ export default function MisaLendContractSummaryReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -279,7 +281,7 @@ export default function MisaLendContractSummaryReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -289,7 +291,7 @@ export default function MisaLendContractSummaryReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -432,7 +434,7 @@ export default function MisaLendContractSummaryReport({
               width: 22,
               height: 22,
               borderRadius: "50%",
-              background: "#0284c7",
+              background: "var(--brand)",
               border: "none",
               color: "#ffffff",
               cursor: "pointer",
@@ -475,7 +477,7 @@ export default function MisaLendContractSummaryReport({
               padding: "2px 4px",
             }}
             title="Xuất khẩu báo cáo"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <Download size={15} />
             <ChevronDown size={12} />
@@ -909,21 +911,21 @@ export default function MisaLendContractSummaryReport({
                           cy="38"
                           r="11"
                           fill="#ffffff"
-                          stroke="#00a862"
+                          stroke="var(--brand)"
                           strokeWidth="2.5"
                         />
                         <path
                           d="M58 46L66 54"
-                          stroke="#00a862"
+                          stroke="var(--brand)"
                           strokeWidth="2.5"
                           strokeLinecap="round"
                         />
                         {/* Green accents/sparkles */}
-                        <circle cx="20" cy="34" r="2" fill="#00a862" opacity="0.6" />
-                        <circle cx="68" cy="22" r="2" fill="#00a862" opacity="0.7" />
+                        <circle cx="20" cy="34" r="2" fill="var(--brand)" opacity="0.6" />
+                        <circle cx="68" cy="22" r="2" fill="var(--brand)" opacity="0.7" />
                         <polygon
                           points="70,16 71.5,19 74.5,20 71.5,21 70,24 68.5,21 65.5,20 68.5,19"
-                          fill="#00a862"
+                          fill="var(--brand)"
                           opacity="0.8"
                         />
                       </svg>
@@ -982,7 +984,7 @@ export default function MisaLendContractSummaryReport({
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#94a3b8",
+                    color: "#64748b",
                     cursor: "pointer",
                   }}
                   title="Trợ giúp"
@@ -1175,7 +1177,7 @@ export default function MisaLendContractSummaryReport({
                       type="checkbox"
                       checked={filteredAccounts.length>0&&filteredAccounts.every(account=>draftAccCode.split(",").includes(account.code))}
                       onChange={(e) => setDraftAccCode(e.target.checked ? filteredAccounts.map(account=>account.code).join(",") : "")}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                   </label>
@@ -1202,7 +1204,7 @@ export default function MisaLendContractSummaryReport({
                         position: "absolute",
                         right: 6,
                         top: 6,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1229,7 +1231,7 @@ export default function MisaLendContractSummaryReport({
                             type="checkbox"
                             checked={filteredAccounts.length>0&&filteredAccounts.every(account=>draftAccCode.split(",").includes(account.code))}
                             onChange={(e) => setDraftAccCode(e.target.checked ? filteredAccounts.map(account=>account.code).join(",") : "")}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th
@@ -1285,7 +1287,7 @@ export default function MisaLendContractSummaryReport({
                                 type="checkbox"
                                 aria-label={`Chọn tài khoản cho vay ${acc.code}`} checked={isSelected}
                                 onClick={event=>event.stopPropagation()} onChange={()=>toggleAccount(acc.code)}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td
@@ -1359,7 +1361,7 @@ export default function MisaLendContractSummaryReport({
                       onChange={(e) =>
                         setDraftPartnerCode(e.target.checked ? filteredPartners.map(partner=>partner.code).join(",") : "")
                       }
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                   </label>
@@ -1386,7 +1388,7 @@ export default function MisaLendContractSummaryReport({
                         position: "absolute",
                         right: 6,
                         top: 6,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1415,7 +1417,7 @@ export default function MisaLendContractSummaryReport({
                             onChange={(e) =>
                               setDraftPartnerCode(e.target.checked ? filteredPartners.map(partner=>partner.code).join(",") : "")
                             }
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th
@@ -1482,7 +1484,7 @@ export default function MisaLendContractSummaryReport({
                                 type="checkbox"
                                 aria-label={`Chọn đối tượng ${p.code}`} checked={isSelected}
                                 onClick={event=>event.stopPropagation()} onChange={()=>togglePartner(p.code)}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td
@@ -1589,7 +1591,7 @@ export default function MisaLendContractSummaryReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

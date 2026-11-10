@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -436,7 +437,7 @@ export default function MisaIncomeRatioAnalysisReport({
               style={{
                 position: "absolute",
                 left: 10,
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -505,7 +506,7 @@ export default function MisaIncomeRatioAnalysisReport({
               justifyContent: "center",
               background: "transparent",
               border: "none",
-              color: "#0284c7",
+              color: "var(--brand)",
               cursor: "pointer",
             }}
             title="Bình luận / Trao đổi"
@@ -547,7 +548,7 @@ export default function MisaIncomeRatioAnalysisReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <span style={{ fontSize: 13, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />
@@ -558,7 +559,7 @@ export default function MisaIncomeRatioAnalysisReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -604,7 +605,7 @@ export default function MisaIncomeRatioAnalysisReport({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <BarChart3 size={20} color="#00a862" />
+              <BarChart3 size={20} color="var(--brand)" />
               <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
                 Biểu đồ tỷ lệ Lợi nhuận gộp trên Doanh thu thuần
               </h4>
@@ -617,14 +618,14 @@ export default function MisaIncomeRatioAnalysisReport({
                 const heightPx = (ratio / 100) * 180;
                 return (
                   <div key={m} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: ratio > 0 ? "#00a862" : "#94a3b8" }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: ratio > 0 ? "var(--brand)" : "#94a3b8" }}>
                       {ratio > 0 ? `${ratio}%` : "0%"}
                     </span>
                     <div
                       style={{
                         width: 36,
                         height: Math.max(heightPx, 4),
-                        background: ratio > 0 ? "linear-gradient(180deg, #10b981 0%, #00a862 100%)" : "#e2e8f0",
+                        background: ratio > 0 ? "linear-gradient(180deg, #10b981 0%, var(--brand) 100%)" : "#e2e8f0",
                         borderRadius: "4px 4px 0 0",
                         transition: "all 0.3s ease",
                       }}
@@ -967,7 +968,7 @@ export default function MisaIncomeRatioAnalysisReport({
                       name="periodType"
                       checked={draftPeriodType === "month"}
                       onChange={() => setDraftPeriodType("month")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Tháng</span>
                   </label>
@@ -978,7 +979,7 @@ export default function MisaIncomeRatioAnalysisReport({
                       name="periodType"
                       checked={draftPeriodType === "quarter"}
                       onChange={() => setDraftPeriodType("quarter")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Quý</span>
                   </label>
@@ -989,7 +990,7 @@ export default function MisaIncomeRatioAnalysisReport({
                       name="periodType"
                       checked={draftPeriodType === "halfYear"}
                       onChange={() => setDraftPeriodType("halfYear")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>6 tháng</span>
                   </label>
@@ -1000,7 +1001,7 @@ export default function MisaIncomeRatioAnalysisReport({
                       name="periodType"
                       checked={draftPeriodType === "year"}
                       onChange={() => setDraftPeriodType("year")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Năm</span>
                   </label>
@@ -1011,7 +1012,7 @@ export default function MisaIncomeRatioAnalysisReport({
                       name="periodType"
                       checked={draftPeriodType === "samePeriod"}
                       onChange={() => setDraftPeriodType("samePeriod")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Cùng kỳ giữa các năm</span>
                   </label>
@@ -1179,7 +1180,7 @@ export default function MisaIncomeRatioAnalysisReport({
                     type="checkbox"
                     checked={draftFromPreparedReport}
                     onChange={(e) => setDraftFromPreparedReport(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer" }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16, cursor: "pointer" }}
                   />
                   <span>Lấy dữ liệu từ báo cáo tài chính đã lập</span>
                 </label>
@@ -1189,7 +1190,7 @@ export default function MisaIncomeRatioAnalysisReport({
                     type="checkbox"
                     checked={draftHideZeroRows}
                     onChange={(e) => setDraftHideZeroRows(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer" }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16, cursor: "pointer" }}
                   />
                   <span>Không hiển thị các chỉ tiêu có số liệu = 0</span>
                 </label>
@@ -1247,7 +1248,7 @@ export default function MisaIncomeRatioAnalysisReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

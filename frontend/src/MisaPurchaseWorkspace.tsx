@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import MisaPaymentTermsWorkspace from "./MisaPaymentTermsWorkspace";
 import {useNavigate,useSearchParams} from "react-router-dom";
 import MisaReportCenterWorkspace from "./MisaReportCenterWorkspace";
@@ -172,7 +173,7 @@ export default function MisaPurchaseWorkspace({
   const [showItemModal, setShowItemModal] = useState(false);
   const [selectedNature, setSelectedNature] = useState<string>("Hàng hóa");
   const [editingItem, setEditingItem] = useState<InventoryItemData | null>(null);
-  const [receiveInvoiceViewMode, setReceiveInvoiceViewMode] = useState<"empty_guide" | "list">("empty_guide");
+  const [receiveInvoiceViewMode, setReceiveInvoiceViewMode] = useState<"empty_guide" | "list">("list");
   const [receivedInvoices, setReceivedInvoices] = useState([
     {
       id: "inv-01",
@@ -1048,7 +1049,7 @@ export default function MisaPurchaseWorkspace({
           background: "#f4f5f8",
           padding: "12px 18px 24px 18px",
           boxSizing: "border-box",
-          fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+          fontFamily: "Roboto, Arial, sans-serif",
           position: "relative",
         }}
       >
@@ -1085,7 +1086,7 @@ export default function MisaPurchaseWorkspace({
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   fontWeight: 500,
                   cursor: "pointer",
                   display: "inline-flex",
@@ -1126,7 +1127,7 @@ export default function MisaPurchaseWorkspace({
                       style={{
                         padding: "7px 12px",
                         fontSize: 13,
-                        color: currencyUnit === unit ? "#0284c7" : "#1e293b",
+                        color: currencyUnit === unit ? "var(--brand)" : "#1e293b",
                         fontWeight: currencyUnit === unit ? 600 : 400,
                         background: currencyUnit === unit ? "#eff6ff" : "#ffffff",
                         cursor: "pointer",
@@ -1232,7 +1233,7 @@ export default function MisaPurchaseWorkspace({
                         style={{
                           padding: "6px 12px",
                           fontSize: 12.5,
-                          color: chartPeriods.orders === p ? "#0284c7" : "#1e293b",
+                          color: chartPeriods.orders === p ? "var(--brand)" : "#1e293b",
                           background: chartPeriods.orders === p ? "#eff6ff" : "#ffffff",
                           cursor: "pointer",
                         }}
@@ -1282,7 +1283,7 @@ export default function MisaPurchaseWorkspace({
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
-                      color: row.isDebt ? "#ea580c" : "#0284c7",
+                      color: row.isDebt ? "#ea580c" : "var(--brand)",
                       fontWeight: 600,
                       fontSize: 13,
                     }}
@@ -1311,7 +1312,7 @@ export default function MisaPurchaseWorkspace({
               <span
                 onClick={handleRefreshChart}
                 style={{
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   cursor: "pointer",
                   fontWeight: 500,
                   marginLeft: 4,
@@ -1324,7 +1325,7 @@ export default function MisaPurchaseWorkspace({
             </div>
           </div>
 
-          {/* CARD 2: Hợp đồng mua (Ocean Blue Header #0284c7) */}
+          {/* CARD 2: Hợp đồng mua (Ocean Blue Header var(--brand)) */}
           <div
             style={{
               background: "#ffffff",
@@ -1339,7 +1340,7 @@ export default function MisaPurchaseWorkspace({
             {/* Header */}
             <div
               style={{
-                background: "#0284c7",
+                background: "var(--brand)",
                 color: "#ffffff",
                 padding: "8px 14px",
                 borderTopLeftRadius: 5,
@@ -1400,7 +1401,7 @@ export default function MisaPurchaseWorkspace({
                         style={{
                           padding: "6px 12px",
                           fontSize: 12.5,
-                          color: chartPeriods.contracts === p ? "#0284c7" : "#1e293b",
+                          color: chartPeriods.contracts === p ? "var(--brand)" : "#1e293b",
                           background: chartPeriods.contracts === p ? "#eff6ff" : "#ffffff",
                           cursor: "pointer",
                         }}
@@ -1450,7 +1451,7 @@ export default function MisaPurchaseWorkspace({
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
-                      color: row.isDebt ? "#ea580c" : "#0284c7",
+                      color: row.isDebt ? "#ea580c" : "var(--brand)",
                       fontWeight: 600,
                       fontSize: 13,
                     }}
@@ -1479,7 +1480,7 @@ export default function MisaPurchaseWorkspace({
               <span
                 onClick={handleRefreshChart}
                 style={{
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   cursor: "pointer",
                   fontWeight: 500,
                   marginLeft: 4,
@@ -1568,7 +1569,7 @@ export default function MisaPurchaseWorkspace({
                         style={{
                           padding: "6px 12px",
                           fontSize: 12.5,
-                          color: chartPeriods.purchases === p ? "#0284c7" : "#1e293b",
+                          color: chartPeriods.purchases === p ? "var(--brand)" : "#1e293b",
                           background: chartPeriods.purchases === p ? "#eff6ff" : "#ffffff",
                           cursor: "pointer",
                         }}
@@ -1617,7 +1618,7 @@ export default function MisaPurchaseWorkspace({
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
-                      color: row.isDebt ? "#ea580c" : "#0284c7",
+                      color: row.isDebt ? "#ea580c" : "var(--brand)",
                       fontWeight: 600,
                       fontSize: 13,
                     }}
@@ -1646,7 +1647,7 @@ export default function MisaPurchaseWorkspace({
               <span
                 onClick={handleRefreshChart}
                 style={{
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   cursor: "pointer",
                   fontWeight: 500,
                   marginLeft: 4,
@@ -1739,7 +1740,7 @@ export default function MisaPurchaseWorkspace({
                           style={{
                             padding: "6px 12px",
                             fontSize: 12.5,
-                            color: chartPeriods.debt === p ? "#0284c7" : "#1e293b",
+                            color: chartPeriods.debt === p ? "var(--brand)" : "#1e293b",
                             background: chartPeriods.debt === p ? "#eff6ff" : "#ffffff",
                             cursor: "pointer",
                           }}
@@ -1806,7 +1807,7 @@ export default function MisaPurchaseWorkspace({
               <span
                 onClick={handleRefreshChart}
                 style={{
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   cursor: "pointer",
                   fontWeight: 500,
                   marginLeft: 4,
@@ -1890,7 +1891,7 @@ export default function MisaPurchaseWorkspace({
                           style={{
                             padding: "6px 12px",
                             fontSize: 12.5,
-                            color: chartPeriods.buyValue === p ? "#0284c7" : "#1e293b",
+                            color: chartPeriods.buyValue === p ? "var(--brand)" : "#1e293b",
                             background: chartPeriods.buyValue === p ? "#eff6ff" : "#ffffff",
                             cursor: "pointer",
                           }}
@@ -1957,7 +1958,7 @@ export default function MisaPurchaseWorkspace({
               <span
                 onClick={handleRefreshChart}
                 style={{
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   cursor: "pointer",
                   fontWeight: 500,
                   marginLeft: 4,
@@ -1994,7 +1995,7 @@ export default function MisaPurchaseWorkspace({
         {/* Subheader: < Lấy lại danh mục */}
         <div style={{ padding: "8px 16px 4px 16px" }}>
           <span
-            style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+            style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
             onClick={() => notify("Đã lấy lại toàn bộ danh mục hàng hóa, dịch vụ.")}
           >
             {"< Lấy lại danh mục"}
@@ -2097,7 +2098,7 @@ export default function MisaPurchaseWorkspace({
                 type="button"
                 onClick={() => setShowNatureDrawer(true)}
                 title="Chọn tính chất hàng hóa dịch vụ"
-                style={{ height: 30, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 30, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Thêm
               </button>
@@ -2105,7 +2106,7 @@ export default function MisaPurchaseWorkspace({
                 type="button"
                 onClick={() => setShowNatureDrawer(true)}
                 title="Chọn tính chất hàng hóa dịch vụ"
-                style={{ height: 30, padding: "0 8px", background: "#009a5d", color: "#ffffff", border: "none", borderLeft: "1px solid rgba(255,255,255,0.2)", cursor: "pointer" }}
+                style={{ height: 30, padding: "0 8px", background: "var(--brand)", color: "#ffffff", border: "none", borderLeft: "1px solid rgba(255,255,255,0.2)", cursor: "pointer" }}
               >
                 <ChevronDown size={13} />
               </button>
@@ -2123,7 +2124,7 @@ export default function MisaPurchaseWorkspace({
             <thead>
               <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 40, textAlign: "center", padding: "8px 4px" }}>
-                  <input type="checkbox" style={{ accentColor: "#00b06b" }} />
+                  <input type="checkbox" style={{ accentColor: "var(--brand)" }} />
                 </th>
                 <th style={{ padding: "8px 10px", textAlign: "left" }}>Tên</th>
                 <th style={{ width: 140, padding: "8px 10px", textAlign: "left" }}>Mã</th>
@@ -2145,7 +2146,7 @@ export default function MisaPurchaseWorkspace({
                   <td style={{ padding: "8px 10px", color: "#64748b" }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                       <span>{item.vatPolicy}</span>
-                      <FileText size={13} style={{ color: "#00b06b" }} />
+                      <FileText size={13} style={{ color: "var(--brand)" }} />
                     </div>
                   </td>
                   <td style={{ padding: "8px 10px", color: "#475569" }}>{item.nature}</td>
@@ -2162,7 +2163,7 @@ export default function MisaPurchaseWorkspace({
                         setSelectedNature(item.nature);
                         setShowItemModal(true);
                       }}
-                      style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 2 }}
+                      style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 2 }}
                     >
                       <span>Sửa</span>
                       <ChevronDown size={12} />
@@ -2225,7 +2226,7 @@ export default function MisaPurchaseWorkspace({
               style={{
                 height: 32,
                 padding: "0 16px",
-                background: "#00b06b",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -2286,7 +2287,7 @@ export default function MisaPurchaseWorkspace({
             <tbody>
               {reconciliations.map((r) => (
                 <tr key={r.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{r.period}</td>
+                  <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{r.period}</td>
                   <td style={{ padding: "8px 10px", fontWeight: 500 }}>{r.supplier}</td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>{r.account}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{formatVND(r.supplierDebt)} đ</td>
@@ -2344,7 +2345,7 @@ export default function MisaPurchaseWorkspace({
             style={{
               height: 32,
               padding: "0 14px",
-              background: "#00b06b",
+              background: "var(--brand)",
               color: "#ffffff",
               border: "none",
               borderRadius: 4,
@@ -2379,7 +2380,7 @@ export default function MisaPurchaseWorkspace({
                 <tr key={d.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ textAlign: "center", padding: "8px 4px" }}><input type="checkbox" /></td>
                   <td style={{ padding: "8px 10px" }}>
-                    <span style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }} onClick={() => setShowDiscountModal(true)}>
+                    <span style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer" }} onClick={() => setShowDiscountModal(true)}>
                       {d.code}
                     </span>
                   </td>
@@ -2388,7 +2389,7 @@ export default function MisaPurchaseWorkspace({
                   <td style={{ padding: "8px 10px" }}>{d.reason}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#b91c1c" }}>{formatVND(d.amount)} đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                    <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>
+                    <span style={{ background: "#e0f2fe", color: "var(--brand-hover)", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>
                       {apiStatus("/api/v1/purchases/purchase-discounts/", "discounts", d.id, d.status)}
                     </span>
                   </td>
@@ -2414,7 +2415,7 @@ export default function MisaPurchaseWorkspace({
             <button
               type="button"
               onClick={() => setShowOrderModal(true)}
-              style={{ height: 32, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+              style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={15} />
               <span>Thêm đơn mua hàng</span>
@@ -2449,7 +2450,7 @@ export default function MisaPurchaseWorkspace({
                 <tr key={po.id} onClick={() => setSelectedRowId(po.id)} style={{ borderBottom: "1px solid #f1f5f9", background: selectedRowId === po.id ? "rgba(0, 176, 107, 0.08)" : "#ffffff", cursor: "pointer" }}>
                   <td style={{ textAlign: "center", padding: "8px 4px" }}><input type="checkbox" checked={selectedRowId === po.id} onChange={() => {}} /></td>
                   <td style={{ padding: "8px 10px" }}>
-                    <span style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }} onClick={() => setShowOrderModal(true)}>
+                    <span style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer" }} onClick={() => setShowOrderModal(true)}>
                       {po.code}
                     </span>
                   </td>
@@ -2494,7 +2495,7 @@ export default function MisaPurchaseWorkspace({
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
         <div style={{ padding: "10px 16px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <button type="button" onClick={() => setShowContractModal(true)} style={{ height: 32, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <button type="button" onClick={() => setShowContractModal(true)} style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Plus size={15} />
             <span>Thêm hợp đồng mua</span>
           </button>
@@ -2518,7 +2519,7 @@ export default function MisaPurchaseWorkspace({
                 <tr key={c.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ textAlign: "center" }}><input type="checkbox" /></td>
                   <td style={{ padding: "8px 10px" }}>
-                    <span style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }} onClick={() => setShowContractModal(true)}>
+                    <span style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer" }} onClick={() => setShowContractModal(true)}>
                       {c.code}
                     </span>
                   </td>
@@ -2623,7 +2624,7 @@ export default function MisaPurchaseWorkspace({
                   style={{
                     height: 32,
                     padding: "0 14px",
-                    background: "#00b06b",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     fontSize: 13,
@@ -2633,8 +2634,8 @@ export default function MisaPurchaseWorkspace({
                     alignItems: "center",
                     borderRight: "1px solid rgba(255, 255, 255, 0.25)",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#00965b")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "#00b06b")}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--brand)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "var(--brand)")}
                 >
                   Thêm
                 </button>
@@ -2644,7 +2645,7 @@ export default function MisaPurchaseWorkspace({
                   style={{
                     height: 32,
                     padding: "0 8px",
-                    background: "#00b06b",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     cursor: "pointer",
@@ -2652,8 +2653,8 @@ export default function MisaPurchaseWorkspace({
                     alignItems: "center",
                     justifyContent: "center",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#00965b")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "#00b06b")}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--brand)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "var(--brand)")}
                 >
                   <ChevronDown size={14} />
                 </button>
@@ -2729,7 +2730,7 @@ export default function MisaPurchaseWorkspace({
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = "#f1f5f9";
-                          e.currentTarget.style.color = "#00b06b";
+                          e.currentTarget.style.color = "var(--brand)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = "transparent";
@@ -2914,7 +2915,7 @@ export default function MisaPurchaseWorkspace({
                 <tr key={v.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ textAlign: "center" }}><input type="checkbox" /></td>
                   <td style={{ padding: "8px 10px" }}>
-                    <span style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }} onClick={() => { setEditingVoucher(apiRows.vouchers?.find((row) => row.id === v.id) || null); setShowVoucherModal(true); }}>
+                    <span style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer" }} onClick={() => { setEditingVoucher(apiRows.vouchers?.find((row) => row.id === v.id) || null); setShowVoucherModal(true); }}>
                       {v.code}
                     </span>
                   </td>
@@ -2959,7 +2960,7 @@ export default function MisaPurchaseWorkspace({
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
         <div style={{ padding: "10px 16px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <button type="button" onClick={() => setShowReturnModal(true)} style={{ height: 32, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <button type="button" onClick={() => setShowReturnModal(true)} style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Plus size={15} />
             <span>Thêm chứng từ trả lại hàng</span>
           </button>
@@ -2983,7 +2984,7 @@ export default function MisaPurchaseWorkspace({
                 <tr key={r.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ textAlign: "center" }}><input type="checkbox" /></td>
                   <td style={{ padding: "8px 10px" }}>
-                    <span style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }} onClick={() => setShowReturnModal(true)}>
+                    <span style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer" }} onClick={() => setShowReturnModal(true)}>
                       {r.code}
                     </span>
                   </td>
@@ -2992,7 +2993,7 @@ export default function MisaPurchaseWorkspace({
                   <td style={{ padding: "8px 10px" }}>{r.reason}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#b91c1c" }}>{formatVND(r.amount)} đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                    <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("/api/v1/purchases/purchase-returns/", "returns", r.id, r.status)}</span>
+                    <span style={{ background: "#e0f2fe", color: "var(--brand-hover)", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{apiStatus("/api/v1/purchases/purchase-returns/", "returns", r.id, r.status)}</span>
                   </td>
                 </tr>
               ))}
@@ -3035,7 +3036,7 @@ export default function MisaPurchaseWorkspace({
             background: "#f1f5f9",
             padding: "14px 18px",
             boxSizing: "border-box",
-            fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+            fontFamily: "Roboto, Arial, sans-serif",
           }}
         >
           <div
@@ -3118,17 +3119,17 @@ export default function MisaPurchaseWorkspace({
                     <text
                       x="65"
                       y="74"
-                      fill="#00b06b"
+                      fill="var(--brand)"
                       fontSize="28"
                       fontWeight="800"
                       textAnchor="middle"
-                      fontFamily="Inter, system-ui, sans-serif"
+                      fontFamily="Roboto, Arial, sans-serif"
                     >
                       $
                     </text>
                     {/* Bill text lines */}
-                    <rect x="46" y="86" width="38" height="4" rx="2" fill="#00b06b" />
-                    <rect x="46" y="94" width="26" height="4" rx="2" fill="#00b06b" />
+                    <rect x="46" y="86" width="38" height="4" rx="2" fill="var(--brand)" />
+                    <rect x="46" y="94" width="26" height="4" rx="2" fill="var(--brand)" />
                   </g>
 
                   {/* Right Floating Card: Analytics with chart and $ badge */}
@@ -3144,7 +3145,7 @@ export default function MisaPurchaseWorkspace({
                       strokeWidth="1.2"
                     />
                     {/* Circular Green $ Badge */}
-                    <circle cx="295" cy="54" r="12" fill="#00b06b" />
+                    <circle cx="295" cy="54" r="12" fill="var(--brand)" />
                     <text
                       x="295"
                       y="59"
@@ -3152,14 +3153,14 @@ export default function MisaPurchaseWorkspace({
                       fontSize="12.5"
                       fontWeight="800"
                       textAnchor="middle"
-                      fontFamily="Inter, system-ui, sans-serif"
+                      fontFamily="Roboto, Arial, sans-serif"
                     >
                       $
                     </text>
                     {/* 3 Bar Chart Columns */}
-                    <rect x="279" y="82" width="7" height="20" rx="2" fill="#00b06b" />
-                    <rect x="291" y="74" width="7" height="28" rx="2" fill="#00b06b" />
-                    <rect x="303" y="78" width="7" height="24" rx="2" fill="#00b06b" />
+                    <rect x="279" y="82" width="7" height="20" rx="2" fill="var(--brand)" />
+                    <rect x="291" y="74" width="7" height="28" rx="2" fill="var(--brand)" />
+                    <rect x="303" y="78" width="7" height="24" rx="2" fill="var(--brand)" />
                   </g>
 
                   {/* Curved Connecting Dashed Lines */}
@@ -3181,12 +3182,12 @@ export default function MisaPurchaseWorkspace({
                   {/* Floating dots & sparkles */}
                   <circle cx="118" cy="148" r="2" fill="#94a3b8" />
                   <circle cx="242" cy="148" r="2" fill="#94a3b8" />
-                  <polygon points="98,140 101,143 98,146 95,143" fill="#00b06b" />
-                  <polygon points="262,140 265,143 262,146 259,143" fill="#00b06b" />
+                  <polygon points="98,140 101,143 98,146 95,143" fill="var(--brand)" />
+                  <polygon points="262,140 265,143 262,146 259,143" fill="var(--brand)" />
                   <polygon points="144,72 146,74 144,76 142,74" fill="#94a3b8" />
                   <polygon points="216,68 218,70 216,72 214,70" fill="#94a3b8" />
-                  <polygon points="65,22 67,24 65,26 63,24" fill="#00b06b" />
-                  <polygon points="295,20 297,22 295,24 293,22" fill="#00b06b" />
+                  <polygon points="65,22 67,24 65,26 63,24" fill="var(--brand)" />
+                  <polygon points="295,20 297,22 295,24 293,22" fill="var(--brand)" />
 
                   {/* Female Accountant Character in Green working at Laptop */}
                   <g id="accountant-character">
@@ -3209,7 +3210,7 @@ export default function MisaPurchaseWorkspace({
                     {/* Emerald Green Blouse */}
                     <path
                       d="M 164 93 Q 180 89 196 93 L 203 128 L 157 128 Z"
-                      fill="#00b06b"
+                      fill="var(--brand)"
                     />
                     {/* White V-neck collar */}
                     <path d="M 176 91 L 180 98 L 184 91 Z" fill="#ffffff" />
@@ -3217,7 +3218,7 @@ export default function MisaPurchaseWorkspace({
                     {/* Sleeves and Arms */}
                     <path
                       d="M 162 101 L 151 118 L 164 122"
-                      stroke="#00b06b"
+                      stroke="var(--brand)"
                       strokeWidth="5.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -3225,7 +3226,7 @@ export default function MisaPurchaseWorkspace({
                     />
                     <path
                       d="M 198 101 L 209 118 L 196 122"
-                      stroke="#00b06b"
+                      stroke="var(--brand)"
                       strokeWidth="5.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -3282,7 +3283,7 @@ export default function MisaPurchaseWorkspace({
                 style={{
                   height: 34,
                   padding: "0 34px",
-                  background: "#00b06b",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,
@@ -3292,8 +3293,8 @@ export default function MisaPurchaseWorkspace({
                   boxShadow: "0 2px 4px rgba(0, 176, 107, 0.25)",
                   transition: "background 0.15s ease",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#00965b")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "#00b06b")}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--brand)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "var(--brand)")}
               >
                 Thêm
               </button>
@@ -3313,8 +3314,8 @@ export default function MisaPurchaseWorkspace({
                   height: 32,
                   padding: "0 20px",
                   background: "#ffffff",
-                  color: "#00b06b",
-                  border: "1px solid #00b06b",
+                  color: "var(--brand)",
+                  border: "1px solid var(--brand)",
                   borderRadius: 4,
                   fontSize: 12.5,
                   fontWeight: 600,
@@ -3378,7 +3379,7 @@ export default function MisaPurchaseWorkspace({
               style={{
                 height: 32,
                 padding: "0 16px",
-                background: "#00b06b",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -3445,7 +3446,7 @@ export default function MisaPurchaseWorkspace({
             </div>
             <button
               type="button"
-              onClick={() => notify("Đã xuất danh sách hóa đơn mua hàng ra Excel")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất danh sách hóa đơn mua hàng"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               style={{
                 height: 30,
                 padding: "0 10px",
@@ -3531,7 +3532,7 @@ export default function MisaPurchaseWorkspace({
                     <td style={{ padding: "8px 10px", color: "#475569" }}>{inv.receivedDate}</td>
                     <td style={{ padding: "8px 10px" }}>
                       <span
-                        style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }}
+                        style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}
                         onClick={(e) => {
                           e.stopPropagation();
                           notify(`Xem chi tiết hóa đơn số ${inv.invoiceNo}`);
@@ -3554,7 +3555,7 @@ export default function MisaPurchaseWorkspace({
                     </td>
                     <td style={{ padding: "8px 10px" }}>
                       <span
-                        style={{ color: "#0284c7", fontWeight: 500, cursor: "pointer" }}
+                        style={{ color: "var(--brand)", fontWeight: 500, cursor: "pointer" }}
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowVoucherModal(true);
@@ -3693,7 +3694,7 @@ export default function MisaPurchaseWorkspace({
           background: "#f4f5f8",
           padding: "10px 16px 14px 16px",
           boxSizing: "border-box",
-          fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          fontFamily: "Roboto, Arial, sans-serif",
           position: "relative",
         }}
       >
@@ -3724,7 +3725,7 @@ export default function MisaPurchaseWorkspace({
             style={{
               background: "transparent",
               border: "none",
-              color: "#0284c7",
+              color: "var(--brand)",
               fontSize: 13,
               fontWeight: 500,
               cursor: "pointer",
@@ -4047,7 +4048,7 @@ export default function MisaPurchaseWorkspace({
                   cursor: "pointer",
                 }}
               >
-                <MapPin size={14} style={{ color: "#0284c7" }} />
+                <MapPin size={14} style={{ color: "var(--brand)" }} />
                 <span>Cập nhật địa chỉ</span>
               </button>
 
@@ -4063,7 +4064,7 @@ export default function MisaPurchaseWorkspace({
                   style={{
                     height: 32,
                     padding: "0 14px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderTopLeftRadius: 4,
@@ -4084,7 +4085,7 @@ export default function MisaPurchaseWorkspace({
                   style={{
                     height: 32,
                     padding: "0 6px",
-                    background: "#009355",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderLeft: "1px solid rgba(255,255,255,0.25)",
@@ -4290,7 +4291,7 @@ export default function MisaPurchaseWorkspace({
                       type="checkbox"
                       checked={isAllSelected}
                       onChange={toggleSelectAll}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                   </th>
                   <th style={{ width: 130, padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #cbd5e1", borderRight: "1px solid #e2e8f0" }}>
@@ -4365,14 +4366,14 @@ export default function MisaPurchaseWorkspace({
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => toggleSelectRow(s.id)}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </td>
                         <td
                           style={{
                             padding: "8px 10px",
                             fontWeight: 500,
-                            color: "#0284c7",
+                            color: "var(--brand)",
                             cursor: "pointer",
                             borderBottom: "1px solid #e2e8f0",
                             borderRight: "1px solid #f1f5f9",
@@ -4416,10 +4417,10 @@ export default function MisaPurchaseWorkspace({
                           {s.phone}
                         </td>
                         <td style={{ textAlign: "center", padding: "8px 10px", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
-                          <input type="checkbox" checked={s.isInternal} readOnly style={{ accentColor: "#00a862" }} />
+                          <input type="checkbox" checked={s.isInternal} readOnly style={{ accentColor: "var(--brand)" }} />
                         </td>
                         <td style={{ textAlign: "center", padding: "8px 10px", borderBottom: "1px solid #e2e8f0", borderRight: "1px solid #f1f5f9" }}>
-                          <input type="checkbox" checked={s.isBranch} readOnly style={{ accentColor: "#00a862" }} />
+                          <input type="checkbox" checked={s.isBranch} readOnly style={{ accentColor: "var(--brand)" }} />
                         </td>
                         <td
                           style={{
@@ -4441,7 +4442,7 @@ export default function MisaPurchaseWorkspace({
                               style={{
                                 background: "transparent",
                                 border: "none",
-                                color: "#0284c7",
+                                color: "var(--brand)",
                                 fontSize: 12.5,
                                 fontWeight: 500,
                                 cursor: "pointer",
@@ -4458,7 +4459,7 @@ export default function MisaPurchaseWorkspace({
                               style={{
                                 background: "transparent",
                                 border: "none",
-                                color: "#0284c7",
+                                color: "var(--brand)",
                                 cursor: "pointer",
                                 padding: "2px 0",
                                 display: "flex",
@@ -4510,7 +4511,7 @@ export default function MisaPurchaseWorkspace({
                                     setEditingSupplier({ ...s, activeTab: "items" });
                                     setShowSupplierModal(true);
                                   }}
-                                  style={{ padding: "7px 12px", fontSize: 12.5, cursor: "pointer", color: "#00a862", fontWeight: 600 }}
+                                  style={{ padding: "7px 12px", fontSize: 12.5, cursor: "pointer", color: "var(--brand)", fontWeight: 600 }}
                                 >
                                   Xem VTHH cung cấp
                                 </div>
@@ -4619,7 +4620,7 @@ export default function MisaPurchaseWorkspace({
                     height: 22,
                     lineHeight: "22px",
                     textAlign: "center",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     borderRadius: 3,
                     fontWeight: 600,
@@ -4717,7 +4718,7 @@ export default function MisaPurchaseWorkspace({
           </h2>
 
           <div
-            className="ref-process-canvas"
+            className="ref-process-canvas sv-flow-nodes"
             style={{
               position: "relative",
               height: 330,
@@ -4726,7 +4727,7 @@ export default function MisaPurchaseWorkspace({
             }}
           >
             {/* SVG Connecting Flow Lines matching user screenshot */}
-            <svg
+            <svg className="sv-flow-connector"
               viewBox="0 0 660 300"
               preserveAspectRatio="none"
               aria-hidden="true"
@@ -4772,7 +4773,7 @@ export default function MisaPurchaseWorkspace({
             </svg>
 
             {/* Col 1 Top: Đơn mua hàng */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "11.36%",
@@ -4813,7 +4814,7 @@ export default function MisaPurchaseWorkspace({
             </div>
 
             {/* Col 1 Bottom: Hợp đồng mua hàng */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "11.36%",
@@ -4854,7 +4855,7 @@ export default function MisaPurchaseWorkspace({
             </div>
 
             {/* Col 2 Top: Nhận hàng hóa, dịch vụ (With Dropdown Menu matching screenshot) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "36.06%",
@@ -5016,7 +5017,7 @@ export default function MisaPurchaseWorkspace({
             </div>
 
             {/* Col 2 Bottom: Nhận hóa đơn */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "36.06%",
@@ -5063,7 +5064,7 @@ export default function MisaPurchaseWorkspace({
             </div>
 
             {/* Col 3 Top: Xử lý hóa đơn đầu vào */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "61.82%",
@@ -5104,7 +5105,7 @@ export default function MisaPurchaseWorkspace({
             </div>
 
             {/* Col 3 Bottom: Trả lại hàng mua */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "61.82%",
@@ -5145,7 +5146,7 @@ export default function MisaPurchaseWorkspace({
             </div>
 
             {/* Col 4 Top: Trả tiền theo hóa đơn */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "87.58%",
@@ -5186,7 +5187,7 @@ export default function MisaPurchaseWorkspace({
             </div>
 
             {/* Col 4 Bottom: Giảm giá hàng mua */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "87.58%",
@@ -5254,29 +5255,29 @@ export default function MisaPurchaseWorkspace({
           </h2>
 
           <ul style={{ listStyle: "none", margin: 0, padding: "10px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-            {['Chi tiết công nợ phải trả nhà cung cấp','Tổng hợp mua hàng theo mặt hàng','Tổng hợp công nợ phải trả nhà cung cấp','Biên bản đối chiếu và xác nhận công nợ phải trả'].map(name=><li key={name}><button style={{border:0,background:'transparent',padding:0,fontSize:12.5,color:'#0284c7',cursor:'pointer',textAlign:'left'}} onClick={()=>openPurchaseReport(name)}>• {name}</button></li>)}
+            {['Chi tiết công nợ phải trả nhà cung cấp','Tổng hợp mua hàng theo mặt hàng','Tổng hợp công nợ phải trả nhà cung cấp','Biên bản đối chiếu và xác nhận công nợ phải trả'].map(name=><li key={name}><button style={{border:0,background:'transparent',padding:0,fontSize:12.5,color:'var(--brand)',cursor:'pointer',textAlign:'left'}} onClick={()=>openPurchaseReport(name)}>• {name}</button></li>)}
             <li>
-              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Sổ chi tiết mua hàng")}>
+              <span style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Sổ chi tiết mua hàng")}>
                 • Sổ chi tiết mua hàng
               </span>
             </li>
             <li>
-              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Sổ chi tiết mua hàng")}>
+              <span style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Sổ chi tiết mua hàng")}>
                 • Bảng kê hóa đơn dịch vụ mua vào
               </span>
             </li>
             <li>
-              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Tổng hợp công nợ phải trả nhà cung cấp")}>
+              <span style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Tổng hợp công nợ phải trả nhà cung cấp")}>
                 • Báo cáo công nợ phải trả NCC
               </span>
             </li>
             <li>
-              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Tình hình thực hiện đơn mua hàng")}>
+              <span style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Tình hình thực hiện đơn mua hàng")}>
                 • Tình hình thực hiện đơn mua hàng
               </span>
             </li>
             <li>
-              <span style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Tình hình thực hiện hợp đồng mua")}>
+              <span style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }} onClick={() => openPurchaseReport("Tình hình thực hiện hợp đồng mua")}>
                 • Theo dõi tiến độ hợp đồng mua
               </span>
             </li>
@@ -5310,7 +5311,7 @@ export default function MisaPurchaseWorkspace({
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", background: "#ffffff", border: "none", borderRight: "1px solid #f1f5f9", cursor: "pointer", fontSize: 12, color: "#334155" }}
             onClick={() => setShowSupplierModal(true)}
           >
-            <Building2 size={20} style={{ color: "#00b06b" }} />
+            <Building2 size={20} style={{ color: "var(--brand)" }} />
             <span>Nhà cung cấp</span>
           </button>
 
@@ -5328,7 +5329,7 @@ export default function MisaPurchaseWorkspace({
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", background: "#ffffff", border: "none", borderRight: "1px solid #f1f5f9", cursor: "pointer", fontSize: 12, color: "#334155" }}
             onClick={() => setPaymentTermsOpen(true)}
           >
-            <ShieldCheck size={20} style={{ color: "#0284c7" }} />
+            <ShieldCheck size={20} style={{ color: "var(--brand)" }} />
             <span>Điều khoản thanh toán</span>
           </button>
 

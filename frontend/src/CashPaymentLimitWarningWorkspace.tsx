@@ -223,7 +223,7 @@ export default function CashPaymentLimitWarningWorkspace({
                           display: "inline-flex",
                           alignItems: "center",
                           gap: 5,
-                          background: "#0284c7",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           padding: "6px 14px",
                           borderRadius: 6,

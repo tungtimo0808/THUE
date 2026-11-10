@@ -11,6 +11,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
+import { showNotice, showPendingFeature } from "./global-popup";
 export function formatVND(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount);
 }
@@ -106,7 +107,7 @@ export function InsurancePaymentModal({
 
   const handleFetchData = () => {
     if (loadRecords) {
-      loadRecords().then((rows) => setItems(rows)).catch((error) => alert(error instanceof Error ? error.message : String(error)));
+      loadRecords().then((rows) => setItems(rows)).catch((error) => showNotice(error instanceof Error ? error.message : String(error)));
       return;
     }
     setItems([
@@ -212,7 +213,7 @@ export function InsurancePaymentModal({
                   name="insurancePayMethod"
                   checked={payMethod === "cash"}
                   onChange={() => setPayMethod("cash")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Tiền mặt</span>
               </label>
@@ -222,7 +223,7 @@ export function InsurancePaymentModal({
                   name="insurancePayMethod"
                   checked={payMethod === "bank"}
                   onChange={() => setPayMethod("bank")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Tiền gửi</span>
               </label>
@@ -289,7 +290,7 @@ export function InsurancePaymentModal({
                         type="checkbox"
                         checked={items.length > 0 && items.every((i) => i.checked)}
                         onChange={toggleSelectAll}
-                        style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                        style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                       />
                     </th>
                     <th>Khoản phải nộp</th>
@@ -316,7 +317,7 @@ export function InsurancePaymentModal({
                           type="checkbox"
                           checked={item.checked}
                           onChange={() => toggleItem(item.id)}
-                          style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                          style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                         />
                       </td>
                       <td>{item.name}</td>
@@ -409,7 +410,7 @@ export function SalaryPaymentModal({
 
   const handleFetchData = () => {
     if (loadRecords) {
-      loadRecords().then((rows) => setRecords(rows)).catch((error) => alert(error instanceof Error ? error.message : String(error)));
+      loadRecords().then((rows) => setRecords(rows)).catch((error) => showNotice(error instanceof Error ? error.message : String(error)));
       return;
     }
     setRecords([
@@ -555,7 +556,7 @@ export function SalaryPaymentModal({
                   name="salaryPayMethod"
                   checked={payMethod === "cash"}
                   onChange={() => setPayMethod("cash")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Tiền mặt</span>
               </label>
@@ -565,7 +566,7 @@ export function SalaryPaymentModal({
                   name="salaryPayMethod"
                   checked={payMethod === "bank"}
                   onChange={() => setPayMethod("bank")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Tiền gửi</span>
               </label>
@@ -633,7 +634,7 @@ export function SalaryPaymentModal({
                         type="checkbox"
                         checked={records.length > 0 && records.every((r) => r.checked)}
                         onChange={toggleSelectAll}
-                        style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                        style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                       />
                     </th>
                     <th style={{ width: 130 }}>
@@ -681,10 +682,10 @@ export function SalaryPaymentModal({
                             type="checkbox"
                             checked={r.checked}
                             onChange={() => toggleRow(r.id)}
-                            style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                            style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                           />
                         </td>
-                        <td style={{ fontWeight: 600, color: "#0284c7" }}>{r.code}</td>
+                        <td style={{ fontWeight: 600, color: "var(--brand)" }}>{r.code}</td>
                         <td style={{ fontWeight: 500, color: "#1f2937" }}>{r.name}</td>
                         <td style={{ color: "#4b5563" }}>{r.department}</td>
                         <td style={{ color: "#4b5563" }}>{r.account}</td>
@@ -714,11 +715,11 @@ export function SalaryPaymentModal({
                             style={{
                               background: "none",
                               border: "none",
-                              color: "#0284c7",
+                              color: "var(--brand)",
                               cursor: "pointer",
                               fontSize: 12,
                             }}
-                            onClick={() => alert(`Xem chi tiết bảng lương nhân viên ${r.name}`)}
+                            onClick={() => showPendingFeature(`Xem chi tiết bảng lương nhân viên ${r.name}`)}
                           >
                             Chi tiết
                           </button>
@@ -854,7 +855,7 @@ export function InternalTransferModal({
               </label>
             </div>}
             <div style={{ display: "grid", placeItems: "center" }}>
-              <ArrowRight size={18} style={{ color: "#00b06b", transform: "rotate(90deg)" }} />
+              <ArrowRight size={18} style={{ color: "var(--brand)", transform: "rotate(90deg)" }} />
             </div>
 
             <div>
@@ -883,7 +884,7 @@ export function InternalTransferModal({
                   type="text"
                   value={formatVND(amount)}
                   onChange={(e) => setAmount(parseInt(e.target.value.replace(/\D/g, "") || "0", 10))}
-                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid #00b06b", borderRadius: 4, fontSize: 14, fontWeight: 700, color: "#00b06b" }}
+                  style={{ width: "100%", height: 34, padding: "0 10px", border: "1px solid var(--brand)", borderRadius: 4, fontSize: 14, fontWeight: 700, color: "var(--brand)" }}
                 />
               </div>
               <div>
@@ -933,7 +934,7 @@ export function InternalTransferModal({
 
         <footer className="misa-tax-modal-footer">
           <div style={{ fontSize: 13, color: "#64748b" }}>
-            Số tiền chuyển: <strong style={{ fontSize: 18, color: "#00b06b" }}>{formatVND(amount)}đ</strong>
+            Số tiền chuyển: <strong style={{ fontSize: 18, color: "var(--brand)" }}>{formatVND(amount)}đ</strong>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button type="button" className="misa-btn-secondary" onClick={close} style={{ padding: "0 20px", height: 36, borderRadius: 4, border: "1px solid #d1d5db", background: "#ffffff", fontWeight: 600 }}>
@@ -958,7 +959,7 @@ export function InternalTransferModal({
                   version: initial?.version,
                 })
               }
-              style={{ padding: "0 22px", height: 36, borderRadius: 4, background: "#00b06b", color: "#fff", border: "none", fontWeight: 600, boxShadow: "0 2px 4px rgba(0, 176, 107, 0.25)" }}
+              style={{ padding: "0 22px", height: 36, borderRadius: 4, background: "var(--brand)", color: "#fff", border: "none", fontWeight: 600, boxShadow: "0 2px 4px rgba(0, 176, 107, 0.25)" }}
             >
               {accounts ? "Lưu" : "Thực hiện chuyển tiền"}
             </button>}

@@ -68,7 +68,7 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
         style={{
           height,
           padding: "0 14px",
-          background: disabled ? "#86efac" : "#00a862",
+          background: disabled ? "#86efac" : "var(--brand)",
           color: "#ffffff",
           border: "none",
           borderTopLeftRadius: 4,
@@ -97,7 +97,7 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
           height,
           width: 28,
           padding: 0,
-          background: disabled ? "#86efac" : open ? "#008f53" : "#009858",
+          background: disabled ? "#86efac" : open ? "var(--brand-hover)" : "#009858",
           color: "#ffffff",
           border: "none",
           borderLeft: "1px solid rgba(255, 255, 255, 0.28)",
@@ -164,10 +164,10 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
             }}
           >
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              <LogOut size={13.5} style={{ color: "#00a862" }} />
+              <LogOut size={13.5} style={{ color: "var(--brand)" }} />
               <span>Lưu và Đóng</span>
             </span>
-            {mode === "save_and_close" && <Check size={13} style={{ color: "#00a862" }} />}
+            {mode === "save_and_close" && <Check size={13} style={{ color: "var(--brand)" }} />}
           </button>
 
           <button
@@ -203,10 +203,10 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
             }}
           >
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              <FilePlus2 size={13.5} style={{ color: "#00a862" }} />
+              <FilePlus2 size={13.5} style={{ color: "var(--brand)" }} />
               <span>Lưu và Thêm</span>
             </span>
-            {mode === "save_and_add" && <Check size={13} style={{ color: "#00a862" }} />}
+            {mode === "save_and_add" && <Check size={13} style={{ color: "var(--brand)" }} />}
           </button>
 
           {(showPrint || Boolean(onSaveAndPrint)) && (

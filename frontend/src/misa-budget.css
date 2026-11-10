@@ -59,7 +59,7 @@
 }
 
 .misa-budget-select:focus {
-  border-color: #00a862;
+  border-color: var(--brand);
   box-shadow: 0 0 0 2px rgba(0, 168, 98, 0.15);
 }
 
@@ -124,8 +124,8 @@
 }
 
 .misa-budget-btn-custom:hover {
-  border-color: #00a862;
-  color: #00a862;
+  border-color: var(--brand);
+  color: var(--brand);
   background: #f0fdf4;
 }
 
@@ -263,7 +263,7 @@
 }
 
 .misa-budget-refresh-link {
-  color: #0284c7;
+  color: var(--brand);
   cursor: pointer;
   text-decoration: none;
   font-weight: 500;
@@ -382,7 +382,7 @@
 .misa-budget-btn-primary {
   height: 36px;
   padding: 0 28px;
-  background: #00a862;
+  background: var(--brand);
   color: #ffffff;
   border: none;
   border-radius: 4px;
@@ -394,7 +394,7 @@
 }
 
 .misa-budget-btn-primary:hover {
-  background: #009355;
+  background: var(--brand);
   box-shadow: 0 3px 8px rgba(0, 168, 98, 0.3);
 }
 
@@ -414,8 +414,8 @@
 }
 
 .misa-budget-landing-bottom-btn:hover {
-  border-color: #00a862;
-  color: #00a862;
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 /* Modal: Chọn kỳ lập kế hoạch */
@@ -526,7 +526,7 @@
 }
 
 .misa-budget-input-with-icon input:focus {
-  border-color: #00a862;
+  border-color: var(--brand);
 }
 
 .misa-budget-input-icon {
@@ -609,7 +609,7 @@
 }
 
 .misa-budget-reports-search-box input:focus {
-  border-color: #00a862;
+  border-color: var(--brand);
 }
 
 .misa-budget-reports-search-icon {
@@ -676,7 +676,7 @@
 }
 
 .misa-budget-report-name:hover {
-  color: #00a862;
+  color: var(--brand);
 }
 
 .misa-budget-report-actions {
@@ -699,7 +699,7 @@
 }
 
 .misa-budget-report-icon-btn:hover {
-  color: #00a862;
+  color: var(--brand);
 }
 
 .misa-budget-report-icon-btn.starred {

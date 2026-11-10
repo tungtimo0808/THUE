@@ -45,7 +45,7 @@ COMPANY_NAME = "Công ty TNHH Điện Tử Minh Khang (Demo)"
 TAX_CODE = "0319990001"
 LAST_MONTH = 10
 # Summary accounts in the seed's own vocabulary, posted to the leaf accounts the reports map.
-POSTING_ACCOUNTS = {"214": "2141", "3331": "33311", "334": "3341", "338": "3383", "341": "3411", "821": "8211"}
+POSTING_ACCOUNTS = {"214": "2141", "3331": "33311", "334": "3341", "338": "3383", "341": "3411", "411": "4111", "821": "8211"}
 # Only debt accounts carry a counterparty; tax, payroll and revenue lines do not.
 PARTY_ACCOUNTS = ("131", "331")
 ZERO = Decimal("0")
@@ -91,10 +91,10 @@ EMPLOYEES = (
     ("NV001", "Nguyễn Văn Khang", "BGD", "Giám đốc", 35_000_000, "6421"),
     ("NV002", "Trần Thị Hoa", "KT", "Kế toán trưởng", 22_000_000, "6421"),
     ("NV003", "Lê Minh Tâm", "KT", "Kế toán viên", 13_000_000, "6421"),
-    ("NV004", "Phạm Thu Hà", "KD", "Trưởng phòng kinh doanh", 20_000_000, "641"),
-    ("NV005", "Vũ Đức Long", "KD", "Nhân viên bán hàng", 12_000_000, "641"),
-    ("NV006", "Đỗ Thị Mai", "KD", "Nhân viên bán hàng", 12_000_000, "641"),
-    ("NV007", "Hoàng Văn Nam", "KHO", "Thủ kho", 11_000_000, "641"),
+    ("NV004", "Phạm Thu Hà", "KD", "Trưởng phòng kinh doanh", 20_000_000, "6411"),
+    ("NV005", "Vũ Đức Long", "KD", "Nhân viên bán hàng", 12_000_000, "6411"),
+    ("NV006", "Đỗ Thị Mai", "KD", "Nhân viên bán hàng", 12_000_000, "6411"),
+    ("NV007", "Hoàng Văn Nam", "KHO", "Thủ kho", 11_000_000, "6411"),
 )
 ASSETS = (
     # code, name, account, cost, months of useful life, months already depreciated
@@ -107,8 +107,8 @@ MONTHLY_EXPENSES = (
     # label, account, amount, deductible VAT
     ("Tiền thuê cửa hàng", "6422", 60_000_000, True),
     ("Tiền điện", "6422", 11_000_000, True),
-    ("Phí quảng cáo", "641", 18_000_000, True),
-    ("Chi phí vận chuyển", "641", 9_000_000, True),
+    ("Phí quảng cáo", "6417", 18_000_000, True),
+    ("Chi phí vận chuyển", "6417", 9_000_000, True),
 )
 
 
@@ -199,7 +199,7 @@ class Command(BaseCommand):
             company=self.company, user=self.user, membership_status=ActiveStatus.ACTIVE,
             joined_at=timezone.now(), created_by=self.user,
         )
-        role = Role.objects.filter(company=self.company, code="COMPANY_ADMIN").first()
+        role = Role.objects.filter(company=self.company, code__in=("ROLE_ADMIN", "COMPANY_ADMIN")).first()
         UserRoleAssignment.objects.create(
             company_membership=membership, role=role, status=ActiveStatus.ACTIVE, assigned_by=self.user,
             assign_reason="Quản trị công ty demo",
@@ -769,7 +769,7 @@ class Command(BaseCommand):
         self.stock_in("RETURN", on, line.warehouse, [(line.item, 1, line.unit_cost)], prefix="NTL")
         self.journal(
             "BT", on, f"Hàng bán trả lại {document.number}",
-            [("521", amount, 0), ("3331", tax, 0), ("131", 0, amount + tax)], party=sale.customer,
+            [("5212", amount, 0), ("3331", tax, 0), ("131", 0, amount + tax)], party=sale.customer,
         )
         self.journal(
             "BT", on, f"Nhập lại giá vốn {document.number}",
@@ -943,7 +943,7 @@ class Command(BaseCommand):
 
     def profit_lines(self, months):
         revenue = ("5111", "515", "711")
-        costs = ("521", "632", "635", "641", "6421", "6422", "811", "821")
+        costs = ("5212", "632", "635", "6411", "6417", "6421", "6422", "811", "821")
         lines = []
         for code in revenue + costs:
             debit = sum(self.ledger[(m, code)][0] for m in months)

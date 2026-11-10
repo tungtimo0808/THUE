@@ -1,4 +1,4 @@
-.tt133-report { min-height: 100%; padding-top: 12px; background: #e8efff; color: #172443; font: 13px "Be Vietnam Pro", sans-serif; }
+.tt133-report { min-height: 100%; padding-top: 12px; background: #e8efff; color: #172443; font: 13px Roboto, sans-serif; }
 .tt133-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 12px; background: #bfcef1; border-bottom: 1px solid #91a8dd; }
 .tt133-toolbar button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; border: 1px solid #94a9d6; border-radius: 3px; background: #edf3ff; color: #123267; cursor: pointer; }
 .tt133-toolbar button:disabled { opacity: .5; cursor: default; }

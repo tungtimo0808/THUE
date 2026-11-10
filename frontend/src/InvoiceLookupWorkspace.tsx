@@ -186,7 +186,7 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
           <Link
             to={href("/sales/invoices", { create: "replacement" })}
             style={{
-              background: "#0284c7",
+              background: "var(--brand)",
               color: "#ffffff",
               padding: "7px 14px",
               borderRadius: 6,

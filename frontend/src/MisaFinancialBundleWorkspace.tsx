@@ -636,7 +636,7 @@ export default function MisaFinancialBundleWorkspace({
           )}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Layers size={18} color="#00a862" />
+              <Layers size={18} color="var(--brand)" />
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
                 Quản lý & Xem Bộ Báo Cáo Tài Chính (Thông tư 99/2025/TT-BTC)
               </h3>
@@ -663,7 +663,7 @@ export default function MisaFinancialBundleWorkspace({
             type="button"
             onClick={handleCreateOrGenerateBundle}
             disabled={loading}
-            style={{ height: 32, padding: "0 14px", background: "#ffffff", border: "1px solid #00a862", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#00a862", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            style={{ height: 32, padding: "0 14px", background: "#ffffff", border: "1px solid var(--brand)", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "var(--brand)", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
           >
             <Play size={14} />
             <span>Lập / Tạo phiên bản Bộ BCTC mới</span>
@@ -671,7 +671,7 @@ export default function MisaFinancialBundleWorkspace({
           <button
             type="button"
             onClick={() => setIsParamDrawerOpen(true)}
-            style={{ height: 32, padding: "0 16px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            style={{ height: 32, padding: "0 16px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
           >
             <span>Chọn tham số</span>
           </button>
@@ -762,7 +762,7 @@ export default function MisaFinancialBundleWorkspace({
                   <span style={{ color: "#cbd5e1" }}>•</span>
                   <span>
                     Trạng thái:{" "}
-                    <strong style={{ color: bundleDetail.bundle_status === "APPROVED" ? "#15803d" : "#0369a1" }}>
+                    <strong style={{ color: bundleDetail.bundle_status === "APPROVED" ? "#15803d" : "var(--brand-hover)" }}>
                       {formatRunStatusText(bundleDetail.bundle_status)}
                     </strong>
                   </span>
@@ -805,7 +805,7 @@ export default function MisaFinancialBundleWorkspace({
                   <button
                     type="button"
                     onClick={handleSubmitReview}
-                    style={{ height: 32, padding: "0 12px", background: "#0284c7", border: "none", borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
+                    style={{ height: 32, padding: "0 12px", background: "var(--brand)", border: "none", borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
                   >
                     <CheckCircle2 size={13} />
                     <span>Trình duyệt</span>
@@ -922,7 +922,7 @@ export default function MisaFinancialBundleWorkspace({
                           </div>
                         </td>
                         <td style={{ padding: "10px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
-                          <div style={{ fontSize: 12.5, fontWeight: 600, color: comp.run_status === "APPROVED" ? "#15803d" : "#0369a1" }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: comp.run_status === "APPROVED" ? "#15803d" : "var(--brand-hover)" }}>
                             {comp.run_status === "APPROVED"
                               ? "Đã phê duyệt"
                               : comp.run_status === "READY_FOR_APPROVAL"
@@ -1020,7 +1020,7 @@ export default function MisaFinancialBundleWorkspace({
                               <button
                                 type="button"
                                 onClick={() => onOpenReportByName(LEGAL_FORM_TO_REPORT_NAME[comp.legal_form_code])}
-                                style={{ width: 64, height: 28, padding: "0 4px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 11.5, fontWeight: 600, color: "#0284c7", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 3, whiteSpace: "nowrap", boxSizing: "border-box" }}
+                                style={{ width: 64, height: 28, padding: "0 4px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 5, fontSize: 11.5, fontWeight: 600, color: "var(--brand)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 3, whiteSpace: "nowrap", boxSizing: "border-box" }}
                               >
                                 <FileText size={11} />
                                 <span>Mở biểu</span>
@@ -1131,7 +1131,7 @@ export default function MisaFinancialBundleWorkspace({
                             )}
                           </td>
                           <td style={{ padding: "7px 10px", textAlign: "center" }}>{ln.indicator_code}</td>
-                          <td style={{ padding: "7px 10px", textAlign: "center", color: "#0284c7" }}>{ln.note_reference}</td>
+                          <td style={{ padding: "7px 10px", textAlign: "center", color: "var(--brand)" }}>{ln.note_reference}</td>
                           {(ln.value_slots || []).length > 0 ? (
                             ln.value_slots.map((s: any) => (
                               <td key={s.slot_code} style={{ padding: "7px 10px", textAlign: "right" }}>
@@ -1152,7 +1152,7 @@ export default function MisaFinancialBundleWorkspace({
                             <button
                               type="button"
                               onClick={() => handleOpenLineDrilldown(activeStatementLines.run_id, ln.indicator_code)}
-                              style={{ padding: "2px 8px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0284c7", cursor: "pointer" }}
+                              style={{ padding: "2px 8px", fontSize: 11, border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "var(--brand)", cursor: "pointer" }}
                             >
                               Nguồn GL
                             </button>
@@ -1288,7 +1288,7 @@ export default function MisaFinancialBundleWorkspace({
                           <button
                             type="button"
                             onClick={() => loadBundleDetail(bundleDetail.bundle_id, v.bundle_version)}
-                            style={{ padding: "2px 8px", fontSize: 11.5, border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#0284c7", cursor: "pointer" }}
+                            style={{ padding: "2px 8px", fontSize: 11.5, border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "var(--brand)", cursor: "pointer" }}
                           >
                             Xem phiên bản lần {v.bundle_version}
                           </button>
@@ -1657,7 +1657,7 @@ export default function MisaFinancialBundleWorkspace({
                     type="checkbox"
                     checked={!showZeroLines}
                     onChange={(e) => setShowZeroLines(!e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Không hiển thị các chỉ tiêu có số liệu = 0</span>
                 </label>
@@ -1734,7 +1734,7 @@ export default function MisaFinancialBundleWorkspace({
                   style={{
                     height: 34,
                     padding: "0 18px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

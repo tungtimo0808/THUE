@@ -1,3 +1,5 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -356,7 +358,7 @@ export default function MisaMultiUnitRevenueExpenseReport({
               style={{
                 position: "absolute",
                 left: 10,
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -451,7 +453,7 @@ export default function MisaMultiUnitRevenueExpenseReport({
               cursor: "pointer",
             }}
             title="Xuất khẩu Excel"
-            onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
             <ChevronDown size={13} color="#64748b" />
@@ -485,7 +487,7 @@ export default function MisaMultiUnitRevenueExpenseReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -503,7 +505,7 @@ export default function MisaMultiUnitRevenueExpenseReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -513,7 +515,7 @@ export default function MisaMultiUnitRevenueExpenseReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -780,11 +782,11 @@ export default function MisaMultiUnitRevenueExpenseReport({
             <option value={100}>100</option>
           </select>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+            <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
             <span
               style={{
                 padding: "2px 8px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 borderRadius: 3,
                 fontWeight: 600,
@@ -792,7 +794,7 @@ export default function MisaMultiUnitRevenueExpenseReport({
             >
               1
             </span>
-            <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
+            <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
           </div>
         </div>
       </div>
@@ -879,7 +881,7 @@ export default function MisaMultiUnitRevenueExpenseReport({
                       width: "100%",
                       height: 32,
                       padding: "0 10px",
-                      border: "1px solid #00a862",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 13,
                       background: "#ffffff",
@@ -1020,7 +1022,7 @@ export default function MisaMultiUnitRevenueExpenseReport({
               <div>
                 <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
                   <div style={{ position: "relative", width: 220 }}>
-                    <Search size={14} style={{ position: "absolute", right: 8, top: 9, color: "#94a3b8" }} />
+                    <Search size={14} style={{ position: "absolute", right: 8, top: 9, color: "#64748b" }} />
                     <input
                       type="text"
                       placeholder="Nhập từ khóa tìm kiếm"
@@ -1145,7 +1147,7 @@ export default function MisaMultiUnitRevenueExpenseReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,
