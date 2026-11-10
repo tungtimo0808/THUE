@@ -1589,9 +1589,7 @@ function ReferenceWorkspace() {
             ? "/purchases/transactions"
             : t.kind === "sale"
               ? "/sales/transactions"
-              : t.kind === "invoice"
-                ? "/invoices/outgoing"
-                : "/cash/transactions",
+              : "/cash/transactions",
       isVoucher: true,
     })),
   ];

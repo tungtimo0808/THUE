@@ -9824,8 +9824,8 @@ export default function MisaLedgerWorkspace({
                                                 ? "TT133/2016/TT-BTC"
                                                 : activeRegimeCode === "TT200"
                                                 ? "TT200/2014/TT-BTC"
-                                                : activeRegimeCode === "TT88"
-                                                ? "TT88/2021/TT-BTC"
+                                                : activeRegimeCode === "TT58"
+                                                ? "TT58/2026/TT-BTC"
                                                 : "TT99/2025/TT-BTC";
                                             const statusVn =
                                               row.batchStatus === "FINALIZED"

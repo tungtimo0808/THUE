@@ -266,7 +266,6 @@ export default function MisaInvoiceWorkspace({
               invoice_kind: kind,
               sent_status: sent,
               fault_type: fault,
-              tax_authority_code: cqtCodeInput.trim(),
               buyer_email: buyerEmailInput.trim(),
             }),
           },

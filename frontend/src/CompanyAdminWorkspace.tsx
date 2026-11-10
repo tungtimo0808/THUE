@@ -155,6 +155,7 @@ interface MemberItem {
   role_assignments: MemberRoleAssignment[];
   effective_permissions?: string[];
   access_status?: string;
+  membership_status?: string;
   joined_at?: string;
 }
 
