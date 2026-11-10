@@ -386,7 +386,7 @@ export function SaleQuoteModal({
               title="Hướng dẫn sử dụng"
               onClick={() => notify("Mở tài liệu Hướng dẫn lập Báo giá bán hàng")}
             >
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </button>
@@ -440,7 +440,7 @@ export function SaleQuoteModal({
                     minWidth: 0,
                     display: "flex",
                     alignItems: "center",
-                    border: "1px solid #00b06b",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     height: 28,
                     background: "#ffffff",
@@ -474,7 +474,7 @@ export function SaleQuoteModal({
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#00b06b",
+                      color: "var(--brand)",
                       cursor: "pointer",
                       padding: "2px",
                       display: "grid",
@@ -645,7 +645,7 @@ export function SaleQuoteModal({
                     fontSize: 12.5,
                   }}
                 />
-                <Calendar size={13} style={{ color: "#94a3b8" }} />
+                <Calendar size={13} style={{ color: "#64748b" }} />
               </div>
             </div>
 
@@ -739,7 +739,7 @@ export function SaleQuoteModal({
                     fontSize: 12.5,
                   }}
                 />
-                <Calendar size={13} style={{ color: "#94a3b8" }} />
+                <Calendar size={13} style={{ color: "#64748b" }} />
               </div>
             </div>
 
@@ -780,7 +780,7 @@ export function SaleQuoteModal({
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#00b06b",
+                    color: "var(--brand)",
                     cursor: "pointer",
                     padding: "2px",
                     display: "grid",
@@ -818,7 +818,7 @@ export function SaleQuoteModal({
             <span
               onClick={() => notify("Chọn chứng từ tham chiếu")}
               style={{
-                color: "#0284c7",
+                color: "var(--brand)",
                 fontSize: 12.5,
                 cursor: "pointer",
                 fontWeight: 500,
@@ -846,7 +846,7 @@ export function SaleQuoteModal({
                   fontSize: 13,
                   color: "#0f172a",
                   paddingBottom: 6,
-                  borderBottom: "2px solid #00b06b",
+                  borderBottom: "2px solid var(--brand)",
                   cursor: "pointer",
                 }}
               >
@@ -894,7 +894,7 @@ export function SaleQuoteModal({
               }}
             >
               <thead>
-                <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid #00a862", color: "#065f46", height: 34, fontWeight: 600 }}>
+                <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid var(--brand)", color: "#065f46", height: 34, fontWeight: 600 }}>
                   <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>
                     #
                   </th>
@@ -1217,11 +1217,11 @@ export function SaleQuoteModal({
                   <option value="20">20</option>
                   <option value="50">50</option>
                 </select>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>|&lt;</span>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
-                <strong style={{ color: "#00b06b", padding: "0 4px" }}>1</strong>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;|</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>|&lt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
+                <strong style={{ color: "var(--brand)", padding: "0 4px" }}>1</strong>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;|</span>
               </div>
             </div>
           </div>
@@ -1239,8 +1239,8 @@ export function SaleQuoteModal({
             {/* LEFT SIDE: ATTACHMENT */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, fontSize: 12 }}>
-                <span style={{ fontWeight: 500, color: "#334155" }}>📎 Đính kèm</span>
-                <span style={{ color: "#94a3b8" }}>Dung lượng tối đa 5MB</span>
+                <span style={{ fontWeight: 500, color: "#334155" }}>Đính kèm</span>
+                <span style={{ color: "#64748b" }}>Dung lượng tối đa 5MB</span>
               </div>
               {/* Solid clean border per user instruction: "đừng để nét đứt như cũ" */}
               <div
@@ -1260,7 +1260,7 @@ export function SaleQuoteModal({
                 }}
               >
                 <Upload size={18} style={{ color: "#64748b", marginBottom: 2 }} />
-                <span style={{ fontSize: 12, color: "#0284c7" }}>
+                <span style={{ fontSize: 12, color: "var(--brand)" }}>
                   <strong>Chọn tệp</strong> hoặc kéo và thả tệp vào đây
                 </span>
               </div>
@@ -1423,7 +1423,7 @@ export function SaleQuoteModal({
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: 6 }}>
                 <span style={{ color: "#64748b" }}>Hạn mức nợ cho phép:</span>
-                <span style={{ color: "#00b06b", fontWeight: 600 }}>150.000.000 đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>150.000.000 đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#64748b" }}>Số ngày nợ cho phép:</span>
@@ -1436,7 +1436,7 @@ export function SaleQuoteModal({
                   style={{
                     height: 28,
                     padding: "0 14px",
-                    background: "#00b06b",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 3,
@@ -1851,7 +1851,7 @@ export function SaleOrderModal({
                     background: "transparent",
                   }}
                 />
-                <Search size={13} style={{ color: "#94a3b8" }} />
+                <Search size={13} style={{ color: "#64748b" }} />
                 <button
                   type="button"
                   onClick={() => setShowQuoteDropdown(!showQuoteDropdown)}
@@ -1903,7 +1903,7 @@ export function SaleOrderModal({
                         e.currentTarget.style.background = "#ffffff";
                       }}
                     >
-                      <strong style={{ color: "#0284c7" }}>{q.code}</strong> - {q.customer}
+                      <strong style={{ color: "var(--brand)" }}>{q.code}</strong> - {q.customer}
                     </div>
                   ))}
                 </div>
@@ -1918,7 +1918,7 @@ export function SaleOrderModal({
               title="Hướng dẫn sử dụng"
               onClick={() => notify("Mở tài liệu Hướng dẫn lập Đơn đặt hàng bán hàng")}
             >
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </button>
@@ -1972,7 +1972,7 @@ export function SaleOrderModal({
                     minWidth: 0,
                     display: "flex",
                     alignItems: "center",
-                    border: "1px solid #00b06b",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     height: 28,
                     background: "#ffffff",
@@ -2005,7 +2005,7 @@ export function SaleOrderModal({
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#00b06b",
+                      color: "var(--brand)",
                       cursor: "pointer",
                       padding: "2px",
                       display: "grid",
@@ -2102,7 +2102,7 @@ export function SaleOrderModal({
                     fontSize: 12.5,
                   }}
                 />
-                <Calendar size={13} style={{ color: "#94a3b8" }} />
+                <Calendar size={13} style={{ color: "#64748b" }} />
               </div>
             </div>
 
@@ -2268,7 +2268,7 @@ export function SaleOrderModal({
                     fontSize: 12.5,
                   }}
                 />
-                <Calendar size={13} style={{ color: "#94a3b8" }} />
+                <Calendar size={13} style={{ color: "#64748b" }} />
               </div>
             </div>
 
@@ -2292,7 +2292,7 @@ export function SaleOrderModal({
                         height: 13,
                         display: "inline-grid",
                         placeItems: "center",
-                        fontSize: 8.5,
+                        fontSize: 10,
                         fontWeight: 700,
                       }}
                       title="Nhân viên phụ trách"
@@ -2322,7 +2322,7 @@ export function SaleOrderModal({
                     <button
                       type="button"
                       onClick={() => notify("Thêm nhân viên bán hàng")}
-                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                      style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <Plus size={14} />
                     </button>
@@ -2361,7 +2361,7 @@ export function SaleOrderModal({
                     <button
                       type="button"
                       onClick={() => notify("Thêm điều khoản thanh toán")}
-                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                      style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <Plus size={14} />
                     </button>
@@ -2449,7 +2449,7 @@ export function SaleOrderModal({
                 id="preExistingOrder"
                 checked={isPreExistingOrder}
                 onChange={(e) => setIsPreExistingOrder(e.target.checked)}
-                style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#00b06b" }}
+                style={{ cursor: "pointer", width: 14, height: 14, accentColor: "var(--brand)" }}
               />
               <label htmlFor="preExistingOrder" style={{ fontSize: 12.5, color: "#334155", cursor: "pointer" }}>
                 Là đơn đặt hàng phát sinh trước khi sử dụng phần mềm
@@ -2462,9 +2462,9 @@ export function SaleOrderModal({
                 id="costAccounting"
                 checked={isCostAccounting}
                 onChange={(e) => setIsCostAccounting(e.target.checked)}
-                style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#00b06b" }}
+                style={{ cursor: "pointer", width: 14, height: 14, accentColor: "var(--brand)" }}
               />
-              <label htmlFor="costAccounting" style={{ fontSize: 12.5, color: "#00b06b", fontWeight: 600, cursor: "pointer" }}>
+              <label htmlFor="costAccounting" style={{ fontSize: 12.5, color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}>
                 Tính giá thành
               </label>
             </div>
@@ -2477,7 +2477,7 @@ export function SaleOrderModal({
             <span
               onClick={() => notify("Chọn chứng từ tham chiếu")}
               style={{
-                color: "#0284c7",
+                color: "var(--brand)",
                 fontSize: 12.5,
                 cursor: "pointer",
                 fontWeight: 500,
@@ -2505,7 +2505,7 @@ export function SaleOrderModal({
                   fontSize: 13,
                   color: "#0f172a",
                   paddingBottom: 6,
-                  borderBottom: "2px solid #00b06b",
+                  borderBottom: "2px solid var(--brand)",
                   cursor: "pointer",
                 }}
               >
@@ -2553,7 +2553,7 @@ export function SaleOrderModal({
               }}
             >
               <thead>
-                <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid #00a862", color: "#065f46", height: 34, fontWeight: 600 }}>
+                <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid var(--brand)", color: "#065f46", height: 34, fontWeight: 600 }}>
                   <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>
                     #
                   </th>
@@ -2961,11 +2961,11 @@ export function SaleOrderModal({
                   <option value="20">20</option>
                   <option value="50">50</option>
                 </select>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>|&lt;</span>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
-                <strong style={{ color: "#00b06b", padding: "0 4px" }}>1</strong>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;|</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>|&lt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
+                <strong style={{ color: "var(--brand)", padding: "0 4px" }}>1</strong>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;|</span>
               </div>
             </div>
           </div>
@@ -3069,7 +3069,7 @@ export function SaleOrderModal({
                       placeholder="DD/MM/YYYY"
                       style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
                     />
-                    <Calendar size={13} style={{ color: "#94a3b8" }} />
+                    <Calendar size={13} style={{ color: "#64748b" }} />
                   </div>
                 </div>
               </div>
@@ -3274,11 +3274,11 @@ export function SaleOrderModal({
                 <tbody>
                   {SAMPLE_SALE_ITEMS.map((item) => (
                     <tr key={item.code} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "6px 8px", fontWeight: 600, color: "#0284c7" }}>{item.code}</td>
+                      <td style={{ padding: "6px 8px", fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                       <td style={{ padding: "6px 8px" }}>{item.name}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>150</td>
                       <td style={{ padding: "6px 8px", textAlign: "right", color: "#ea580c" }}>30</td>
-                      <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: "#00b06b" }}>120</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: "var(--brand)" }}>120</td>
                     </tr>
                   ))}
                 </tbody>
@@ -3290,7 +3290,7 @@ export function SaleOrderModal({
                   style={{
                     height: 28,
                     padding: "0 14px",
-                    background: "#00b06b",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 3,
@@ -3362,7 +3362,7 @@ export function SaleOrderModal({
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: 6 }}>
                 <span style={{ color: "#64748b" }}>Hạn mức nợ cho phép:</span>
-                <span style={{ color: "#00b06b", fontWeight: 600 }}>150.000.000 đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>150.000.000 đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#64748b" }}>Số ngày nợ cho phép:</span>
@@ -3375,7 +3375,7 @@ export function SaleOrderModal({
                   style={{
                     height: 28,
                     padding: "0 14px",
-                    background: "#00b06b",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 3,
@@ -3783,7 +3783,7 @@ export function SaleContractModal({
                   value="contract"
                   checked={contractType === "contract"}
                   onChange={() => setContractType("contract")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Hợp đồng</span>
               </label>
@@ -3795,7 +3795,7 @@ export function SaleContractModal({
                   value="project"
                   checked={contractType === "project"}
                   onChange={() => setContractType("project")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                 />
                 <span>Dự án</span>
               </label>
@@ -3834,7 +3834,7 @@ export function SaleContractModal({
                       background: "transparent",
                     }}
                   />
-                  <Search size={13} style={{ color: "#94a3b8" }} />
+                  <Search size={13} style={{ color: "#64748b" }} />
                   <button
                     type="button"
                     onClick={() => setShowOrderDropdown(!showOrderDropdown)}
@@ -3886,7 +3886,7 @@ export function SaleContractModal({
                           e.currentTarget.style.background = "#ffffff";
                         }}
                       >
-                        <strong style={{ color: "#0284c7" }}>{o.code}</strong> - {o.customer} ({formatVND(o.amount)} đ)
+                        <strong style={{ color: "var(--brand)" }}>{o.code}</strong> - {o.customer} ({formatVND(o.amount)} đ)
                       </div>
                     ))}
                   </div>
@@ -3902,7 +3902,7 @@ export function SaleContractModal({
               title="Hướng dẫn sử dụng"
               onClick={() => notify("Mở tài liệu Hướng dẫn quản lý Hợp đồng bán hàng")}
             >
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </button>
@@ -3969,7 +3969,7 @@ export function SaleContractModal({
                       onChange={(e) => setSignDate(e.target.value)}
                       style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
                     />
-                    <Calendar size={13} style={{ color: "#94a3b8" }} />
+                    <Calendar size={13} style={{ color: "#64748b" }} />
                   </div>
                 </div>
               </div>
@@ -4113,7 +4113,7 @@ export function SaleContractModal({
                         if (onOpenCustomerModal) onOpenCustomerModal();
                         else notify("Thêm nhanh khách hàng mới");
                       }}
-                      style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                      style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                     >
                       <Plus size={14} />
                     </button>
@@ -4175,7 +4175,7 @@ export function SaleContractModal({
                       placeholder="DD/MM/YYYY"
                       style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
                     />
-                    <Calendar size={13} style={{ color: "#94a3b8" }} />
+                    <Calendar size={13} style={{ color: "#64748b" }} />
                   </div>
                 </div>
 
@@ -4189,14 +4189,14 @@ export function SaleContractModal({
                       placeholder="DD/MM/YYYY"
                       style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
                     />
-                    <Calendar size={13} style={{ color: "#94a3b8" }} />
+                    <Calendar size={13} style={{ color: "#64748b" }} />
                   </div>
                 </div>
 
                 <div style={{ paddingBottom: 6 }}>
                   <span
                     onClick={() => notify("Chọn chứng từ tham chiếu")}
-                    style={{ color: "#0284c7", fontSize: 12.5, cursor: "pointer", fontWeight: 500 }}
+                    style={{ color: "var(--brand)", fontSize: 12.5, cursor: "pointer", fontWeight: 500 }}
                   >
                     Tham chiếu ...
                   </span>
@@ -4211,7 +4211,7 @@ export function SaleContractModal({
                     id="autoLiquidate"
                     checked={autoLiquidate}
                     onChange={(e) => setAutoLiquidate(e.target.checked)}
-                    style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#00b06b" }}
+                    style={{ cursor: "pointer", width: 14, height: 14, accentColor: "var(--brand)" }}
                   />
                   <label htmlFor="autoLiquidate" style={{ fontSize: 12.5, color: "#334155", cursor: "pointer" }}>
                     Tự động chuyển Đã thanh lý khi hợp đồng đã giao đủ hàng, đã xuất hóa đơn và đã thu đủ tiền
@@ -4336,7 +4336,7 @@ export function SaleContractModal({
                           height: 13,
                           display: "inline-grid",
                           placeItems: "center",
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: 700,
                         }}
                       >
@@ -4391,7 +4391,7 @@ export function SaleContractModal({
                         placeholder="DD/MM/YYYY"
                         style={{ border: "none", outline: "none", width: "100%", fontSize: 12.5 }}
                       />
-                      <Calendar size={13} style={{ color: "#94a3b8" }} />
+                      <Calendar size={13} style={{ color: "#64748b" }} />
                     </div>
                   </div>
 
@@ -4412,9 +4412,9 @@ export function SaleContractModal({
                         id="contractCosting"
                         checked={isCostAccounting}
                         onChange={(e) => setIsCostAccounting(e.target.checked)}
-                        style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#00b06b" }}
+                        style={{ cursor: "pointer", width: 14, height: 14, accentColor: "var(--brand)" }}
                       />
-                      <label htmlFor="contractCosting" style={{ fontSize: 12, color: "#00b06b", fontWeight: 600, cursor: "pointer" }}>
+                      <label htmlFor="contractCosting" style={{ fontSize: 12, color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}>
                         Tính giá thành
                       </label>
                     </div>
@@ -4425,7 +4425,7 @@ export function SaleContractModal({
                         id="contractInvoiced"
                         checked={hasInvoiced}
                         onChange={(e) => setHasInvoiced(e.target.checked)}
-                        style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#00b06b" }}
+                        style={{ cursor: "pointer", width: 14, height: 14, accentColor: "var(--brand)" }}
                       />
                       <label htmlFor="contractInvoiced" style={{ fontSize: 12, color: "#475569", cursor: "pointer" }}>
                         Đã xuất hóa đơn
@@ -4466,7 +4466,7 @@ export function SaleContractModal({
                 id="contractPreExisting"
                 checked={isPreExistingContract}
                 onChange={(e) => setIsPreExistingContract(e.target.checked)}
-                style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#00b06b" }}
+                style={{ cursor: "pointer", width: 14, height: 14, accentColor: "var(--brand)" }}
               />
               <label htmlFor="contractPreExisting" style={{ fontSize: 12, color: "#475569", cursor: "pointer" }}>
                 Là hợp đồng/dự án phát sinh trước khi sử dụng phần mềm
@@ -4545,7 +4545,7 @@ export function SaleContractModal({
                 <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto", background: "#ffffff" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
                     <thead>
-                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid #00a862", color: "#065f46", height: 34, fontWeight: 600 }}>
+                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", borderBottom: "2px solid var(--brand)", color: "#065f46", height: 34, fontWeight: 600 }}>
                         <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>#</th>
                         <th style={{ width: 130, textAlign: "left", borderRight: "1px solid #cbd5e1", padding: "4px 8px" }}>
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -4808,11 +4808,11 @@ export function SaleContractModal({
                         <option value="20">20</option>
                         <option value="50">50</option>
                       </select>
-                      <span style={{ cursor: "pointer", color: "#94a3b8" }}>|&lt;</span>
-                      <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
-                      <strong style={{ color: "#00b06b", padding: "0 4px" }}>1</strong>
-                      <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
-                      <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;|</span>
+                      <span style={{ cursor: "pointer", color: "#64748b" }}>|&lt;</span>
+                      <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
+                      <strong style={{ color: "var(--brand)", padding: "0 4px" }}>1</strong>
+                      <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
+                      <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;|</span>
                     </div>
                   </div>
                 </div>

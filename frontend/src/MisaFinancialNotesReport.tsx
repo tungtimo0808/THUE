@@ -128,7 +128,7 @@ const STATUS_BADGE_MAP: Record<
   VALIDATED: {
     label: "Đã kiểm tra",
     bg: "#e0f2fe",
-    color: "#0369a1",
+    color: "var(--brand-hover)",
     border: "#7dd3fc",
   },
   COMPLETED: {
@@ -723,7 +723,7 @@ export default function MisaFinancialNotesReport({
                   : formatRunStatusText(activeRun?.run_status)}
               </span>{" "}
               • Kỳ: <strong>{fromDate} → {toDate}</strong> • Tiến độ hoàn thiện:{" "}
-              <strong style={{ color: "#00a862" }}>
+              <strong style={{ color: "var(--brand)" }}>
                 {completenessSummary.completed_items}/{completenessSummary.applicable_items} mục (
                 {completenessSummary.completeness_pct}%)
               </strong>
@@ -800,7 +800,7 @@ export default function MisaFinancialNotesReport({
                 style={{
                   height: 32,
                   padding: "0 12px",
-                  background: "#0284c7",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   fontSize: 12.5,
@@ -824,7 +824,7 @@ export default function MisaFinancialNotesReport({
             style={{
               height: 32,
               padding: "0 14px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 12.5,
@@ -905,7 +905,7 @@ export default function MisaFinancialNotesReport({
             }}
             onClick={handleValidateRun}
           >
-            <FileCheck size={14} color="#00a862" />
+            <FileCheck size={14} color="var(--brand)" />
             <span>Kiểm tra đối chiếu B01 / B02 / B03</span>
           </button>
 
@@ -924,7 +924,7 @@ export default function MisaFinancialNotesReport({
               type="checkbox"
               checked={hideNotApplicable}
               onChange={(e) => setHideNotApplicable(e.target.checked)}
-              style={{ accentColor: "#00a862" }}
+              style={{ accentColor: "var(--brand)" }}
             />
             <span>Ẩn mục không phát sinh</span>
           </label>
@@ -939,7 +939,7 @@ export default function MisaFinancialNotesReport({
                 left: 10,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -1154,9 +1154,9 @@ export default function MisaFinancialNotesReport({
           style={{
             padding: "4px 10px",
             borderRadius: 4,
-            border: activeSectionCode === "all" ? "1px solid #00a862" : "1px solid #e2e8f0",
+            border: activeSectionCode === "all" ? "1px solid var(--brand)" : "1px solid #e2e8f0",
             background: activeSectionCode === "all" ? "#e6f7ef" : "#ffffff",
-            color: activeSectionCode === "all" ? "#00a862" : "#334155",
+            color: activeSectionCode === "all" ? "var(--brand)" : "#334155",
             fontWeight: activeSectionCode === "all" ? 600 : 400,
             cursor: "pointer",
             whiteSpace: "nowrap",
@@ -1173,9 +1173,9 @@ export default function MisaFinancialNotesReport({
               padding: "4px 10px",
               borderRadius: 4,
               border:
-                activeSectionCode === sec.section_code ? "1px solid #00a862" : "1px solid #e2e8f0",
+                activeSectionCode === sec.section_code ? "1px solid var(--brand)" : "1px solid #e2e8f0",
               background: activeSectionCode === sec.section_code ? "#e6f7ef" : "#ffffff",
-              color: activeSectionCode === sec.section_code ? "#00a862" : "#334155",
+              color: activeSectionCode === sec.section_code ? "var(--brand)" : "#334155",
               fontWeight: activeSectionCode === sec.section_code ? 600 : 400,
               cursor: "pointer",
               whiteSpace: "nowrap",
@@ -1285,12 +1285,12 @@ export default function MisaFinancialNotesReport({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    borderBottom: "2px solid #00a862",
+                    borderBottom: "2px solid var(--brand)",
                     paddingBottom: 6,
                     marginBottom: 14,
                   }}
                 >
-                  <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#00a862" }}>
+                  <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--brand)" }}>
                     {sec.section_title?.startsWith(`${sec.section_code}.`)
                       ? sec.section_title
                       : `${sec.section_code}. ${sec.section_title}`}
@@ -1439,7 +1439,7 @@ export default function MisaFinancialNotesReport({
                                   background: "#f8fafc",
                                   border: "1px solid #cbd5e1",
                                   borderRadius: 4,
-                                  color: "#0284c7",
+                                  color: "var(--brand)",
                                   cursor: "pointer",
                                   display: "flex",
                                   alignItems: "center",
@@ -1608,7 +1608,7 @@ export default function MisaFinancialNotesReport({
                                                 style={{
                                                   padding: "10px 12px",
                                                   textAlign: "center",
-                                                  color: "#94a3b8",
+                                                  color: "#64748b",
                                                   fontStyle: "italic",
                                                 }}
                                               >
@@ -1641,7 +1641,7 @@ export default function MisaFinancialNotesReport({
                                                         borderRight: "1px solid #f1f5f9",
                                                         color:
                                                           row.is_total_row && isNum
-                                                            ? "#00a862"
+                                                            ? "var(--brand)"
                                                             : "#1e293b",
                                                       }}
                                                     >
@@ -1935,7 +1935,7 @@ export default function MisaFinancialNotesReport({
                     height: 34,
                     padding: "0 18px",
                     border: "none",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     fontSize: 13,
                     fontWeight: 600,
@@ -2261,7 +2261,7 @@ export default function MisaFinancialNotesReport({
                   type="checkbox"
                   checked={editIsApplicable}
                   onChange={(e) => setEditIsApplicable(e.target.checked)}
-                  style={{ accentColor: "#00a862" }}
+                  style={{ accentColor: "var(--brand)" }}
                 />
                 <strong>Mục thuyết minh này có áp dụng trong kỳ báo cáo</strong>
               </label>
@@ -2338,7 +2338,7 @@ export default function MisaFinancialNotesReport({
                   height: 32,
                   padding: "0 16px",
                   border: "none",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontWeight: 600,
                   borderRadius: 4,

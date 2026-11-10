@@ -1,3 +1,4 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
 import ReportCustomizationMenu from "./ReportCustomizationMenu";
 import { REPORT_TEMPLATE_DEFAULT_COLUMNS } from "./misa-report-optional-columns";
 import { templateColumnLabels } from "./report-template-columns";
@@ -298,7 +299,7 @@ export default function MisaDetailedCashLedgerReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -316,7 +317,7 @@ export default function MisaDetailedCashLedgerReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -326,7 +327,7 @@ export default function MisaDetailedCashLedgerReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -409,7 +410,7 @@ export default function MisaDetailedCashLedgerReport({
               style={{
                 position: "absolute",
                 left: 10,
-                color: "#94a3b8",
+                color: "#64748b",
               }}
             />
             <input
@@ -803,7 +804,7 @@ export default function MisaDetailedCashLedgerReport({
                         border: "1px solid #e2e8f0",
                         padding: "7px 10px",
                         textAlign: "center",
-                        color: "#0284c7",
+                        color: "var(--brand)",
                         cursor: row.receiptNo ? "pointer" : "default",
                       }}
                       onClick={() => {
@@ -819,7 +820,7 @@ export default function MisaDetailedCashLedgerReport({
                         border: "1px solid #e2e8f0",
                         padding: "7px 10px",
                         textAlign: "center",
-                        color: "#0284c7",
+                        color: "var(--brand)",
                         cursor: row.paymentNo ? "pointer" : "default",
                         fontWeight: row.paymentNo ? 500 : 400,
                       }}
@@ -983,7 +984,7 @@ export default function MisaDetailedCashLedgerReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -997,7 +998,7 @@ export default function MisaDetailedCashLedgerReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -1008,7 +1009,7 @@ export default function MisaDetailedCashLedgerReport({
               <span
                 style={{
                   padding: "2px 8px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   borderRadius: 3,
                   fontSize: 12,
@@ -1023,7 +1024,7 @@ export default function MisaDetailedCashLedgerReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -1037,7 +1038,7 @@ export default function MisaDetailedCashLedgerReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -1156,7 +1157,7 @@ export default function MisaDetailedCashLedgerReport({
                       width: "100%",
                       height: 32,
                       padding: "0 10px",
-                      border: "1px solid #00a862",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 13,
                       background: "#ffffff",
@@ -1200,7 +1201,7 @@ export default function MisaDetailedCashLedgerReport({
                         position: "absolute",
                         right: 8,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1239,7 +1240,7 @@ export default function MisaDetailedCashLedgerReport({
                         position: "absolute",
                         right: 8,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1276,7 +1277,7 @@ export default function MisaDetailedCashLedgerReport({
                           type="checkbox"
                           checked={draftAccCode === "111"}
                           onChange={() => {}}
-                          style={{ accentColor: "#00a862" }}
+                          style={{ accentColor: "var(--brand)" }}
                         />
                       </th>
                       <th
@@ -1330,7 +1331,7 @@ export default function MisaDetailedCashLedgerReport({
                           type="checkbox"
                           checked={draftAccCode === "111"}
                           onChange={() => setDraftAccCode("111")}
-                          style={{ accentColor: "#00a862" }}
+                          style={{ accentColor: "var(--brand)" }}
                         />
                       </td>
                       <td
@@ -1387,7 +1388,7 @@ export default function MisaDetailedCashLedgerReport({
                     type="checkbox"
                     checked={draftMergeSame}
                     onChange={(e) => setDraftMergeSame(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Cộng gộp các bút toán giống nhau</span>
                 </label>
@@ -1406,7 +1407,7 @@ export default function MisaDetailedCashLedgerReport({
                     type="checkbox"
                     checked={draftMergeVoucher}
                     onChange={(e) => setDraftMergeVoucher(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Cộng gộp theo chứng từ</span>
                 </label>
@@ -1425,7 +1426,7 @@ export default function MisaDetailedCashLedgerReport({
                     type="checkbox"
                     checked={draftSortCreation}
                     onChange={(e) => setDraftSortCreation(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>Sắp xếp chứng từ theo thứ tự lập</span>
                 </label>
@@ -1444,7 +1445,7 @@ export default function MisaDetailedCashLedgerReport({
                     type="checkbox"
                     checked={draftSortReceiptFirst}
                     onChange={(e) => setDraftSortReceiptFirst(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                   />
                   <span>
                     Sắp xếp chứng từ thu trước chứng từ chi trong cùng một ngày
@@ -1505,7 +1506,7 @@ export default function MisaDetailedCashLedgerReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

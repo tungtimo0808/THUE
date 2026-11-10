@@ -61,7 +61,7 @@ export default function MisaApiDocumentStatus({ path, record, companyId, notify,
           type="button"
           onClick={run}
           disabled={busy}
-          style={{ marginLeft: 6, border: 0, background: "none", color: "#0284c7", cursor: "pointer", fontSize: "inherit", fontWeight: 600, padding: 0 }}
+          style={{ marginLeft: 6, border: 0, background: "none", color: "var(--brand)", cursor: "pointer", fontSize: "inherit", fontWeight: 600, padding: 0 }}
         >
           {busy ? "…" : step[1]}
         </button>

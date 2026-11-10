@@ -21,7 +21,7 @@
 .company-portal-content,
 .company-portal-card,
 .company-portal-card * {
-  font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-family: Roboto, Arial, sans-serif;
 }
 
 .account-page {
@@ -86,7 +86,7 @@
 .auth-logo-icon {
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -143,7 +143,7 @@
 }
 
 .auth-step-item.active {
-  color: #0284c7;
+  color: var(--brand);
   background: #e0f2fe;
   border-color: #7dd3fc;
   box-shadow: 0 2px 8px rgba(2, 132, 199, 0.15);
@@ -168,7 +168,7 @@
 }
 
 .auth-step-item.active .auth-step-num {
-  background: #0284c7;
+  background: var(--brand);
   color: #ffffff;
 }
 
@@ -296,7 +296,7 @@
 .quick-chip:hover {
   background: #eff6ff;
   border-color: #93c5fd;
-  color: #0284c7;
+  color: var(--brand);
   transform: translateY(-1px);
 }
 
@@ -353,13 +353,13 @@
 .auth-input:focus {
   outline: none;
   background: #ffffff;
-  border-color: #0284c7;
+  border-color: var(--brand);
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
 .auth-input:focus + .auth-input-icon,
 .auth-input-wrap:focus-within .auth-input-icon {
-  color: #0284c7;
+  color: var(--brand);
 }
 
 .auth-input::placeholder {
@@ -416,7 +416,7 @@
   flex: 0 0 16px !important;
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
-  accent-color: #0284c7;
+  accent-color: var(--brand);
   cursor: pointer;
   margin: 2px 0 0 0;
   box-sizing: border-box;
@@ -431,14 +431,14 @@
 }
 
 .auth-forgot-link {
-  color: #0284c7;
+  color: var(--brand);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.15s ease;
 }
 
 .auth-forgot-link:hover {
-  color: #0369a1;
+  color: var(--brand-hover);
   text-decoration: underline;
 }
 
@@ -448,7 +448,7 @@
   width: 100%;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%);
   color: #ffffff;
   font-size: 15px;
   font-weight: 600;
@@ -525,7 +525,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -609,7 +609,7 @@
 }
 
 .company-card-item.selected {
-  border-color: #0284c7;
+  border-color: var(--brand);
   background: #f0f9ff;
   box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
 }
@@ -630,7 +630,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0284c7;
+  color: var(--brand);
   flex-shrink: 0;
   box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15);
 }
@@ -660,7 +660,7 @@
 }
 
 .company-tax-badge {
-  font-family: monospace;
+  font-family: Roboto, Arial, sans-serif;
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
   padding: 2px 6px;
@@ -683,7 +683,7 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #0284c7;
+  color: var(--brand);
   padding: 8px 14px;
   border-radius: 10px;
   background: #e0f2fe;
@@ -692,7 +692,7 @@
 }
 
 .company-card-item:hover .company-card-cta {
-  background: #0284c7;
+  background: var(--brand);
   color: #ffffff;
   transform: translateX(3px);
 }
@@ -716,7 +716,7 @@
   height: 52px;
   border-radius: 50%;
   background: #e0f2fe;
-  color: #0284c7;
+  color: var(--brand);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -784,7 +784,7 @@
 .btn-create-new:hover {
   background: #eff6ff;
   border-color: #93c5fd;
-  color: #0284c7;
+  color: var(--brand);
 }
 
 /* Modal form create company */
@@ -801,7 +801,7 @@
   margin: 0 0 14px 0;
   font-size: 15px;
   font-weight: 600;
-  color: #0369a1;
+  color: var(--brand-hover);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -819,7 +819,7 @@
 }
 
 .auth-card-footer a {
-  color: #0284c7;
+  color: var(--brand);
   text-decoration: none;
   font-weight: 600;
 }
@@ -848,7 +848,7 @@
   width: 44px;
   height: 44px;
   border: 3px solid #bae6fd;
-  border-top-color: #0284c7;
+  border-top-color: var(--brand);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -988,7 +988,7 @@
 
 .company-portal-search input:focus {
   outline: none;
-  border-color: #0284c7;
+  border-color: var(--brand);
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
@@ -1029,7 +1029,7 @@
 }
 
 .company-portal-card.active-selected {
-  border-color: #0284c7;
+  border-color: var(--brand);
   box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25);
   background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 40%);
 }
@@ -1049,7 +1049,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0284c7;
+  color: var(--brand);
   flex-shrink: 0;
   box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15);
 }
@@ -1097,7 +1097,7 @@
 }
 
 .company-portal-card-status-line.current {
-  color: #0284c7;
+  color: var(--brand);
   font-weight: 600;
 }
 
@@ -1111,7 +1111,7 @@
 }
 
 .company-portal-status-dot.active {
-  background: #0284c7;
+  background: var(--brand);
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
 }
 
@@ -1159,7 +1159,7 @@
   height: 38px;
   padding: 0 16px;
   border-radius: 8px;
-  background: #0284c7;
+  background: var(--brand);
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
@@ -1172,7 +1172,7 @@
 }
 
 .company-portal-enter-btn:hover {
-  background: #0369a1;
+  background: var(--brand-hover);
   transform: translateY(-1px);
 }
 
@@ -1190,14 +1190,14 @@
 .auth-login-card a.auth-submit-btn { text-decoration: none; box-sizing: border-box; }
 .auth-hint { color: #64748b; font-size: 12px; line-height: 1.5; }
 .auth-note { margin: 0 0 16px; color: #475569; font-size: 14px; line-height: 1.6; }
-.auth-note a { color: #0284c7; font-weight: 600; }
+.auth-note a { color: var(--brand); font-weight: 600; }
 .auth-text-button {
   display: block;
   margin: 14px auto 0;
   padding: 0;
   border: 0;
   background: none;
-  color: #0284c7;
+  color: var(--brand);
   font: inherit;
   font-size: 13px;
   font-weight: 600;

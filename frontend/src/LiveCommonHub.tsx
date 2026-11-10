@@ -19,13 +19,13 @@ import {
   Calendar,
   RefreshCw,
   ShieldAlert,
-  Sparkles,
   CheckCircle2,
   Filter,
 } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import "./live-account.css";
+import "./common-hub.css";
 
 type Page<T> = { results: T[]; count: number };
 
@@ -89,7 +89,7 @@ const GROUP_LABELS: Record<string, string> = {
 
 const MODULE_LABELS: Record<string, { label: string; bg: string; color: string }> = {
   CASH: { label: "Ngân quỹ & Tiền mặt", bg: "#ecfdf5", color: "#059669" },
-  BANK: { label: "Tiền gửi Ngân hàng", bg: "#eff6ff", color: "#0284c7" },
+  BANK: { label: "Tiền gửi Ngân hàng", bg: "#eff6ff", color: "var(--brand)" },
   TAX: { label: "Thuế & Hóa đơn", bg: "#fff7ed", color: "#ea580c" },
   GL: { label: "Sổ cái & BCTC", bg: "#f5f3ff", color: "#7c3aed" },
   PUR: { label: "Mua hàng & Công nợ", bg: "#fef2f2", color: "#dc2626" },
@@ -162,6 +162,7 @@ export default function LiveCommonHub() {
     if (!token) return;
     let active = true;
     setBusy(true);
+    setError("");
     const compFilter = companyId ? `&company_id=${encodeURIComponent(companyId)}` : "";
     Promise.allSettled([
       request<Page<Notification>>(
@@ -188,6 +189,9 @@ export default function LiveCommonHub() {
           const list = Array.isArray(val) ? val : val.results || [];
           setNotifications(list);
           setNotificationCount(typeof val?.count === "number" ? val.count : list.length);
+        }
+        if ([notifRes, prRes, asRes, workRes].some((result) => result.status === "rejected")) {
+          setError("Một số dữ liệu chưa tải được. Bấm Làm mới để thử lại.");
         }
         const voucherTasks: WorkItem[] = [];
         if (prRes.status === "fulfilled") {
@@ -223,7 +227,7 @@ export default function LiveCommonHub() {
                 task_type: "ADVANCE_SETTLEMENT",
                 reference_code: st.code || st.settlement_number || "QT",
                 due_at: st.settlement_date,
-                link: "/cash/advance-settlement-request",
+                link: "/cash/advance-settlement",
                 amount: Number(st.spentAmount || st.spent_amount || st.advanceAmount || 0),
                 requester: st.person || st.employee_name || "Nhân viên",
                 department: st.dept || st.department || "Phòng ban",
@@ -393,14 +397,6 @@ export default function LiveCommonHub() {
     [notifications]
   );
 
-  const alertCount = useMemo(
-    () =>
-      notifications.filter(
-        (n) => n.level === "IMPORTANT" || n.level === "WARNING" || n.source_module === "TAX"
-      ).length,
-    [notifications]
-  );
-
   const combinedWorkItems = useMemo(() => [...pendingVouchers, ...work], [pendingVouchers, work]);
 
   const filteredNotifications = useMemo(() => {
@@ -435,9 +431,9 @@ export default function LiveCommonHub() {
   }, [notifications, notifCategory, notifSearch]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f1f5f9", color: "#0f172a", display: "flex", flexDirection: "column" }}>
+    <div className="common-hub">
       {/* Top Enterprise Header Bar */}
-      <header
+      <header className="common-hub-header"
         style={{
           background: "#ffffff",
           borderBottom: "1px solid #e2e8f0",
@@ -464,39 +460,19 @@ export default function LiveCommonHub() {
               borderRadius: 8,
               background: "#f0f9ff",
               border: "1px solid #bae6fd",
-              color: "#0284c7",
+              color: "var(--brand)",
               fontWeight: 700,
               fontSize: 13,
               textDecoration: "none",
             }}
           >
             <ArrowLeft size={16} />
-            <span>Quay lại Bàn làm việc Kế toán</span>
+            <span>Bàn làm việc</span>
           </Link>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: "linear-gradient(135deg, #0284c7 0%, #10b981 100%)",
-                color: "#ffffff",
-                display: "grid",
-                placeItems: "center",
-                boxShadow: "0 2px 6px rgba(2, 132, 199, 0.25)",
-              }}
-            >
-              <Bell size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#0284c7", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                TRUNG TÂM ĐIỀU HÀNH & TIỆN ÍCH CHUNG
-              </div>
-              <h1 style={{ fontSize: 17, fontWeight: 800, color: "#0f172a", margin: 0 }}>
-                Thông báo, Phê duyệt Chứng từ & Tra cứu Hệ thống
-              </h1>
-            </div>
+          <div className="common-hub-title">
+            <h1>Thông báo và công việc</h1>
+            <p>Theo dõi thông báo, xử lý chứng từ và tra cứu dữ liệu.</p>
           </div>
         </div>
 
@@ -513,7 +489,7 @@ export default function LiveCommonHub() {
                 padding: "5px 12px",
               }}
             >
-              <Building2 size={15} style={{ color: "#0284c7" }} />
+              <Building2 size={15} style={{ color: "var(--brand)" }} />
               <select
                 aria-label="Chọn doanh nghiệp"
                 value={companyId || activeCompany?.id || ""}
@@ -581,133 +557,17 @@ export default function LiveCommonHub() {
       </header>
 
       {/* Main Content Container */}
-      <main style={{ maxWidth: 1320, width: "100%", margin: "0 auto", padding: "22px 28px 48px", boxSizing: "border-box", flex: 1 }}>
+      <main className="common-hub-main" style={{ maxWidth: 1320, width: "100%", margin: "0 auto", padding: "22px 28px 48px", boxSizing: "border-box", flex: 1 }}>
         {!token ? (
           <div style={{ background: "#ffffff", borderRadius: 12, padding: 32, textAlign: "center", border: "1px solid #e2e8f0" }}>
             <p style={{ fontSize: 15, color: "#475569" }}>
-              Vui lòng <Link to="/login" style={{ color: "#0284c7", fontWeight: 700 }}>đăng nhập</Link> để xem thông báo và công việc cần xử lý.
+              Vui lòng <Link to="/login" style={{ color: "var(--brand)", fontWeight: 700 }}>đăng nhập</Link> để xem thông báo và công việc cần xử lý.
             </p>
           </div>
         ) : (
           <>
-            {/* 4 KPI Summary Cards */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                gap: 16,
-                marginBottom: 22,
-              }}
-            >
-              <div
-                onClick={() => { setTab("notifications"); setNotifCategory("ALL"); setArchived(false); }}
-                style={{
-                  background: "#ffffff",
-                  borderRadius: 12,
-                  padding: "16px 20px",
-                  border: tab === "notifications" && notifCategory === "ALL" ? "1.5px solid #0284c7" : "1px solid #e2e8f0",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-                }}
-              >
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: "#eff6ff", color: "#0284c7", display: "grid", placeItems: "center", flexShrink: 0 }}>
-                  <Bell size={22} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Tổng thông báo hiện hành</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>{notifications.length}</div>
-                  <div style={{ fontSize: 11.5, color: "#0284c7", fontWeight: 500 }}>
-                    {activeCompany?.name || "Toàn doanh nghiệp"}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                onClick={() => { setTab("notifications"); setNotifCategory("UNREAD"); setArchived(false); }}
-                style={{
-                  background: "#ffffff",
-                  borderRadius: 12,
-                  padding: "16px 20px",
-                  border: tab === "notifications" && notifCategory === "UNREAD" ? "1.5px solid #ef4444" : "1px solid #e2e8f0",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-                }}
-              >
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: "#fef2f2", color: "#dc2626", display: "grid", placeItems: "center", flexShrink: 0 }}>
-                  <Sparkles size={22} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Thông báo chưa đọc</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: unreadCount > 0 ? "#dc2626" : "#10b981" }}>
-                    {unreadCount}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: "#64748b" }}>
-                    {unreadCount > 0 ? "Cần kiểm tra & xử lý" : "Đã đọc hoàn tất"}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                onClick={() => setTab("work")}
-                style={{
-                  background: "#ffffff",
-                  borderRadius: 12,
-                  padding: "16px 20px",
-                  border: tab === "work" ? "1.5px solid #10b981" : "1px solid #e2e8f0",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-                }}
-              >
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: "#ecfdf5", color: "#059669", display: "grid", placeItems: "center", flexShrink: 0 }}>
-                  <CheckSquare size={22} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Chứng từ & Việc chờ duyệt</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#059669" }}>{combinedWorkItems.length}</div>
-                  <div style={{ fontSize: 11.5, color: "#059669", fontWeight: 500 }}>
-                    Đề nghị chi, Quyết toán & Phê duyệt
-                  </div>
-                </div>
-              </div>
-
-              <div
-                onClick={() => { setTab("notifications"); setNotifCategory("IMPORTANT"); setArchived(false); }}
-                style={{
-                  background: "#ffffff",
-                  borderRadius: 12,
-                  padding: "16px 20px",
-                  border: tab === "notifications" && notifCategory === "IMPORTANT" ? "1.5px solid #f59e0b" : "1px solid #e2e8f0",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-                }}
-              >
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: "#fff7ed", color: "#ea580c", display: "grid", placeItems: "center", flexShrink: 0 }}>
-                  <AlertTriangle size={22} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Cảnh báo Thuế & Ngân quỹ</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#ea580c" }}>{alertCount}</div>
-                  <div style={{ fontSize: 11.5, color: "#ea580c", fontWeight: 500 }}>
-                    Hạn kê khai thuế & Đối chiếu sổ
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Main Navigation Tabs */}
-            <div
+            <div className="common-hub-panel"
               style={{
                 background: "#ffffff",
                 borderRadius: 12,
@@ -728,12 +588,12 @@ export default function LiveCommonHub() {
                   gap: 12,
                 }}
               >
-                <nav aria-label="Chức năng dùng chung" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <nav className="common-hub-tabs" aria-label="Chức năng dùng chung" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   {(
                     [
-                      ["notifications", "Thông báo & Cảnh báo", notifications.length],
-                      ["work", "Việc cần xử lý & Phê duyệt", combinedWorkItems.length],
-                      ["search", "Tra cứu nhanh toàn hệ thống", null],
+                      ["notifications", "Thông báo", notificationCount],
+                      ["work", "Việc cần xử lý", combinedWorkItems.length],
+                      ["search", "Tra cứu", null],
                     ] as const
                   ).map(([id, label, badge]) => {
                     const active = tab === id;
@@ -753,8 +613,8 @@ export default function LiveCommonHub() {
                           gap: 8,
                           padding: "8px 16px",
                           borderRadius: 8,
-                          border: active ? "1px solid #0284c7" : "1px solid #cbd5e1",
-                          background: active ? "#0284c7" : "#ffffff",
+                          border: active ? "1px solid var(--brand)" : "1px solid #cbd5e1",
+                          background: active ? "var(--brand)" : "#ffffff",
                           color: active ? "#ffffff" : "#334155",
                           fontWeight: 700,
                           fontSize: 13,
@@ -799,16 +659,16 @@ export default function LiveCommonHub() {
                         gap: 6,
                         padding: "7px 13px",
                         borderRadius: 8,
-                        border: archived ? "1px solid #0284c7" : "1px solid #cbd5e1",
+                        border: archived ? "1px solid var(--brand)" : "1px solid #cbd5e1",
                         background: archived ? "#e0f2fe" : "#ffffff",
-                        color: archived ? "#0369a1" : "#334155",
+                        color: archived ? "var(--brand-hover)" : "#334155",
                         fontSize: 12.5,
                         fontWeight: 600,
                         cursor: "pointer",
                       }}
                     >
                       <Archive size={14} />
-                      <span>{archived ? "Đang xem: Đã lưu trữ (Quay lại hiện tại)" : "Xem mục Đã lưu trữ"}</span>
+                      <span>{archived ? "Về thông báo hiện tại" : "Đã lưu trữ"}</span>
                     </button>
 
                     {!archived && unreadCount > 0 && (
@@ -905,14 +765,16 @@ export default function LiveCommonHub() {
                         return (
                           <button
                             key={code}
+                            aria-pressed={active}
                             type="button"
                             onClick={() => setNotifCategory(code)}
+                            className="common-hub-filter"
                             style={{
                               padding: "5px 12px",
                               borderRadius: 999,
-                              border: active ? "1px solid #0284c7" : "1px solid #e2e8f0",
+                              border: active ? "1px solid var(--brand)" : "1px solid #e2e8f0",
                               background: active ? "#e0f2fe" : "#f8fafc",
-                              color: active ? "#0369a1" : "#475569",
+                              color: active ? "var(--brand-hover)" : "#475569",
                               fontSize: 12,
                               fontWeight: active ? 700 : 500,
                               cursor: "pointer",
@@ -939,7 +801,8 @@ export default function LiveCommonHub() {
                       <Search size={14} style={{ color: "#64748b" }} />
                       <input
                         type="text"
-                        placeholder="Lọc nhanh thông báo theo từ khóa..."
+                        aria-label="Tìm thông báo"
+                        placeholder="Tìm thông báo"
                         value={notifSearch}
                         onChange={(e) => setNotifSearch(e.target.value)}
                         style={{
@@ -956,22 +819,11 @@ export default function LiveCommonHub() {
 
                   {/* Notification List */}
                   {filteredNotifications.length === 0 ? (
-                    <div
-                      style={{
-                        padding: "48px 24px",
-                        textAlign: "center",
-                        background: "#f8fafc",
-                        borderRadius: 10,
-                        border: "1px dashed #cbd5e1",
-                      }}
-                    >
-                      <CheckCircle2 size={40} style={{ color: "#10b981", marginBottom: 8 }} />
-                      <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-                        {archived ? "Không có thông báo nào trong mục Đã lưu trữ" : "Không có thông báo nào khớp bộ lọc"}
-                      </h3>
-                      <p style={{ margin: 0, fontSize: 13, color: "#64748b" }}>
-                        Mọi thông báo hệ thống, lịch nộp thuế và yêu cầu phê duyệt chứng từ sẽ hiển thị đầy đủ tại đây.
-                      </p>
+                    <div className="common-hub-empty" role="status">
+                      <Bell size={28} aria-hidden="true" />
+                      <h3>{busy ? "Đang tải thông báo…" : error ? "Chưa tải được thông báo" : notifSearch || notifCategory !== "ALL" ? "Không tìm thấy thông báo phù hợp" : archived ? "Chưa có thông báo lưu trữ" : "Chưa có thông báo"}</h3>
+                      <p>{busy ? "Vui lòng chờ trong giây lát." : error ? "Bấm Làm mới để tải lại danh sách." : notifSearch || notifCategory !== "ALL" ? "Thử từ khóa khác hoặc xóa bộ lọc để xem danh sách." : "Thông báo của doanh nghiệp sẽ xuất hiện tại đây khi có cập nhật."}</p>
+                      {!busy && (notifSearch || notifCategory !== "ALL") && <button type="button" onClick={() => { setNotifSearch(""); setNotifCategory("ALL"); }}>Xóa bộ lọc</button>}
                     </div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -985,7 +837,7 @@ export default function LiveCommonHub() {
                               ? { text: "Cảnh báo", bg: "#fff7ed", color: "#ea580c", border: "#fed7aa" }
                               : item.level === "SUCCESS"
                                 ? { text: "Hoàn tất", bg: "#ecfdf5", color: "#059669", border: "#a7f3d0" }
-                                : { text: "Thông báo", bg: "#eff6ff", color: "#0284c7", border: "#bae6fd" };
+                                : { text: "Thông báo", bg: "#eff6ff", color: "var(--brand)", border: "#bae6fd" };
 
                         return (
                           <div
@@ -1065,10 +917,10 @@ export default function LiveCommonHub() {
                                         gap: 4,
                                         fontSize: 11,
                                         fontWeight: 700,
-                                        color: "#0284c7",
+                                        color: "var(--brand)",
                                       }}
                                     >
-                                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#0284c7" }} />
+                                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--brand)" }} />
                                       Mới
                                     </span>
                                   )}
@@ -1106,8 +958,8 @@ export default function LiveCommonHub() {
                                   gap: 6,
                                   padding: "7px 14px",
                                   borderRadius: 8,
-                                  border: "1px solid #0284c7",
-                                  background: "#0284c7",
+                                  border: "1px solid var(--brand)",
+                                  background: "var(--brand)",
                                   color: "#ffffff",
                                   fontSize: 12.5,
                                   fontWeight: 700,
@@ -1239,7 +1091,7 @@ export default function LiveCommonHub() {
                                         padding: "2px 8px",
                                         borderRadius: 6,
                                         background: "#e0f2fe",
-                                        color: "#0369a1",
+                                        color: "var(--brand-hover)",
                                       }}
                                     >
                                       {item.reference_code}
@@ -1352,7 +1204,7 @@ export default function LiveCommonHub() {
                         padding: "9px 14px",
                       }}
                     >
-                      <Search size={18} style={{ color: "#0284c7" }} />
+                      <Search size={18} style={{ color: "var(--brand)" }} />
                       <input
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
@@ -1376,7 +1228,7 @@ export default function LiveCommonHub() {
                         padding: "10px 22px",
                         borderRadius: 10,
                         border: "none",
-                        background: "#0284c7",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         fontSize: 13.5,
                         fontWeight: 700,
@@ -1447,7 +1299,7 @@ export default function LiveCommonHub() {
                                   padding: "2px 8px",
                                   borderRadius: 999,
                                   background: "#e0f2fe",
-                                  color: "#0369a1",
+                                  color: "var(--brand-hover)",
                                 }}
                               >
                                 {group.count} kết quả
@@ -1467,7 +1319,7 @@ export default function LiveCommonHub() {
                                   }}
                                 >
                                   <div>
-                                    <strong style={{ color: "#0284c7", fontSize: 13.5, marginRight: 8 }}>
+                                    <strong style={{ color: "var(--brand)", fontSize: 13.5, marginRight: 8 }}>
                                       {item.code}
                                     </strong>
                                     <span style={{ color: "#0f172a", fontSize: 13.5, fontWeight: 600 }}>
@@ -1491,7 +1343,7 @@ export default function LiveCommonHub() {
                                       borderRadius: 6,
                                       border: "1px solid #cbd5e1",
                                       background: "#ffffff",
-                                      color: "#0284c7",
+                                      color: "var(--brand)",
                                       fontSize: 12,
                                       fontWeight: 700,
                                       cursor: "pointer",

@@ -141,7 +141,7 @@
   box-sizing: border-box;
   background: white;
   color: #111;
-  font-family: "Times New Roman", serif;
+  font-family: Roboto, Arial, sans-serif;
   width: 1120px;
   min-height: 790px;
   margin: auto;
@@ -475,7 +475,7 @@
 }
 .ar-aging-paper table th,
 .ar-aging-paper table td {
-  font-size: 9px;
+  font-size: 10px;
   padding: 3px 2px;
 }
 .ar-aging-paper .ar-aging-group {

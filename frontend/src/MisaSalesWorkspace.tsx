@@ -139,7 +139,7 @@ export default function MisaSalesWorkspace({
   const [showCommercialInvoiceModal, setShowCommercialInvoiceModal] = useState(false);
   const [showInvoiceAdjustmentModal, setShowInvoiceAdjustmentModal] = useState(false);
   const [showInvoiceDropdown, setShowInvoiceDropdown] = useState(false);
-  const [invoiceViewMode, setInvoiceViewMode] = useState<"landing" | "list">("landing");
+  const [invoiceViewMode, setInvoiceViewMode] = useState<"landing" | "list">("list");
   const [salesParams, setSalesParams] = useSearchParams();
   const correctionCreateMode = salesParams.get("create");
   useEffect(() => {
@@ -155,15 +155,15 @@ export default function MisaSalesWorkspace({
   }, [correctionCreateMode]);
 
   // Quote view mode & selection
-  const [quoteViewMode, setQuoteViewMode] = useState<"landing" | "list">("landing");
+  const [quoteViewMode, setQuoteViewMode] = useState<"landing" | "list">("list");
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
 
   // Order view mode & selection
-  const [orderViewMode, setOrderViewMode] = useState<"landing" | "list">("landing");
+  const [orderViewMode, setOrderViewMode] = useState<"landing" | "list">("list");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   // Contract view mode & selection
-  const [contractViewMode, setContractViewMode] = useState<"landing" | "list">("landing");
+  const [contractViewMode, setContractViewMode] = useState<"landing" | "list">("list");
   const [selectedContract, setSelectedContract] = useState<any>(null);
 
   // Sales Voucher view mode & selection
@@ -1421,24 +1421,24 @@ export default function MisaSalesWorkspace({
                 </thead>
                 <tbody>
                   <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>TTN</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>TTN</td>
                     <td style={{ padding: "8px 10px" }}>Thanh toán ngay khi giao hàng</td>
                     <td style={{ padding: "8px 10px", textAlign: "right" }}>0</td>
                   </tr>
                   <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>NET30</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>NET30</td>
                     <td style={{ padding: "8px 10px" }}>Gối đầu công nợ 30 ngày</td>
                     <td style={{ padding: "8px 10px", textAlign: "right" }}>30</td>
                   </tr>
                   <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>NET45</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>NET45</td>
                     <td style={{ padding: "8px 10px" }}>Gối đầu công nợ 45 ngày</td>
                     <td style={{ padding: "8px 10px", textAlign: "right" }}>45</td>
                   </tr>
                 </tbody>
               </table>
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
-                <button type="button" onClick={() => setShowPaymentTermsModal(false)} style={{ height: 32, padding: "0 16px", border: "none", background: "#00b06b", color: "#ffffff", borderRadius: 4, fontWeight: 600, cursor: "pointer" }}>Đóng</button>
+                <button type="button" onClick={() => setShowPaymentTermsModal(false)} style={{ height: 32, padding: "0 16px", border: "none", background: "var(--brand)", color: "#ffffff", borderRadius: 4, fontWeight: 600, cursor: "pointer" }}>Đóng</button>
               </div>
             </div>
           </div>
@@ -1487,7 +1487,7 @@ export default function MisaSalesWorkspace({
           boxSizing: "border-box",
           overflowY: "auto",
           overflowX: "hidden",
-          fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+          fontFamily: "Roboto, Arial, sans-serif",
         }}
       >
         {/* Main Grid: Flowchart Left (2.4fr) + Reports Right (1fr) */}
@@ -1530,7 +1530,7 @@ export default function MisaSalesWorkspace({
             </h2>
 
             {/* Canvas Container */}
-            <div
+            <div className="sv-flow-nodes"
               style={{
                 flex: 1,
                 position: "relative",
@@ -1539,7 +1539,7 @@ export default function MisaSalesWorkspace({
               }}
             >
               {/* SVG Connecting Timeline and Brackets */}
-              <svg
+              <svg className="sv-flow-connector"
                 style={{
                   position: "absolute",
                   inset: 0,
@@ -1601,7 +1601,7 @@ export default function MisaSalesWorkspace({
               {/* ----------------- FLOWCHART NODES ----------------- */}
 
               {/* Node 1: Báo giá (Top Left) */}
-              <div
+              <div className="sv-flow-node"
                 style={{
                   position: "absolute",
                   left: "9%",
@@ -1641,7 +1641,7 @@ export default function MisaSalesWorkspace({
               </div>
 
               {/* Node 2: Đơn đặt hàng (Middle Left) */}
-              <div
+              <div className="sv-flow-node"
                 style={{
                   position: "absolute",
                   left: "9%",
@@ -1684,7 +1684,7 @@ export default function MisaSalesWorkspace({
               </div>
 
               {/* Node 3: Hợp đồng bán hàng (Bottom Left) */}
-              <div
+              <div className="sv-flow-node"
                 style={{
                   position: "absolute",
                   left: "9%",
@@ -1727,7 +1727,7 @@ export default function MisaSalesWorkspace({
               </div>
 
               {/* Node 4: Ghi nhận doanh thu (Station 1 Top) */}
-              <div
+              <div className="sv-flow-node"
                 style={{
                   position: "absolute",
                   left: "37%",
@@ -1771,7 +1771,7 @@ export default function MisaSalesWorkspace({
               </div>
 
               {/* Node 5: Xuất hóa đơn doanh thu (Station 1 Bottom) */}
-              <div
+              <div className="sv-flow-node"
                 style={{
                   position: "absolute",
                   left: "37%",
@@ -1814,7 +1814,7 @@ export default function MisaSalesWorkspace({
               </div>
 
               {/* Node 6: Trả lại hàng bán (Station 2 Top) */}
-              <div
+              <div className="sv-flow-node"
                 style={{
                   position: "absolute",
                   left: "56%",
@@ -1857,7 +1857,7 @@ export default function MisaSalesWorkspace({
               </div>
 
               {/* Node 7: Giảm giá hàng bán (Station 2 Bottom) */}
-              <div
+              <div className="sv-flow-node"
                 style={{
                   position: "absolute",
                   left: "56%",
@@ -1900,7 +1900,7 @@ export default function MisaSalesWorkspace({
               </div>
 
               {/* Node 8: Thu tiền theo hóa đơn (Station 3 Top) */}
-              <div
+              <div className="sv-flow-node"
                 style={{
                   position: "absolute",
                   left: "74%",
@@ -1972,7 +1972,7 @@ export default function MisaSalesWorkspace({
                 <span
                   style={{ fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 500 }}
                   onClick={() => navigateTo("reports")}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#0284c7")}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                 >
                   • Sổ chi tiết bán hàng
@@ -1982,7 +1982,7 @@ export default function MisaSalesWorkspace({
                 <span
                   style={{ fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 500 }}
                   onClick={() => navigateTo("receivables")}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#0284c7")}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                 >
                   • Chi tiết công nợ phải thu khách hàng
@@ -1992,7 +1992,7 @@ export default function MisaSalesWorkspace({
                 <span
                   style={{ fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 500 }}
                   onClick={() => navigateTo("reports")}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#0284c7")}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                 >
                   • Tổng hợp bán hàng theo mặt hàng
@@ -2002,7 +2002,7 @@ export default function MisaSalesWorkspace({
                 <span
                   style={{ fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 500 }}
                   onClick={() => navigateTo("receivables")}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#0284c7")}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                 >
                   • Tổng hợp công nợ phải thu khách hàng
@@ -2012,7 +2012,7 @@ export default function MisaSalesWorkspace({
                 <span
                   style={{ fontSize: 12.5, color: "#334155", cursor: "pointer", fontWeight: 500 }}
                   onClick={() => navigateTo("reports")}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#0284c7")}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                 >
                   • Báo cáo chi tiết lãi lỗ theo đơn hàng
@@ -2022,7 +2022,7 @@ export default function MisaSalesWorkspace({
 
             <div style={{ marginTop: "auto", padding: "14px 16px", borderTop: "1px solid #f1f5f9", textAlign: "center" }}>
               <span
-                style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                 onClick={() => navigateTo("reports")}
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                 onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
@@ -2105,7 +2105,7 @@ export default function MisaSalesWorkspace({
             }}
             onClick={() => setShowPaymentTermsModal(true)}
           >
-            <ShieldCheck size={20} style={{ color: "#00b06b" }} />
+            <ShieldCheck size={20} style={{ color: "var(--brand)" }} />
             <span>Điều khoản thanh toán</span>
           </button>
 
@@ -2170,7 +2170,7 @@ export default function MisaSalesWorkspace({
               <button
                 type="button"
                 onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
-                style={{ background: "none", border: "none", color: "#0284c7", fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 4px", fontSize: 13 }}
+                style={{ background: "none", border: "none", color: "var(--brand)", fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 4px", fontSize: 13 }}
               >
                 <span>{currencyUnit}</span>
                 <ChevronDown size={14} />
@@ -2181,7 +2181,7 @@ export default function MisaSalesWorkspace({
                     <div
                       key={unit}
                       onClick={() => { setCurrencyUnit(unit); setShowCurrencyMenu(false); notify(`Đã chuyển đơn vị tính tiền sang: ${unit}`); }}
-                      style={{ padding: "7px 12px", fontSize: 13, color: currencyUnit === unit ? "#0284c7" : "#1e293b", fontWeight: currencyUnit === unit ? 600 : 400, background: currencyUnit === unit ? "#eff6ff" : "#ffffff", cursor: "pointer" }}
+                      style={{ padding: "7px 12px", fontSize: 13, color: currencyUnit === unit ? "var(--brand)" : "#1e293b", fontWeight: currencyUnit === unit ? 600 : 400, background: currencyUnit === unit ? "#eff6ff" : "#ffffff", cursor: "pointer" }}
                     >
                       {unit}
                     </div>
@@ -2203,15 +2203,15 @@ export default function MisaSalesWorkspace({
             <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Giá trị đơn hàng</span>
-                <span style={{ color: "#0284c7", fontWeight: 600 }}>{formatVND(orders.reduce((s, o) => s + o.amount, 0))} đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>{formatVND(orders.reduce((s, o) => s + o.amount, 0))} đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Đã thực hiện</span>
-                <span style={{ color: "#0284c7", fontWeight: 600 }}>0 đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>0 đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Đã thu tiền</span>
-                <span style={{ color: "#0284c7", fontWeight: 600 }}>0 đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>0 đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Chưa thu tiền</span>
@@ -2221,28 +2221,28 @@ export default function MisaSalesWorkspace({
             <div style={{ padding: "8px 14px", borderTop: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#64748b" }}>
               <Clock size={12.5} style={{ color: "#94a3b8" }} />
               <span>Số liệu tính đến: {chartRefreshTime}</span>
-              <span onClick={handleRefreshChart} style={{ color: "#0284c7", cursor: "pointer", fontWeight: 500, marginLeft: 4 }}>Tải lại</span>
+              <span onClick={handleRefreshChart} style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 500, marginLeft: 4 }}>Tải lại</span>
             </div>
           </div>
 
           {/* Card 2: Hợp đồng bán */}
           <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #e2e8f0", display: "flex", flexDirection: "column" }}>
-            <div style={{ background: "#0284c7", color: "#ffffff", padding: "8px 14px", borderTopLeftRadius: 5, borderTopRightRadius: 5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ background: "var(--brand)", color: "#ffffff", padding: "8px 14px", borderTopLeftRadius: 5, borderTopRightRadius: 5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontWeight: 600, fontSize: 13.5 }}>Hợp đồng bán</span>
               <span style={{ fontSize: 12.5, opacity: 0.9 }}>{chartPeriods.contracts} ▾</span>
             </div>
             <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Giá trị hợp đồng</span>
-                <span style={{ color: "#0284c7", fontWeight: 600 }}>{formatVND(contracts.reduce((s, c) => s + c.amount, 0))} đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>{formatVND(contracts.reduce((s, c) => s + c.amount, 0))} đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Đã thực hiện</span>
-                <span style={{ color: "#0284c7", fontWeight: 600 }}>0 đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>0 đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Đã thu tiền</span>
-                <span style={{ color: "#0284c7", fontWeight: 600 }}>0 đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>0 đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Chưa thu tiền</span>
@@ -2252,7 +2252,7 @@ export default function MisaSalesWorkspace({
             <div style={{ padding: "8px 14px", borderTop: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#64748b" }}>
               <Clock size={12.5} style={{ color: "#94a3b8" }} />
               <span>Số liệu tính đến: {chartRefreshTime}</span>
-              <span onClick={handleRefreshChart} style={{ color: "#0284c7", cursor: "pointer", fontWeight: 500, marginLeft: 4 }}>Tải lại</span>
+              <span onClick={handleRefreshChart} style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 500, marginLeft: 4 }}>Tải lại</span>
             </div>
           </div>
 
@@ -2265,11 +2265,11 @@ export default function MisaSalesWorkspace({
             <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8, flex: 1, justifyContent: "space-around" }}>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Tổng tiền bán hàng</span>
-                <span style={{ color: "#0284c7", fontWeight: 600 }}>{formatVND(salesVouchers.reduce((s, v) => s + v.amount, 0))} đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>{formatVND(salesVouchers.reduce((s, v) => s + v.amount, 0))} đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Đã thu tiền</span>
-                <span style={{ color: "#0284c7", fontWeight: 600 }}>45.000.000 đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>45.000.000 đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#334155" }}>
                 <span>Chưa thu tiền</span>
@@ -2279,7 +2279,7 @@ export default function MisaSalesWorkspace({
             <div style={{ padding: "8px 14px", borderTop: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#64748b" }}>
               <Clock size={12.5} style={{ color: "#94a3b8" }} />
               <span>Số liệu tính đến: {chartRefreshTime}</span>
-              <span onClick={handleRefreshChart} style={{ color: "#0284c7", cursor: "pointer", fontWeight: 500, marginLeft: 4 }}>Tải lại</span>
+              <span onClick={handleRefreshChart} style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 500, marginLeft: 4 }}>Tải lại</span>
             </div>
           </div>
         </div>
@@ -2332,7 +2332,7 @@ export default function MisaSalesWorkspace({
                   <rect x="0" y="0" width="36" height="46" rx="4" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
                   <path d="M24 0 L36 12 L24 12 Z" fill="#10b981" />
                   <circle cx="18" cy="25" r="9" fill="#10b981" />
-                  <text x="18" y="29.5" fill="#ffffff" fontSize="13" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">$</text>
+                  <text x="18" y="29.5" fill="#ffffff" fontSize="13" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">$</text>
                   <circle cx="-5" cy="40" r="3" fill="#10b981" />
                 </g>
 
@@ -2348,7 +2348,7 @@ export default function MisaSalesWorkspace({
                 {/* Center Woman Character */}
                 <g transform="translate(116, 58)">
                   {/* Body / Blazer in Green */}
-                  <path d="M29 65 C16 65 6 72 2 86 L56 86 C52 72 42 65 29 65 Z" fill="#00a862" />
+                  <path d="M29 65 C16 65 6 72 2 86 L56 86 C52 72 42 65 29 65 Z" fill="var(--brand)" />
                   {/* Inner shirt / V-neck */}
                   <path d="M24 65 L29 76 L34 65 Z" fill="#1e293b" />
                   {/* Neck */}
@@ -2368,7 +2368,7 @@ export default function MisaSalesWorkspace({
                   <polygon points="12,86 46,86 50,95 8,95" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1" />
                   <rect x="15" y="67" width="28" height="19" rx="2" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1" />
                   <rect x="17" y="69" width="24" height="15" rx="1" fill="#f8fafc" />
-                  <line x1="20" y1="74" x2="28" y2="74" stroke="#00b06b" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="20" y1="74" x2="28" y2="74" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
                   <line x1="20" y1="78" x2="36" y2="78" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
                 </g>
 
@@ -2376,7 +2376,7 @@ export default function MisaSalesWorkspace({
                 {/* 1. Green coin with % */}
                 <g transform="translate(192, 34)">
                   <circle cx="13" cy="13" r="11" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <text x="13" y="17.5" fill="#10b981" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">%</text>
+                  <text x="13" y="17.5" fill="#10b981" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">%</text>
                 </g>
 
                 {/* 2. Green coin with Chart */}
@@ -2515,7 +2515,7 @@ export default function MisaSalesWorkspace({
                   height: 38,
                   padding: "0 28px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontSize: 13.5,
@@ -2580,9 +2580,9 @@ export default function MisaSalesWorkspace({
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#00a862";
+                  e.currentTarget.style.borderColor = "var(--brand)";
                   e.currentTarget.style.background = "#f0fdf4";
-                  e.currentTarget.style.color = "#00a862";
+                  e.currentTarget.style.color = "var(--brand)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = "#cbd5e1";
@@ -2615,7 +2615,7 @@ export default function MisaSalesWorkspace({
               style={{
                 height: 32,
                 padding: "0 14px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -2736,7 +2736,7 @@ export default function MisaSalesWorkspace({
                     style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }}
                     title="Bấm để xem và sửa chi tiết báo giá"
                   >
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{q.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{q.code}</td>
                     <td style={{ padding: "8px 10px" }}>{q.date}</td>
                     <td style={{ padding: "8px 10px", color: "#64748b" }}>{q.expiryDate}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{q.customer}</td>
@@ -2745,7 +2745,7 @@ export default function MisaSalesWorkspace({
                       <span
                         style={{
                           background: q.status === "Khách đã duyệt" ? "#dcfce7" : "#e0f2fe",
-                          color: q.status === "Khách đã duyệt" ? "#15803d" : "#0284c7",
+                          color: q.status === "Khách đã duyệt" ? "#15803d" : "var(--brand)",
                           padding: "2px 8px",
                           borderRadius: 10,
                           fontSize: 11.5,
@@ -2809,7 +2809,7 @@ export default function MisaSalesWorkspace({
                   <rect x="0" y="0" width="36" height="46" rx="4" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
                   <path d="M24 0 L36 12 L24 12 Z" fill="#10b981" />
                   <circle cx="18" cy="25" r="9" fill="#10b981" />
-                  <text x="18" y="29.5" fill="#ffffff" fontSize="13" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">$</text>
+                  <text x="18" y="29.5" fill="#ffffff" fontSize="13" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">$</text>
                   <circle cx="-5" cy="40" r="3" fill="#10b981" />
                 </g>
 
@@ -2825,7 +2825,7 @@ export default function MisaSalesWorkspace({
                 {/* Center Woman Character */}
                 <g transform="translate(116, 58)">
                   {/* Body / Blazer in Green */}
-                  <path d="M29 65 C16 65 6 72 2 86 L56 86 C52 72 42 65 29 65 Z" fill="#00a862" />
+                  <path d="M29 65 C16 65 6 72 2 86 L56 86 C52 72 42 65 29 65 Z" fill="var(--brand)" />
                   {/* Inner shirt / V-neck */}
                   <path d="M24 65 L29 76 L34 65 Z" fill="#1e293b" />
                   {/* Neck */}
@@ -2845,7 +2845,7 @@ export default function MisaSalesWorkspace({
                   <polygon points="12,86 46,86 50,95 8,95" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1" />
                   <rect x="15" y="67" width="28" height="19" rx="2" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1" />
                   <rect x="17" y="69" width="24" height="15" rx="1" fill="#f8fafc" />
-                  <line x1="20" y1="74" x2="28" y2="74" stroke="#00b06b" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="20" y1="74" x2="28" y2="74" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
                   <line x1="20" y1="78" x2="36" y2="78" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
                 </g>
 
@@ -2853,7 +2853,7 @@ export default function MisaSalesWorkspace({
                 {/* 1. Green coin with % */}
                 <g transform="translate(192, 34)">
                   <circle cx="13" cy="13" r="11" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <text x="13" y="17.5" fill="#10b981" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">%</text>
+                  <text x="13" y="17.5" fill="#10b981" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">%</text>
                 </g>
 
                 {/* 2. Green coin with Chart */}
@@ -2983,7 +2983,7 @@ export default function MisaSalesWorkspace({
                   height: 38,
                   padding: "0 28px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontSize: 13.5,
@@ -3072,9 +3072,9 @@ export default function MisaSalesWorkspace({
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#00a862";
+                  e.currentTarget.style.borderColor = "var(--brand)";
                   e.currentTarget.style.background = "#f0fdf4";
-                  e.currentTarget.style.color = "#00a862";
+                  e.currentTarget.style.color = "var(--brand)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = "#cbd5e1";
@@ -3107,7 +3107,7 @@ export default function MisaSalesWorkspace({
               style={{
                 height: 32,
                 padding: "0 14px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -3247,7 +3247,7 @@ export default function MisaSalesWorkspace({
                     style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }}
                     title="Bấm để xem và sửa chi tiết đơn hàng"
                   >
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{o.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{o.code}</td>
                     <td style={{ padding: "8px 10px" }}>{o.date}</td>
                     <td style={{ padding: "8px 10px" }}>{o.deliveryDate}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{o.customer}</td>
@@ -3326,7 +3326,7 @@ export default function MisaSalesWorkspace({
                   {/* Distinctive green cursive signature ribbon 'e' loop in center */}
                   <path
                     d="M 12 34 C 8 26 12 18 22 20 C 32 22 30 36 16 38 C 28 39 36 32 36 28"
-                    stroke="#00a862"
+                    stroke="var(--brand)"
                     strokeWidth="3.2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -3343,8 +3343,8 @@ export default function MisaSalesWorkspace({
 
                 {/* Center Woman Character */}
                 <g transform="translate(116, 58)">
-                  {/* Body / Blazer in rich emerald green #00a862 */}
-                  <path d="M29 65 C16 65 6 72 2 86 L56 86 C52 72 42 65 29 65 Z" fill="#00a862" />
+                  {/* Body / Blazer in rich emerald green var(--brand) */}
+                  <path d="M29 65 C16 65 6 72 2 86 L56 86 C52 72 42 65 29 65 Z" fill="var(--brand)" />
                   {/* Inner shirt / V-neck */}
                   <path d="M24 65 L29 76 L34 65 Z" fill="#1e293b" />
                   {/* Neck */}
@@ -3364,7 +3364,7 @@ export default function MisaSalesWorkspace({
                   <polygon points="12,86 46,86 50,95 8,95" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1" />
                   <rect x="15" y="67" width="28" height="19" rx="2" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1" />
                   <rect x="17" y="69" width="24" height="15" rx="1" fill="#f8fafc" />
-                  <line x1="20" y1="74" x2="28" y2="74" stroke="#00b06b" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="20" y1="74" x2="28" y2="74" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
                   <line x1="20" y1="78" x2="36" y2="78" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
                 </g>
 
@@ -3387,7 +3387,7 @@ export default function MisaSalesWorkspace({
                 {/* 3. Lower Right: Green coin with $ */}
                 <g transform="translate(186, 92)">
                   <circle cx="10" cy="10" r="9" fill="#ffffff" stroke="#10b981" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))" />
-                  <text x="10" y="14" fill="#10b981" fontSize="10" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">$</text>
+                  <text x="10" y="14" fill="#10b981" fontSize="10" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">$</text>
                 </g>
 
                 {/* Decorative pluses, sparkles & dots */}
@@ -3511,7 +3511,7 @@ export default function MisaSalesWorkspace({
                 style={{
                   height: 38,
                   padding: "0 28px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 4,
@@ -3565,7 +3565,7 @@ export default function MisaSalesWorkspace({
                   background: "#ffffff",
                   border: "1px solid #10b981",
                   borderRadius: 4,
-                  color: "#00a862",
+                  color: "var(--brand)",
                   fontSize: 13,
                   fontWeight: 500,
                   cursor: "pointer",
@@ -3618,7 +3618,7 @@ export default function MisaSalesWorkspace({
               style={{
                 height: 32,
                 padding: "0 14px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -3741,7 +3741,7 @@ export default function MisaSalesWorkspace({
                     style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }}
                     title="Bấm để xem và sửa chi tiết hợp đồng"
                   >
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{c.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{c.code}</td>
                     <td style={{ padding: "8px 10px" }}>{c.date}</td>
                     <td style={{ padding: "8px 10px", color: "#64748b" }}>{c.project || "—"}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{c.customer}</td>
@@ -3764,7 +3764,7 @@ export default function MisaSalesWorkspace({
                       <span
                         style={{
                           background: c.deliveryStatus === "Đã giao hết" ? "#dcfce7" : c.deliveryStatus === "Giao một phần" ? "#e0f2fe" : "#fef3c7",
-                          color: c.deliveryStatus === "Đã giao hết" ? "#15803d" : c.deliveryStatus === "Giao một phần" ? "#0284c7" : "#b45309",
+                          color: c.deliveryStatus === "Đã giao hết" ? "#15803d" : c.deliveryStatus === "Giao một phần" ? "var(--brand)" : "#b45309",
                           padding: "2px 8px",
                           borderRadius: 10,
                           fontSize: 11.5,
@@ -3787,7 +3787,7 @@ export default function MisaSalesWorkspace({
             Tổng số: <strong>{contracts.length}</strong> hợp đồng
           </div>
           <div>
-            Tổng giá trị: <strong style={{ color: "#00a862" }}>{formatVND(contracts.reduce((s, c) => s + c.amount, 0))} đ</strong>
+            Tổng giá trị: <strong style={{ color: "var(--brand)" }}>{formatVND(contracts.reduce((s, c) => s + c.amount, 0))} đ</strong>
           </div>
         </div>
 
@@ -3843,7 +3843,7 @@ export default function MisaSalesWorkspace({
                     width="42"
                     height="38"
                     rx="4"
-                    fill="#00a862"
+                    fill="var(--brand)"
                     filter="drop-shadow(0 4px 6px rgba(0,0,0,0.08))"
                   />
                   {/* Box lid/tape */}
@@ -3853,16 +3853,16 @@ export default function MisaSalesWorkspace({
                   {/* Curved arrow wrapping into box */}
                   <path
                     d="M 6 12 C 4 -2 24 -6 38 -2 C 48 2 54 8 58 18"
-                    stroke="#00a862"
+                    stroke="var(--brand)"
                     strokeWidth="2.4"
                     strokeDasharray="3,2"
                     fill="none"
                   />
-                  <polygon points="56,16 60,21 62,15" fill="#00a862" />
+                  <polygon points="56,16 60,21 62,15" fill="var(--brand)" />
 
                   {/* Floating green dollar coin */}
                   <circle cx="2" cy="12" r="9.5" fill="#10b981" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" />
-                  <text x="2" y="16.5" fill="#ffffff" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">$</text>
+                  <text x="2" y="16.5" fill="#ffffff" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                   {/* Small connecting dashed line */}
                   <path d="M 2 21 C 2 34 8 40 10 42" stroke="#10b981" strokeWidth="1.6" strokeDasharray="2,2" fill="none" />
@@ -3870,8 +3870,8 @@ export default function MisaSalesWorkspace({
 
                 {/* Center Woman Character */}
                 <g transform="translate(116, 58)">
-                  {/* Body / Blazer in emerald green #00a862 */}
-                  <path d="M29 65 C16 65 6 72 2 86 L56 86 C52 72 42 65 29 65 Z" fill="#00a862" />
+                  {/* Body / Blazer in emerald green var(--brand) */}
+                  <path d="M29 65 C16 65 6 72 2 86 L56 86 C52 72 42 65 29 65 Z" fill="var(--brand)" />
                   {/* Inner shirt / V-neck */}
                   <path d="M24 65 L29 76 L34 65 Z" fill="#1e293b" />
                   {/* Neck */}
@@ -3891,7 +3891,7 @@ export default function MisaSalesWorkspace({
                   <polygon points="12,86 46,86 50,95 8,95" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1" />
                   <rect x="15" y="67" width="28" height="19" rx="2" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1" />
                   <rect x="17" y="69" width="24" height="15" rx="1" fill="#f8fafc" />
-                  <line x1="20" y1="74" x2="28" y2="74" stroke="#00b06b" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="20" y1="74" x2="28" y2="74" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
                   <line x1="20" y1="78" x2="36" y2="78" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
                 </g>
 
@@ -3914,7 +3914,7 @@ export default function MisaSalesWorkspace({
                 {/* 3. Lower Right: Green coin with % */}
                 <g transform="translate(186, 92)">
                   <circle cx="10" cy="10" r="9" fill="#ffffff" stroke="#10b981" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))" />
-                  <text x="10" y="14" fill="#10b981" fontSize="10" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">%</text>
+                  <text x="10" y="14" fill="#10b981" fontSize="10" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">%</text>
                 </g>
 
                 {/* Decorative pluses, sparkles & dots */}
@@ -4036,7 +4036,7 @@ export default function MisaSalesWorkspace({
                   style={{
                     height: 36,
                     padding: "0 18px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderTopLeftRadius: 5,
@@ -4059,7 +4059,7 @@ export default function MisaSalesWorkspace({
                   style={{
                     height: 36,
                     padding: "0 8px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     borderLeft: "1px solid rgba(255,255,255,0.3)",
@@ -4159,7 +4159,7 @@ export default function MisaSalesWorkspace({
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = "#eff6ff";
-                            e.currentTarget.style.color = "#00a862";
+                            e.currentTarget.style.color = "var(--brand)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.background = "#ffffff";
@@ -4230,7 +4230,7 @@ export default function MisaSalesWorkspace({
                   background: "#ffffff",
                   border: "1px solid #10b981",
                   borderRadius: 4,
-                  color: "#00a862",
+                  color: "var(--brand)",
                   fontSize: 13,
                   fontWeight: 500,
                   cursor: "pointer",
@@ -4286,7 +4286,7 @@ export default function MisaSalesWorkspace({
                 style={{
                   height: 32,
                   padding: "0 14px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderTopLeftRadius: 4,
@@ -4309,7 +4309,7 @@ export default function MisaSalesWorkspace({
                 style={{
                   height: 32,
                   padding: "0 6px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderLeft: "1px solid rgba(255,255,255,0.3)",
@@ -4407,7 +4407,7 @@ export default function MisaSalesWorkspace({
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = "#eff6ff";
-                          e.currentTarget.style.color = "#00a862";
+                          e.currentTarget.style.color = "var(--brand)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = "#ffffff";
@@ -4429,8 +4429,8 @@ export default function MisaSalesWorkspace({
                 height: 32,
                 padding: "0 14px",
                 background: "#ffffff",
-                color: "#00b06b",
-                border: "1px solid #00b06b",
+                color: "var(--brand)",
+                border: "1px solid var(--brand)",
                 borderRadius: 4,
                 fontSize: 13,
                 fontWeight: 600,
@@ -4552,7 +4552,7 @@ export default function MisaSalesWorkspace({
                     style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }}
                     title="Bấm để xem và sửa chi tiết chứng từ bán hàng"
                   >
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{v.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{v.code}</td>
                     <td style={{ padding: "8px 10px" }}>{v.date}</td>
                     <td style={{ padding: "8px 10px", color: "#475569" }}>
                       {v.saleType === 2
@@ -4595,7 +4595,7 @@ export default function MisaSalesWorkspace({
             Tổng số: <strong>{salesVouchers.length}</strong> chứng từ
           </div>
           <div>
-            Tổng tiền bán hàng: <strong style={{ color: "#00a862" }}>{formatVND(salesVouchers.reduce((s, v) => s + (v.totalPayment || v.amount), 0))} đ</strong>
+            Tổng tiền bán hàng: <strong style={{ color: "var(--brand)" }}>{formatVND(salesVouchers.reduce((s, v) => s + (v.totalPayment || v.amount), 0))} đ</strong>
           </div>
         </div>
 
@@ -4635,14 +4635,14 @@ export default function MisaSalesWorkspace({
               <rect x="85" y="63" width="45" height="3" rx="1.5" fill="#f1f5f9" />
               <rect x="85" y="71" width="35" height="3" rx="1.5" fill="#f1f5f9" />
               {/* Dollar / Dong badge on doc */}
-              <circle cx="120" cy="46" r="10" fill="#00a862" />
+              <circle cx="120" cy="46" r="10" fill="var(--brand)" />
               <text x="120" y="50" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold">$</text>
               {/* Plus badge */}
-              <circle cx="95" cy="100" r="7" fill="#00b06b" />
+              <circle cx="95" cy="100" r="7" fill="var(--brand)" />
               <path d="M95 96 V104 M91 100 H99" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
               {/* Woman at laptop */}
               <circle cx="165" cy="80" r="14" fill="#64748b" />
-              <path d="M151 116 C151 100 179 100 179 116 Z" fill="#00a862" />
+              <path d="M151 116 C151 100 179 100 179 116 Z" fill="var(--brand)" />
               <rect x="145" y="104" width="36" height="22" rx="3" fill="#cbd5e1" />
               <path d="M140 126 H186" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
               {/* Floating coins */}
@@ -4677,7 +4677,7 @@ export default function MisaSalesWorkspace({
                 style={{
                   height: 36,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderTopLeftRadius: 5,
@@ -4701,7 +4701,7 @@ export default function MisaSalesWorkspace({
                 style={{
                   height: 36,
                   padding: "0 8px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderLeft: "1px solid rgba(255,255,255,0.3)",
@@ -4796,7 +4796,7 @@ export default function MisaSalesWorkspace({
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = "#eff6ff";
-                          e.currentTarget.style.color = "#00a862";
+                          e.currentTarget.style.color = "var(--brand)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = "#ffffff";
@@ -4840,11 +4840,11 @@ export default function MisaSalesWorkspace({
               height: 32,
               padding: "0 20px",
               background: "#ffffff",
-              border: "1px solid #00a862",
+              border: "1px solid var(--brand)",
               borderRadius: 16,
               fontSize: 12.5,
               fontWeight: 600,
-              color: "#00a862",
+              color: "var(--brand)",
               cursor: "pointer",
               transition: "all 0.15s",
             }}
@@ -4880,7 +4880,7 @@ export default function MisaSalesWorkspace({
                 style={{
                   height: 32,
                   padding: "0 14px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderTopLeftRadius: 4,
@@ -4904,7 +4904,7 @@ export default function MisaSalesWorkspace({
                 style={{
                   height: 32,
                   padding: "0 6px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderLeft: "1px solid rgba(255,255,255,0.3)",
@@ -4997,7 +4997,7 @@ export default function MisaSalesWorkspace({
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = "#eff6ff";
-                          e.currentTarget.style.color = "#00a862";
+                          e.currentTarget.style.color = "var(--brand)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = "#ffffff";
@@ -5131,7 +5131,7 @@ export default function MisaSalesWorkspace({
                     title="Bấm để xem và sửa chi tiết hóa đơn bán hàng"
                   >
                     <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{inv.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{inv.code}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center", color: "#475569" }}>{inv.series}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{inv.date}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{inv.customer}</td>
@@ -5158,7 +5158,7 @@ export default function MisaSalesWorkspace({
                           const row = apiRows.taxInvoices.find((entry) => entry.id === inv.id);
                           if (row) void requestTaxIssue(row);
                         }} disabled={Boolean(issuingTaxInvoiceId)}
-                          style={{ marginLeft: 6, border: "1px solid #00a862", color: "#00834d", background: "white", borderRadius: 4, cursor: "pointer" }}>
+                          style={{ marginLeft: 6, border: "1px solid var(--brand)", color: "#00834d", background: "white", borderRadius: 4, cursor: "pointer" }}>
                           {issuingTaxInvoiceId === inv.id ? "Đang gửi…" : "Phát hành"}
                         </button>}
                     </td>
@@ -5174,7 +5174,7 @@ export default function MisaSalesWorkspace({
             Tổng số: <strong>{invoices.length}</strong> hóa đơn
           </div>
           <div>
-            Tổng tiền thanh toán: <strong style={{ color: "#00a862" }}>{formatVND(invoices.reduce((s, i) => s + i.total, 0))} đ</strong>
+            Tổng tiền thanh toán: <strong style={{ color: "var(--brand)" }}>{formatVND(invoices.reduce((s, i) => s + i.total, 0))} đ</strong>
           </div>
         </div>
 
@@ -5198,7 +5198,7 @@ export default function MisaSalesWorkspace({
               style={{
                 height: 32,
                 padding: "0 14px",
-                background: "#00b06b",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -5281,7 +5281,7 @@ export default function MisaSalesWorkspace({
                     title="Bấm để xem và sửa chi tiết chứng từ bán hàng bị trả lại"
                   >
                     <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{ret.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{ret.code}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{ret.date}</td>
                     <td style={{ padding: "8px 10px", color: "#475569", fontWeight: 500 }}>{ret.type}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{ret.customer}</td>
@@ -5328,7 +5328,7 @@ export default function MisaSalesWorkspace({
               style={{
                 height: 32,
                 padding: "0 14px",
-                background: "#00b06b",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -5411,7 +5411,7 @@ export default function MisaSalesWorkspace({
                     title="Bấm để xem và sửa chi tiết chứng từ giảm giá hàng bán"
                   >
                     <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{disc.code}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{disc.code}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{disc.date}</td>
                     <td style={{ padding: "8px 10px", color: "#475569", fontWeight: 500 }}>{disc.type}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500 }}>{disc.customer}</td>
@@ -5483,7 +5483,7 @@ export default function MisaSalesWorkspace({
                   justifyContent: "space-between",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#00b06b";
+                  e.currentTarget.style.borderColor = "var(--brand)";
                   e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 176, 107, 0.1)";
                 }}
                 onMouseLeave={(e) => {
@@ -5495,7 +5495,7 @@ export default function MisaSalesWorkspace({
                   <h4 style={{ margin: "0 0 6px 0", fontSize: 13.5, color: "#1e293b", fontWeight: 600 }}>{rep.title}</h4>
                   <p style={{ margin: 0, fontSize: 12, color: "#64748b", lineHeight: 1.4 }}>{rep.desc}</p>
                 </div>
-                <div style={{ marginTop: 12, fontSize: 11.5, color: "#00b06b", fontWeight: 500 }}>{rep.count}</div>
+                <div style={{ marginTop: 12, fontSize: 11.5, color: "var(--brand)", fontWeight: 500 }}>{rep.count}</div>
               </div>
             ))}
           </div>
@@ -5516,7 +5516,7 @@ export default function MisaSalesWorkspace({
             <button
               type="button"
               onClick={() => setShowCollectionModal(true)}
-              style={{ height: 32, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+              style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               <CreditCard size={15} />
               <span>Thu tiền theo hóa đơn</span>
@@ -5550,12 +5550,12 @@ export default function MisaSalesWorkspace({
             <tbody>
               {customers.map((c) => (
                 <tr key={c.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{c.code}</td>
+                  <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{c.code}</td>
                   <td style={{ padding: "8px 10px", fontWeight: 500 }}>{c.name}</td>
                   <td style={{ padding: "8px 10px", color: "#64748b" }}>{c.taxCode}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right" }}>0 đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", color: "#059669" }}>{formatVND(c.debt || 0)} đ</td>
-                  <td style={{ padding: "8px 10px", textAlign: "right", color: "#0284c7" }}>0 đ</td>
+                  <td style={{ padding: "8px 10px", textAlign: "right", color: "var(--brand)" }}>0 đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: (c.debt || 0) > 0 ? "#ea580c" : "#059669" }}>
                     {formatVND(c.debt || 0)} đ
                   </td>
@@ -5582,7 +5582,7 @@ export default function MisaSalesWorkspace({
           <button
             type="button"
             onClick={() => notify("Đang tạo kỳ đối chiếu công nợ mới...")}
-            style={{ height: 32, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+            style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
           >
             <Plus size={15} />
             <span>Lập biên bản đối chiếu</span>
@@ -5654,8 +5654,8 @@ export default function MisaSalesWorkspace({
                 padding: "8px 0",
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#00a862",
-                borderBottom: "2px solid #00a862",
+                color: "var(--brand)",
+                borderBottom: "2px solid var(--brand)",
                 cursor: "pointer",
               }}
             >
@@ -5683,7 +5683,7 @@ export default function MisaSalesWorkspace({
 
         {/* Top breadcrumb */}
         <div
-          style={{ padding: "8px 16px 4px", display: "flex", alignItems: "center", gap: 4, fontSize: 12.5, color: "#0284c7", cursor: "pointer" }}
+          style={{ padding: "8px 16px 4px", display: "flex", alignItems: "center", gap: 4, fontSize: 12.5, color: "var(--brand)", cursor: "pointer" }}
           onClick={() => notify("Đang lấy lại danh mục...")}
         >
           <ChevronLeft size={15} />
@@ -5841,7 +5841,7 @@ export default function MisaSalesWorkspace({
               style={{
                 height: 30,
                 padding: "0 12px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -5885,7 +5885,7 @@ export default function MisaSalesWorkspace({
                         setSelectedInventoryItems([]);
                       }
                     }}
-                    style={{ accentColor: "#00a862", cursor: "pointer" }}
+                    style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                   />
                 </th>
                 <th style={{ minWidth: 260, padding: "8px 10px", textAlign: "left" }}>Tên</th>
@@ -5912,7 +5912,7 @@ export default function MisaSalesWorkspace({
                           setSelectedInventoryItems(selectedInventoryItems.filter((id) => id !== targetId));
                         }
                       }}
-                      style={{ accentColor: "#00a862", cursor: "pointer" }}
+                      style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                     />
                   </td>
                   <td style={{ padding: "8px 10px", fontWeight: 500, color: "#1e293b" }}>{it.name}</td>
@@ -5931,7 +5931,7 @@ export default function MisaSalesWorkspace({
                     {(it.stockValue || 0).toLocaleString("vi-VN")}
                   </td>
                   <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}>
                       <span
                         onClick={() => {
                           setEditingItem(it);
@@ -5990,7 +5990,7 @@ export default function MisaSalesWorkspace({
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <button style={{ border: "none", background: "transparent", color: "#94a3b8", cursor: "pointer" }}>|&lt;</button>
               <button style={{ border: "none", background: "transparent", color: "#94a3b8", cursor: "pointer" }}>&lt;</button>
-              <span style={{ padding: "0 6px", fontWeight: 600, color: "#00a862" }}>1</span>
+              <span style={{ padding: "0 6px", fontWeight: 600, color: "var(--brand)" }}>1</span>
               <button style={{ border: "none", background: "transparent", color: "#94a3b8", cursor: "pointer" }}>&gt;</button>
               <button style={{ border: "none", background: "transparent", color: "#94a3b8", cursor: "pointer" }}>&gt;|</button>
             </div>
@@ -6009,7 +6009,7 @@ export default function MisaSalesWorkspace({
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
         {/* Breadcrumb matching user screenshot */}
-        <div style={{ padding: "10px 16px 4px", display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#0284c7", cursor: "pointer" }} onClick={() => notify("Quay lại Tất cả danh mục")}>
+        <div style={{ padding: "10px 16px 4px", display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--brand)", cursor: "pointer" }} onClick={() => notify("Quay lại Tất cả danh mục")}>
           <ChevronLeft size={16} />
           <span style={{ fontWeight: 500 }}>Tất cả danh mục</span>
         </div>
@@ -6019,7 +6019,7 @@ export default function MisaSalesWorkspace({
             <button
               type="button"
               onClick={() => setShowCustomerModal(true)}
-              style={{ height: 32, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+              style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={15} />
               <span>Thêm</span>
@@ -6059,7 +6059,7 @@ export default function MisaSalesWorkspace({
             <tbody>
               {customers.map((c) => (
                 <tr key={c.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "8px 10px", fontWeight: 600, color: "#0284c7" }}>{c.code}</td>
+                  <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{c.code}</td>
                   <td style={{ padding: "8px 10px", fontWeight: 500 }}>{c.name}</td>
                   <td style={{ padding: "8px 10px", color: "#64748b" }}>{c.taxCode}</td>
                   <td style={{ padding: "8px 10px", color: "#475569" }}>{c.address}</td>
@@ -6081,8 +6081,8 @@ export default function MisaSalesWorkspace({
             style={{
               padding: "6px 20px",
               background: "#ffffff",
-              border: "1px solid #00a862",
-              color: "#00a862",
+              border: "1px solid var(--brand)",
+              color: "var(--brand)",
               borderRadius: 4,
               fontSize: 13,
               fontWeight: 500,
@@ -6108,7 +6108,7 @@ export default function MisaSalesWorkspace({
           <button
             type="button"
             onClick={() => notify("Kết nối Cổng Hóa đơn điện tử tự động hạch toán...")}
-            style={{ height: 32, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+            style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
           >
             <Sparkles size={15} />
             <span>Đồng bộ Hóa đơn điện tử</span>
@@ -6116,7 +6116,7 @@ export default function MisaSalesWorkspace({
         </div>
         <div style={{ flex: 1, padding: 20, color: "#64748b", textAlign: "center" }}>
           <div style={{ maxWidth: 480, margin: "40px auto" }}>
-            <Sparkles size={40} style={{ color: "#00b06b", marginBottom: 12 }} />
+            <Sparkles size={40} style={{ color: "var(--brand)", marginBottom: 12 }} />
             <h3 style={{ fontSize: 16, color: "#1e293b", margin: "0 0 8px 0" }}>Tự động hạch toán Hóa đơn bán hàng Sổ Việt e-Invoice</h3>
             <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>
               Hệ thống tự động đồng bộ hóa đơn đầu ra mới nhất từ Cổng Hóa đơn điện tử, tự động nhận diện khách hàng và sinh chứng từ bán hàng theo thiết lập sẵn.
@@ -6142,7 +6142,7 @@ export default function MisaSalesWorkspace({
               setActiveSaleType(1);
               setShowVoucherModal(true);
             }}
-            style={{ height: 32, padding: "0 14px", background: "#00b06b", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+            style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
           >
             <Plus size={15} />
             <span>Thêm chứng từ bán hàng</span>

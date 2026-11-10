@@ -125,7 +125,7 @@ export default function LiveJoin() {
         {selected && (
           <div style={{ padding: "12px 14px", background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
             <div>
-              <p style={{ margin: 0, fontSize: 14, color: "#0369a1" }}>Đã chọn: <strong>{selected.name}</strong></p>
+              <p style={{ margin: 0, fontSize: 14, color: "var(--brand-hover)" }}>Đã chọn: <strong>{selected.name}</strong></p>
               <span style={{ display: "block", fontSize: 12.5, color: "#475569", marginTop: 4 }}>
                 Mã DN: <strong>{selected.code}</strong> · MST: <strong>{selected.tax_code || "—"}</strong>
                 {selected.address ? ` · ${selected.address}` : ""}

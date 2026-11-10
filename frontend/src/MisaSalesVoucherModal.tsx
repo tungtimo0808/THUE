@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { formatMoneyInput, parseMoneyInput } from "./formatMoney";
 import {
+  Bot,
   X,
   RotateCcw,
   ChevronDown,
@@ -753,7 +754,7 @@ export function SaleVoucherModal({
                           e.currentTarget.style.background = "#ffffff";
                         }}
                       >
-                        <strong style={{ color: "#0284c7" }}>{o.code}</strong> - {o.customer} ({formatVND(o.amount)} đ)
+                        <strong style={{ color: "var(--brand)" }}>{o.code}</strong> - {o.customer} ({formatVND(o.amount)} đ)
                       </div>
                     ))}
                   </div>
@@ -770,7 +771,7 @@ export function SaleVoucherModal({
               style={{
                 background: "none",
                 border: "none",
-                color: "#00b06b",
+                color: "var(--brand)",
                 fontSize: 13,
                 fontWeight: 500,
                 cursor: "pointer",
@@ -780,7 +781,7 @@ export function SaleVoucherModal({
                 padding: "4px 6px",
               }}
             >
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={13} />
             </button>
@@ -880,7 +881,7 @@ export function SaleVoucherModal({
                   name="voucherCollectionType"
                   checked={collectionType === "uncollected"}
                   onChange={() => handleToggleCollection("uncollected")}
-                  style={{ accentColor: "#00b06b", cursor: "pointer", width: 15, height: 15 }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer", width: 15, height: 15 }}
                 />
                 <span>Chưa thu tiền</span>
               </label>
@@ -903,7 +904,7 @@ export function SaleVoucherModal({
                     name="voucherCollectionType"
                     checked={collectionType === "collected_now"}
                     onChange={() => handleToggleCollection("collected_now")}
-                    style={{ accentColor: "#00b06b", cursor: "pointer", width: 15, height: 15 }}
+                    style={{ accentColor: "var(--brand)", cursor: "pointer", width: 15, height: 15 }}
                   />
                   <span>Thu tiền ngay</span>
                 </label>
@@ -945,7 +946,7 @@ export function SaleVoucherModal({
                     type="checkbox"
                     checked={hasDeliveryNote}
                     onChange={(e) => setHasDeliveryNote(e.target.checked)}
-                    style={{ accentColor: "#00b06b", cursor: "pointer", width: 15, height: 15 }}
+                    style={{ accentColor: "var(--brand)", cursor: "pointer", width: 15, height: 15 }}
                   />
                   <span>Kiêm phiếu xuất</span>
                 </label>
@@ -966,7 +967,7 @@ export function SaleVoucherModal({
                   type="checkbox"
                   checked={hasInvoice}
                   onChange={(e) => setHasInvoice(e.target.checked)}
-                  style={{ accentColor: "#00b06b", cursor: "pointer", width: 15, height: 15 }}
+                  style={{ accentColor: "var(--brand)", cursor: "pointer", width: 15, height: 15 }}
                 />
                 <span>Lập kèm hóa đơn</span>
               </label>
@@ -983,8 +984,8 @@ export function SaleVoucherModal({
                   padding: "6px 2px",
                   fontSize: 13,
                   fontWeight: voucherTab === "main" ? 600 : 400,
-                  color: voucherTab === "main" ? "#00b06b" : "#64748b",
-                  borderBottom: voucherTab === "main" ? "2px solid #00b06b" : "2px solid transparent",
+                  color: voucherTab === "main" ? "var(--brand)" : "#64748b",
+                  borderBottom: voucherTab === "main" ? "2px solid var(--brand)" : "2px solid transparent",
                   cursor: "pointer",
                 }}
               >
@@ -1001,8 +1002,8 @@ export function SaleVoucherModal({
                     padding: "6px 2px",
                     fontSize: 13,
                     fontWeight: voucherTab === "delivery" ? 600 : 400,
-                    color: voucherTab === "delivery" ? "#00b06b" : "#64748b",
-                    borderBottom: voucherTab === "delivery" ? "2px solid #00b06b" : "2px solid transparent",
+                    color: voucherTab === "delivery" ? "var(--brand)" : "#64748b",
+                    borderBottom: voucherTab === "delivery" ? "2px solid var(--brand)" : "2px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -1020,8 +1021,8 @@ export function SaleVoucherModal({
                     padding: "6px 2px",
                     fontSize: 13,
                     fontWeight: voucherTab === "invoice" ? 600 : 400,
-                    color: voucherTab === "invoice" ? "#00b06b" : "#64748b",
-                    borderBottom: voucherTab === "invoice" ? "2px solid #00b06b" : "2px solid transparent",
+                    color: voucherTab === "invoice" ? "var(--brand)" : "#64748b",
+                    borderBottom: voucherTab === "invoice" ? "2px solid var(--brand)" : "2px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -1112,7 +1113,7 @@ export function SaleVoucherModal({
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            border: "1px solid #00b06b",
+                            border: "1px solid var(--brand)",
                             borderRadius: 4,
                             height: 28,
                             padding: "0 4px 0 6px",
@@ -1135,7 +1136,7 @@ export function SaleVoucherModal({
                               if (onOpenCustomerModal) onOpenCustomerModal();
                               else notify("Thêm nhanh khách hàng mới");
                             }}
-                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                            style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <Plus size={13} />
                           </button>
@@ -1201,7 +1202,7 @@ export function SaleVoucherModal({
                               onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
                             >
-                              <strong style={{ color: "#00b06b" }}>{c.code}</strong> - {c.name}
+                              <strong style={{ color: "var(--brand)" }}>{c.code}</strong> - {c.name}
                             </div>
                           ))}
                         </div>
@@ -1352,7 +1353,7 @@ export function SaleVoucherModal({
                         <button
                           type="button"
                           onClick={() => notify("Thêm nhân viên bán hàng")}
-                          style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                          style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                         >
                           <Plus size={13} />
                         </button>
@@ -1454,7 +1455,7 @@ export function SaleVoucherModal({
                           />
                           <button
                             type="button"
-                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                            style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <Plus size={13} />
                           </button>
@@ -1472,7 +1473,7 @@ export function SaleVoucherModal({
                       <button
                         type="button"
                         onClick={() => notify("Chọn chứng từ tham chiếu")}
-                        style={{ background: "none", border: "none", color: "#00b06b", fontSize: 12.5, cursor: "pointer", padding: 0 }}
+                        style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12.5, cursor: "pointer", padding: 0 }}
                       >
                         Tham chiếu ...
                       </button>
@@ -1516,7 +1517,7 @@ export function SaleVoucherModal({
                           </select>
                           <button
                             type="button"
-                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                            style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <Plus size={13} />
                           </button>
@@ -1595,7 +1596,7 @@ export function SaleVoucherModal({
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            border: "1px solid #00b06b",
+                            border: "1px solid var(--brand)",
                             borderRadius: 4,
                             height: 28,
                             padding: "0 4px 0 6px",
@@ -1618,7 +1619,7 @@ export function SaleVoucherModal({
                               if (onOpenCustomerModal) onOpenCustomerModal();
                               else notify("Thêm nhanh khách hàng mới");
                             }}
-                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                            style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <Plus size={13} />
                           </button>
@@ -1682,7 +1683,7 @@ export function SaleVoucherModal({
                               onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
                             >
-                              <strong style={{ color: "#00b06b" }}>{c.code}</strong> - {c.name}
+                              <strong style={{ color: "var(--brand)" }}>{c.code}</strong> - {c.name}
                             </div>
                           ))}
                         </div>
@@ -1779,7 +1780,7 @@ export function SaleVoucherModal({
                         <button
                           type="button"
                           onClick={() => notify("Thêm nhân viên bán hàng")}
-                          style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                          style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                         >
                           <Plus size={13} />
                         </button>
@@ -1849,7 +1850,7 @@ export function SaleVoucherModal({
                       <button
                         type="button"
                         onClick={() => notify("Chọn chứng từ tham chiếu")}
-                        style={{ background: "none", border: "none", color: "#00b06b", fontSize: 12.5, cursor: "pointer", padding: 0 }}
+                        style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12.5, cursor: "pointer", padding: 0 }}
                       >
                         Tham chiếu ...
                       </button>
@@ -1891,7 +1892,7 @@ export function SaleVoucherModal({
                           </select>
                           <button
                             type="button"
-                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                            style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <Plus size={13} />
                           </button>
@@ -1968,7 +1969,7 @@ export function SaleVoucherModal({
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            border: "1px solid #00b06b",
+                            border: "1px solid var(--brand)",
                             borderRadius: 4,
                             height: 28,
                             padding: "0 4px 0 6px",
@@ -1991,7 +1992,7 @@ export function SaleVoucherModal({
                               if (onOpenCustomerModal) onOpenCustomerModal();
                               else notify("Thêm nhanh khách hàng mới");
                             }}
-                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                            style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <Plus size={13} />
                           </button>
@@ -2055,7 +2056,7 @@ export function SaleVoucherModal({
                               onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
                             >
-                              <strong style={{ color: "#00b06b" }}>{c.code}</strong> - {c.name}
+                              <strong style={{ color: "var(--brand)" }}>{c.code}</strong> - {c.name}
                             </div>
                           ))}
                         </div>
@@ -2426,7 +2427,7 @@ export function SaleVoucherModal({
                       <button
                         type="button"
                         onClick={() => notify("Chọn chứng từ tham chiếu")}
-                        style={{ background: "none", border: "none", color: "#00b06b", fontSize: 12.5, cursor: "pointer", padding: 0 }}
+                        style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12.5, cursor: "pointer", padding: 0 }}
                       >
                         Tham chiếu ...
                       </button>
@@ -2470,7 +2471,7 @@ export function SaleVoucherModal({
                           </select>
                           <button
                             type="button"
-                            style={{ background: "none", border: "none", color: "#00b06b", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
+                            style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "2px", display: "grid", placeItems: "center", flexShrink: 0 }}
                           >
                             <Plus size={13} />
                           </button>
@@ -2772,8 +2773,8 @@ export function SaleVoucherModal({
                     padding: "4px 2px",
                     fontWeight: 600,
                     fontSize: 13.5,
-                    color: detailTab === "items" ? "#00b06b" : "#64748b",
-                    borderBottom: detailTab === "items" ? "2px solid #00b06b" : "2px solid transparent",
+                    color: detailTab === "items" ? "var(--brand)" : "#64748b",
+                    borderBottom: detailTab === "items" ? "2px solid var(--brand)" : "2px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -2790,8 +2791,8 @@ export function SaleVoucherModal({
                       padding: "4px 2px",
                       fontWeight: 600,
                       fontSize: 13.5,
-                      color: detailTab === "cogs" ? "#00b06b" : "#64748b",
-                      borderBottom: detailTab === "cogs" ? "2px solid #00b06b" : "2px solid transparent",
+                      color: detailTab === "cogs" ? "var(--brand)" : "#64748b",
+                      borderBottom: detailTab === "cogs" ? "2px solid var(--brand)" : "2px solid transparent",
                       cursor: "pointer",
                     }}
                   >
@@ -2829,10 +2830,10 @@ export function SaleVoucherModal({
                       display: "grid",
                       placeItems: "center",
                       color: "#ffffff",
-                      fontSize: 9,
+                      fontSize: 10,
                     }}
                   >
-                    🤖
+                    <Bot size={14} className="ui-inline-icon" aria-hidden="true" />
                   </div>
                   <span>"Kiểm tra hồ sơ"</span>
                   {isService && <ChevronDown size={12} />}
@@ -2875,7 +2876,7 @@ export function SaleVoucherModal({
                 <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
                   <thead>
                     {isService ? (
-                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid #00a862" }}>
+                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid var(--brand)" }}>
                         <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 4px", fontWeight: 600, color: "#065f46" }}>#</th>
                         <th style={{ width: 110, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -2930,7 +2931,7 @@ export function SaleVoucherModal({
                         <th style={{ width: 36, textAlign: "center", padding: "6px 4px" }}></th>
                       </tr>
                     ) : (
-                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid #00a862" }}>
+                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid var(--brand)" }}>
                         <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 4px", fontWeight: 600, color: "#065f46" }}>#</th>
                         <th style={{ width: 120, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -3072,7 +3073,7 @@ export function SaleVoucherModal({
                               value={it.code}
                               onChange={(e) => handleItemChange(idx, "code", e.target.value)}
                               list={`voucher-catalog-items-${idx}`}
-                              style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5, fontWeight: 600, color: "#0284c7" }}
+                              style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5, fontWeight: 600, color: "var(--brand)" }}
                             />
                             <datalist id={`voucher-catalog-items-${idx}`}>
                               {SAMPLE_SALE_ITEMS.map((si) => (
@@ -3096,7 +3097,7 @@ export function SaleVoucherModal({
                             <>
                               <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                                  <FileText size={11} style={{ color: "#00b06b", flexShrink: 0 }} />
+                                  <FileText size={11} style={{ color: "var(--brand)", flexShrink: 0 }} />
                                   <input
                                     type="text"
                                     value={it.debitAccount}
@@ -3171,7 +3172,7 @@ export function SaleVoucherModal({
                           </td>
 
                           {/* Tiền thuế GTGT */}
-                          <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right", fontWeight: 700, color: "#0369a1" }}>
+                          <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right", fontWeight: 700, color: "var(--brand-hover)" }}>
                             {it.vatAmount === 0 ? "0" : formatVND(it.vatAmount)}
                           </td>
 
@@ -3217,7 +3218,7 @@ export function SaleVoucherModal({
                             value={it.code}
                             onChange={(e) => handleItemChange(idx, "code", e.target.value)}
                             list={`voucher-catalog-items-${idx}`}
-                            style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5, fontWeight: 600, color: "#0284c7" }}
+                            style={{ width: "100%", border: "none", outline: "none", background: "transparent", fontSize: 12.5, fontWeight: 600, color: "var(--brand)" }}
                           />
                           <datalist id={`voucher-catalog-items-${idx}`}>
                             {SAMPLE_SALE_ITEMS.map((si) => (
@@ -3263,7 +3264,7 @@ export function SaleVoucherModal({
                               type="checkbox"
                               checked={!!it.tradeDiscount}
                               onChange={(e) => handleItemChange(idx, "tradeDiscount", e.target.checked)}
-                              style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#00b06b" }}
+                              style={{ cursor: "pointer", width: 14, height: 14, accentColor: "var(--brand)" }}
                             />
                           </td>
                         )}
@@ -3324,7 +3325,7 @@ export function SaleVoucherModal({
                                 <option value="KCT">KCT</option>
                               </select>
                             </td>
-                            <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right", fontWeight: 700, color: "#0369a1" }}>
+                            <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", textAlign: "right", fontWeight: 700, color: "var(--brand-hover)" }}>
                               {it.vatAmount === 0 ? "0" : formatVND(it.vatAmount)}
                             </td>
                           </>
@@ -3417,7 +3418,7 @@ export function SaleVoucherModal({
                         {totalAmount === 0 ? "0" : formatVND(totalAmount)}
                       </td>
                       <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#0369a1", fontWeight: 700 }}>
+                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "var(--brand-hover)", fontWeight: 700 }}>
                         {totalVat === 0 ? "0" : formatVND(totalVat)}
                       </td>
                       <td></td>
@@ -3445,7 +3446,7 @@ export function SaleVoucherModal({
                       {saleType === 1 && (
                         <>
                           <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                          <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#0369a1", fontWeight: 700 }}>
+                          <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "var(--brand-hover)", fontWeight: 700 }}>
                             {totalVat === 0 ? "0" : formatVND(totalVat)}
                           </td>
                         </>
@@ -3457,7 +3458,7 @@ export function SaleVoucherModal({
                         <>
                           <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px" }}>0</td>
                           <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                          <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#0369a1", fontWeight: 700 }}>
+                          <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "var(--brand-hover)", fontWeight: 700 }}>
                             {totalExportTax === 0 ? "0" : formatVND(totalExportTax)}
                           </td>
                         </>
@@ -3496,7 +3497,7 @@ export function SaleVoucherModal({
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto", background: "#ffffff" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
                   <thead>
-                    <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid #00a862" }}>
+                    <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid var(--brand)" }}>
                       <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 4px", fontWeight: 600, color: "#065f46" }}>#</th>
                       <th style={{ width: 120, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Mã hàng</th>
                       <th style={{ width: 220, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Tên hàng</th>
@@ -3513,7 +3514,7 @@ export function SaleVoucherModal({
                     {items.map((it, idx) => (
                       <tr key={it.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32, background: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
                         <td style={{ textAlign: "center", borderRight: "1px solid #cbd5e1", color: "#64748b" }}>{idx + 1}</td>
-                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", color: "#0284c7", fontWeight: 600 }}>{it.code || "—"}</td>
+                        <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", color: "var(--brand)", fontWeight: 600 }}>{it.code || "—"}</td>
                         <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", color: "#0f172a" }}>{it.name || "—"}</td>
                         <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px" }}>Kho 1561</td>
                         <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 8px", color: "#047857", fontWeight: 500 }}>632</td>
@@ -3669,7 +3670,7 @@ export function SaleVoucherModal({
                       type="checkbox"
                       checked={isReplacementInvoice}
                       onChange={(e) => setIsReplacementInvoice(e.target.checked)}
-                      style={{ cursor: "pointer", width: 14, height: 14, accentColor: "#00b06b" }}
+                      style={{ cursor: "pointer", width: 14, height: 14, accentColor: "var(--brand)" }}
                     />
                     <span>Là hóa đơn thay thế</span>
                   </label>
@@ -4026,7 +4027,7 @@ export function SaleVoucherModal({
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
                         <span>Thuế GTGT:</span>
-                        <span style={{ fontWeight: 600, color: "#0369a1" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
+                        <span style={{ fontWeight: 600, color: "var(--brand-hover)" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, fontWeight: 700, borderTop: "1px dashed #cbd5e1", paddingTop: 8, marginTop: 2 }}>
                         <span style={{ color: "#0f172a" }}>Tổng tiền thanh toán:</span>
@@ -4041,7 +4042,7 @@ export function SaleVoucherModal({
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
                         <span>Thuế GTGT:</span>
-                        <span style={{ fontWeight: 600, color: "#0369a1" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
+                        <span style={{ fontWeight: 600, color: "var(--brand-hover)" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, fontWeight: 700, borderTop: "1px dashed #cbd5e1", paddingTop: 8, marginTop: 2 }}>
                         <span style={{ color: "#0f172a" }}>Tổng tiền thanh toán:</span>
@@ -4049,7 +4050,7 @@ export function SaleVoucherModal({
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
                         <span>Thuế xuất khẩu:</span>
-                        <span style={{ fontWeight: 600, color: "#0369a1" }}>{totalExportTax === 0 ? "0" : formatVND(totalExportTax)}</span>
+                        <span style={{ fontWeight: 600, color: "var(--brand-hover)" }}>{totalExportTax === 0 ? "0" : formatVND(totalExportTax)}</span>
                       </div>
                     </>
                   ) : saleType === 2 ? (
@@ -4064,7 +4065,7 @@ export function SaleVoucherModal({
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
                         <span>Thuế xuất khẩu:</span>
-                        <span style={{ fontWeight: 600, color: "#0369a1" }}>{totalExportTax === 0 ? "0" : formatVND(totalExportTax)}</span>
+                        <span style={{ fontWeight: 600, color: "var(--brand-hover)" }}>{totalExportTax === 0 ? "0" : formatVND(totalExportTax)}</span>
                       </div>
                     </>
                   ) : (
@@ -4075,7 +4076,7 @@ export function SaleVoucherModal({
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#475569" }}>
                         <span>Thuế GTGT:</span>
-                        <span style={{ fontWeight: 600, color: "#0369a1" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
+                        <span style={{ fontWeight: 600, color: "var(--brand-hover)" }}>{totalVat === 0 ? "0" : formatVND(totalVat)}</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, fontWeight: 700, borderTop: "1px dashed #cbd5e1", paddingTop: 8, marginTop: 2 }}>
                         <span style={{ color: "#0f172a" }}>Tổng tiền thanh toán:</span>
@@ -4127,7 +4128,7 @@ export function SaleVoucherModal({
                   width: 36,
                   height: 20,
                   borderRadius: 10,
-                  background: showAccounts ? "#00b06b" : "#cbd5e1",
+                  background: showAccounts ? "var(--brand)" : "#cbd5e1",
                   position: "relative",
                   transition: "background 0.2s ease",
                   cursor: "pointer",
@@ -4197,7 +4198,7 @@ export function SaleVoucherModal({
                   border: "none",
                   borderTopLeftRadius: 4,
                   borderBottomLeftRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   fontSize: 13,
                   fontWeight: 600,
                   color: "#ffffff",
@@ -4219,7 +4220,7 @@ export function SaleVoucherModal({
                   borderLeft: "1px solid rgba(255,255,255,0.3)",
                   borderTopRightRadius: 4,
                   borderBottomRightRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   cursor: "pointer",
                   display: "grid",

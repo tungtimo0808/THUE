@@ -7295,7 +7295,7 @@ export function buildClientFallbackMisaHtml(d: Row = {}): string {
 <title>${escapeHtml(title)}</title>
 <style>
   @page { size: A4 landscape; margin: 12mm; }
-  body { font-family: "Times New Roman", Times, serif; color: #000; background: #fff; margin: 0; padding: 24px 30px; font-size: 11pt; }
+  body { font-family: Roboto, Arial, sans-serif; color: #000; background: #fff; margin: 0; padding: 24px 30px; font-size: 11pt; }
   .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
   .company-block .company-name { font-size: 11pt; font-weight: normal; margin-bottom: 2px; }
   .company-block .company-addr { font-size: 10.5pt; }
@@ -7388,7 +7388,7 @@ export function openMisaReportPreviewModal(opts: {
   const overlay = document.createElement("div");
   overlay.id = "misa-print-preview-modal-root";
   overlay.style.cssText =
-    "position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,0.45);display:flex;flex-direction:column;font-family:'Be Vietnam Pro','Segoe UI',system-ui,-apple-system,sans-serif;";
+    "position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,0.45);display:flex;flex-direction:column;font-family: Roboto, Arial, sans-serif;";
 
   const header = document.createElement("div");
   header.style.cssText =
@@ -7461,8 +7461,8 @@ export function openMisaReportPreviewModal(opts: {
     const btnExcel = makeBtn(
       iconExcel,
       isPrimary ? "Tải xuống Excel (.xlsx)" : "Xuất Excel (.xlsx)",
-      isPrimary ? "#00a862" : "#f0fdf4",
-      isPrimary ? "#00a862" : "#86efac",
+      isPrimary ? "var(--brand)" : "#f0fdf4",
+      isPrimary ? "var(--brand)" : "#86efac",
       isPrimary ? "#ffffff" : "#166534",
     );
     btnExcel.onclick = async () => {
@@ -7508,8 +7508,8 @@ export function openMisaReportPreviewModal(opts: {
   const btnPrint = makeBtn(
     iconPrint,
     "In báo cáo",
-    isPrintPrimary ? "#0284c7" : "#ffffff",
-    isPrintPrimary ? "#0284c7" : "#cbd5e1",
+    isPrintPrimary ? "var(--brand)" : "#ffffff",
+    isPrintPrimary ? "var(--brand)" : "#cbd5e1",
     isPrintPrimary ? "#ffffff" : "#1e293b",
   );
   btnPrint.onclick = () => {

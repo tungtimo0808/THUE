@@ -204,7 +204,7 @@ export const MisaItemNatureDrawer: React.FC<MisaItemNatureDrawerProps> = ({
                   width: 44,
                   height: 44,
                   borderRadius: "50%",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   display: "grid",
                   placeItems: "center",
                   flexShrink: 0,

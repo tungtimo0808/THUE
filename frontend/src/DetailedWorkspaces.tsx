@@ -54,7 +54,7 @@ function WorkspaceHeader({
         <p>{description}</p>
       </div>
       <div className="erp3-header-actions">
-        <button onClick={() => notify("Đã làm mới dữ liệu thành công.")}>
+        <button onClick={() => window.location.reload()}>
           <RefreshCw size={15} /> Làm mới
         </button>
         <button
@@ -1961,7 +1961,7 @@ export function ConfiguredListWorkspace({
                 </div>
                 <div className="total">
                   <dt>Tổng quyết toán</dt>
-                  <dd style={{ color: "#0284c7", fontSize: "16px" }}>
+                  <dd style={{ color: "var(--brand)", fontSize: "16px" }}>
                     141.460.000 VND
                   </dd>
                 </div>

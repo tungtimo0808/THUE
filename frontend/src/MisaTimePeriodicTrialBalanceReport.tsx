@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -363,7 +364,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
             style={{
               position: "absolute",
               left: 10,
-              color: "#94a3b8",
+              color: "#64748b",
             }}
           />
           <input
@@ -432,7 +433,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
             justifyContent: "center",
             background: "transparent",
             border: "none",
-            color: "#0284c7",
+            color: "var(--brand)",
             cursor: "pointer",
           }}
           title="Bình luận / Trao đổi"
@@ -474,7 +475,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
             cursor: "pointer",
           }}
           title="Xuất khẩu Excel"
-          onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+          onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
         >
           <span style={{ fontSize: 13, fontWeight: 700 }}>XLS</span>
           <ChevronDown size={13} color="#64748b" />
@@ -485,7 +486,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
           style={{
             height: 32,
             padding: "0 18px",
-            background: "#00a862",
+            background: "var(--brand)",
             border: "none",
             borderRadius: 4,
             fontSize: 13,
@@ -688,7 +689,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                         border: "1px solid #e2e8f0",
                         padding: "4px 8px",
                         textAlign: "center",
-                        color: "#0284c7",
+                        color: "var(--brand)",
                         fontWeight: 600,
                         cursor: "pointer",
                       }}
@@ -984,7 +985,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                       name="periodType"
                       checked={draftPeriodType === "month"}
                       onChange={() => setDraftPeriodType("month")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Tháng</span>
                   </label>
@@ -1002,7 +1003,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                       name="periodType"
                       checked={draftPeriodType === "quarter"}
                       onChange={() => setDraftPeriodType("quarter")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Quý</span>
                   </label>
@@ -1226,7 +1227,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                     checked={draftShowTwoSideBalance}
                     onChange={(e) => setDraftShowTwoSideBalance(e.target.checked)}
                     style={{
-                      accentColor: "#00a862",
+                      accentColor: "var(--brand)",
                       width: 16,
                       height: 16,
                       cursor: "pointer",
@@ -1288,7 +1289,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,
@@ -1398,7 +1399,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                   <tr>
                     <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px", textAlign: "center" }}>10/2026</td>
                     <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px", textAlign: "center" }}>05/10/2026</td>
-                    <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>
+                    <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px", textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>
                       BH00012
                     </td>
                     <td style={{ border: "1px solid #e2e8f0", padding: "8px 10px" }}>
@@ -1431,7 +1432,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
             >
               <button
                 type="button"
-                onClick={() => notify?.("Đã xuất khẩu chứng từ ra Excel.")}
+                onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất khẩu chứng từ"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                 style={{
                   height: 30,
                   padding: "0 14px",
@@ -1450,7 +1451,7 @@ export default function MisaTimePeriodicTrialBalanceReport({
                 style={{
                   height: 30,
                   padding: "0 18px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   fontSize: 12.5,

@@ -1,6 +1,7 @@
 import {
   useEffect,
   useRef,
+  useId,
   useState,
   type ReactNode,
   type FormEvent,
@@ -12,6 +13,8 @@ import {
   Trash2,
   Copy,
   Check,
+  Circle,
+  Clock,
   ArrowDownLeft,
   ArrowUpRight,
   FileText,
@@ -42,6 +45,7 @@ export function Modal({
   className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const dialog = ref.current!;
     dialog.showModal();
@@ -51,14 +55,14 @@ export function Modal({
     <dialog
       ref={ref}
       className={`modal ${wide ? "wide" : ""} ${drawer ? "drawer" : ""} ${className}`}
-      aria-labelledby="dialog-title"
+      aria-labelledby={titleId}
       onCancel={(e) => {
         e.preventDefault();
         onClose();
       }}
     >
       <header className="modal-header">
-        <h2 id="dialog-title">{title}</h2>
+        <h2 id={titleId}>{title}</h2>
         <button className="icon-button" aria-label="Đóng" onClick={onClose}>
           <X size={20} />
         </button>
@@ -71,7 +75,7 @@ export function StatusBadge({ status }: { status: Transaction["status"] }) {
   return (
     <span className={`status ${status}`}>
       <span aria-hidden="true">
-        {status === "posted" ? "✓" : status === "pending" ? "◷" : "•"}
+        {status === "posted" ? <Check size={14} /> : status === "pending" ? <Clock size={14} /> : <Circle size={8} fill="currentColor" />}
       </span>
       {statuses[status]}
     </span>

@@ -1,4 +1,6 @@
+import { exportVisibleTable, printVisibleTable } from "./table-actions";
 import LedgerAccountField from "./LedgerAccountField";
+import { MapPin } from "lucide-react";
 import { formatMoneyInput, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
@@ -43,6 +45,7 @@ import {
   resolveActivePeriodRange,
 } from './transaction-period';
 import {
+  ChartNoAxesCombined,
   Filter,
   Plus,
   Search,
@@ -100,6 +103,7 @@ import {
 import "./misa-cash.css";
 
 
+import { showNotice, showPendingFeature } from "./global-popup";
 // Helper format tiền tệ VNĐ
 export function formatVND(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount);
@@ -299,7 +303,7 @@ export function TaxPaymentModal({
             <button
               type="button"
               className="misa-invoice-help-link"
-              onClick={() => alert("Hướng dẫn sử dụng Nộp thuế")}
+              onClick={() => showPendingFeature("Hướng dẫn sử dụng Nộp thuế")}
             >
               <HelpCircle size={15} />
               <span>Hướng dẫn sử dụng</span>
@@ -408,7 +412,7 @@ export function TaxPaymentModal({
                     name="taxPaymentMethod"
                     checked={paymentMethod === "bank"}
                     onChange={() => setPaymentMethod("bank")}
-                    style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                    style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                   />
                   <span>Tiền gửi</span>
                 </label>
@@ -418,7 +422,7 @@ export function TaxPaymentModal({
                     name="taxPaymentMethod"
                     checked={paymentMethod === "cash"}
                     onChange={() => setPaymentMethod("cash")}
-                    style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                    style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                   />
                   <span>Tiền mặt</span>
                 </label>
@@ -480,7 +484,7 @@ export function TaxPaymentModal({
                         type="checkbox"
                         checked={allChecked}
                         onChange={toggleAll}
-                        style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                        style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                       />
                     </th>
                     <th>Khoản phải nộp</th>
@@ -508,7 +512,7 @@ export function TaxPaymentModal({
                             type="checkbox"
                             checked={item.checked}
                             onChange={() => toggleCheck(item.id)}
-                            style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                            style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                           />
                         </td>
                         <td>{item.name}</td>
@@ -785,7 +789,7 @@ export function SupplierPaymentModal({
             <button
               type="button"
               className="misa-invoice-help-link"
-              onClick={() => alert("Hướng dẫn sử dụng Trả tiền nhà cung cấp theo hóa đơn")}
+              onClick={() => showPendingFeature("Hướng dẫn sử dụng Trả tiền nhà cung cấp theo hóa đơn")}
             >
               <HelpCircle size={15} />
               <span>Hướng dẫn sử dụng</span>
@@ -975,10 +979,10 @@ export function SupplierPaymentModal({
                 className="misa-invoice-fetch-btn"
                 onClick={() => {
                   if (debtSource) {
-                    if (!supplier) { alert("Vui lòng chọn nhà cung cấp."); return; }
+                    if (!supplier) { showNotice("Vui lòng chọn nhà cung cấp."); return; }
                     debtSource.load(supplier)
                       .then((rows) => setInvoices(rows))
-                      .catch((error) => alert(`Không lấy được công nợ: ${error instanceof Error ? error.message : String(error)}`));
+                      .catch((error) => showNotice(`Không lấy được công nợ: ${error instanceof Error ? error.message : String(error)}`));
                     return;
                   }
                   if (!supplier) {
@@ -1060,7 +1064,7 @@ export function SupplierPaymentModal({
                         type="checkbox"
                         checked={invoices.length > 0 && invoices.every((i) => i.checked)}
                         onChange={toggleSelectAll}
-                        style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                        style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                       />
                     </th>
                     <th style={{ width: 110, textAlign: "center" }}>Ngày chứng từ</th>
@@ -1114,12 +1118,12 @@ export function SupplierPaymentModal({
                           type="checkbox"
                           checked={inv.checked}
                           onChange={() => toggleInvoiceCheck(inv.id)}
-                          style={{ accentColor: "#00b06b", cursor: "pointer" }}
+                          style={{ accentColor: "var(--brand)", cursor: "pointer" }}
                         />
                       </td>
                       <td style={{ textAlign: "center" }}>{inv.voucherDate}</td>
                       <td>
-                        <strong style={{ color: "#00b06b" }}>{inv.voucherCode}</strong>
+                        <strong style={{ color: "var(--brand)" }}>{inv.voucherCode}</strong>
                       </td>
                       <td style={{ textAlign: "center" }}>{inv.invoiceDate}</td>
                       <td>{inv.invoiceCode}</td>
@@ -1224,9 +1228,9 @@ export function AccountingVoucherModal({
 <head>
   <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8"/>
   <style>
-    body { font-family: 'Times New Roman', serif; font-size: 13pt; }
+    body { font-family: Roboto, Arial, sans-serif; font-size: 13pt; }
     table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #000000; padding: 6px 8px; font-family: 'Times New Roman', serif; }
+    th, td { border: 1px solid #000000; padding: 6px 8px; font-family: Roboto, Arial, sans-serif; }
     th { font-weight: bold; text-align: center; background: #ffffff; }
     .no-border { border: none !important; }
     .center { text-align: center; }
@@ -1322,9 +1326,9 @@ export function AccountingVoucherModal({
 <head>
   <meta http-equiv="content-type" content="application/msword; charset=UTF-8"/>
   <style>
-    body { font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.35; }
+    body { font-family: Roboto, Arial, sans-serif; font-size: 13pt; line-height: 1.35; }
     table { border-collapse: collapse; width: 100%; margin: 15px 0; }
-    th, td { border: 1px solid #000000; padding: 6px 8px; font-family: 'Times New Roman', serif; font-size: 13pt; }
+    th, td { border: 1px solid #000000; padding: 6px 8px; font-family: Roboto, Arial, sans-serif; font-size: 13pt; }
     th { font-weight: bold; text-align: center; }
     .no-border { border: none !important; }
     .center { text-align: center; }
@@ -1453,7 +1457,7 @@ export function AccountingVoucherModal({
                   className="misa-voucher-export-item"
                   onClick={handleExportExcel}
                 >
-                  <FileSpreadsheet size={16} style={{ color: "#00b06b" }} />
+                  <FileSpreadsheet size={16} style={{ color: "var(--brand)" }} />
                   <span>Xuất Excel biểu mẫu (.xls)</span>
                 </button>
                 <button
@@ -1518,7 +1522,7 @@ export function AccountingVoucherModal({
             onClick={() => setShowTip(false)}
             aria-label="Đóng gợi ý"
           >
-            ✕
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
       )}
@@ -3454,7 +3458,7 @@ export function CreateVoucherModal({
               top: 12,
               left: "50%",
               transform: "translateX(-50%)",
-              background: "#00b06b",
+              background: "var(--brand)",
               color: "#ffffff",
               padding: "6px 16px",
               borderRadius: 6,
@@ -3520,7 +3524,7 @@ export function CreateVoucherModal({
               buttonStyle={{
                 height: 28,
                 padding: "0 10px",
-                border: "1px solid #00b06b",
+                border: "1px solid var(--brand)",
                 borderRadius: 4,
                 fontSize: 13,
                 fontWeight: 600,
@@ -3563,12 +3567,12 @@ export function CreateVoucherModal({
               className="misa-voucher-help-link"
               onClick={(e) => {
                 e.preventDefault();
-                alert(
+                showNotice(
                   `Hướng dẫn hạch toán theo chuẩn Sổ Việt ERP:\n- Nghiệp vụ: ${currentType.label}\n- Nợ TK: ${currentType.defaultDebit || "(Tùy chọn)"}\n- Có TK: ${currentType.defaultCredit || "(Tùy chọn)"}`
                 );
               }}
             >
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </a>
@@ -3618,7 +3622,7 @@ export function CreateVoucherModal({
                 type="checkbox"
                 checked={isBatchPayment}
                 onChange={(e) => setIsBatchPayment(e.target.checked)}
-                style={{ accentColor: "#00b06b", width: 15, height: 15 }}
+                style={{ accentColor: "var(--brand)", width: 15, height: 15 }}
               />
               <span>Là UNC chuyển tiền theo lô</span>
             </label>
@@ -4809,7 +4813,7 @@ export function CreateVoucherModal({
             <div
               className="misa-voucher-drawer-handle"
               title="Kiểm tra nhanh định khoản"
-              onClick={() => alert("Hệ thống kiểm tra định khoản Sổ Việt ERP")}
+              onClick={() => showPendingFeature("Kiểm tra định khoản tự động")}
             >
               <ChevronLeft size={14} />
             </div>
@@ -4829,8 +4833,8 @@ export function CreateVoucherModal({
                   onClick={() => setActiveTab("tax")}
                   style={{
                     cursor: "pointer",
-                    borderBottom: activeTab === "tax" ? "2px solid #00b06b" : "none",
-                    color: activeTab === "tax" ? "#00b06b" : "#475569",
+                    borderBottom: activeTab === "tax" ? "2px solid var(--brand)" : "none",
+                    color: activeTab === "tax" ? "var(--brand)" : "#475569",
                     fontWeight: activeTab === "tax" ? 700 : 500,
                   }}
                 >
@@ -4855,7 +4859,7 @@ export function CreateVoucherModal({
                       type="checkbox"
                       checked={batchTaxInvoices}
                       onChange={(e) => setBatchTaxInvoices(e.target.checked)}
-                      style={{ accentColor: "#00b06b" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Hạch toán gộp nhiều hóa đơn</span>
                     <HelpCircle size={13} style={{ color: "#9ca3af" }} />
@@ -4866,8 +4870,9 @@ export function CreateVoucherModal({
                   type="button"
                   className="misa-voucher-ava-pill"
                   onClick={() => {
-                    alert(
-                      `Đã kiểm tra hạch toán hợp lệ!\n- Nghiệp vụ: ${currentType.label}\n- Định khoản: Nợ TK ${currentType.defaultDebit || "(Tùy chọn)"} / Có TK ${currentType.defaultCredit || "(Tùy chọn)"}`
+                    showNotice(
+                      `Định khoản mặc định của nghiệp vụ ${currentType.label}: Nợ TK ${currentType.defaultDebit || "(Tùy chọn)"} / Có TK ${currentType.defaultCredit || "(Tùy chọn)"}.\nĐây là gợi ý, chưa phải kết quả kiểm tra tự động; hệ thống kiểm tra khi lưu/ghi sổ.`,
+                      "info",
                     );
                   }}
                 >
@@ -5146,7 +5151,7 @@ export function CreateVoucherModal({
                           <input
                             type="text"
                             className="misa-voucher-cell-input"
-                            style={{ textAlign: "right", fontWeight: 600, color: "#00b06b" }}
+                            style={{ textAlign: "right", fontWeight: 600, color: "var(--brand)" }}
                             value={tr.taxAmount === 0 ? "0" : formatVND(tr.taxAmount)}
                             onChange={(e) => {
                               const raw = parseInt(e.target.value.replace(/\D/g, "") || "0", 10);
@@ -5245,7 +5250,7 @@ export function CreateVoucherModal({
 <td style={{ textAlign: "right", fontWeight: 600 }}>Tổng cộng:</td>
 <td></td>
 <td></td>
-<td style={{ textAlign: "right", fontWeight: 700, color: "#00b06b" }}>
+<td style={{ textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>
                         {totalTaxAmount === 0 ? "0" : formatVND(totalTaxAmount)}
                       </td>
 <td></td>
@@ -5278,7 +5283,7 @@ export function CreateVoucherModal({
                   className="misa-voucher-tool-btn"
                   onClick={activeTab === "tax" ? handleAddTaxRow : handleAddRow}
                 >
-                  <Plus size={13} style={{ color: "#00b06b", strokeWidth: 2.5 }} />
+                  <Plus size={13} style={{ color: "var(--brand)", strokeWidth: 2.5 }} />
                   <span>Thêm dòng</span>
                 </button>
 
@@ -5296,8 +5301,7 @@ export function CreateVoucherModal({
                     type="button"
                     className="misa-voucher-tool-btn"
                     onClick={() => {
-                      const note = prompt("Nhập ghi chú cho chứng từ:");
-                      if (note) alert(`Đã thêm ghi chú: ${note}`);
+                      showPendingFeature("Ghi chú chứng từ");
                     }}
                   >
                     <FileText size={13} />
@@ -5334,7 +5338,7 @@ export function CreateVoucherModal({
                 >
                   <span style={{ cursor: "pointer" }}>|&lt;</span>
                   <span style={{ cursor: "pointer" }}>&lt;</span>
-                  <span style={{ fontWeight: 700, color: "#00b06b" }}>1</span>
+                  <span style={{ fontWeight: 700, color: "var(--brand)" }}>1</span>
                   <span style={{ cursor: "pointer" }}>&gt;</span>
                   <span style={{ cursor: "pointer" }}>&gt;|</span>
                 </div>
@@ -5344,7 +5348,7 @@ export function CreateVoucherModal({
             {/* 4. Attachment Dropzone */}
             <div className="misa-voucher-attach-zone">
               <div className="misa-voucher-attach-header">
-                <Paperclip size={13} style={{ color: "#00b06b" }} />
+                <Paperclip size={13} style={{ color: "var(--brand)" }} />
                 <span style={{ fontWeight: 600, color: "#1e293b" }}>Đính kèm</span>
                 <span style={{ color: "#64748b", fontSize: 12, marginLeft: 6 }}>
                   Dung lượng tối đa 5MB
@@ -5485,13 +5489,13 @@ export function CreateVoucherModal({
                         <td>{inv.date}</td>
                         <td>{inv.desc}</td>
                         <td style={{ textAlign: "right" }}>{formatVND(inv.total)}</td>
-                        <td style={{ textAlign: "right", color: "#00b06b" }}>{formatVND(inv.paid)}</td>
+                        <td style={{ textAlign: "right", color: "var(--brand)" }}>{formatVND(inv.paid)}</td>
                         <td style={{ textAlign: "right", fontWeight: 700, color: "#dc2626" }}>{formatVND(inv.remain)}</td>
                         <td style={{ textAlign: "center" }}>
                           <button
                             type="button"
                             style={{
-                              background: "#00b06b",
+                              background: "var(--brand)",
                               color: "#ffffff",
                               border: "none",
                               borderRadius: 4,
@@ -5641,7 +5645,7 @@ export function AIAssistantModal({
                     color: "#334155",
                   }}
                 >
-                  ✨ {p}
+                  <Sparkles size={14} className="ui-inline-icon" aria-hidden="true" /> {p}
                 </button>
               ))}
             </div>
@@ -5876,14 +5880,14 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                 className={`misa-report-mode-btn ${viewMode === "detail" ? "active" : ""}`}
                 onClick={() => setViewMode("detail")}
               >
-                📑 Sổ chi tiết ({selectedMonth.replace("Tháng ", "T")})
+                <BookOpen size={14} className="ui-inline-icon" aria-hidden="true" /> Sổ chi tiết ({selectedMonth.replace("Tháng ", "T")})
               </button>
               <button
                 type="button"
                 className={`misa-report-mode-btn ${viewMode === "monthly_summary" ? "active" : ""}`}
                 onClick={() => setViewMode("monthly_summary")}
               >
-                📊 Thống kê 12 tháng (Năm 2026)
+                <ChartNoAxesCombined size={14} className="ui-inline-icon" aria-hidden="true" /> Thống kê 12 tháng (Năm 2026)
               </button>
             </div>
           </div>
@@ -5891,7 +5895,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             {/* Kỳ chọn tháng chuẩn MISA */}
             <div className="misa-period-select-box">
-              <Calendar size={14} style={{ color: "#107e3e" }} />
+              <Calendar size={14} style={{ color: "var(--brand)" }} />
               <span>Kỳ:</span>
               <select
                 value={selectedMonth}
@@ -5918,9 +5922,9 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
             <button
               className="misa-btn-secondary"
               style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, fontSize: 12.5 }}
-              onClick={() => notify("Đang kết xuất tệp Excel báo cáo chuẩn Thông tư 99/2025/TT-BTC...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đang kết xuất tệp Excel báo cáo chuẩn Thông tư 99/2025/TT-BTC"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
             >
-              <FileSpreadsheet size={15} style={{ color: "#107e3e" }} />
+              <FileSpreadsheet size={15} style={{ color: "var(--brand)" }} />
               <span>Xuất khẩu Excel</span>
             </button>
 
@@ -5929,7 +5933,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
               style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, fontSize: 12.5 }}
               onClick={() => window.print()}
             >
-              <Printer size={15} style={{ color: "#0284c7" }} />
+              <Printer size={15} style={{ color: "var(--brand)" }} />
               <span>In (Ctrl+P)</span>
             </button>
 
@@ -5996,7 +6000,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                       </td>
                       <td className="numeric">-</td>
                       <td className="numeric">-</td>
-                      <td className="numeric" style={{ textAlign: "right", color: "#107e3e", fontWeight: 700 }}>
+                      <td className="numeric" style={{ textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>
                         45.200.000
                       </td>
                     </tr>
@@ -6005,7 +6009,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                       <td style={{ textAlign: "center" }}>1</td>
                       <td style={{ textAlign: "center" }}>03/09/2026</td>
                       <td style={{ textAlign: "center" }}>03/09/2026</td>
-                      <td style={{ textAlign: "center", color: "#0284c7", fontWeight: 600 }}>PT00001</td>
+                      <td style={{ textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>PT00001</td>
                       <td>Thu tiền bán hàng trực tiếp tại quầy thu ngân</td>
                       <td style={{ textAlign: "center" }}>5111</td>
                       <td style={{ textAlign: "right" }}>15.000.000</td>
@@ -6017,7 +6021,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                       <td style={{ textAlign: "center" }}>2</td>
                       <td style={{ textAlign: "center" }}>03/09/2026</td>
                       <td style={{ textAlign: "center" }}>03/09/2026</td>
-                      <td style={{ textAlign: "center", color: "#0284c7", fontWeight: 600 }}>PT00005</td>
+                      <td style={{ textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>PT00005</td>
                       <td>Thu hoàn ứng sau khi quyết toán tạm ứng cho Hoàng Thiên Bảo</td>
                       <td style={{ textAlign: "center" }}>141</td>
                       <td style={{ textAlign: "right" }}>5.000.000</td>
@@ -6053,7 +6057,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                       <td style={{ textAlign: "center" }}>5</td>
                       <td style={{ textAlign: "center" }}>15/09/2026</td>
                       <td style={{ textAlign: "center" }}>15/09/2026</td>
-                      <td style={{ textAlign: "center", color: "#0284c7", fontWeight: 600 }}>PT00008</td>
+                      <td style={{ textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>PT00008</td>
                       <td>Rút tiền gửi ngân hàng Vietcombank 1023847592 về nhập quỹ</td>
                       <td style={{ textAlign: "center" }}>1121</td>
                       <td style={{ textAlign: "right" }}>50.000.000</td>
@@ -6078,7 +6082,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                       <td colSpan={6} style={{ textAlign: "right", paddingRight: 14 }}>
                         <strong>Cộng số phát sinh cả {selectedMonth}:</strong>
                       </td>
-                      <td style={{ textAlign: "right", color: "#107e3e" }}>70.000.000</td>
+                      <td style={{ textAlign: "right", color: "var(--brand)" }}>70.000.000</td>
                       <td style={{ textAlign: "right", color: "#ea580c" }}>18.400.000</td>
                       <td style={{ textAlign: "right" }}>-</td>
                     </tr>
@@ -6090,7 +6094,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                       </td>
                       <td style={{ textAlign: "right" }}>-</td>
                       <td style={{ textAlign: "right" }}>-</td>
-                      <td style={{ textAlign: "right", color: "#107e3e", fontSize: 14 }}>
+                      <td style={{ textAlign: "right", color: "var(--brand)", fontSize: 14 }}>
                         96.800.000
                       </td>
                     </tr>
@@ -6121,7 +6125,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                   </div>
                   <div className="misa-monthly-kpi-card">
                     <span>Tổng thu lũy kế (T1 - T9)</span>
-                    <strong style={{ color: "#107e3e" }}>586.500.000 đ</strong>
+                    <strong style={{ color: "var(--brand)" }}>586.500.000 đ</strong>
                     <small>Bán lẻ + rút NH + thu hồi nợ</small>
                   </div>
                   <div className="misa-monthly-kpi-card">
@@ -6142,7 +6146,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                     <h4>Biểu đồ so sánh Dòng tiền Thu - Chi từng tháng trong năm 2026</h4>
                     <div className="misa-monthly-chart-legend">
                       <div className="misa-monthly-legend-item">
-                        <span className="misa-legend-color" style={{ background: "#107e3e" }} />
+                        <span className="misa-legend-color" style={{ background: "var(--brand)" }} />
                         <span>Tiền thu vào (VNĐ)</span>
                       </div>
                       <div className="misa-monthly-legend-item">
@@ -6176,7 +6180,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                           </div>
                           <span className="misa-monthly-bar-label">
                             {st.mShort}
-                            {isSelected ? " 📍" : st.isCurrent ? " ⭐" : ""}
+                            {isSelected ? <MapPin size={12} aria-label="Tháng đang chọn" /> : st.isCurrent ? <Star size={12} aria-label="Tháng hiện tại" /> : null}
                           </span>
                         </div>
                       );
@@ -6227,9 +6231,9 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                             )}
                           </td>
                           <td style={{ textAlign: "right" }}>{formatVND(row.opening)}</td>
-                          <td style={{ textAlign: "right", color: "#107e3e" }}>{formatVND(row.inAmount)}</td>
+                          <td style={{ textAlign: "right", color: "var(--brand)" }}>{formatVND(row.inAmount)}</td>
                           <td style={{ textAlign: "right", color: "#ea580c" }}>{formatVND(row.outAmount)}</td>
-                          <td style={{ textAlign: "right", color: row.diff >= 0 ? "#107e3e" : "#dc2626" }}>
+                          <td style={{ textAlign: "right", color: row.diff >= 0 ? "var(--brand)" : "#dc2626" }}>
                             {row.diff >= 0 ? `+${formatVND(row.diff)}` : `(${formatVND(Math.abs(row.diff))})`}
                           </td>
                           <td style={{ textAlign: "right", fontWeight: 700 }}>{formatVND(row.closing)}</td>
@@ -6257,9 +6261,9 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                         <strong>TỔNG CỘNG LŨY KẾ CẢ NĂM 2026:</strong>
                       </td>
                       <td style={{ textAlign: "right" }}>32.000.000</td>
-                      <td style={{ textAlign: "right", color: "#107e3e" }}>821.500.000</td>
+                      <td style={{ textAlign: "right", color: "var(--brand)" }}>821.500.000</td>
                       <td style={{ textAlign: "right", color: "#ea580c" }}>737.700.000</td>
-                      <td style={{ textAlign: "right", color: "#107e3e" }}>+83.800.000</td>
+                      <td style={{ textAlign: "right", color: "var(--brand)" }}>+83.800.000</td>
                       <td style={{ textAlign: "right", color: "#065f46", fontSize: 14 }}>115.800.000</td>
                       <td style={{ textAlign: "center" }}>-</td>
                     </tr>
@@ -6307,7 +6311,7 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
       <header className="misa-cash-reports-header">
         <div className="misa-cash-reports-title">
           <h2>
-            <BookOpen size={20} style={{ color: "#107e3e" }} />
+            <BookOpen size={20} style={{ color: "var(--brand)" }} />
             <span>Báo cáo Tiền mặt</span>
           </h2>
           <p>
@@ -6683,7 +6687,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
       <header className="misa-forecast-toolbar">
         <div className="misa-forecast-title-group">
           <h2>
-            <TrendingUp size={20} style={{ color: "#107e3e" }} />
+            <TrendingUp size={20} style={{ color: "var(--brand)" }} />
             <span>Dự báo dòng tiền (Cash Flow Forecast)</span>
             <span style={{ fontSize: 11, background: "#ecfdf5", color: "#065f46", border: "1px solid #a7f3d0", padding: "2px 8px", borderRadius: 12 }}>
               Chuẩn Sổ Việt ERP
@@ -6697,7 +6701,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           {/* Period selector */}
           <div className="misa-period-select-box">
-            <Calendar size={14} style={{ color: "#107e3e" }} />
+            <Calendar size={14} style={{ color: "var(--brand)" }} />
             <span>Kỳ dự báo:</span>
             <select
               value={period}
@@ -6727,9 +6731,9 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
             type="button"
             className="misa-btn-secondary"
             style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, fontSize: 12.5 }}
-            onClick={() => notify("Đang xuất kế hoạch dòng tiền ra tệp Excel...")}
+            onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "kế hoạch dòng tiền ra tệp Excel"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
-            <FileSpreadsheet size={15} style={{ color: "#107e3e" }} />
+            <FileSpreadsheet size={15} style={{ color: "var(--brand)" }} />
             <span>Xuất khẩu Excel</span>
           </button>
 
@@ -6748,7 +6752,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
       {/* 2. KPI Cards */}
       <div className="misa-forecast-kpis">
         <div className="misa-forecast-kpi-card">
-          <div className="misa-forecast-kpi-icon" style={{ background: "#f0fdf4", color: "#107e3e", border: "1px solid #bbf7d0" }}>
+          <div className="misa-forecast-kpi-icon" style={{ background: "#f0fdf4", color: "var(--brand)", border: "1px solid #bbf7d0" }}>
             <Coins size={22} />
           </div>
           <div className="misa-forecast-kpi-info">
@@ -6759,12 +6763,12 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
         </div>
 
         <div className="misa-forecast-kpi-card">
-          <div className="misa-forecast-kpi-icon" style={{ background: "#eff6ff", color: "#0284c7", border: "1px solid #bfdbfe" }}>
+          <div className="misa-forecast-kpi-icon" style={{ background: "#eff6ff", color: "var(--brand)", border: "1px solid #bfdbfe" }}>
             <TrendingUp size={22} />
           </div>
           <div className="misa-forecast-kpi-info">
             <span>Dự kiến thu tiền (+)</span>
-            <strong style={{ color: "#107e3e" }}>+{formatVND(totalIn)} đ</strong>
+            <strong style={{ color: "var(--brand)" }}>+{formatVND(totalIn)} đ</strong>
             <small>{items.filter((i) => i.kind === "in").length} khoản thu (HĐ bán lẻ + nợ KH)</small>
           </div>
         </div>
@@ -6781,7 +6785,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
         </div>
 
         <div className="misa-forecast-kpi-card" style={{ background: "#ecfdf5", borderColor: "#a7f3d0" }}>
-          <div className="misa-forecast-kpi-icon" style={{ background: "#107e3e", color: "#ffffff" }}>
+          <div className="misa-forecast-kpi-icon" style={{ background: "var(--brand)", color: "#ffffff" }}>
             <ShieldCheck size={22} />
           </div>
           <div className="misa-forecast-kpi-info">
@@ -6832,7 +6836,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
 
           <div className="misa-monthly-chart-legend">
             <div className="misa-monthly-legend-item">
-              <span className="misa-legend-color" style={{ background: "#107e3e" }} />
+              <span className="misa-legend-color" style={{ background: "var(--brand)" }} />
               <span>Tiền thu vào (+)</span>
             </div>
             <div className="misa-monthly-legend-item">
@@ -6840,7 +6844,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
               <span>Tiền chi ra (-)</span>
             </div>
             <div className="misa-monthly-legend-item">
-              <span className="misa-legend-color" style={{ background: "#0284c7" }} />
+              <span className="misa-legend-color" style={{ background: "var(--brand)" }} />
               <span>Số dư quỹ dự báo</span>
             </div>
           </div>
@@ -6955,7 +6959,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
                   </td>
                   <td>{item.partner}</td>
                   <td style={{ color: "#64748b", fontSize: 12 }}>{item.documentRef}</td>
-                  <td style={{ textAlign: "right", color: item.kind === "in" ? "#107e3e" : "#94a3b8", fontWeight: item.kind === "in" ? 700 : 400 }}>
+                  <td style={{ textAlign: "right", color: item.kind === "in" ? "var(--brand)" : "#94a3b8", fontWeight: item.kind === "in" ? 700 : 400 }}>
                     {item.kind === "in" ? `+${formatVND(item.amount)}` : "-"}
                   </td>
                   <td style={{ textAlign: "right", color: item.kind === "out" ? "#ea580c" : "#94a3b8", fontWeight: item.kind === "out" ? 700 : 400 }}>
@@ -6995,7 +6999,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
               <td colSpan={5} style={{ textAlign: "left", paddingLeft: 14, color: "#065f46" }}>
                 <strong>TỔNG HỢP KẾ HOẠCH DÒNG TIỀN (30 NGÀY TỚI):</strong>
               </td>
-              <td style={{ textAlign: "right", color: "#107e3e" }}>+{formatVND(totalIn)}</td>
+              <td style={{ textAlign: "right", color: "var(--brand)" }}>+{formatVND(totalIn)}</td>
               <td style={{ textAlign: "right", color: "#ea580c" }}>-{formatVND(totalOut)}</td>
               <td style={{ textAlign: "right", color: "#065f46", fontSize: 14 }}>{formatVND(finalBalance)}</td>
               <td colSpan={2} style={{ textAlign: "center", color: "#059669", fontSize: 11.5 }}>
@@ -7016,7 +7020,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
           >
             <div className="misa-modal-header">
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                <Plus size={18} style={{ color: "#107e3e" }} />
+                <Plus size={18} style={{ color: "var(--brand)" }} />
                 <span>Thêm khoản dự kiến thu / chi tiền mặt</span>
               </h3>
               <button
@@ -7176,18 +7180,18 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 18 }}>
                 <div style={{ background: "#f8fafc", padding: 12, borderRadius: 6, border: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 11.5, color: "#64748b" }}>Tồn quỹ thấp nhất</div>
-                  <strong style={{ fontSize: 17, color: "#0284c7" }}>{formatVND(minBalance)} đ</strong>
-                  <div style={{ fontSize: 11, color: "#107e3e" }}>Vào ngày 08/10/2026</div>
+                  <strong style={{ fontSize: 17, color: "var(--brand)" }}>{formatVND(minBalance)} đ</strong>
+                  <div style={{ fontSize: 11, color: "var(--brand)" }}>Vào ngày 08/10/2026</div>
                 </div>
                 <div style={{ background: "#f8fafc", padding: 12, borderRadius: 6, border: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 11.5, color: "#64748b" }}>Hệ số an toàn dòng tiền</div>
-                  <strong style={{ fontSize: 17, color: "#107e3e" }}>3.87x</strong>
+                  <strong style={{ fontSize: 17, color: "var(--brand)" }}>3.87x</strong>
                   <div style={{ fontSize: 11, color: "#64748b" }}>Trên định mức tối thiểu</div>
                 </div>
                 <div style={{ background: "#f8fafc", padding: 12, borderRadius: 6, border: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 11.5, color: "#64748b" }}>Dòng tiền thuần (Net)</div>
-                  <strong style={{ fontSize: 17, color: "#107e3e" }}>+{formatVND(netCashflow)} đ</strong>
-                  <div style={{ fontSize: 11, color: "#107e3e" }}>Thặng dư tiền mặt</div>
+                  <strong style={{ fontSize: 17, color: "var(--brand)" }}>+{formatVND(netCashflow)} đ</strong>
+                  <div style={{ fontSize: 11, color: "var(--brand)" }}>Thặng dư tiền mặt</div>
                 </div>
               </div>
 
@@ -7445,11 +7449,11 @@ export function PaymentRequestsTab({
         </div>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Đã duyệt (Chờ chi)</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7" }}>{kpiStats.approvedCount} đề nghị</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)" }}>{kpiStats.approvedCount} đề nghị</div>
         </div>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Đã chi tiền</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#00b06b" }}>{kpiStats.paidCount} đề nghị</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)" }}>{kpiStats.paidCount} đề nghị</div>
         </div>
       </div>
 
@@ -7500,7 +7504,7 @@ export function PaymentRequestsTab({
           <button
             type="button"
             className="misa-btn-primary"
-            style={{ height: 34, padding: "0 14px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            style={{ height: 34, padding: "0 14px", fontSize: 12.5, fontWeight: 600, background: "var(--brand)", color: "#ffffff", border: "1px solid var(--brand)", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
             onClick={openNewModal}
           >
             <Plus size={14} />
@@ -7538,7 +7542,7 @@ export function PaymentRequestsTab({
                 <td style={{ textAlign: "center" }}><input type="checkbox" aria-label={`Chọn ${r.code}`} /></td>
                 <td style={{ whiteSpace: "nowrap" }}>
                   <strong
-                    style={{ color: "#00b06b", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
+                    style={{ color: "var(--brand)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
                     onClick={() => {
                       setEditingDoc({ ...r });
                       setModalMode("view");
@@ -7566,7 +7570,7 @@ export function PaymentRequestsTab({
                   {r.status === "paid" ? (
                     <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã chi tiền</span>
                   ) : r.status === "approved" ? (
-                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã duyệt</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#e0f2fe", color: "var(--brand-hover)", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Đã duyệt</span>
                   ) : r.status === "rejected" ? (
                     <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96, background: "#fee2e2", color: "#b91c1c", padding: "4px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 600, whiteSpace: "nowrap" }}>Từ chối</span>
                   ) : (
@@ -7576,7 +7580,7 @@ export function PaymentRequestsTab({
                 <td style={{ whiteSpace: "nowrap" }}>
                   {r.voucherCode ? (
                     <strong
-                      style={{ color: "#0284c7", cursor: "pointer" }}
+                      style={{ color: "var(--brand)", cursor: "pointer" }}
                       onClick={() => {
                         setEditingDoc({ ...r });
                         setModalMode("view");
@@ -7607,7 +7611,7 @@ export function PaymentRequestsTab({
                         <button
                           type="button"
                           onClick={() => void persistDoc({ ...r, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${r.code}`)}
-                          style={{ width: 53, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid #0284c7", background: "#f0f9ff", color: "#0369a1", cursor: "pointer" }}
+                          style={{ width: 53, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0, fontSize: 11.5, fontWeight: 600, borderRadius: 5, border: "1px solid var(--brand)", background: "#f0f9ff", color: "var(--brand-hover)", cursor: "pointer" }}
                         >
                           Duyệt
                         </button>
@@ -7677,7 +7681,7 @@ export function PaymentRequestsTab({
                   {editingDoc.status === "paid" ? (
                     <span style={{ background: "#dcfce7", color: "#15803d", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Đã chi tiền</span>
                   ) : editingDoc.status === "approved" ? (
-                    <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Đã phê duyệt</span>
+                    <span style={{ background: "#e0f2fe", color: "var(--brand-hover)", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Đã phê duyệt</span>
                   ) : editingDoc.status === "rejected" ? (
                     <span style={{ background: "#fee2e2", color: "#b91c1c", padding: "3px 10px", borderRadius: 12, fontSize: 11.5, fontWeight: 700 }}>Từ chối</span>
                   ) : (
@@ -7707,7 +7711,7 @@ export function PaymentRequestsTab({
                     <div style={{ fontSize: 11.5, color: "#64748b" }}>{editingDoc.dept} · {editingDoc.date}</div>
                   </div>
                   <div style={{ padding: "10px 12px", borderRadius: 8, background: editingDoc.status === "pending" ? "#fffbeb" : editingDoc.status === "rejected" ? "#fef2f2" : "#f0f9ff", border: `1px solid ${editingDoc.status === "pending" ? "#fde68a" : editingDoc.status === "rejected" ? "#fecaca" : "#bae6fd"}` }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: editingDoc.status === "pending" ? "#b45309" : editingDoc.status === "rejected" ? "#dc2626" : "#0369a1", textTransform: "uppercase" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: editingDoc.status === "pending" ? "#b45309" : editingDoc.status === "rejected" ? "#dc2626" : "var(--brand-hover)", textTransform: "uppercase" }}>
                       Bước 2 · {editingDoc.status === "pending" ? "Đang chờ phê duyệt" : editingDoc.status === "rejected" ? "Đã từ chối" : "Kế toán trưởng đã duyệt"}
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", marginTop: 2 }}>
@@ -7751,7 +7755,7 @@ export function PaymentRequestsTab({
                     </div>
                     <div>
                       <span style={{ color: "#64748b", display: "block", fontSize: 11.5 }}>Phương thức chi trả &amp; Chứng từ</span>
-                      <strong style={{ color: "#0284c7" }}>
+                      <strong style={{ color: "var(--brand)" }}>
                         {editingDoc.paymentMethod || "Tiền mặt"} {editingDoc.voucherCode ? `· Mã CT: ${editingDoc.voucherCode}` : ""}
                       </strong>
                     </div>
@@ -7786,7 +7790,7 @@ export function PaymentRequestsTab({
                     <tfoot>
                       <tr>
                         <td colSpan={4} style={{ textAlign: "right", fontWeight: 700 }}>Tổng số tiền đề nghị thanh toán:</td>
-                        <td className="numeric" style={{ fontWeight: 800, color: "#00a862", fontSize: 14 }}>{formatVND(editingDoc.amount)} đ</td>
+                        <td className="numeric" style={{ fontWeight: 800, color: "var(--brand)", fontSize: 14 }}>{formatVND(editingDoc.amount)} đ</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -7890,7 +7894,7 @@ export function PaymentRequestsTab({
                   <button
                     type="button"
                     className="misa-btn-secondary"
-                    style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0284c7", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
+                    style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "var(--brand)", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
                     onClick={() => setModalMode("edit")}
                   >
                     ✎ Chỉnh sửa thông tin
@@ -7922,7 +7926,7 @@ export function PaymentRequestsTab({
                     <button
                       type="button"
                       className="misa-btn-primary"
-                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "var(--brand)", color: "#ffffff", border: "1px solid var(--brand)", borderRadius: 6, cursor: "pointer" }}
                       onClick={() => {
                         void persistDoc({ ...editingDoc, status: "approved" }, `✓ Đã lưu và phê duyệt đề nghị chi ${editingDoc.code}`);
                         setIsModalOpen(false);
@@ -7937,7 +7941,7 @@ export function PaymentRequestsTab({
                       <button
                         type="button"
                         className="misa-btn-primary"
-                        style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#0284c7", color: "#ffffff", border: "1px solid #0284c7", borderRadius: 6, cursor: "pointer" }}
+                        style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "var(--brand)", color: "#ffffff", border: "1px solid var(--brand)", borderRadius: 6, cursor: "pointer" }}
                         onClick={() => {
                           void persistDoc({ ...editingDoc, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${editingDoc.code}`);
                           setIsModalOpen(false);
@@ -7950,7 +7954,7 @@ export function PaymentRequestsTab({
                       <button
                         type="button"
                         className="misa-btn-primary"
-                        style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                        style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "var(--brand)", color: "#ffffff", border: "1px solid var(--brand)", borderRadius: 6, cursor: "pointer" }}
                         onClick={() => {
                           const autoVoucher = editingDoc.paymentMethod === "Chuyển khoản" ? `UNC-${editingDoc.code.replace(/[^0-9]/g, "").slice(-4) || "001"}` : `PC-${editingDoc.code.replace(/[^0-9]/g, "").slice(-4) || "001"}`;
                           void persistDoc(
@@ -8164,11 +8168,11 @@ export function AdvanceSettlementTab({
         </div>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Đã chi thực tế</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#0284c7" }}>{formatVND(kpiStats.totalSpent)} đ</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)" }}>{formatVND(kpiStats.totalSpent)} đ</div>
         </div>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Thu hồi hoàn ứng</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#00b06b" }}>{formatVND(kpiStats.totalRefund)} đ</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)" }}>{formatVND(kpiStats.totalRefund)} đ</div>
         </div>
       </div>
 
@@ -8198,7 +8202,7 @@ export function AdvanceSettlementTab({
           <button
             type="button"
             className="misa-btn-primary"
-            style={{ height: 34, padding: "0 14px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            style={{ height: 34, padding: "0 14px", fontSize: 12.5, fontWeight: 600, background: "var(--brand)", color: "#ffffff", border: "1px solid var(--brand)", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
             onClick={openNewModal}
           >
             <Plus size={14} />
@@ -8237,7 +8241,7 @@ export function AdvanceSettlementTab({
                 <td style={{ textAlign: "center" }}><input type="checkbox" aria-label={`Chọn ${s.code}`} /></td>
                 <td style={{ whiteSpace: "nowrap" }}>
                   <strong
-                    style={{ color: "#00b06b", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
+                    style={{ color: "var(--brand)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
                     onClick={() => {
                       setEditingDoc({ ...s });
                       setModalMode("view");
@@ -8255,7 +8259,7 @@ export function AdvanceSettlementTab({
                 <td style={{ whiteSpace: "normal", lineHeight: 1.45, color: "#1e293b", padding: "9px 10px" }}>{s.reason}</td>
                 <td className="numeric" style={{ whiteSpace: "nowrap" }}>{formatVND(s.advanceAmount)} đ</td>
                 <td className="numeric" style={{ color: "#ea580c", fontWeight: 600, whiteSpace: "nowrap" }}>{formatVND(s.spentAmount)} đ</td>
-                <td className="numeric" style={{ color: "#00b06b", fontWeight: 700, whiteSpace: "nowrap" }}>{formatVND(s.refundAmount)} đ</td>
+                <td className="numeric" style={{ color: "var(--brand)", fontWeight: 700, whiteSpace: "nowrap" }}>{formatVND(s.refundAmount)} đ</td>
                 <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                   <div>
                     {s.status === "settled" ? (
@@ -8267,7 +8271,7 @@ export function AdvanceSettlementTab({
                   {s.receiptCode && s.receiptCode !== "-" && (
                     <div style={{ marginTop: 3 }}>
                       <strong
-                        style={{ color: "#0284c7", cursor: "pointer", fontSize: 11.5 }}
+                        style={{ color: "var(--brand)", cursor: "pointer", fontSize: 11.5 }}
                         onClick={() => {
                           setEditingDoc({ ...s });
                           setModalMode("view");
@@ -8523,7 +8527,7 @@ export function AdvanceSettlementTab({
                   <button
                     type="button"
                     className="misa-btn-secondary"
-                    style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0284c7", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
+                    style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "var(--brand)", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
                     onClick={() => setModalMode("edit")}
                   >
                     ✎ Chỉnh sửa bảng quyết toán
@@ -8555,7 +8559,7 @@ export function AdvanceSettlementTab({
                     <button
                       type="button"
                       className="misa-btn-primary"
-                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "var(--brand)", color: "#ffffff", border: "1px solid var(--brand)", borderRadius: 6, cursor: "pointer" }}
                       onClick={() => {
                         const refund = Math.max(0, (Number(editingDoc.advanceAmount) || 0) - (Number(editingDoc.spentAmount) || 0));
                         const autoReceipt = refund > 0 ? (editingDoc.receiptCode || `PT-HU-${editingDoc.code.replace(/[^0-9]/g, "").slice(-3) || "006"}`) : "-";
@@ -8574,7 +8578,7 @@ export function AdvanceSettlementTab({
                     <button
                       type="button"
                       className="misa-btn-primary"
-                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#00a862", color: "#ffffff", border: "1px solid #00a862", borderRadius: 6, cursor: "pointer" }}
+                      style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "var(--brand)", color: "#ffffff", border: "1px solid var(--brand)", borderRadius: 6, cursor: "pointer" }}
                       onClick={() => {
                         const refund = Math.max(0, (Number(editingDoc.advanceAmount) || 0) - (Number(editingDoc.spentAmount) || 0));
                         const autoReceipt = refund > 0 ? (editingDoc.receiptCode || `PT-HU-${editingDoc.code.replace(/[^0-9]/g, "").slice(-3) || "006"}`) : "-";
@@ -9522,7 +9526,7 @@ export default function MisaCashWorkspace({
                   border: "1px solid #a7f3d0",
                   display: "grid",
                   placeItems: "center",
-                  color: "#00b06b",
+                  color: "var(--brand)",
                   flexShrink: 0,
                 }}
               >
@@ -9532,7 +9536,7 @@ export default function MisaCashWorkspace({
                 <div style={{ fontSize: 13, color: "#334155", fontWeight: 500, marginBottom: 2 }}>
                   Tổng thu đầu năm đến hiện tại
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "#00b06b" }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)" }}>
                   {formatVND(totalReceipt)}
                 </div>
               </div>
@@ -9818,8 +9822,8 @@ export default function MisaCashWorkspace({
                   border: "1px solid #d1d5db",
                   borderRadius: 6,
                   background: cashExcelMenuOpen ? "#f0fdf4" : "#ffffff",
-                  borderColor: cashExcelMenuOpen ? "#00a862" : "#d1d5db",
-                  color: cashExcelMenuOpen ? "#00a862" : "#334155",
+                  borderColor: cashExcelMenuOpen ? "var(--brand)" : "#d1d5db",
+                  color: cashExcelMenuOpen ? "var(--brand)" : "#334155",
                   fontSize: 12.5,
                   fontWeight: 500,
                   display: "inline-flex",
@@ -9927,7 +9931,7 @@ export default function MisaCashWorkspace({
                 style={{
                   height: 34,
                   padding: "0 14px",
-                  background: "#00b06b",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 6,
@@ -10052,7 +10056,7 @@ export default function MisaCashWorkspace({
                 style={{
                   height: 34,
                   padding: "0 14px",
-                  background: "#00b06b",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 6,
@@ -10329,7 +10333,7 @@ export default function MisaCashWorkspace({
 <td>{t.date.split("-").reverse().join("/")}</td>,
 <td>
                     <strong
-                      style={{ color: "#00b06b", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
+                      style={{ color: "var(--brand)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedRowId(t.id);
@@ -10554,7 +10558,7 @@ export default function MisaCashWorkspace({
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <strong style={{ fontSize: 13, color: "#0f172a" }}>
-                  Chi tiết hạch toán: <span style={{ color: "#00a862" }}>{selectedTransaction.code}</span> — {selectedTransaction.description}
+                  Chi tiết hạch toán: <span style={{ color: "var(--brand)" }}>{selectedTransaction.code}</span> — {selectedTransaction.description}
                 </strong>
                 <span
                   style={{
@@ -10586,7 +10590,7 @@ export default function MisaCashWorkspace({
                 <button
                   type="button"
                   className="misa-btn-secondary"
-                  style={{ height: 26, padding: "0 10px", fontSize: 11.5, fontWeight: 600, color: "#0284c7", borderColor: "#bae6fd", background: "#f0f9ff" }}
+                  style={{ height: 26, padding: "0 10px", fontSize: 11.5, fontWeight: 600, color: "var(--brand)", borderColor: "#bae6fd", background: "#f0f9ff" }}
                   onClick={() => setViewingCashVoucher(selectedTransaction)}
                 >
                   {selectedTransaction.status === "posted" ? `Xem chi tiết (${selectedTransaction.code})` : `Sửa chứng từ (${selectedTransaction.code})`}
@@ -10642,7 +10646,7 @@ export default function MisaCashWorkspace({
                     <tr key={row.id}>
                       <td>{(cashDetailVisiblePage - 1) * cashDetailSize + index + 1}</td>
                       <td>{(selectedTransaction.postingDate || selectedTransaction.date || "").split("-").reverse().join("/")}</td>
-                      <td><strong style={{ color: "#00a862" }}>{selectedTransaction.code}</strong></td>
+                      <td><strong style={{ color: "var(--brand)" }}>{selectedTransaction.code}</strong></td>
                       <td>{row.description || selectedTransaction.description}</td>
                       <td><strong style={{ color: "#2563eb" }}>{row.debit || (selectedTransaction.kind === "receipt" ? "1111" : "331")}</strong></td>
                       <td><strong style={{ color: "#7c3aed" }}>{row.credit || (selectedTransaction.kind === "receipt" ? "131" : "1111")}</strong></td>
@@ -10986,7 +10990,7 @@ export default function MisaCashWorkspace({
                               value={editCashCode}
                               readOnly={isPosted}
                               onChange={(e) => setEditCashCode(e.target.value)}
-                              style={{ fontWeight: 700, color: "#00a862" }}
+                              style={{ fontWeight: 700, color: "var(--brand)" }}
                             />
                           </div>
                         </div>
@@ -11221,7 +11225,7 @@ export default function MisaCashWorkspace({
                           type="button"
                           className="misa-btn-primary"
                           disabled={isSavingCashEdit}
-                          style={{ background: "#00a862", border: "none", fontWeight: 700 }}
+                          style={{ background: "var(--brand)", border: "none", fontWeight: 700 }}
                           onClick={() => void handleSaveCashVoucherEdit(true)}
                         >
                           Cất & Ghi sổ
@@ -11317,7 +11321,7 @@ export default function MisaCashWorkspace({
           </button>
           <button
             className="misa-btn-secondary"
-            onClick={() => notify("Đang in biên bản kiểm kê quỹ tiền mặt...")}
+            onClick={async (event) => { try { await printVisibleTable(event.currentTarget, "biên bản kiểm kê quỹ tiền mặt"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
           >
             <Printer size={14} style={{ marginRight: 4 }} />
             In biên bản kiểm kê
@@ -11348,7 +11352,7 @@ export default function MisaCashWorkspace({
             </thead>
             <tbody>
               <tr>
-                <td><strong style={{ color: "#00b06b" }}>KK00002</strong></td>
+                <td><strong style={{ color: "var(--brand)" }}>KK00002</strong></td>
                 <td>25/09/2026</td>
                 <td>Kiểm kê đột xuất quỹ tiền mặt định kỳ</td>
                 <td className="numeric">96.800.000</td>
@@ -11358,7 +11362,7 @@ export default function MisaCashWorkspace({
                 <td><span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11 }}>Đã duyệt</span></td>
               </tr>
               <tr>
-                <td><strong style={{ color: "#00b06b" }}>KK00001</strong></td>
+                <td><strong style={{ color: "var(--brand)" }}>KK00001</strong></td>
                 <td>31/08/2026</td>
                 <td>Kiểm kê chốt quỹ tiền mặt cuối tháng 8</td>
                 <td className="numeric">85.200.000</td>
@@ -11418,7 +11422,7 @@ export default function MisaCashWorkspace({
               <tr>
                 <td><strong>Cộng tiền mặt thực tế</strong></td>
                 <td className="numeric"><strong>515 tờ</strong></td>
-                <td className="numeric"><strong style={{ color: "#00b06b" }}>96.800.000 đ</strong></td>
+                <td className="numeric"><strong style={{ color: "var(--brand)" }}>96.800.000 đ</strong></td>
               </tr>
             </tbody>
           </table>
@@ -11535,7 +11539,7 @@ export default function MisaCashWorkspace({
           </h2>
 
           <div
-            className="ref-process-canvas"
+            className="ref-process-canvas sv-flow-nodes"
             style={{
               position: "relative",
               height: 310,
@@ -11545,7 +11549,7 @@ export default function MisaCashWorkspace({
           >
             {/* SVG Connecting Flow Lines with Arrows */}
             <svg
-              className="ref-flow-lines"
+              className="ref-flow-lines sv-flow-connector"
               viewBox="0 0 650 300"
               preserveAspectRatio="none"
               aria-hidden="true"
@@ -11623,7 +11627,7 @@ export default function MisaCashWorkspace({
             )}
 
             {/* Node 1: Đề nghị chi tiền (Left, aligned with Chi tiền) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "13%",
@@ -11666,7 +11670,7 @@ export default function MisaCashWorkspace({
             </div>
 
             {/* Node 2: Thu tiền (Top Center) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "38%",
@@ -11823,7 +11827,7 @@ export default function MisaCashWorkspace({
             </div>
 
             {/* Node 3: Chi tiền (Bottom Center) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "38%",
@@ -12022,7 +12026,7 @@ export default function MisaCashWorkspace({
             </div>
 
             {/* Node 4: Kiểm kê quỹ (Right, middle vertical) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "63%",
@@ -12073,7 +12077,7 @@ export default function MisaCashWorkspace({
             </div>
 
             {/* Node 5: Dự báo dòng tiền (Right, connected to arrow) */}
-            <div
+            <div className="sv-flow-node"
               style={{
                 position: "absolute",
                 left: "87%",
@@ -12105,7 +12109,7 @@ export default function MisaCashWorkspace({
                 </span>
                 <span
                   className="ref-gold-icon"
-                  style={{ background: "#0284c7", borderColor: "#38bdf8" }}
+                  style={{ background: "var(--brand)", borderColor: "#38bdf8" }}
                 >
                   <Calculator size={14} strokeWidth={2.2} />
                 </span>
@@ -12203,7 +12207,7 @@ export default function MisaCashWorkspace({
           >
             <span
               style={{
-                color: "#0284c7",
+                color: "var(--brand)",
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -12271,7 +12275,7 @@ export default function MisaCashWorkspace({
             }}
             onClick={() => navigate((href?.("/directory") || "/directory") + ((href?.("/directory") || "/directory").includes("?") ? "&" : "?") + "directory=" + encodeURIComponent("Nhà cung cấp"))}
           >
-            <Building2 size={20} style={{ color: "#00b06b" }} />
+            <Building2 size={20} style={{ color: "var(--brand)" }} />
             <span>Nhà cung cấp</span>
           </button>
 

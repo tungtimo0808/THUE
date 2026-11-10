@@ -27,6 +27,7 @@ import {
 
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 
+import { showPendingFeature } from "./global-popup";
 export function formatVND(amount: number): string {
   return new Intl.NumberFormat("vi-VN").format(amount);
 }
@@ -494,7 +495,7 @@ export function PurchaseOrderModal({
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button type="button" className="misa-purchase-link-btn" title="Hướng dẫn sử dụng">
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </button>
@@ -716,7 +717,7 @@ export function PurchaseOrderModal({
 
             {/* Row 5: Tham chiếu */}
             <div style={{ marginTop: 2 }}>
-              <span style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 600 }}>
+              <span style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 600 }}>
                 Tham chiếu ...
               </span>
             </div>
@@ -801,10 +802,10 @@ export function PurchaseOrderModal({
                   height: 36,
                   background: "transparent",
                   border: "none",
-                  borderBottom: "2px solid #00b06b",
+                  borderBottom: "2px solid var(--brand)",
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#00b06b",
+                  color: "var(--brand)",
                   cursor: "pointer",
                 }}
               >
@@ -1031,12 +1032,12 @@ export function PurchaseOrderModal({
 
               {/* Attachment Dropzone */}
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, padding: "10px 14px", background: "#f8fafc", display: "flex", alignItems: "center", gap: 12 }}>
-                <Upload size={18} style={{ color: "#00b06b" }} />
+                <Upload size={18} style={{ color: "var(--brand)" }} />
                 <div>
                   <div style={{ fontSize: 12, color: "#374151" }}>
-                    <span style={{ color: "#0284c7", cursor: "pointer", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                    <span style={{ color: "var(--brand)", cursor: "pointer", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                   </div>
-                  <div style={{ fontSize: 10.5, color: "#94a3b8" }}>Đính kèm: Dung lượng tối đa 5MB</div>
+                  <div style={{ fontSize: 10.5, color: "#64748b" }}>Đính kèm: Dung lượng tối đa 5MB</div>
                 </div>
               </div>
             </div>
@@ -1333,7 +1334,7 @@ export function PurchaseContractModal({
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button type="button" className="misa-purchase-link-btn" title="Hướng dẫn sử dụng">
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </button>
@@ -1409,7 +1410,7 @@ export function PurchaseContractModal({
                       onChange={(e) => setSignDate(e.target.value)}
                       style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12 }}
                     />
-                    <Calendar size={13} style={{ color: "#94a3b8", flexShrink: 0 }} />
+                    <Calendar size={13} style={{ color: "#64748b", flexShrink: 0 }} />
                   </div>
                 </div>
               </div>
@@ -1486,8 +1487,8 @@ export function PurchaseContractModal({
               {/* Row 4: Tham chiếu */}
               <div style={{ paddingTop: 2 }}>
                 <span
-                  style={{ color: "#0284c7", fontSize: 12.5, cursor: "pointer", fontWeight: 500 }}
-                  onClick={() => alert("Chọn chứng từ tham chiếu")}
+                  style={{ color: "var(--brand)", fontSize: 12.5, cursor: "pointer", fontWeight: 500 }}
+                  onClick={() => showPendingFeature("Chọn chứng từ tham chiếu")}
                 >
                   Tham chiếu ...
                 </span>
@@ -1526,7 +1527,7 @@ export function PurchaseContractModal({
                       style={{
                         background: "none",
                         border: "none",
-                        color: "#00b06b",
+                        color: "var(--brand)",
                         cursor: "pointer",
                         padding: "2px",
                         display: "grid",
@@ -1663,7 +1664,7 @@ export function PurchaseContractModal({
                       onChange={(e) => setDeliveryDeadline(e.target.value)}
                       style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12 }}
                     />
-                    <Calendar size={13} style={{ color: "#94a3b8", flexShrink: 0 }} />
+                    <Calendar size={13} style={{ color: "#64748b", flexShrink: 0 }} />
                   </div>
                 </div>
 
@@ -1688,7 +1689,7 @@ export function PurchaseContractModal({
                       onChange={(e) => setPaymentDeadline(e.target.value)}
                       style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12 }}
                     />
-                    <Calendar size={13} style={{ color: "#94a3b8", flexShrink: 0 }} />
+                    <Calendar size={13} style={{ color: "#64748b", flexShrink: 0 }} />
                   </div>
                 </div>
               </div>
@@ -1713,7 +1714,7 @@ export function PurchaseContractModal({
               style={{
                 background: "none",
                 border: "none",
-                color: "#00a862",
+                color: "var(--brand)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -1811,7 +1812,7 @@ export function PurchaseContractModal({
                         style={{
                           background: "none",
                           border: "none",
-                          color: "#00b06b",
+                          color: "var(--brand)",
                           cursor: "pointer",
                           padding: "2px",
                           display: "grid",
@@ -1845,7 +1846,7 @@ export function PurchaseContractModal({
                       id="purchasePreExisting"
                       checked={isPreExisting}
                       onChange={(e) => setIsPreExisting(e.target.checked)}
-                      style={{ width: 14, height: 14, cursor: "pointer", accentColor: "#00b06b" }}
+                      style={{ width: 14, height: 14, cursor: "pointer", accentColor: "var(--brand)" }}
                     />
                     <label
                       htmlFor="purchasePreExisting"
@@ -1900,7 +1901,7 @@ export function PurchaseContractModal({
                         onChange={(e) => setLiquidationDate(e.target.value)}
                         style={{ border: "none", outline: "none", flex: 1, minWidth: 0, fontSize: 12 }}
                       />
-                      <Calendar size={13} style={{ color: "#94a3b8", flexShrink: 0 }} />
+                      <Calendar size={13} style={{ color: "#64748b", flexShrink: 0 }} />
                     </div>
                   </div>
 
@@ -2503,9 +2504,9 @@ export function PurchaseContractModal({
                     gap: 8,
                   }}
                 >
-                  <Upload size={14} style={{ color: "#00b06b" }} />
+                  <Upload size={14} style={{ color: "var(--brand)" }} />
                   <span style={{ fontSize: 11.5, color: "#475569" }}>
-                    <span style={{ color: "#0284c7", fontWeight: 600 }}>Chọn tệp</span> đính kèm
+                    <span style={{ color: "var(--brand)", fontWeight: 600 }}>Chọn tệp</span> đính kèm
                   </span>
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#059669" }}>
@@ -2982,7 +2983,7 @@ export function PurchaseVoucherModal({
                   height: 30,
                   padding: "0 10px",
                   borderRadius: 4,
-                  border: "1.5px solid #00b06b",
+                  border: "1.5px solid var(--brand)",
                   background: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -2993,7 +2994,7 @@ export function PurchaseVoucherModal({
                 }}
               >
                 <span>{purchaseType}</span>
-                <ChevronDown size={14} style={{ color: "#00b06b", strokeWidth: 2.5 }} />
+                <ChevronDown size={14} style={{ color: "var(--brand)", strokeWidth: 2.5 }} />
               </div>
 
               {/* Dropdown Menu (Exact match Image 1) */}
@@ -3009,7 +3010,7 @@ export function PurchaseVoucherModal({
                       top: "calc(100% + 4px)",
                       left: 0,
                       background: "#ffffff",
-                      border: "1px solid #00b06b",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
                       zIndex: 120,
@@ -3028,14 +3029,14 @@ export function PurchaseVoucherModal({
                             fontSize: 13,
                             fontWeight: isSelected ? 600 : 500,
                             color: isSelected ? "#ffffff" : "#1e293b",
-                            background: isSelected ? "#00b06b" : "#ffffff",
+                            background: isSelected ? "var(--brand)" : "#ffffff",
                             cursor: "pointer",
                             transition: "background 0.12s",
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
                               e.currentTarget.style.background = "#f0fdf4";
-                              e.currentTarget.style.color = "#00b06b";
+                              e.currentTarget.style.color = "var(--brand)";
                             }
                           }}
                           onMouseLeave={(e) => {
@@ -3076,7 +3077,7 @@ export function PurchaseVoucherModal({
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button type="button" className="misa-purchase-link-btn" title="Hướng dẫn sử dụng">
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </button>
@@ -3104,7 +3105,7 @@ export function PurchaseVoucherModal({
                   name="purchasePayment"
                   checked={paymentOption === "unpaid"}
                   onChange={() => handlePaymentOptionChange("unpaid")}
-                  style={{ accentColor: "#00b06b" }}
+                  style={{ accentColor: "var(--brand)" }}
                 />
                 <span>Chưa thanh toán</span>
               </label>
@@ -3115,7 +3116,7 @@ export function PurchaseVoucherModal({
                   name="purchasePayment"
                   checked={paymentOption === "paid"}
                   onChange={() => handlePaymentOptionChange("paid")}
-                  style={{ accentColor: "#00b06b" }}
+                  style={{ accentColor: "var(--brand)" }}
                 />
                 <span>Thanh toán ngay</span>
               </label>
@@ -3184,8 +3185,8 @@ export function PurchaseVoucherModal({
                 padding: "7px 4px",
                 background: "transparent",
                 border: "none",
-                borderBottom: activeSubTab === "receipt" ? "2px solid #00b06b" : "2px solid transparent",
-                color: activeSubTab === "receipt" ? "#00b06b" : "#475569",
+                borderBottom: activeSubTab === "receipt" ? "2px solid var(--brand)" : "2px solid transparent",
+                color: activeSubTab === "receipt" ? "var(--brand)" : "#475569",
                 fontSize: 12.5,
                 fontWeight: activeSubTab === "receipt" ? 700 : 500,
                 cursor: "pointer",
@@ -3203,8 +3204,8 @@ export function PurchaseVoucherModal({
                 padding: "7px 4px",
                 background: "transparent",
                 border: "none",
-                borderBottom: activeSubTab === "payment" ? "2px solid #00b06b" : "2px solid transparent",
-                color: activeSubTab === "payment" ? "#00b06b" : "#475569",
+                borderBottom: activeSubTab === "payment" ? "2px solid var(--brand)" : "2px solid transparent",
+                color: activeSubTab === "payment" ? "var(--brand)" : "#475569",
                 fontSize: 12.5,
                 fontWeight: activeSubTab === "payment" ? 700 : 500,
                 cursor: "pointer",
@@ -3222,8 +3223,8 @@ export function PurchaseVoucherModal({
                 padding: "7px 4px",
                 background: "transparent",
                 border: "none",
-                borderBottom: activeSubTab === "invoice" ? "2px solid #00b06b" : "2px solid transparent",
-                color: activeSubTab === "invoice" ? "#00b06b" : "#475569",
+                borderBottom: activeSubTab === "invoice" ? "2px solid var(--brand)" : "2px solid transparent",
+                color: activeSubTab === "invoice" ? "var(--brand)" : "#475569",
                 fontSize: 12.5,
                 fontWeight: activeSubTab === "invoice" ? 700 : 500,
                 cursor: "pointer",
@@ -3257,7 +3258,7 @@ export function PurchaseVoucherModal({
                           type="button"
                           onClick={onOpenSupplierModal}
                           title="Thêm nhà cung cấp"
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)", boxSizing: "border-box" }}
                         >
                           <Plus size={14} style={{ strokeWidth: 2.5 }} />
                         </button>
@@ -3309,7 +3310,7 @@ export function PurchaseVoucherModal({
                               onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                             >
-                              <strong style={{ color: "#00b06b" }}>{s.code}</strong> - {s.name}
+                              <strong style={{ color: "var(--brand)" }}>{s.code}</strong> - {s.name}
                               <div style={{ fontSize: 11, color: "#64748b" }}>{s.address}</div>
                             </div>
                           ))}
@@ -3371,7 +3372,7 @@ export function PurchaseVoucherModal({
                             const newEmp = prompt("Nhập tên nhân viên mua hàng mới:");
                             if (newEmp) setEmployee(newEmp);
                           }}
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)", boxSizing: "border-box" }}
                         >
                           <Plus size={14} />
                         </button>
@@ -3415,7 +3416,7 @@ export function PurchaseVoucherModal({
                       )}
                       <span
                         onClick={() => setShowRefModal(true)}
-                        style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                        style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                       >
                         Tham chiếu {purchaseType === "Mua hàng nhập khẩu nhập kho" ? "..." : "--"}
                       </span>
@@ -3424,7 +3425,7 @@ export function PurchaseVoucherModal({
                     <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 8 }}>
                       <span
                         onClick={() => setShowRefModal(true)}
-                        style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                        style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                       >
                         Tham chiếu {purchaseType === "Mua hàng nhập khẩu nhập kho" ? "..." : "--"}
                       </span>
@@ -3443,7 +3444,7 @@ export function PurchaseVoucherModal({
                             const d = prompt("Nhập số ngày được nợ mới:", String(debtDays));
                             if (d) setDebtDays(d);
                           }}
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00b06b", cursor: "pointer", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer", boxSizing: "border-box" }}
                         >
                           <Plus size={13} />
                         </button>
@@ -3493,7 +3494,7 @@ export function PurchaseVoucherModal({
                           type="button"
                           onClick={onOpenSupplierModal}
                           title="Thêm nhà cung cấp"
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)", boxSizing: "border-box" }}
                         >
                           <Plus size={14} style={{ strokeWidth: 2.5 }} />
                         </button>
@@ -3545,7 +3546,7 @@ export function PurchaseVoucherModal({
                               onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                             >
-                              <strong style={{ color: "#00b06b" }}>{s.code}</strong> - {s.name}
+                              <strong style={{ color: "var(--brand)" }}>{s.code}</strong> - {s.name}
                               <div style={{ fontSize: 11, color: "#64748b" }}>{s.address}</div>
                             </div>
                           ))}
@@ -3659,7 +3660,7 @@ export function PurchaseVoucherModal({
                                 const newEmp = prompt("Nhập tên nhân viên mua hàng mới:");
                                 if (newEmp) setEmployee(newEmp);
                               }}
-                              style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}
+                              style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)", boxSizing: "border-box" }}
                             >
                               <Plus size={14} />
                             </button>
@@ -3684,7 +3685,7 @@ export function PurchaseVoucherModal({
                   <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
                     <span
                       onClick={() => setShowRefModal(true)}
-                      style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </span>
@@ -3710,7 +3711,7 @@ export function PurchaseVoucherModal({
                           type="button"
                           onClick={onOpenSupplierModal}
                           title="Thêm nhà cung cấp"
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)", boxSizing: "border-box" }}
                         >
                           <Plus size={14} style={{ strokeWidth: 2.5 }} />
                         </button>
@@ -3762,7 +3763,7 @@ export function PurchaseVoucherModal({
                               onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                             >
-                              <strong style={{ color: "#00b06b" }}>{s.code}</strong> - {s.name}
+                              <strong style={{ color: "var(--brand)" }}>{s.code}</strong> - {s.name}
                               <div style={{ fontSize: 11, color: "#64748b" }}>{s.address}</div>
                             </div>
                           ))}
@@ -3806,7 +3807,7 @@ export function PurchaseVoucherModal({
                   <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: paymentOption === "unpaid" ? 8 : 0 }}>
                     <span
                       onClick={() => setShowRefModal(true)}
-                      style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     >
                       Tham chiếu {isImport ? "--" : (paymentOption === "unpaid" ? "--" : "...")}
                     </span>
@@ -3824,7 +3825,7 @@ export function PurchaseVoucherModal({
                             const d = prompt("Nhập số ngày được nợ mới:", String(debtDays));
                             if (d) setDebtDays(d);
                           }}
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00b06b", cursor: "pointer", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer", boxSizing: "border-box" }}
                         >
                           <Plus size={13} />
                         </button>
@@ -4008,8 +4009,8 @@ export function PurchaseVoucherModal({
                   height: 36,
                   background: "transparent",
                   border: "none",
-                  borderBottom: activeGridTab === "goods" ? "2px solid #00b06b" : "none",
-                  color: activeGridTab === "goods" ? "#00b06b" : "#475569",
+                  borderBottom: activeGridTab === "goods" ? "2px solid var(--brand)" : "none",
+                  color: activeGridTab === "goods" ? "var(--brand)" : "#475569",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -4027,8 +4028,8 @@ export function PurchaseVoucherModal({
                     height: 36,
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeGridTab === "tax" ? "2px solid #00b06b" : "none",
-                    color: activeGridTab === "tax" ? "#00b06b" : "#475569",
+                    borderBottom: activeGridTab === "tax" ? "2px solid var(--brand)" : "none",
+                    color: activeGridTab === "tax" ? "var(--brand)" : "#475569",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -4047,8 +4048,8 @@ export function PurchaseVoucherModal({
                     height: 36,
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeGridTab === "customs_fee" ? "2px solid #00b06b" : "none",
-                    color: activeGridTab === "customs_fee" ? "#00b06b" : "#475569",
+                    borderBottom: activeGridTab === "customs_fee" ? "2px solid var(--brand)" : "none",
+                    color: activeGridTab === "customs_fee" ? "var(--brand)" : "#475569",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -4067,8 +4068,8 @@ export function PurchaseVoucherModal({
                     height: 36,
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeGridTab === "inward_fee" ? "2px solid #00b06b" : "none",
-                    color: activeGridTab === "inward_fee" ? "#00b06b" : "#475569",
+                    borderBottom: activeGridTab === "inward_fee" ? "2px solid var(--brand)" : "none",
+                    color: activeGridTab === "inward_fee" ? "var(--brand)" : "#475569",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -4086,8 +4087,8 @@ export function PurchaseVoucherModal({
                     height: 36,
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeGridTab === "costs" ? "2px solid #00b06b" : "none",
-                    color: activeGridTab === "costs" ? "#00b06b" : "#475569",
+                    borderBottom: activeGridTab === "costs" ? "2px solid var(--brand)" : "none",
+                    color: activeGridTab === "costs" ? "var(--brand)" : "#475569",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -4105,8 +4106,8 @@ export function PurchaseVoucherModal({
                     height: 36,
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeGridTab === "costs" ? "2px solid #00b06b" : "none",
-                    color: activeGridTab === "costs" ? "#00b06b" : "#475569",
+                    borderBottom: activeGridTab === "costs" ? "2px solid var(--brand)" : "none",
+                    color: activeGridTab === "costs" ? "var(--brand)" : "#475569",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -4499,7 +4500,7 @@ export function PurchaseVoucherModal({
                       <td><input type="number" value={row.exciseTaxRate || 0} onChange={(e) => handleItemChange(idx, "exciseTaxRate", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
                       <td style={{ textAlign: "right" }}>{formatVND(row.exciseTaxAmount || 0)}</td>
                       <td><input type="number" value={row.vatRate} onChange={(e) => handleItemChange(idx, "vatRate", Number(e.target.value) || 0)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5, textAlign: "right" }} /></td>
-                      <td style={{ textAlign: "right", color: "#00b06b", fontWeight: 600 }}>{formatVND(row.vatAmount)}</td>
+                      <td style={{ textAlign: "right", color: "var(--brand)", fontWeight: 600 }}>{formatVND(row.vatAmount)}</td>
                       {showAccounts && <td><input type="text" value={row.vatAccount} onChange={(e) => handleItemChange(idx, "vatAccount", e.target.value)} style={{ width: "100%", height: 26, border: "none", outline: "none", fontSize: 12.5 }} /></td>}
                     </tr>
                   ))}
@@ -4527,7 +4528,7 @@ export function PurchaseVoucherModal({
                       <td style={{ textAlign: "center", color: "#64748b" }}>{idx + 1}</td>
                       <td>{fee.postingDate}</td>
                       <td>{fee.docDate}</td>
-                      <td style={{ fontWeight: 600, color: "#0284c7" }}>{fee.docNo}</td>
+                      <td style={{ fontWeight: 600, color: "var(--brand)" }}>{fee.docNo}</td>
                       <td>{fee.desc}</td>
                       <td style={{ textAlign: "right", fontWeight: 600 }}>{formatVND(fee.amount)}</td>
                       {showAccounts && <td>{fee.expenseAccount}</td>}
@@ -4557,7 +4558,7 @@ export function PurchaseVoucherModal({
                     <tr key={fee.id}>
                       <td style={{ textAlign: "center", color: "#64748b" }}>{idx + 1}</td>
                       <td>{fee.docDate}</td>
-                      <td style={{ fontWeight: 600, color: "#0284c7" }}>{fee.docNo}</td>
+                      <td style={{ fontWeight: 600, color: "var(--brand)" }}>{fee.docNo}</td>
                       <td>{fee.supplier}</td>
                       <td>{fee.desc}</td>
                       <td style={{ textAlign: "right", fontWeight: 600 }}>{formatVND(fee.amount)}</td>
@@ -4589,11 +4590,11 @@ export function PurchaseVoucherModal({
                 <option value="20">20</option>
                 <option value="50">50</option>
               </select>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>|&lt;</span>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
-              <strong style={{ color: "#00b06b", padding: "0 4px" }}>1</strong>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;|</span>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>|&lt;</span>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
+              <strong style={{ color: "var(--brand)", padding: "0 4px" }}>1</strong>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;|</span>
             </div>
           </div>
 
@@ -4616,7 +4617,7 @@ export function PurchaseVoucherModal({
                 <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
                   <Paperclip size={13} style={{ color: "#64748b" }} />
                   <span style={{ fontWeight: 600 }}>Đính kèm</span>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>Dung lượng tối đa 5MB</span>
+                  <span style={{ fontSize: 11, color: "#64748b" }}>Dung lượng tối đa 5MB</span>
                 </div>
                 <div
                   style={{
@@ -4631,7 +4632,7 @@ export function PurchaseVoucherModal({
                     textAlign: "center",
                   }}
                 >
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "#0284c7" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--brand)" }}>
                     <Upload size={15} />
                     <span><strong>Chọn tệp</strong> hoặc kéo và thả tệp vào đây</span>
                   </div>
@@ -4725,7 +4726,7 @@ export function PurchaseVoucherModal({
                   width: 32,
                   height: 18,
                   borderRadius: 10,
-                  background: showAccounts ? "#00b06b" : "#cbd5e1",
+                  background: showAccounts ? "var(--brand)" : "#cbd5e1",
                   position: "relative",
                   transition: "background 0.2s",
                 }}
@@ -4746,7 +4747,7 @@ export function PurchaseVoucherModal({
               </div>
               <span style={{ fontSize: 12, color: "#334155", fontWeight: 500 }}>Hiển thị tài khoản</span>
             </div>
-            <span style={{ fontSize: 12, color: "#94a3b8" }}>|</span>
+            <span style={{ fontSize: 12, color: "#64748b" }}>|</span>
             <span style={{ fontSize: 12, color: "#64748b" }}>F3 - Tìm nhanh, F9 - Thêm nhanh</span>
           </div>
 
@@ -4793,13 +4794,13 @@ export function PurchaseVoucherModal({
                     </select>
                   </div>
                 </div>
-                <div style={{ fontSize: 12.5, color: "#94a3b8", textAlign: "center", padding: "16px 0" }}>
+                <div style={{ fontSize: 12.5, color: "#64748b", textAlign: "center", padding: "16px 0" }}>
                   Chưa có chứng từ tham chiếu nào được chọn.
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
                 <button type="button" onClick={() => setShowRefModal(false)} style={{ padding: "6px 16px", borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", cursor: "pointer", fontSize: 13 }}>Đóng</button>
-                <button type="button" onClick={() => setShowRefModal(false)} style={{ padding: "6px 16px", borderRadius: 4, border: "none", background: "#00b06b", color: "#ffffff", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>Đồng ý</button>
+                <button type="button" onClick={() => setShowRefModal(false)} style={{ padding: "6px 16px", borderRadius: 4, border: "none", background: "var(--brand)", color: "#ffffff", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>Đồng ý</button>
               </div>
             </div>
           </div>
@@ -4814,7 +4815,7 @@ export function PurchaseVoucherModal({
                 <button type="button" onClick={() => setShowDebtLookup(false)} style={{ border: "none", background: "transparent", cursor: "pointer" }}><X size={16} /></button>
               </div>
               <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>
-                <div><strong>Mã NCC:</strong> <span style={{ color: "#00b06b" }}>{supplierCode}</span></div>
+                <div><strong>Mã NCC:</strong> <span style={{ color: "var(--brand)" }}>{supplierCode}</span></div>
                 <div><strong>Tên NCC:</strong> {supplierName}</div>
                 <div style={{ marginTop: 10, padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
@@ -4829,14 +4830,14 @@ export function PurchaseVoucherModal({
                     <span>Số đã thanh toán trong kỳ:</span>
                     <strong>0 đ</strong>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #cbd5e1", paddingTop: 8, color: "#00b06b", fontWeight: 700 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #cbd5e1", paddingTop: 8, color: "var(--brand)", fontWeight: 700 }}>
                     <span>Số dư nợ hiện tại:</span>
                     <strong>0 đ</strong>
                   </div>
                 </div>
               </div>
               <div style={{ textAlign: "right", marginTop: 16 }}>
-                <button type="button" onClick={() => setShowDebtLookup(false)} style={{ padding: "7px 20px", background: "#00b06b", color: "#fff", border: "none", borderRadius: 4, fontWeight: 600, cursor: "pointer" }}>Đóng</button>
+                <button type="button" onClick={() => setShowDebtLookup(false)} style={{ padding: "7px 20px", background: "var(--brand)", color: "#fff", border: "none", borderRadius: 4, fontWeight: 600, cursor: "pointer" }}>Đóng</button>
               </div>
             </div>
           </div>
@@ -4985,7 +4986,7 @@ export function PurchaseReturnModal({
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button type="button" className="misa-purchase-link-btn" title="Hướng dẫn sử dụng">
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </button>
@@ -5005,7 +5006,7 @@ export function PurchaseReturnModal({
                   name="returnOption"
                   checked={returnOption === "debt_reduction"}
                   onChange={() => setReturnOption("debt_reduction")}
-                  style={{ accentColor: "#00b06b" }}
+                  style={{ accentColor: "var(--brand)" }}
                 />
                 <span>Giảm trừ công nợ</span>
               </label>
@@ -5016,7 +5017,7 @@ export function PurchaseReturnModal({
                   name="returnOption"
                   checked={returnOption === "cash"}
                   onChange={() => setReturnOption("cash")}
-                  style={{ accentColor: "#00b06b" }}
+                  style={{ accentColor: "var(--brand)" }}
                 />
                 <span>Thu tiền mặt</span>
               </label>
@@ -5027,7 +5028,7 @@ export function PurchaseReturnModal({
                 type="checkbox"
                 checked={returnFromStock}
                 onChange={(e) => setReturnFromStock(e.target.checked)}
-                style={{ accentColor: "#00b06b" }}
+                style={{ accentColor: "var(--brand)" }}
               />
               <span>Trả lại hàng trong kho</span>
             </label>
@@ -5090,7 +5091,7 @@ export function PurchaseReturnModal({
                   <label className="misa-purchase-label">Mã nhà cung cấp</label>
                   <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                     <input type="text" value={supplierCode} onChange={(e) => setSupplierCode(e.target.value)} style={{ flex: 1, height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box" }} />
-                    <button type="button" onClick={onOpenSupplierModal} style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00b06b", cursor: "pointer", boxSizing: "border-box" }}><Plus size={14} /></button>
+                    <button type="button" onClick={onOpenSupplierModal} style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer", boxSizing: "border-box" }}><Plus size={14} /></button>
                     <button type="button" style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#64748b", cursor: "pointer", boxSizing: "border-box" }}><ChevronDown size={13} /></button>
                     <button type="button" style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#64748b", cursor: "pointer", boxSizing: "border-box" }}><DollarSign size={13} /></button>
                   </div>
@@ -5131,7 +5132,7 @@ export function PurchaseReturnModal({
                       <option value="Nguyễn Văn A - Phòng Mua hàng">Nguyễn Văn A - Phòng Mua hàng</option>
                       <option value="Trần Thị B - Trưởng phòng Thu mua">Trần Thị B - Trưởng phòng Thu mua</option>
                     </select>
-                    <button type="button" style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00b06b", cursor: "pointer", boxSizing: "border-box" }}><Plus size={14} /></button>
+                    <button type="button" style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer", boxSizing: "border-box" }}><Plus size={14} /></button>
                   </div>
                 </div>
 
@@ -5141,7 +5142,7 @@ export function PurchaseReturnModal({
                     <input type="number" value={attachedCount} onChange={(e) => setAttachedCount(Number(e.target.value) || 0)} style={{ width: 68, height: 28, textAlign: "center", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12, boxSizing: "border-box" }} />
                     <span style={{ fontSize: 12, color: "#374151" }}>chứng từ gốc</span>
                   </div>
-                  <span style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}>Tham chiếu ...</span>
+                  <span style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}>Tham chiếu ...</span>
                 </div>
               </div>
             </div>
@@ -5188,8 +5189,8 @@ export function PurchaseReturnModal({
                 height: 36,
                 background: "transparent",
                 border: "none",
-                borderBottom: "2px solid #00b06b",
-                color: "#00b06b",
+                borderBottom: "2px solid var(--brand)",
+                color: "var(--brand)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -5299,8 +5300,8 @@ export function PurchaseReturnModal({
               </div>
 
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, padding: "8px 12px", background: "#f8fafc", display: "flex", alignItems: "center", gap: 10 }}>
-                <Upload size={16} style={{ color: "#00b06b" }} />
-                <span style={{ fontSize: 12, color: "#475569" }}><span style={{ color: "#0284c7", fontWeight: 600, cursor: "pointer" }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây. Dung lượng tối đa 5MB</span>
+                <Upload size={16} style={{ color: "var(--brand)" }} />
+                <span style={{ fontSize: 12, color: "#475569" }}><span style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây. Dung lượng tối đa 5MB</span>
               </div>
             </div>
 
@@ -5329,11 +5330,11 @@ export function PurchaseReturnModal({
                 type="checkbox"
                 checked={showAccounts}
                 onChange={(e) => setShowAccounts(e.target.checked)}
-                style={{ accentColor: "#00b06b", width: 16, height: 16 }}
+                style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
               />
               <span>Hiển thị tài khoản</span>
             </label>
-            <span style={{ fontSize: 12, color: "#94a3b8" }}>|</span>
+            <span style={{ fontSize: 12, color: "#64748b" }}>|</span>
             <span style={{ fontSize: 12, color: "#64748b" }}>F9 - Thêm nhanh</span>
           </div>
 
@@ -5680,7 +5681,7 @@ export function PurchaseDiscountModal({
                 gap: 6,
                 background: "transparent",
                 border: "none",
-                color: "#00b06b",
+                color: "var(--brand)",
                 fontSize: 12.5,
                 cursor: "pointer",
                 padding: "4px 8px",
@@ -5704,7 +5705,7 @@ export function PurchaseDiscountModal({
               name="discountOption"
               checked={discountOption === "debt_reduction"}
               onChange={() => handleOptionChange("debt_reduction")}
-              style={{ accentColor: "#00b06b", width: 16, height: 16 }}
+              style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
             />
             <span>Giảm trừ công nợ</span>
           </label>
@@ -5715,7 +5716,7 @@ export function PurchaseDiscountModal({
               name="discountOption"
               checked={discountOption === "cash"}
               onChange={() => handleOptionChange("cash")}
-              style={{ accentColor: "#00b06b", width: 16, height: 16 }}
+              style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
             />
             <span>Thu tiền mặt</span>
           </label>
@@ -5725,7 +5726,7 @@ export function PurchaseDiscountModal({
               type="checkbox"
               checked={reduceStockValue}
               onChange={(e) => setReduceStockValue(e.target.checked)}
-              style={{ accentColor: "#00b06b", width: 16, height: 16 }}
+              style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
             />
             <span>Giảm giá trị hàng nhập kho</span>
           </label>
@@ -5741,8 +5742,8 @@ export function PurchaseDiscountModal({
               padding: "0 4px",
               background: "transparent",
               border: "none",
-              borderBottom: activeSubTab === "main" ? "2px solid #00b06b" : "2px solid transparent",
-              color: activeSubTab === "main" ? "#00b06b" : "#475569",
+              borderBottom: activeSubTab === "main" ? "2px solid var(--brand)" : "2px solid transparent",
+              color: activeSubTab === "main" ? "var(--brand)" : "#475569",
               fontSize: 13,
               fontWeight: 600,
               cursor: "pointer",
@@ -5758,8 +5759,8 @@ export function PurchaseDiscountModal({
               padding: "0 4px",
               background: "transparent",
               border: "none",
-              borderBottom: activeSubTab === "invoice" ? "2px solid #00b06b" : "2px solid transparent",
-              color: activeSubTab === "invoice" ? "#00b06b" : "#475569",
+              borderBottom: activeSubTab === "invoice" ? "2px solid var(--brand)" : "2px solid transparent",
+              color: activeSubTab === "invoice" ? "var(--brand)" : "#475569",
               fontSize: 13,
               fontWeight: 600,
               cursor: "pointer",
@@ -5791,7 +5792,7 @@ export function PurchaseDiscountModal({
                             height: 28,
                             padding: "0 8px",
                             borderRadius: 4,
-                            border: "1px solid #00b06b",
+                            border: "1px solid var(--brand)",
                             fontSize: 12.5,
                             boxSizing: "border-box",
                             background: "#ffffff",
@@ -5810,7 +5811,7 @@ export function PurchaseDiscountModal({
                             background: "#ffffff",
                             display: "grid",
                             placeItems: "center",
-                            color: "#00b06b",
+                            color: "var(--brand)",
                             cursor: "pointer",
                             boxSizing: "border-box",
                           }}
@@ -5888,7 +5889,7 @@ export function PurchaseDiscountModal({
                               onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
                             >
-                              <div style={{ fontWeight: 600, color: "#00b06b" }}>{s.code} - {s.name}</div>
+                              <div style={{ fontWeight: 600, color: "var(--brand)" }}>{s.code} - {s.name}</div>
                               <div style={{ color: "#64748b", fontSize: 11 }}>MST: {s.taxCode} | {s.address}</div>
                             </div>
                           ))}
@@ -6010,7 +6011,7 @@ export function PurchaseDiscountModal({
                             background: "#ffffff",
                             display: "grid",
                             placeItems: "center",
-                            color: "#00b06b",
+                            color: "var(--brand)",
                             cursor: "pointer",
                             boxSizing: "border-box",
                           }}
@@ -6101,7 +6102,7 @@ export function PurchaseDiscountModal({
                         <span style={{ fontSize: 12, color: "#334155" }}>Chứng từ gốc</span>
                       </div>
                     )}
-                    <span style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}>
+                    <span style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}>
                       Tham chiếu ...
                     </span>
                   </div>
@@ -6125,7 +6126,7 @@ export function PurchaseDiscountModal({
                             height: 28,
                             padding: "0 8px",
                             borderRadius: 4,
-                            border: "1px solid #00b06b",
+                            border: "1px solid var(--brand)",
                             fontSize: 12.5,
                             boxSizing: "border-box",
                             background: "#ffffff",
@@ -6144,7 +6145,7 @@ export function PurchaseDiscountModal({
                             background: "#ffffff",
                             display: "grid",
                             placeItems: "center",
-                            color: "#00b06b",
+                            color: "var(--brand)",
                             cursor: "pointer",
                             boxSizing: "border-box",
                           }}
@@ -6222,7 +6223,7 @@ export function PurchaseDiscountModal({
                               onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
                             >
-                              <div style={{ fontWeight: 600, color: "#00b06b" }}>{s.code} - {s.name}</div>
+                              <div style={{ fontWeight: 600, color: "var(--brand)" }}>{s.code} - {s.name}</div>
                               <div style={{ color: "#64748b", fontSize: 11 }}>MST: {s.taxCode} | {s.address}</div>
                             </div>
                           ))}
@@ -6294,7 +6295,7 @@ export function PurchaseDiscountModal({
 
                   {/* Row 4: Tham chiếu */}
                   <div>
-                    <span style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}>
+                    <span style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}>
                       Tham chiếu ...
                     </span>
                   </div>
@@ -6510,8 +6511,8 @@ export function PurchaseDiscountModal({
                 height: 36,
                 background: "transparent",
                 border: "none",
-                borderBottom: "2px solid #00b06b",
-                color: "#00b06b",
+                borderBottom: "2px solid var(--brand)",
+                color: "var(--brand)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -6705,7 +6706,7 @@ export function PurchaseDiscountModal({
                   boxSizing: "border-box",
                 }}
               >
-                <Plus size={13} style={{ color: "#00b06b" }} /> Thêm dòng
+                <Plus size={13} style={{ color: "var(--brand)" }} /> Thêm dòng
               </button>
               <button
                 type="button"
@@ -6813,7 +6814,7 @@ export function PurchaseDiscountModal({
                 >
                   <Upload size={18} style={{ color: "#64748b" }} />
                   <span style={{ fontSize: 12, color: "#475569" }}>
-                    <span style={{ color: "#00b06b", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                    <span style={{ color: "var(--brand)", fontWeight: 600 }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                   </span>
                 </div>
               </div>
@@ -6846,7 +6847,7 @@ export function PurchaseDiscountModal({
                   width: 32,
                   height: 18,
                   borderRadius: 10,
-                  background: showAccounts ? "#00b06b" : "#cbd5e1",
+                  background: showAccounts ? "var(--brand)" : "#cbd5e1",
                   position: "relative",
                   transition: "background 0.2s",
                   cursor: "pointer",
@@ -6868,7 +6869,7 @@ export function PurchaseDiscountModal({
               </div>
               <span>Hiển thị tài khoản</span>
             </label>
-            <span style={{ fontSize: 12, color: "#94a3b8" }}>|</span>
+            <span style={{ fontSize: 12, color: "#64748b" }}>|</span>
             <span style={{ fontSize: 12, color: "#64748b" }}>F9 - Thêm nhanh</span>
           </div>
 
@@ -6918,7 +6919,7 @@ export function PurchaseDiscountModal({
                   padding: "0 14px",
                   border: "none",
                   borderRight: "1px solid rgba(255,255,255,0.3)",
-                  background: "#00b06b",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 12.5,
                   fontWeight: 600,
@@ -6934,7 +6935,7 @@ export function PurchaseDiscountModal({
                   height: 28,
                   width: 24,
                   border: "none",
-                  background: "#00b06b",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   display: "grid",
                   placeItems: "center",
@@ -7001,14 +7002,14 @@ export function ReconciliationPeriodModal({
           {/* Left Column */}
           <div>
             <label className="misa-purchase-label">
-              📎 Tệp báo cáo công nợ từ nhà cung cấp (xls, xlsx) <span style={{ color: "#ef4444" }}>*</span>
-              <span style={{ float: "right", fontSize: 11, color: "#94a3b8", fontWeight: 400 }}>Dung lượng tối đa 5MB</span>
+              Tệp báo cáo công nợ từ nhà cung cấp (xls, xlsx) <span style={{ color: "#ef4444" }}>*</span>
+              <span style={{ float: "right", fontSize: 11, color: "#64748b", fontWeight: 400 }}>Dung lượng tối đa 5MB</span>
             </label>
 
             {/* Dropzone */}
             <div
               style={{
-                border: "1.5px solid #00b06b",
+                border: "1.5px solid var(--brand)",
                 borderRadius: 6,
                 background: "#f0fdf4",
                 padding: "36px 16px",
@@ -7018,11 +7019,11 @@ export function ReconciliationPeriodModal({
               }}
               onClick={() => setFileName("Doi_chieu_cong_no_NCC001.xlsx")}
             >
-              <Upload size={30} style={{ color: "#00b06b", margin: "0 auto 8px auto" }} />
+              <Upload size={30} style={{ color: "var(--brand)", margin: "0 auto 8px auto" }} />
               <div style={{ fontSize: 13, color: "#1e293b", fontWeight: 600 }}>
                 {fileName ? fileName : (
                   <>
-                    <span style={{ color: "#0284c7" }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
+                    <span style={{ color: "var(--brand)" }}>Chọn tệp</span> hoặc kéo và thả tệp vào đây
                   </>
                 )}
               </div>
@@ -7084,7 +7085,7 @@ export function ReconciliationPeriodModal({
 
             {/* Template image placeholder card */}
             <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: "24px 16px", textAlign: "center", background: "#f8fafc", minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 8, background: "#e2e8f0", display: "grid", placeItems: "center", color: "#94a3b8", marginBottom: 8 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 8, background: "#e2e8f0", display: "grid", placeItems: "center", color: "#64748b", marginBottom: 8 }}>
                 <FileSpreadsheet size={24} />
               </div>
               <span style={{ fontSize: 12, color: "#64748b" }}>
@@ -7303,7 +7304,7 @@ export function SupplierModal({
                   name="supplierPartnerType"
                   checked={partnerType === "org"}
                   onChange={() => setPartnerType("org")}
-                  style={{ accentColor: "#00a862" }}
+                  style={{ accentColor: "var(--brand)" }}
                 />
                 <span>Tổ chức</span>
               </label>
@@ -7314,7 +7315,7 @@ export function SupplierModal({
                   name="supplierPartnerType"
                   checked={partnerType === "individual"}
                   onChange={() => setPartnerType("individual")}
-                  style={{ accentColor: "#00a862" }}
+                  style={{ accentColor: "var(--brand)" }}
                 />
                 <span>Cá nhân</span>
               </label>
@@ -7324,7 +7325,7 @@ export function SupplierModal({
                   type="checkbox"
                   checked={isCustomer}
                   onChange={(e) => setIsCustomer(e.target.checked)}
-                  style={{ accentColor: "#00a862" }}
+                  style={{ accentColor: "var(--brand)" }}
                 />
                 <span>Là khách hàng</span>
               </label>
@@ -7360,7 +7361,7 @@ export function SupplierModal({
                       type="button"
                       onClick={handleLookupTax}
                       title="Tra cứu thông tin cá nhân theo CCCD"
-                      style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", padding: 0, color: "#00a862", display: "flex", alignItems: "center" }}
+                      style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", padding: 0, color: "var(--brand)", display: "flex", alignItems: "center" }}
                     >
                       <Search size={14} />
                     </button>
@@ -7405,7 +7406,7 @@ export function SupplierModal({
                       placeholder="Cá nhân, hộ kinh doanh"
                       style={{ flex: 1, height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                     />
-                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00a862", cursor: "pointer" }}><Plus size={14} /></button>
+                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer" }}><Plus size={14} /></button>
                     <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#64748b", cursor: "pointer" }}><ChevronDown size={14} /></button>
                   </div>
                 </div>
@@ -7450,7 +7451,7 @@ export function SupplierModal({
                       placeholder="NV01 - Nguyễn Văn An"
                       style={{ flex: 1, height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                     />
-                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00a862", cursor: "pointer" }}><Plus size={14} /></button>
+                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer" }}><Plus size={14} /></button>
                     <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#64748b", cursor: "pointer" }}><ChevronDown size={14} /></button>
                   </div>
                 </div>
@@ -7492,10 +7493,10 @@ export function SupplierModal({
                       type="checkbox"
                       checked={isInternal}
                       onChange={(e) => setIsInternal(e.target.checked)}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Là Đối tượng nội bộ</span>
-                    <HelpCircle size={13} style={{ color: "#0284c7" }} />
+                    <HelpCircle size={13} style={{ color: "var(--brand)" }} />
                   </label>
                 </div>
               </div>
@@ -7558,7 +7559,7 @@ export function SupplierModal({
                       type="button"
                       onClick={handleLookupTax}
                       title="Tra cứu mã số thuế"
-                      style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", padding: 0, color: "#00a862", display: "flex", alignItems: "center" }}
+                      style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", padding: 0, color: "var(--brand)", display: "flex", alignItems: "center" }}
                     >
                       <Search size={14} />
                     </button>
@@ -7628,7 +7629,7 @@ export function SupplierModal({
                       placeholder=""
                       style={{ flex: 1, height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                     />
-                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00a862", cursor: "pointer" }}><Plus size={14} /></button>
+                    <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer" }}><Plus size={14} /></button>
                     <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#64748b", cursor: "pointer" }}><ChevronDown size={14} /></button>
                   </div>
                 </div>
@@ -7658,7 +7659,7 @@ export function SupplierModal({
                         placeholder=""
                         style={{ flex: 1, height: 30, padding: "0 8px", borderRadius: 3, border: "1px solid #cbd5e1", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                       />
-                      <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00a862", cursor: "pointer" }}><Plus size={14} /></button>
+                      <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer" }}><Plus size={14} /></button>
                       <button type="button" style={{ width: 28, height: 30, borderRadius: 3, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#64748b", cursor: "pointer" }}><ChevronDown size={14} /></button>
                     </div>
                   </div>
@@ -7669,10 +7670,10 @@ export function SupplierModal({
                         type="checkbox"
                         checked={isInternal}
                         onChange={(e) => setIsInternal(e.target.checked)}
-                        style={{ accentColor: "#00a862" }}
+                        style={{ accentColor: "var(--brand)" }}
                       />
                       <span>Là Đối tượng nội bộ</span>
-                      <HelpCircle size={13} style={{ color: "#0284c7" }} />
+                      <HelpCircle size={13} style={{ color: "var(--brand)" }} />
                     </label>
                   </div>
                 </div>
@@ -7700,8 +7701,8 @@ export function SupplierModal({
                 height: 38,
                 background: "transparent",
                 border: "none",
-                borderBottom: activeTab === t.id ? "2px solid #00a862" : "2px solid transparent",
-                color: activeTab === t.id ? "#00a862" : "#475569",
+                borderBottom: activeTab === t.id ? "2px solid var(--brand)" : "2px solid transparent",
+                color: activeTab === t.id ? "var(--brand)" : "#475569",
                 fontSize: 12.5,
                 fontWeight: activeTab === t.id ? 600 : 500,
                 cursor: "pointer",
@@ -7991,7 +7992,7 @@ export function SupplierModal({
                     gap: 5,
                     padding: "5px 12px",
                     borderRadius: 4,
-                    background: "#00b06b",
+                    background: "var(--brand)",
                     border: "none",
                     color: "#ffffff",
                     fontSize: 12.5,
@@ -8020,7 +8021,7 @@ export function SupplierModal({
                   <tbody>
                     {supplierItems.length === 0 ? (
                       <tr>
-                        <td colSpan={8} style={{ textAlign: "center", padding: "20px", color: "#94a3b8" }}>
+                        <td colSpan={8} style={{ textAlign: "center", padding: "20px", color: "#64748b" }}>
                           Chưa có mặt hàng nào được gán cho nhà cung cấp này. Bấm "Thêm hàng hóa, dịch vụ" để liên kết.
                         </td>
                       </tr>
@@ -8037,7 +8038,7 @@ export function SupplierModal({
                                 next[idx] = { ...next[idx], code: e.target.value };
                                 setSupplierItems(next);
                               }}
-                              style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, fontWeight: 600, color: "#0284c7" }}
+                              style={{ width: "100%", height: 26, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, fontWeight: 600, color: "var(--brand)" }}
                             />
                           </td>
                           <td style={{ padding: "6px" }}>
@@ -8334,7 +8335,7 @@ export function ReceiveInvoiceSelectModal({
         alignItems: "center",
         justifyContent: "center",
         zIndex: 1050,
-        fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+        fontFamily: "Roboto, Arial, sans-serif",
       }}
     >
       <div
@@ -8372,14 +8373,14 @@ export function ReceiveInvoiceSelectModal({
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                color: "#00b06b",
+                color: "var(--brand)",
                 fontSize: 13,
                 fontWeight: 500,
                 cursor: "pointer",
               }}
               title="Xem hướng dẫn nhận hóa đơn từ chứng từ mua hàng"
             >
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn</span>
             </div>
             <button
@@ -8443,7 +8444,7 @@ export function ReceiveInvoiceSelectModal({
                   height: 30,
                   padding: "0 28px 0 10px",
                   borderRadius: 4,
-                  border: "1.5px solid #00b06b",
+                  border: "1.5px solid var(--brand)",
                   outline: "none",
                   fontSize: 13,
                   color: selectedSupplier ? "#1e293b" : "#475569",
@@ -8570,7 +8571,7 @@ export function ReceiveInvoiceSelectModal({
                     right: 8,
                     top: "50%",
                     transform: "translateY(-50%)",
-                    color: "#94a3b8",
+                    color: "#64748b",
                   }}
                 />
               </div>
@@ -8603,7 +8604,7 @@ export function ReceiveInvoiceSelectModal({
                     right: 8,
                     top: "50%",
                     transform: "translateY(-50%)",
-                    color: "#94a3b8",
+                    color: "#64748b",
                   }}
                 />
               </div>
@@ -8656,7 +8657,7 @@ export function ReceiveInvoiceSelectModal({
                 right: 9,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#94a3b8",
+                color: "#64748b",
                 pointerEvents: "none",
               }}
             />
@@ -8777,7 +8778,7 @@ export function ReceiveInvoiceSelectModal({
                     style={{
                       padding: "36px 20px",
                       textAlign: "center",
-                      color: "#94a3b8",
+                      color: "#64748b",
                       fontSize: 13,
                     }}
                   >
@@ -8841,7 +8842,7 @@ export function ReceiveInvoiceSelectModal({
                         style={{
                           padding: "8px 10px",
                           borderRight: "1px solid #f1f5f9",
-                          color: "#0284c7",
+                          color: "var(--brand)",
                           fontWeight: 600,
                         }}
                       >
@@ -8892,9 +8893,9 @@ export function ReceiveInvoiceSelectModal({
           <div style={{ fontSize: 12.5, color: "#64748b" }}>
             {selectedCount > 0 ? (
               <span>
-                Đã chọn: <strong style={{ color: "#00b06b" }}>{selectedCount}</strong> chứng từ —
+                Đã chọn: <strong style={{ color: "var(--brand)" }}>{selectedCount}</strong> chứng từ —
                 Tổng tiền:{" "}
-                <strong style={{ color: "#00b06b" }}>{formatVND(selectedTotal)} đ</strong>
+                <strong style={{ color: "var(--brand)" }}>{formatVND(selectedTotal)} đ</strong>
               </span>
             ) : (
               <span>Chưa chọn chứng từ nào</span>
@@ -8926,7 +8927,7 @@ export function ReceiveInvoiceSelectModal({
                 padding: "0 22px",
                 borderRadius: 4,
                 border: "none",
-                background: "#00b06b",
+                background: "var(--brand)",
                 color: "#ffffff",
                 fontSize: 13,
                 fontWeight: 600,
@@ -8934,8 +8935,8 @@ export function ReceiveInvoiceSelectModal({
                 boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
                 transition: "background 0.15s ease",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#00965b")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#00b06b")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--brand)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--brand)")}
             >
               Đồng ý
             </button>
@@ -9248,7 +9249,7 @@ export function PurchaseServiceModal({
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button type="button" className="misa-purchase-link-btn" title="Hướng dẫn sử dụng">
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </button>
@@ -9276,7 +9277,7 @@ export function PurchaseServiceModal({
                 name="servicePurchasePayment"
                 checked={paymentStatus === "unpaid"}
                 onChange={() => handlePaymentStatusChange("unpaid")}
-                style={{ accentColor: "#00b06b" }}
+                style={{ accentColor: "var(--brand)" }}
               />
               <span>Chưa thanh toán</span>
             </label>
@@ -9287,7 +9288,7 @@ export function PurchaseServiceModal({
                 name="servicePurchasePayment"
                 checked={paymentStatus === "paid"}
                 onChange={() => handlePaymentStatusChange("paid")}
-                style={{ accentColor: "#00b06b" }}
+                style={{ accentColor: "var(--brand)" }}
               />
               <span>Thanh toán ngay</span>
             </label>
@@ -9310,7 +9311,7 @@ export function PurchaseServiceModal({
                   minWidth: 120,
                   padding: "0 8px",
                   borderRadius: 4,
-                  border: showPaymentMethodDropdown ? "1.5px solid #00b06b" : "1px solid #cbd5e1",
+                  border: showPaymentMethodDropdown ? "1.5px solid var(--brand)" : "1px solid #cbd5e1",
                   background: paymentStatus === "unpaid" ? "#f8fafc" : "#ffffff",
                   fontSize: 12.5,
                   fontWeight: 500,
@@ -9323,7 +9324,7 @@ export function PurchaseServiceModal({
                   {paymentMethod}
                 </span>
                 {showPaymentMethodDropdown ? (
-                  <ChevronUp size={14} style={{ color: "#00b06b", strokeWidth: 2.5 }} />
+                  <ChevronUp size={14} style={{ color: "var(--brand)", strokeWidth: 2.5 }} />
                 ) : (
                   <ChevronDown size={14} style={{ color: "#64748b" }} />
                 )}
@@ -9343,7 +9344,7 @@ export function PurchaseServiceModal({
                       top: "calc(100% + 4px)",
                       left: 0,
                       background: "#ffffff",
-                      border: "1px solid #00b06b",
+                      border: "1px solid var(--brand)",
                       borderRadius: 6,
                       boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
                       zIndex: 120,
@@ -9367,14 +9368,14 @@ export function PurchaseServiceModal({
                             fontSize: 13,
                             fontWeight: isSelected ? 600 : 500,
                             color: isSelected ? "#ffffff" : "#1e293b",
-                            background: isSelected ? "#00b06b" : "#ffffff",
+                            background: isSelected ? "var(--brand)" : "#ffffff",
                             cursor: "pointer",
                             transition: "background 0.12s",
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
                               e.currentTarget.style.background = "#f0fdf4";
-                              e.currentTarget.style.color = "#00b06b";
+                              e.currentTarget.style.color = "var(--brand)";
                             }
                           }}
                           onMouseLeave={(e) => {
@@ -9407,7 +9408,7 @@ export function PurchaseServiceModal({
                   minWidth: 160,
                   padding: "0 8px",
                   borderRadius: 4,
-                  border: showInvoiceOptionDropdown ? "1.5px solid #00b06b" : "1px solid #cbd5e1",
+                  border: showInvoiceOptionDropdown ? "1.5px solid var(--brand)" : "1px solid #cbd5e1",
                   background: "#ffffff",
                   fontSize: 12.5,
                   fontWeight: 500,
@@ -9420,7 +9421,7 @@ export function PurchaseServiceModal({
                   {invoiceOption}
                 </span>
                 {showInvoiceOptionDropdown ? (
-                  <ChevronUp size={14} style={{ color: "#00b06b", strokeWidth: 2.5 }} />
+                  <ChevronUp size={14} style={{ color: "var(--brand)", strokeWidth: 2.5 }} />
                 ) : (
                   <ChevronDown size={14} style={{ color: "#64748b" }} />
                 )}
@@ -9440,7 +9441,7 @@ export function PurchaseServiceModal({
                       top: "calc(100% + 4px)",
                       left: 0,
                       background: "#ffffff",
-                      border: "1px solid #00b06b",
+                      border: "1px solid var(--brand)",
                       borderRadius: 6,
                       boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
                       zIndex: 120,
@@ -9463,14 +9464,14 @@ export function PurchaseServiceModal({
                             fontSize: 13,
                             fontWeight: isSelected ? 600 : 500,
                             color: isSelected ? "#ffffff" : "#1e293b",
-                            background: isSelected ? "#00b06b" : "#ffffff",
+                            background: isSelected ? "var(--brand)" : "#ffffff",
                             cursor: "pointer",
                             transition: "background 0.12s",
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
                               e.currentTarget.style.background = "#f0fdf4";
-                              e.currentTarget.style.color = "#00b06b";
+                              e.currentTarget.style.color = "var(--brand)";
                             }
                           }}
                           onMouseLeave={(e) => {
@@ -9494,7 +9495,7 @@ export function PurchaseServiceModal({
                 type="checkbox"
                 checked={isPurchaseExpense}
                 onChange={(e) => setIsPurchaseExpense(e.target.checked)}
-                style={{ accentColor: "#00b06b" }}
+                style={{ accentColor: "var(--brand)" }}
               />
               <span>Là chi phí mua hàng</span>
             </label>
@@ -9539,7 +9540,7 @@ export function PurchaseServiceModal({
                     <button
                       type="button"
                       onClick={() => onOpenSupplierModal && onOpenSupplierModal()}
-                      style={{ width: 28, height: 28, minWidth: 28, padding: 0, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", color: "#00b06b", cursor: "pointer", display: "grid", placeItems: "center", boxSizing: "border-box" }}
+                      style={{ width: 28, height: 28, minWidth: 28, padding: 0, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", color: "var(--brand)", cursor: "pointer", display: "grid", placeItems: "center", boxSizing: "border-box" }}
                       title="Thêm nhanh nhà cung cấp"
                     >
                       <Plus size={14} />
@@ -9600,7 +9601,7 @@ export function PurchaseServiceModal({
                             const newEmp = prompt("Nhập tên nhân viên mua hàng mới:");
                             if (newEmp) setPurchaser(newEmp);
                           }}
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)", boxSizing: "border-box" }}
                         >
                           <Plus size={14} />
                         </button>
@@ -9631,7 +9632,7 @@ export function PurchaseServiceModal({
                   <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 8 }}>
                     <span
                       onClick={() => setShowRefModal(true)}
-                      style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </span>
@@ -9648,7 +9649,7 @@ export function PurchaseServiceModal({
                           const d = prompt("Nhập số ngày được nợ mới:", String(debtDays));
                           if (d) setDebtDays(d);
                         }}
-                        style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00b06b", cursor: "pointer", boxSizing: "border-box" }}
+                        style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer", boxSizing: "border-box" }}
                       >
                         <Plus size={13} />
                       </button>
@@ -9745,7 +9746,7 @@ export function PurchaseServiceModal({
                             const newEmp = prompt("Nhập tên nhân viên mua hàng mới:");
                             if (newEmp) setPurchaser(newEmp);
                           }}
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)", boxSizing: "border-box" }}
                         >
                           <Plus size={14} />
                         </button>
@@ -9769,7 +9770,7 @@ export function PurchaseServiceModal({
                   <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
                     <span
                       onClick={() => setShowRefModal(true)}
-                      style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </span>
@@ -9894,8 +9895,8 @@ export function PurchaseServiceModal({
                   height: 36,
                   background: "transparent",
                   border: "none",
-                  borderBottom: activeTab === "accounting" ? "2px solid #00b06b" : "none",
-                  color: activeTab === "accounting" ? "#00b06b" : "#475569",
+                  borderBottom: activeTab === "accounting" ? "2px solid var(--brand)" : "none",
+                  color: activeTab === "accounting" ? "var(--brand)" : "#475569",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -9910,8 +9911,8 @@ export function PurchaseServiceModal({
                   height: 36,
                   background: "transparent",
                   border: "none",
-                  borderBottom: activeTab === "tax" ? "2px solid #00b06b" : "none",
-                  color: activeTab === "tax" ? "#00b06b" : "#475569",
+                  borderBottom: activeTab === "tax" ? "2px solid var(--brand)" : "none",
+                  color: activeTab === "tax" ? "var(--brand)" : "#475569",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -10136,11 +10137,11 @@ export function PurchaseServiceModal({
                 <option value="20">20</option>
                 <option value="50">50</option>
               </select>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>|&lt;</span>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
-              <strong style={{ color: "#00b06b", padding: "0 4px" }}>1</strong>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;|</span>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>|&lt;</span>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
+              <strong style={{ color: "var(--brand)", padding: "0 4px" }}>1</strong>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;|</span>
             </div>
           </div>
 
@@ -10181,7 +10182,7 @@ export function PurchaseServiceModal({
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
                 <Paperclip size={13} style={{ color: "#64748b" }} />
                 <span style={{ fontWeight: 600 }}>Đính kèm</span>
-                <span style={{ fontSize: 11, color: "#94a3b8" }}>Dung lượng tối đa 5MB</span>
+                <span style={{ fontSize: 11, color: "#64748b" }}>Dung lượng tối đa 5MB</span>
               </div>
               <div
                 style={{
@@ -10198,8 +10199,8 @@ export function PurchaseServiceModal({
                   maxWidth: 420,
                 }}
               >
-                <Upload size={18} style={{ color: "#0284c7", marginBottom: 4 }} />
-                <div style={{ fontSize: 12, color: "#0284c7" }}>
+                <Upload size={18} style={{ color: "var(--brand)", marginBottom: 4 }} />
+                <div style={{ fontSize: 12, color: "var(--brand)" }}>
                   <strong>Chọn tệp</strong> hoặc kéo và thả tệp vào đây
                 </div>
               </div>
@@ -10235,7 +10236,7 @@ export function PurchaseServiceModal({
                   width: 32,
                   height: 18,
                   borderRadius: 10,
-                  background: showAccount ? "#00b06b" : "#cbd5e1",
+                  background: showAccount ? "var(--brand)" : "#cbd5e1",
                   position: "relative",
                   transition: "background 0.2s",
                 }}
@@ -10612,7 +10613,7 @@ export function PurchaseMultiInvoiceModal({
                   height: 30,
                   padding: "0 10px",
                   borderRadius: 4,
-                  border: "1.5px solid #00b06b",
+                  border: "1.5px solid var(--brand)",
                   background: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -10623,7 +10624,7 @@ export function PurchaseMultiInvoiceModal({
                 }}
               >
                 <span>{purchaseKind}</span>
-                <ChevronDown size={14} style={{ color: "#00b06b", strokeWidth: 2.5 }} />
+                <ChevronDown size={14} style={{ color: "var(--brand)", strokeWidth: 2.5 }} />
               </div>
 
               {showTypeDropdown && (
@@ -10638,7 +10639,7 @@ export function PurchaseMultiInvoiceModal({
                       top: "calc(100% + 4px)",
                       left: 0,
                       background: "#ffffff",
-                      border: "1px solid #00b06b",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
                       zIndex: 120,
@@ -10657,14 +10658,14 @@ export function PurchaseMultiInvoiceModal({
                             fontSize: 13,
                             fontWeight: isSelected ? 600 : 500,
                             color: isSelected ? "#ffffff" : "#1e293b",
-                            background: isSelected ? "#00b06b" : "#ffffff",
+                            background: isSelected ? "var(--brand)" : "#ffffff",
                             cursor: "pointer",
                             transition: "background 0.12s",
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
                               e.currentTarget.style.background = "#f0fdf4";
-                              e.currentTarget.style.color = "#00b06b";
+                              e.currentTarget.style.color = "var(--brand)";
                             }
                           }}
                           onMouseLeave={(e) => {
@@ -10707,7 +10708,7 @@ export function PurchaseMultiInvoiceModal({
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button type="button" className="misa-purchase-link-btn" title="Hướng dẫn sử dụng">
-              <HelpCircle size={15} style={{ color: "#00b06b" }} />
+              <HelpCircle size={15} style={{ color: "var(--brand)" }} />
               <span>Hướng dẫn sử dụng</span>
               <ChevronDown size={12} />
             </button>
@@ -10734,7 +10735,7 @@ export function PurchaseMultiInvoiceModal({
                 name="multiPurchasePayment"
                 checked={paymentStatus === "unpaid"}
                 onChange={() => handlePaymentStatusChange("unpaid")}
-                style={{ accentColor: "#00b06b" }}
+                style={{ accentColor: "var(--brand)" }}
               />
               <span>Chưa thanh toán</span>
             </label>
@@ -10745,7 +10746,7 @@ export function PurchaseMultiInvoiceModal({
                 name="multiPurchasePayment"
                 checked={paymentStatus === "paid"}
                 onChange={() => handlePaymentStatusChange("paid")}
-                style={{ accentColor: "#00b06b" }}
+                style={{ accentColor: "var(--brand)" }}
               />
               <span>Thanh toán ngay</span>
             </label>
@@ -10768,7 +10769,7 @@ export function PurchaseMultiInvoiceModal({
                   minWidth: 120,
                   padding: "0 8px",
                   borderRadius: 4,
-                  border: showPaymentMethodDropdown ? "1px solid #00b06b" : "1px solid #cbd5e1",
+                  border: showPaymentMethodDropdown ? "1px solid var(--brand)" : "1px solid #cbd5e1",
                   background: paymentStatus === "unpaid" ? "#f8fafc" : "#ffffff",
                   fontSize: 12.5,
                   fontWeight: 500,
@@ -10781,7 +10782,7 @@ export function PurchaseMultiInvoiceModal({
                   {paymentMethod}
                 </span>
                 {showPaymentMethodDropdown ? (
-                  <ChevronUp size={14} style={{ color: "#00b06b", strokeWidth: 2.5 }} />
+                  <ChevronUp size={14} style={{ color: "var(--brand)", strokeWidth: 2.5 }} />
                 ) : (
                   <ChevronDown size={14} style={{ color: "#64748b" }} />
                 )}
@@ -10801,7 +10802,7 @@ export function PurchaseMultiInvoiceModal({
                       top: "calc(100% + 4px)",
                       left: 0,
                       background: "#ffffff",
-                      border: "1px solid #00b06b",
+                      border: "1px solid var(--brand)",
                       borderRadius: 6,
                       boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
                       zIndex: 120,
@@ -10825,14 +10826,14 @@ export function PurchaseMultiInvoiceModal({
                             fontSize: 13,
                             fontWeight: isSelected ? 600 : 500,
                             color: isSelected ? "#ffffff" : "#1e293b",
-                            background: isSelected ? "#00b06b" : "#ffffff",
+                            background: isSelected ? "var(--brand)" : "#ffffff",
                             cursor: "pointer",
                             transition: "background 0.12s",
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
                               e.currentTarget.style.background = "#f0fdf4";
-                              e.currentTarget.style.color = "#00b06b";
+                              e.currentTarget.style.color = "var(--brand)";
                             }
                           }}
                           onMouseLeave={(e) => {
@@ -10873,8 +10874,8 @@ export function PurchaseMultiInvoiceModal({
                   padding: "7px 4px",
                   background: "transparent",
                   border: "none",
-                  borderBottom: activeSubTab === "receipt" ? "2px solid #00b06b" : "2px solid transparent",
-                  color: activeSubTab === "receipt" ? "#00b06b" : "#475569",
+                  borderBottom: activeSubTab === "receipt" ? "2px solid var(--brand)" : "2px solid transparent",
+                  color: activeSubTab === "receipt" ? "var(--brand)" : "#475569",
                   fontSize: 12.5,
                   fontWeight: activeSubTab === "receipt" ? 700 : 500,
                   cursor: "pointer",
@@ -10891,8 +10892,8 @@ export function PurchaseMultiInvoiceModal({
                     padding: "7px 4px",
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeSubTab === "payment" ? "2px solid #00b06b" : "2px solid transparent",
-                    color: activeSubTab === "payment" ? "#00b06b" : "#475569",
+                    borderBottom: activeSubTab === "payment" ? "2px solid var(--brand)" : "2px solid transparent",
+                    color: activeSubTab === "payment" ? "var(--brand)" : "#475569",
                     fontSize: 12.5,
                     fontWeight: activeSubTab === "payment" ? 700 : 500,
                     cursor: "pointer",
@@ -10915,8 +10916,8 @@ export function PurchaseMultiInvoiceModal({
                     padding: "7px 4px",
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeSubTab === "debit" ? "2px solid #00b06b" : "2px solid transparent",
-                    color: activeSubTab === "debit" ? "#00b06b" : "#475569",
+                    borderBottom: activeSubTab === "debit" ? "2px solid var(--brand)" : "2px solid transparent",
+                    color: activeSubTab === "debit" ? "var(--brand)" : "#475569",
                     fontSize: 12.5,
                     fontWeight: activeSubTab === "debit" ? 700 : 500,
                     cursor: "pointer",
@@ -10932,8 +10933,8 @@ export function PurchaseMultiInvoiceModal({
                     padding: "7px 4px",
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeSubTab === "payment" ? "2px solid #00b06b" : "2px solid transparent",
-                    color: activeSubTab === "payment" ? "#00b06b" : "#475569",
+                    borderBottom: activeSubTab === "payment" ? "2px solid var(--brand)" : "2px solid transparent",
+                    color: activeSubTab === "payment" ? "var(--brand)" : "#475569",
                     fontSize: 12.5,
                     fontWeight: activeSubTab === "payment" ? 700 : 500,
                     cursor: "pointer",
@@ -11017,7 +11018,7 @@ export function PurchaseMultiInvoiceModal({
                             const newEmp = prompt("Nhập tên nhân viên mua hàng mới:");
                             if (newEmp) setPurchaser(newEmp);
                           }}
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)", boxSizing: "border-box" }}
                         >
                           <Plus size={14} />
                         </button>
@@ -11041,7 +11042,7 @@ export function PurchaseMultiInvoiceModal({
                   <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: paymentStatus === "unpaid" ? 8 : 0 }}>
                     <span
                       onClick={() => setShowRefModal(true)}
-                      style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </span>
@@ -11059,7 +11060,7 @@ export function PurchaseMultiInvoiceModal({
                             const d = prompt("Nhập số ngày được nợ mới:", String(debtDays));
                             if (d) setDebtDays(d);
                           }}
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00b06b", cursor: "pointer", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer", boxSizing: "border-box" }}
                         >
                           <Plus size={13} />
                         </button>
@@ -11134,7 +11135,7 @@ export function PurchaseMultiInvoiceModal({
                           const newEmp = prompt("Nhập tên nhân viên mua hàng mới:");
                           if (newEmp) setPurchaser(newEmp);
                         }}
-                        style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}
+                        style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)", boxSizing: "border-box" }}
                       >
                         <Plus size={14} />
                       </button>
@@ -11145,7 +11146,7 @@ export function PurchaseMultiInvoiceModal({
                   <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 8 }}>
                     <span
                       onClick={() => setShowRefModal(true)}
-                      style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </span>
@@ -11162,7 +11163,7 @@ export function PurchaseMultiInvoiceModal({
                           const d = prompt("Nhập số ngày được nợ mới:", String(debtDays));
                           if (d) setDebtDays(d);
                         }}
-                        style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "#00b06b", cursor: "pointer", boxSizing: "border-box" }}
+                        style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", color: "var(--brand)", cursor: "pointer", boxSizing: "border-box" }}
                       >
                         <Plus size={13} />
                       </button>
@@ -11259,7 +11260,7 @@ export function PurchaseMultiInvoiceModal({
                             const newEmp = prompt("Nhập tên nhân viên mua hàng mới:");
                             if (newEmp) setPurchaser(newEmp);
                           }}
-                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#00b06b", boxSizing: "border-box" }}
+                          style={{ width: 28, height: 28, minWidth: 28, borderRadius: 4, border: "1px solid #cbd5e1", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)", boxSizing: "border-box" }}
                         >
                           <Plus size={14} />
                         </button>
@@ -11283,7 +11284,7 @@ export function PurchaseMultiInvoiceModal({
                   <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
                     <span
                       onClick={() => setShowRefModal(true)}
-                      style={{ fontSize: 12, color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </span>
@@ -11441,8 +11442,8 @@ export function PurchaseMultiInvoiceModal({
                   height: 36,
                   background: "transparent",
                   border: "none",
-                  borderBottom: activeTab === "goods" ? "2px solid #00b06b" : "none",
-                  color: activeTab === "goods" ? "#00b06b" : "#475569",
+                  borderBottom: activeTab === "goods" ? "2px solid var(--brand)" : "none",
+                  color: activeTab === "goods" ? "var(--brand)" : "#475569",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -11457,8 +11458,8 @@ export function PurchaseMultiInvoiceModal({
                   height: 36,
                   background: "transparent",
                   border: "none",
-                  borderBottom: activeTab === "tax" ? "2px solid #00b06b" : "none",
-                  color: activeTab === "tax" ? "#00b06b" : "#475569",
+                  borderBottom: activeTab === "tax" ? "2px solid var(--brand)" : "none",
+                  color: activeTab === "tax" ? "var(--brand)" : "#475569",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -11474,8 +11475,8 @@ export function PurchaseMultiInvoiceModal({
                     height: 36,
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeTab === "cost" ? "2px solid #00b06b" : "none",
-                    color: activeTab === "cost" ? "#00b06b" : "#475569",
+                    borderBottom: activeTab === "cost" ? "2px solid var(--brand)" : "none",
+                    color: activeTab === "cost" ? "var(--brand)" : "#475569",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -11492,8 +11493,8 @@ export function PurchaseMultiInvoiceModal({
                     height: 36,
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeTab === "customs_fee" ? "2px solid #00b06b" : "none",
-                    color: activeTab === "customs_fee" ? "#00b06b" : "#475569",
+                    borderBottom: activeTab === "customs_fee" ? "2px solid var(--brand)" : "none",
+                    color: activeTab === "customs_fee" ? "var(--brand)" : "#475569",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -11510,8 +11511,8 @@ export function PurchaseMultiInvoiceModal({
                     height: 36,
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeTab === "warehouse_fee" ? "2px solid #00b06b" : "none",
-                    color: activeTab === "warehouse_fee" ? "#00b06b" : "#475569",
+                    borderBottom: activeTab === "warehouse_fee" ? "2px solid var(--brand)" : "none",
+                    color: activeTab === "warehouse_fee" ? "var(--brand)" : "#475569",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -11528,8 +11529,8 @@ export function PurchaseMultiInvoiceModal({
                     height: 36,
                     background: "transparent",
                     border: "none",
-                    borderBottom: activeTab === "cost" ? "2px solid #00b06b" : "none",
-                    color: activeTab === "cost" ? "#00b06b" : "#475569",
+                    borderBottom: activeTab === "cost" ? "2px solid var(--brand)" : "none",
+                    color: activeTab === "cost" ? "var(--brand)" : "#475569",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -11698,11 +11699,11 @@ export function PurchaseMultiInvoiceModal({
                 <option value="20">20</option>
                 <option value="50">50</option>
               </select>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>|&lt;</span>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
-              <strong style={{ color: "#00b06b", padding: "0 4px" }}>1</strong>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
-              <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;|</span>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>|&lt;</span>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
+              <strong style={{ color: "var(--brand)", padding: "0 4px" }}>1</strong>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
+              <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;|</span>
             </div>
           </div>
 
@@ -11713,7 +11714,7 @@ export function PurchaseMultiInvoiceModal({
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
                 <Paperclip size={13} style={{ color: "#64748b" }} />
                 <span style={{ fontWeight: 600 }}>Đính kèm</span>
-                <span style={{ fontSize: 11, color: "#94a3b8" }}>Dung lượng tối đa 5MB</span>
+                <span style={{ fontSize: 11, color: "#64748b" }}>Dung lượng tối đa 5MB</span>
               </div>
               <div
                 style={{
@@ -11730,8 +11731,8 @@ export function PurchaseMultiInvoiceModal({
                   maxWidth: 460,
                 }}
               >
-                <Upload size={18} style={{ color: "#0284c7", marginBottom: 6 }} />
-                <div style={{ fontSize: 12, color: "#0284c7" }}>
+                <Upload size={18} style={{ color: "var(--brand)", marginBottom: 6 }} />
+                <div style={{ fontSize: 12, color: "var(--brand)" }}>
                   <strong>Chọn tệp</strong> hoặc kéo và thả tệp vào đây
                 </div>
               </div>
@@ -11830,7 +11831,7 @@ export function PurchaseMultiInvoiceModal({
                   width: 32,
                   height: 18,
                   borderRadius: 10,
-                  background: showAccount ? "#00b06b" : "#cbd5e1",
+                  background: showAccount ? "var(--brand)" : "#cbd5e1",
                   position: "relative",
                   transition: "background 0.2s",
                 }}

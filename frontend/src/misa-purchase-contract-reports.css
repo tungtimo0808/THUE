@@ -30,8 +30,8 @@
   outline-offset: 2px;
 }
 .pc-report button.pc-primary {
-  background: #00a862;
-  border-color: #00a862;
+  background: var(--brand);
+  border-color: var(--brand);
   color: #fff;
 }
 .pc-report input,
@@ -48,7 +48,7 @@
 .pc-report input[type="checkbox"] {
   width: 15px;
   height: 15px;
-  accent-color: #00a862;
+  accent-color: var(--brand);
   padding: 0;
   flex: none;
 }

@@ -1,27 +1,42 @@
-@import "@fontsource/be-vietnam-pro/latin-400.css";
-@import "@fontsource/be-vietnam-pro/vietnamese-400.css";
-@import "@fontsource/be-vietnam-pro/latin-500.css";
-@import "@fontsource/be-vietnam-pro/vietnamese-500.css";
-@import "@fontsource/be-vietnam-pro/latin-600.css";
-@import "@fontsource/be-vietnam-pro/vietnamese-600.css";
-@import "@fontsource/be-vietnam-pro/latin-700.css";
-@import "@fontsource/be-vietnam-pro/vietnamese-700.css";
+@import "@fontsource/roboto/latin-400.css";
+@import "@fontsource/roboto/vietnamese-400.css";
+@import "@fontsource/roboto/latin-500.css";
+@import "@fontsource/roboto/vietnamese-500.css";
+@import "@fontsource/roboto/latin-600.css";
+@import "@fontsource/roboto/vietnamese-600.css";
+@import "@fontsource/roboto/latin-700.css";
+@import "@fontsource/roboto/vietnamese-700.css";
 :root {
-  font-family: "Be Vietnam Pro", sans-serif;
-  color: #1e293b;
-  background: #f8fafc;
+  font-family: Roboto, Arial, sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
   font-synthesis: none;
   font-size: 13px;
   font-weight: 400;
   line-height: 1.6;
-  --navy: #0f172a;
-  --primary: #00a862;
-  --canvas: #f8fafc;
+  /* Brand — một màu nhận diện duy nhất (xanh dương). Định nghĩa ở đây để
+     mọi tệp CSS, kể cả tệp nạp trước ui-consistency.css, đều dùng được. */
+  --brand: #2563eb;
+  --brand-hover: #1d4ed8;
+  --brand-soft: #eff6ff;
+  --brand-border: #bfdbfe;
+  --brand-ink: #1e40af;
+  --navy: #14243b;
+  --primary: var(--brand);
+  --canvas: #f3f5f9;
   --surface: #ffffff;
-  --ink: #1e293b;
+  --ink: #172b4d;
   --muted: #64748b;
   --border: #e2e8f0;
-  --teal: #00a862;
+  --teal: var(--brand);
+  /* Màu trạng thái */
+  --success: #15803d;
+  --success-soft: #ecfdf3;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px var(--brand);
   color-scheme: light;
 }
 * {
@@ -117,16 +132,20 @@ strong {
 svg {
   vertical-align: middle;
 }
+/* Focus bàn phím: viền đặc màu brand, đủ tương phản (WCAG 2.4.7 / 1.4.11).
+   Trước đây dùng rgba 35% gần như không thấy, và admin tắt hẳn outline của nút/liên kết. */
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
-summary:focus-visible {
-  outline: 2px solid rgba(0, 82, 204, 0.35);
+textarea:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--brand);
   outline-offset: 1px;
 }
-.admin-workspace button:focus-visible,
-.admin-workspace a:focus-visible,
 .admin-workspace input:focus-visible,
 .admin-workspace select:focus-visible {
   outline: none;
@@ -139,8 +158,9 @@ select {
   border-radius: 6px;
   padding: 10px 12px;
 }
-input::placeholder {
-  color: #586980;
+input::placeholder,
+textarea::placeholder {
+  color: #6b7a8f;
 }
 
 /* Ensure borderless inputs inside custom containers, bordered wrappers, and combo boxes fill their container */
@@ -264,7 +284,7 @@ tbody tr:hover {
 td small {
   display: block;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   margin-top: 3px;
 }
 table caption {
@@ -326,10 +346,9 @@ table caption {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
-  box-shadow: 0 2px 3px #1c54c718;
 }
 .button.primary:hover {
-  background: #4d572d;
+  background: var(--brand-hover);
 }
 .icon-button {
   border: 0;
@@ -393,7 +412,7 @@ table caption {
   background: #fff3e3;
 }
 .teal {
-  color: #4d572d;
+  color: var(--brand-hover);
   background: #edf1df;
 }
 .violet {
@@ -416,7 +435,7 @@ table caption {
   align-items: center;
   white-space: nowrap;
   border-radius: 5px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   padding: 3px 8px;
 }
@@ -469,7 +488,7 @@ table caption {
 .misa-modal-backdrop table thead tr,
 .misa-purchase-modal-window table thead tr {
   background: linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%) !important;
-  border-bottom: 2px solid #00a862 !important;
+  border-bottom: 2px solid var(--brand) !important;
 }
 
 .misa-table thead th,
@@ -483,7 +502,7 @@ table caption {
   height: 34px !important;
   white-space: nowrap !important;
   border-right: 1px solid #bbf7d0 !important;
-  border-bottom: 2px solid #00a862 !important;
+  border-bottom: 2px solid var(--brand) !important;
 }
 
 .misa-table thead th:last-child,

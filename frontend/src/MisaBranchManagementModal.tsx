@@ -249,7 +249,7 @@ export default function MisaBranchManagementModal({
           flexDirection: "column",
           maxHeight: "90vh",
           overflow: "hidden",
-          fontFamily: "'Be Vietnam Pro', -apple-system, sans-serif",
+          fontFamily: "Roboto, Arial, sans-serif",
         }}
       >
         {/* Header Modal */}
@@ -270,7 +270,7 @@ export default function MisaBranchManagementModal({
                 height: 40,
                 borderRadius: 10,
                 background: "#e0f2fe",
-                color: "#0284c7",
+                color: "var(--brand)",
                 display: "grid",
                 placeItems: "center",
               }}
@@ -316,7 +316,7 @@ export default function MisaBranchManagementModal({
                   borderBottom: "1px solid #e2e8f0",
                 }}
               >
-                <div style={{ fontSize: 15, fontWeight: 700, color: "#0284c7", display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--brand)", display: "flex", alignItems: "center", gap: 6 }}>
                   {editingBranch ? <Edit2 size={16} /> : <Plus size={16} />}
                   {editingBranch ? `Chỉnh sửa chi nhánh: ${editingBranch.name}` : "Thêm chi nhánh mới"}
                 </div>
@@ -355,7 +355,7 @@ export default function MisaBranchManagementModal({
                       border: "1px solid #cbd5e1",
                       fontSize: 13,
                       boxSizing: "border-box",
-                      fontFamily: "monospace",
+                      fontFamily: "Roboto, Arial, sans-serif",
                       fontWeight: 700,
                     }}
                   />
@@ -473,7 +473,7 @@ export default function MisaBranchManagementModal({
                     type="checkbox"
                     checked={formIsHeadOffice}
                     onChange={(e) => setFormIsHeadOffice(e.target.checked)}
-                    style={{ width: 16, height: 16, accentColor: "#0284c7" }}
+                    style={{ width: 16, height: 16, accentColor: "var(--brand)" }}
                   />
                   Đặt làm Trụ sở chính (Head Office)
                 </label>
@@ -491,8 +491,8 @@ export default function MisaBranchManagementModal({
                       fontWeight: 600,
                     }}
                   >
-                    <option value="ACTIVE">🟢 Đang hoạt động</option>
-                    <option value="INACTIVE">⚪ Ngừng hoạt động</option>
+                    <option value="ACTIVE">Đang hoạt động</option>
+                    <option value="INACTIVE">Ngừng hoạt động</option>
                   </select>
                 </div>
               </div>
@@ -520,7 +520,7 @@ export default function MisaBranchManagementModal({
                   style={{
                     padding: "8px 20px",
                     borderRadius: 6,
-                    background: "#0284c7",
+                    background: "var(--brand)",
                     color: "#ffffff",
                     border: "none",
                     fontSize: 13,
@@ -539,7 +539,7 @@ export default function MisaBranchManagementModal({
               {/* Toolbar */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
                 <div style={{ position: "relative", flex: 1, maxWidth: 360 }}>
-                  <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                  <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
                   <input
                     type="text"
                     value={search}
@@ -588,7 +588,7 @@ export default function MisaBranchManagementModal({
                       gap: 6,
                       padding: "8px 16px",
                       borderRadius: 8,
-                      background: "#0284c7",
+                      background: "var(--brand)",
                       color: "#ffffff",
                       border: "none",
                       fontSize: 13,
@@ -634,7 +634,7 @@ export default function MisaBranchManagementModal({
                               background: isCurrentActive ? "#f0fdf4" : undefined,
                             }}
                           >
-                            <td style={{ padding: "10px 10px", fontWeight: 700, fontFamily: "monospace", color: "#0284c7", whiteSpace: "nowrap" }}>
+                            <td style={{ padding: "10px 10px", fontWeight: 700, fontFamily: "Roboto, Arial, sans-serif", color: "var(--brand)", whiteSpace: "nowrap" }}>
                               {b.code}
                             </td>
                             <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
@@ -717,7 +717,7 @@ export default function MisaBranchManagementModal({
                                       borderRadius: 6,
                                       background: "#eff6ff",
                                       border: "1px solid #bfdbfe",
-                                      color: "#0284c7",
+                                      color: "var(--brand)",
                                       fontSize: 12,
                                       fontWeight: 600,
                                       whiteSpace: "nowrap",

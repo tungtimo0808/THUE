@@ -253,7 +253,7 @@ export function SaleCommercialInvoiceModal({
         alignItems: "center",
         justifyContent: "center",
         zIndex: 1100,
-        fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+        fontFamily: "Roboto, Arial, sans-serif",
       }}
     >
       <div
@@ -325,7 +325,7 @@ export function SaleCommercialInvoiceModal({
                 alignItems: "center",
                 gap: 4,
                 fontSize: 12.5,
-                color: "#00a862",
+                color: "var(--brand)",
                 cursor: "pointer",
                 padding: "2px 6px",
                 borderRadius: 4,
@@ -476,7 +476,7 @@ export function SaleCommercialInvoiceModal({
                         borderRadius: 3,
                         border: "1px solid #cbd5e1",
                         background: "#ffffff",
-                        color: "#00a862",
+                        color: "var(--brand)",
                         cursor: "pointer",
                         display: "grid",
                         placeItems: "center",
@@ -582,7 +582,7 @@ export function SaleCommercialInvoiceModal({
                         right: 6,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -650,7 +650,7 @@ export function SaleCommercialInvoiceModal({
                         right: 6,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -770,7 +770,7 @@ export function SaleCommercialInvoiceModal({
                     }}
                   >
                     <span>Người mua hàng</span>
-                    <Info size={12} style={{ color: "#0284c7" }} />
+                    <Info size={12} style={{ color: "var(--brand)" }} />
                   </label>
                   <input
                     type="text"
@@ -945,7 +945,7 @@ export function SaleCommercialInvoiceModal({
                         borderRadius: 3,
                         border: "1px solid #cbd5e1",
                         background: "#ffffff",
-                        color: "#00a862",
+                        color: "var(--brand)",
                         cursor: "pointer",
                         display: "grid",
                         placeItems: "center",
@@ -966,7 +966,7 @@ export function SaleCommercialInvoiceModal({
                     }}
                     style={{
                       fontSize: 12,
-                      color: "#00a862",
+                      color: "var(--brand)",
                       textDecoration: "none",
                       cursor: "pointer",
                       fontWeight: 500,
@@ -1127,7 +1127,7 @@ export function SaleCommercialInvoiceModal({
                     }}
                   >
                     <span>Ngày HĐ</span>
-                    <Info size={12} style={{ color: "#0284c7" }} />
+                    <Info size={12} style={{ color: "var(--brand)" }} />
                   </label>
                   <div style={{ position: "relative" }}>
                     <input
@@ -1152,7 +1152,7 @@ export function SaleCommercialInvoiceModal({
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1181,10 +1181,10 @@ export function SaleCommercialInvoiceModal({
               padding: "9px 4px",
               fontSize: 13,
               fontWeight: 600,
-              color: "#00a862",
+              color: "var(--brand)",
               border: "none",
               background: "transparent",
-              borderBottom: "2.5px solid #00a862",
+              borderBottom: "2.5px solid var(--brand)",
               cursor: "pointer",
             }}
           >
@@ -1233,7 +1233,7 @@ export function SaleCommercialInvoiceModal({
                   <th style={{ width: 38, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>#</th>
                   <th style={{ width: 140, padding: "4px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                      <Pin size={12} style={{ color: "#00a862" }} />
+                      <Pin size={12} style={{ color: "var(--brand)" }} />
                       <span>Mã hàng</span>
                     </div>
                   </th>
@@ -1368,7 +1368,7 @@ export function SaleCommercialInvoiceModal({
                             background: "transparent",
                           }}
                         />
-                        <FileText size={12} style={{ color: "#00a862" }} />
+                        <FileText size={12} style={{ color: "var(--brand)" }} />
                       </div>
                     </td>
 
@@ -1728,8 +1728,8 @@ export function SaleCommercialInvoiceModal({
                     maxWidth: "432px",
                   }}
                 >
-                  <UploadCloud size={20} style={{ color: "#00a862" }} />
-                  <span style={{ fontSize: 12, color: "#0284c7" }}>
+                  <UploadCloud size={20} style={{ color: "var(--brand)" }} />
+                  <span style={{ fontSize: 12, color: "var(--brand)" }}>
                     Chọn tệp hoặc kéo và thả tệp vào đây
                   </span>
                 </div>

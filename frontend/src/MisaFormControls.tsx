@@ -4,7 +4,7 @@ import { Calendar, Check, ChevronDown } from "lucide-react";
 
 /* Bộ điều khiển form dùng chung cho các bảng "Chọn tham số" để đồng bộ giao diện toàn web. */
 
-export const MISA_GREEN = "#00a862";
+export const MISA_GREEN = "var(--brand)";
 const BORDER = "#cbd5e1";
 const CONTROL_HEIGHT = 34;
 
@@ -51,7 +51,7 @@ export function MisaButton({
     ? { opacity: 0.55, cursor: "not-allowed" }
     : hover
       ? variant === "primary"
-        ? { background: "#009456", borderColor: "#009456" }
+        ? { background: "var(--brand)", borderColor: "var(--brand)" }
         : variant === "ghost"
           ? { background: "#f1f5f9" }
           : { background: "#f8fafc", borderColor: "#94a3b8" }

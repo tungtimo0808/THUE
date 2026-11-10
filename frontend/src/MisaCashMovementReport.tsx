@@ -1,3 +1,5 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
+import { exportVisibleTable } from "./table-actions";
 import {CASH_PERIODS,cashPeriodDates,cashPeriodSubtitle} from "./cash-report-periods";
 import {cashDateRange,cashDateValue} from './cash-date';
 import React, { useState, useMemo } from "react";
@@ -224,7 +226,7 @@ export default function MisaCashMovementReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -242,7 +244,7 @@ export default function MisaCashMovementReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu mẫu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -252,7 +254,7 @@ export default function MisaCashMovementReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -292,7 +294,7 @@ export default function MisaCashMovementReport({
             style={{
               position: "absolute",
               left: 10,
-              color: "#94a3b8",
+              color: "#64748b",
             }}
           />
           <input
@@ -387,7 +389,7 @@ export default function MisaCashMovementReport({
             cursor: "pointer",
           }}
           title="Xuất khẩu Excel"
-          onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+          onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
         >
           <span style={{ fontSize: 12, fontWeight: 700 }}>XLS</span>
           <ChevronDown size={13} color="#64748b" />
@@ -550,7 +552,7 @@ export default function MisaCashMovementReport({
                         padding: "7px 12px",
                         paddingLeft: row.indent ? `${row.indent * 24 + 12}px` : "12px",
                         fontWeight: row.isBold ? 700 : 400,
-                        color: row.isLink ? "#0284c7" : "#1e293b",
+                        color: row.isLink ? "var(--brand)" : "#1e293b",
                         cursor: row.isLink ? "pointer" : "default",
                       }}
                       onClick={() => {
@@ -629,7 +631,7 @@ export default function MisaCashMovementReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -643,7 +645,7 @@ export default function MisaCashMovementReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -654,7 +656,7 @@ export default function MisaCashMovementReport({
               <span
                 style={{
                   padding: "2px 8px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   borderRadius: 3,
                   fontSize: 12,
@@ -669,7 +671,7 @@ export default function MisaCashMovementReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -683,7 +685,7 @@ export default function MisaCashMovementReport({
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "#64748b",
                   cursor: "not-allowed",
                   fontSize: 12,
                   padding: "2px 6px",
@@ -802,7 +804,7 @@ export default function MisaCashMovementReport({
                       width: "100%",
                       height: 32,
                       padding: "0 10px",
-                      border: "1px solid #00a862",
+                      border: "1px solid var(--brand)",
                       borderRadius: 4,
                       fontSize: 13,
                       background: "#ffffff",
@@ -846,7 +848,7 @@ export default function MisaCashMovementReport({
                         position: "absolute",
                         right: 8,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -885,7 +887,7 @@ export default function MisaCashMovementReport({
                         position: "absolute",
                         right: 8,
                         top: 9,
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -945,7 +947,7 @@ export default function MisaCashMovementReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

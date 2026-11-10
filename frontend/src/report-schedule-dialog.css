@@ -51,9 +51,9 @@
   font: inherit;
 }
 .misa-report-schedule-dialog button[role="tab"][aria-selected="true"] {
-  background: #0284c7;
+  background: var(--brand);
   color: white;
-  border-color: #0284c7;
+  border-color: var(--brand);
 }
 .misa-report-schedule-dialog .pc-date-input {
   position: relative;

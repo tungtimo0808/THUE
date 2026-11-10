@@ -431,7 +431,7 @@ export function SaleReturnModal({
         alignItems: "center",
         justifyContent: "center",
         zIndex: 1100,
-        fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+        fontFamily: "Roboto, Arial, sans-serif",
       }}
     >
       <div
@@ -572,7 +572,7 @@ export function SaleReturnModal({
                   display: "flex",
                   alignItems: "center",
                   gap: 2,
-                  color: "#94a3b8",
+                  color: "#64748b",
                 }}
               >
                 <Search size={13} />
@@ -589,7 +589,7 @@ export function SaleReturnModal({
                 alignItems: "center",
                 gap: 4,
                 fontSize: 12.5,
-                color: "#00a862",
+                color: "var(--brand)",
                 cursor: "pointer",
                 padding: "2px 6px",
                 marginRight: 6,
@@ -688,7 +688,7 @@ export function SaleReturnModal({
                   setReturnType("debt");
                   setUpperTab("main");
                 }}
-                style={{ accentColor: "#00b06b", cursor: "pointer", width: 15, height: 15 }}
+                style={{ accentColor: "var(--brand)", cursor: "pointer", width: 15, height: 15 }}
               />
               <span>Giảm trừ công nợ</span>
             </label>
@@ -713,7 +713,7 @@ export function SaleReturnModal({
                   setReturnType("cash");
                   setUpperTab("main");
                 }}
-                style={{ accentColor: "#00b06b", cursor: "pointer", width: 15, height: 15 }}
+                style={{ accentColor: "var(--brand)", cursor: "pointer", width: 15, height: 15 }}
               />
               <span>Trả lại tiền mặt</span>
             </label>
@@ -734,7 +734,7 @@ export function SaleReturnModal({
                 type="checkbox"
                 checked={isStockInward}
                 onChange={(e) => setIsStockInward(e.target.checked)}
-                style={{ accentColor: "#00b06b", cursor: "pointer", width: 15, height: 15 }}
+                style={{ accentColor: "var(--brand)", cursor: "pointer", width: 15, height: 15 }}
               />
               <span>Kiêm phiếu nhập kho</span>
             </label>
@@ -805,10 +805,10 @@ export function SaleReturnModal({
                 padding: "8px 2px",
                 fontSize: 12.5,
                 fontWeight: 600,
-                color: upperTab === "main" ? "#00a862" : "#64748b",
+                color: upperTab === "main" ? "var(--brand)" : "#64748b",
                 border: "none",
                 background: "transparent",
-                borderBottom: upperTab === "main" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                borderBottom: upperTab === "main" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                 cursor: "pointer",
               }}
             >
@@ -824,10 +824,10 @@ export function SaleReturnModal({
                   padding: "8px 2px",
                   fontSize: 12.5,
                   fontWeight: 600,
-                  color: upperTab === "stock" ? "#00a862" : "#64748b",
+                  color: upperTab === "stock" ? "var(--brand)" : "#64748b",
                   border: "none",
                   background: "transparent",
-                  borderBottom: upperTab === "stock" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                  borderBottom: upperTab === "stock" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                   cursor: "pointer",
                 }}
               >
@@ -843,10 +843,10 @@ export function SaleReturnModal({
                 padding: "8px 2px",
                 fontSize: 12.5,
                 fontWeight: 600,
-                color: upperTab === "invoice" ? "#00a862" : "#64748b",
+                color: upperTab === "invoice" ? "var(--brand)" : "#64748b",
                 border: "none",
                 background: "transparent",
-                borderBottom: upperTab === "invoice" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                borderBottom: upperTab === "invoice" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                 cursor: "pointer",
               }}
             >
@@ -935,7 +935,7 @@ export function SaleReturnModal({
                           borderRadius: 3,
                           border: "1px solid #cbd5e1",
                           background: "#ffffff",
-                          color: "#00a862",
+                          color: "var(--brand)",
                           cursor: "pointer",
                           display: "grid",
                           placeItems: "center",
@@ -1062,7 +1062,7 @@ export function SaleReturnModal({
                           borderRadius: 3,
                           border: "1px solid #cbd5e1",
                           background: "#ffffff",
-                          color: "#00a862",
+                          color: "var(--brand)",
                           cursor: "pointer",
                           display: "grid",
                           placeItems: "center",
@@ -1174,7 +1174,7 @@ export function SaleReturnModal({
                             borderRadius: 3,
                             border: "1px solid #cbd5e1",
                             background: "#ffffff",
-                            color: "#00a862",
+                            color: "var(--brand)",
                             cursor: "pointer",
                             display: "grid",
                             placeItems: "center",
@@ -1192,7 +1192,7 @@ export function SaleReturnModal({
                           e.preventDefault();
                           notify("Mở tham chiếu chứng từ");
                         }}
-                        style={{ fontSize: 12, color: "#00a862", textDecoration: "none", fontWeight: 500 }}
+                        style={{ fontSize: 12, color: "var(--brand)", textDecoration: "none", fontWeight: 500 }}
                       >
                         Tham chiếu ...
                       </a>
@@ -1206,7 +1206,7 @@ export function SaleReturnModal({
                         e.preventDefault();
                         notify("Mở tham chiếu chứng từ");
                       }}
-                      style={{ fontSize: 12, color: "#00a862", textDecoration: "none", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "var(--brand)", textDecoration: "none", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </a>
@@ -1243,7 +1243,7 @@ export function SaleReturnModal({
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1276,7 +1276,7 @@ export function SaleReturnModal({
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1364,7 +1364,7 @@ export function SaleReturnModal({
                           borderRadius: 3,
                           border: "1px solid #cbd5e1",
                           background: "#ffffff",
-                          color: "#00a862",
+                          color: "var(--brand)",
                           cursor: "pointer",
                           display: "grid",
                           placeItems: "center",
@@ -1513,7 +1513,7 @@ export function SaleReturnModal({
                           borderRadius: 3,
                           border: "1px solid #cbd5e1",
                           background: "#ffffff",
-                          color: "#00a862",
+                          color: "var(--brand)",
                           cursor: "pointer",
                           display: "grid",
                           placeItems: "center",
@@ -1651,7 +1651,7 @@ export function SaleReturnModal({
                             borderRadius: 3,
                             border: "1px solid #cbd5e1",
                             background: "#ffffff",
-                            color: "#00a862",
+                            color: "var(--brand)",
                             cursor: "pointer",
                             display: "grid",
                             placeItems: "center",
@@ -1669,7 +1669,7 @@ export function SaleReturnModal({
                           e.preventDefault();
                           notify("Mở tham chiếu chứng từ");
                         }}
-                        style={{ fontSize: 12, color: "#00a862", textDecoration: "none", fontWeight: 500 }}
+                        style={{ fontSize: 12, color: "var(--brand)", textDecoration: "none", fontWeight: 500 }}
                       >
                         Tham chiếu ...
                       </a>
@@ -1683,7 +1683,7 @@ export function SaleReturnModal({
                         e.preventDefault();
                         notify("Mở tham chiếu chứng từ");
                       }}
-                      style={{ fontSize: 12, color: "#00a862", textDecoration: "none", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "var(--brand)", textDecoration: "none", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </a>
@@ -1720,7 +1720,7 @@ export function SaleReturnModal({
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1753,7 +1753,7 @@ export function SaleReturnModal({
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -1841,7 +1841,7 @@ export function SaleReturnModal({
                           borderRadius: 3,
                           border: "1px solid #cbd5e1",
                           background: "#ffffff",
-                          color: "#00a862",
+                          color: "var(--brand)",
                           cursor: "pointer",
                           display: "grid",
                           placeItems: "center",
@@ -1990,7 +1990,7 @@ export function SaleReturnModal({
                           borderRadius: 3,
                           border: "1px solid #cbd5e1",
                           background: "#ffffff",
-                          color: "#00a862",
+                          color: "var(--brand)",
                           cursor: "pointer",
                           display: "grid",
                           placeItems: "center",
@@ -2069,7 +2069,7 @@ export function SaleReturnModal({
                         e.preventDefault();
                         notify("Mở tham chiếu chứng từ");
                       }}
-                      style={{ fontSize: 12, color: "#00a862", textDecoration: "none", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "var(--brand)", textDecoration: "none", fontWeight: 500 }}
                     >
                       Tham chiếu ...
                     </a>
@@ -2106,7 +2106,7 @@ export function SaleReturnModal({
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -2139,7 +2139,7 @@ export function SaleReturnModal({
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -2227,7 +2227,7 @@ export function SaleReturnModal({
                           borderRadius: 3,
                           border: "1px solid #cbd5e1",
                           background: "#ffffff",
-                          color: "#00a862",
+                          color: "var(--brand)",
                           cursor: "pointer",
                           display: "grid",
                           placeItems: "center",
@@ -2335,7 +2335,7 @@ export function SaleReturnModal({
                       e.preventDefault();
                       notify("Mở tham chiếu chứng từ");
                     }}
-                    style={{ fontSize: 12, color: "#00a862", textDecoration: "none", fontWeight: 500 }}
+                    style={{ fontSize: 12, color: "var(--brand)", textDecoration: "none", fontWeight: 500 }}
                   >
                     Tham chiếu ...
                   </a>
@@ -2451,7 +2451,7 @@ export function SaleReturnModal({
                         right: 8,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        color: "#94a3b8",
+                        color: "#64748b",
                       }}
                     />
                   </div>
@@ -2483,10 +2483,10 @@ export function SaleReturnModal({
                 padding: "8px 2px",
                 fontSize: 12.5,
                 fontWeight: 600,
-                color: tableTab === "items" ? "#00a862" : "#64748b",
+                color: tableTab === "items" ? "var(--brand)" : "#64748b",
                 border: "none",
                 background: "transparent",
-                borderBottom: tableTab === "items" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                borderBottom: tableTab === "items" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                 cursor: "pointer",
               }}
             >
@@ -2501,10 +2501,10 @@ export function SaleReturnModal({
                   padding: "8px 2px",
                   fontSize: 12.5,
                   fontWeight: 600,
-                  color: tableTab === "cost" ? "#00a862" : "#64748b",
+                  color: tableTab === "cost" ? "var(--brand)" : "#64748b",
                   border: "none",
                   background: "transparent",
-                  borderBottom: tableTab === "cost" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                  borderBottom: tableTab === "cost" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                   cursor: "pointer",
                 }}
               >
@@ -2608,7 +2608,7 @@ export function SaleReturnModal({
                   <tr
                     style={{
                       background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)",
-                      borderBottom: "2px solid #00a862",
+                      borderBottom: "2px solid var(--brand)",
                       height: 34,
                       color: "#065f46",
                       fontWeight: 600,
@@ -2617,7 +2617,7 @@ export function SaleReturnModal({
                     <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>#</th>
                     <th style={{ width: 130, padding: "4px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        <Pin size={12} style={{ color: "#00a862" }} />
+                        <Pin size={12} style={{ color: "var(--brand)" }} />
                         <span>Mã hàng</span>
                       </div>
                     </th>
@@ -2789,7 +2789,7 @@ export function SaleReturnModal({
                   <tr
                     style={{
                       background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)",
-                      borderBottom: "2px solid #00a862",
+                      borderBottom: "2px solid var(--brand)",
                       height: 34,
                       color: "#065f46",
                       fontWeight: 600,
@@ -2798,7 +2798,7 @@ export function SaleReturnModal({
                     <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #cbd5e1", padding: "4px" }}>#</th>
                     <th style={{ width: 130, padding: "4px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        <Pin size={12} style={{ color: "#00a862" }} />
+                        <Pin size={12} style={{ color: "var(--brand)" }} />
                         <span>Mã hàng</span>
                       </div>
                     </th>
@@ -4155,10 +4155,10 @@ export function SaleReturnModal({
                     type="checkbox"
                     checked={noVatReport}
                     onChange={(e) => setNoVatReport(e.target.checked)}
-                    style={{ accentColor: "#00b06b", cursor: "pointer", width: 14, height: 14 }}
+                    style={{ accentColor: "var(--brand)", cursor: "pointer", width: 14, height: 14 }}
                   />
                   <span>Không lên bảng kê thuế GTGT</span>
-                  <Info size={12} style={{ color: "#0284c7" }} />
+                  <Info size={12} style={{ color: "var(--brand)" }} />
                 </label>
               </div>
 
@@ -4250,8 +4250,8 @@ export function SaleReturnModal({
                     maxWidth: "400px",
                   }}
                 >
-                  <UploadCloud size={20} style={{ color: "#00a862" }} />
-                  <span style={{ fontSize: 12, color: "#0284c7" }}>
+                  <UploadCloud size={20} style={{ color: "var(--brand)" }} />
+                  <span style={{ fontSize: 12, color: "var(--brand)" }}>
                     Chọn tệp hoặc kéo và thả tệp vào đây
                   </span>
                 </div>
@@ -4290,14 +4290,14 @@ export function SaleReturnModal({
                 }}
               >
                 <span>Tổng tiền thanh toán</span>
-                <span style={{ color: "#00a862" }}>{formatVND(isExportTrust ? totalAmount : totalPayment)}</span>
+                <span style={{ color: "var(--brand)" }}>{formatVND(isExportTrust ? totalAmount : totalPayment)}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Short info shortcut line */}
-        <div style={{ padding: "0 16px 4px 16px", fontSize: 11, color: "#94a3b8" }}>
+        <div style={{ padding: "0 16px 4px 16px", fontSize: 11, color: "#64748b" }}>
           F9 - Thêm nhanh
         </div>
 
@@ -4334,7 +4334,7 @@ export function SaleReturnModal({
                   width: 32,
                   height: 18,
                   borderRadius: 9,
-                  background: showAccounts ? "#00a862" : "#cbd5e1",
+                  background: showAccounts ? "var(--brand)" : "#cbd5e1",
                   position: "relative",
                   transition: "background 0.2s",
                 }}

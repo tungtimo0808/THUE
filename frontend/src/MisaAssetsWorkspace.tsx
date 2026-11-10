@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import { useState, useEffect } from "react";
 import { formatMoneyInput, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
 import { useNavigate } from "react-router-dom";
@@ -500,12 +501,12 @@ export default function MisaAssetsWorkspace({
   // Tab views (Intro vs Table)
   const [registerView, setRegisterView] = useState<"intro" | "table">("table");
   const [registerActionCode, setRegisterActionCode] = useState<string | null>(null);
-  const [increaseView, setIncreaseView] = useState<"intro" | "table">("intro");
-  const [deprView, setDeprView] = useState<"intro" | "table">("intro");
-  const [revalView, setRevalView] = useState<"intro" | "table">("intro");
-  const [transferView, setTransferView] = useState<"intro" | "table">("intro");
-  const [decreaseView, setDecreaseView] = useState<"intro" | "table">("intro");
-  const [stocktakeView, setStocktakeView] = useState<"intro" | "table">("intro");
+  const [increaseView, setIncreaseView] = useState<"intro" | "table">("table");
+  const [deprView, setDeprView] = useState<"intro" | "table">("table");
+  const [revalView, setRevalView] = useState<"intro" | "table">("table");
+  const [transferView, setTransferView] = useState<"intro" | "table">("table");
+  const [decreaseView, setDecreaseView] = useState<"intro" | "table">("table");
+  const [stocktakeView, setStocktakeView] = useState<"intro" | "table">("table");
 
   // Modals state
   const [showAddAssetModal, setShowAddAssetModal] = useState(false);
@@ -786,7 +787,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
 </tbody></table>
 <table style="margin-top:24px"><tr class="center"><td class="center"><strong>Người lập</strong><br><span class="muted">(Ký, họ tên)</span></td><td class="center"><strong>Kế toán trưởng</strong><br><span class="muted">(Ký, họ tên)</span></td></tr></table>`;
     openPrintFrame(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(record.number)}</title>
-<style>body{font-family:"Times New Roman",serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%}.num{text-align:right}.center{text-align:center}h1{font-size:18px;margin:4px 0}.muted{font-style:italic}</style></head><body>${head}${body}</body></html>`,
+<style>body{font-family: Roboto, Arial, sans-serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%}.num{text-align:right}.center{text-align:center}h1{font-size:18px;margin:4px 0}.muted{font-style:italic}</style></head><body>${head}${body}</body></html>`,
       `In ${record.number}`, () => notify("Trình duyệt chặn lệnh in. Vui lòng thử lại."));
   };
   const handleSaveReval = async (printTemplate?: string) => {
@@ -1017,7 +1018,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       const td = (value: unknown) => `<td style="${cell}">${escapeHtml(String(value ?? ""))}</td>`;
       const rows = (record.lines || []).map((l: any, i: number) => `<tr>${td(i + 1)}${td(l.asset_code)}${td(l.asset_name)}${td(l.from_department_name)}${td(l.to_department_name)}${td(l.sales_contract)}${td(l.sales_order)}${td(l.project)}${td(l.expense_item)}${td(l.cost_object)}</tr>`).join("");
       openPrintFrame(`<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(record.voucher_no)}</title>
-<style>body{font-family:"Times New Roman",serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%;margin-top:8px}.center{text-align:center}h1{font-size:18px;margin:4px 0}.muted{font-style:italic}</style></head><body>
+<style>body{font-family: Roboto, Arial, sans-serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%;margin-top:8px}.center{text-align:center}h1{font-size:18px;margin:4px 0}.muted{font-style:italic}</style></head><body>
 <div class="center"><h1>BIÊN BẢN GIAO NHẬN TÀI SẢN CỐ ĐỊNH</h1><div>Số: <strong>${escapeHtml(record.voucher_no)}</strong> &nbsp; Ngày: ${escapeHtml(toViDate(record.transaction_date))}</div></div>
 <p>- Người bàn giao: ${escapeHtml(record.deliverer)}<br>- Người tiếp nhận: ${escapeHtml(record.receiver)}<br>- Lý do điều chuyển: ${escapeHtml(record.reason)}${record.reference ? `<br>- Tham chiếu: ${escapeHtml(record.reference)}` : ""}</p>
 <table><thead><tr>${["STT", "Mã tài sản", "Tên tài sản", "Từ đơn vị", "Đến đơn vị", "Hợp đồng bán", "Đơn đặt hàng", "Công trình", "Khoản mục CP", "Đối tượng THCP"].map((h) => `<th style="${cell}">${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
@@ -1549,7 +1550,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     const money = (value: unknown) => Number(value || 0).toLocaleString("vi-VN");
     const cell = "border:1px solid #334155;padding:5px 7px";
     const rows = (record.rows || []).map((row: any) => `<tr><td style="${cell}">${escapeHtml(row.asset_code)}</td><td style="${cell}">${escapeHtml(row.asset_name)}</td><td style="${cell}">${money(row.original_cost)}</td><td style="${cell}">${money(row.accumulated_depreciation)}</td><td style="${cell}">${money(row.remaining_value)}</td></tr>`).join("");
-    const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(record.voucher_no)}</title><style>body{font-family:"Times New Roman",serif;margin:30px;color:#111827}table{border-collapse:collapse;width:100%}h1{text-align:center;font-size:20px}p{font-size:14px}</style></head><body><h1>CHỨNG TỪ GHI GIẢM TÀI SẢN CỐ ĐỊNH</h1><p>Số: ${escapeHtml(record.voucher_no)} &nbsp; Ngày hạch toán: ${escapeHtml(toViDate(record.posting_date))}</p><p>Lý do: ${escapeHtml(record.reason)}${record.reference ? ` &nbsp; Tham chiếu: ${escapeHtml(record.reference)}` : ""}</p><table><thead><tr><th style="${cell}">Mã tài sản</th><th style="${cell}">Tên tài sản</th><th style="${cell}">Nguyên giá</th><th style="${cell}">Hao mòn lũy kế</th><th style="${cell}">Giá trị còn lại</th></tr></thead><tbody>${rows}</tbody></table><p>Tổng nguyên giá ghi giảm: <strong>${money(record.total_original_cost)}</strong></p></body></html>`;
+    const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(record.voucher_no)}</title><style>body{font-family: Roboto, Arial, sans-serif;margin:30px;color:#111827}table{border-collapse:collapse;width:100%}h1{text-align:center;font-size:20px}p{font-size:14px}</style></head><body><h1>CHỨNG TỪ GHI GIẢM TÀI SẢN CỐ ĐỊNH</h1><p>Số: ${escapeHtml(record.voucher_no)} &nbsp; Ngày hạch toán: ${escapeHtml(toViDate(record.posting_date))}</p><p>Lý do: ${escapeHtml(record.reason)}${record.reference ? ` &nbsp; Tham chiếu: ${escapeHtml(record.reference)}` : ""}</p><table><thead><tr><th style="${cell}">Mã tài sản</th><th style="${cell}">Tên tài sản</th><th style="${cell}">Nguyên giá</th><th style="${cell}">Hao mòn lũy kế</th><th style="${cell}">Giá trị còn lại</th></tr></thead><tbody>${rows}</tbody></table><p>Tổng nguyên giá ghi giảm: <strong>${money(record.total_original_cost)}</strong></p></body></html>`;
     openPrintFrame(html, `In ${record.voucher_no}`, () => notify("Đã lưu chứng từ nhưng không thể in. Vui lòng thử lại."));
   };
 
@@ -2284,7 +2285,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
     const bookMoney = (value: unknown) => (value === null || value === undefined ? "" : money(value));
     const lines = (record.lines || []).map((line: any) => `<tr><td style="${cell}">${escapeHtml(line.asset_code)}</td><td style="${cell}">${escapeHtml(line.asset_name)}</td><td style="${cell}">${escapeHtml(line.book_department_name)}</td><td style="${cell}">${bookMoney(line.original_cost)}</td><td style="${cell}">${bookMoney(line.accumulated_depreciation)}</td><td style="${cell}">${escapeHtml(line.reconciliation_result_display)}</td><td style="${cell}">${escapeHtml(line.current_quality)}</td><td style="${cell}">${escapeHtml(line.recommendation)}</td><td style="${cell}">${escapeHtml(line.note)}</td></tr>`).join("");
     const members = (record.members || []).map((m: any) => `<li>${escapeHtml(m.name)} – ${escapeHtml(m.position)} – ${escapeHtml(m.represent)} (${escapeHtml(m.role)})</li>`).join("");
-    const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(record.voucher_no)}</title><style>body{font-family:"Times New Roman",serif;margin:30px;color:#111827}table{border-collapse:collapse;width:100%}h1{text-align:center;font-size:20px}p{font-size:14px}</style></head><body><h1>BIÊN BẢN KIỂM KÊ TÀI SẢN CỐ ĐỊNH</h1><p>Số: ${escapeHtml(record.voucher_no)} &nbsp; Kiểm kê đến ngày: ${escapeHtml(record.count_date_display)}</p><p>Mục đích: ${escapeHtml(record.purpose)}</p><p>Ngày lập: ${escapeHtml(record.report_datetime)}${record.reference ? ` &nbsp; Tham chiếu: ${escapeHtml(record.reference)}` : ""}</p><p>Thành viên tham gia:</p><ul>${members}</ul><table><thead><tr><th style="${cell}">Mã tài sản</th><th style="${cell}">Tên tài sản</th><th style="${cell}">Đơn vị theo sổ</th><th style="${cell}">Nguyên giá</th><th style="${cell}">Hao mòn lũy kế</th><th style="${cell}">Kết quả</th><th style="${cell}">Chất lượng</th><th style="${cell}">Kiến nghị</th><th style="${cell}">Ghi chú</th></tr></thead><tbody>${lines}</tbody></table><p>Kết luận: ${escapeHtml(record.conclusion)}</p><p>Tổng số TSCĐ: ${Number(record.summary?.book_assets_count || 0)} &nbsp; Khớp: ${Number(record.summary?.matched_count || 0)} &nbsp; Chênh lệch: ${Number(record.summary?.diff_count || 0)}</p></body></html>`;
+    const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(record.voucher_no)}</title><style>body{font-family: Roboto, Arial, sans-serif;margin:30px;color:#111827}table{border-collapse:collapse;width:100%}h1{text-align:center;font-size:20px}p{font-size:14px}</style></head><body><h1>BIÊN BẢN KIỂM KÊ TÀI SẢN CỐ ĐỊNH</h1><p>Số: ${escapeHtml(record.voucher_no)} &nbsp; Kiểm kê đến ngày: ${escapeHtml(record.count_date_display)}</p><p>Mục đích: ${escapeHtml(record.purpose)}</p><p>Ngày lập: ${escapeHtml(record.report_datetime)}${record.reference ? ` &nbsp; Tham chiếu: ${escapeHtml(record.reference)}` : ""}</p><p>Thành viên tham gia:</p><ul>${members}</ul><table><thead><tr><th style="${cell}">Mã tài sản</th><th style="${cell}">Tên tài sản</th><th style="${cell}">Đơn vị theo sổ</th><th style="${cell}">Nguyên giá</th><th style="${cell}">Hao mòn lũy kế</th><th style="${cell}">Kết quả</th><th style="${cell}">Chất lượng</th><th style="${cell}">Kiến nghị</th><th style="${cell}">Ghi chú</th></tr></thead><tbody>${lines}</tbody></table><p>Kết luận: ${escapeHtml(record.conclusion)}</p><p>Tổng số TSCĐ: ${Number(record.summary?.book_assets_count || 0)} &nbsp; Khớp: ${Number(record.summary?.matched_count || 0)} &nbsp; Chênh lệch: ${Number(record.summary?.diff_count || 0)}</p></body></html>`;
     openPrintFrame(html, `In ${record.voucher_no}`, () => notify("Đã lưu biên bản nhưng không thể in. Vui lòng thử lại."));
   };
 
@@ -4864,7 +4865,7 @@ ${(record.entries || []).map((entry: any) => `<tr><td style="${cell}">${escapeHt
       const th = (labels: string[]) => `<tr>${labels.map((label) => `<th style="${cell}">${label}</th>`).join("")}</tr>`;
       const td = (value: unknown, cls = "") => `<td style="${cell}"${cls ? ` class="${cls}"` : ""}>${escapeHtml(String(value ?? ""))}</td>`;
       const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(String(number))}</title>
-<style>body{font-family:"Times New Roman",serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%;margin-top:8px}.num{text-align:right}.center{text-align:center}h1{font-size:18px;margin:4px 0}h2{font-size:14px;margin:16px 0 0}.muted{font-style:italic}</style></head><body>
+<style>body{font-family: Roboto, Arial, sans-serif;font-size:13px;color:#000;margin:24px}table{border-collapse:collapse;width:100%;margin-top:8px}.num{text-align:right}.center{text-align:center}h1{font-size:18px;margin:4px 0}h2{font-size:14px;margin:16px 0 0}.muted{font-style:italic}</style></head><body>
 <div class="center"><h1>BẢNG TÍNH VÀ PHÂN BỔ KHẤU HAO TSCĐ</h1><div>Tháng ${escapeHtml(String(month))} năm ${escapeHtml(String(year))}</div>
 <div>Số: <strong>${escapeHtml(String(number))}</strong> &nbsp; Ngày chứng từ: ${escapeHtml(record ? toViDate(record.voucher_date) : deprVoucherDate)} &nbsp; Ngày hạch toán: ${escapeHtml(record ? toViDate(record.posting_date) : deprPostingDate)}</div></div>
 <p>- Diễn giải: ${escapeHtml(String(record?.description ?? deprReason))}</p>
@@ -5365,8 +5366,8 @@ ${entries.length
     <div style={{ marginBottom: 26 }}>
       <svg width="220" height="110" viewBox="0 0 220 110" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="25" y="24" width="46" height="34" rx="17" fill="#ecfdf5" stroke="#a7f3d0" strokeWidth="1.5" strokeDasharray="3 3"/>
-        <path d="M40 44V34H56V44H40Z" fill="#00a862"/>
-        <path d="M38 34L48 27L58 34" stroke="#00a862" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M40 44V34H56V44H40Z" fill="var(--brand)"/>
+        <path d="M38 34L48 27L58 34" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round"/>
         <rect x="44" y="37" width="3" height="3" fill="#ffffff"/>
         <rect x="49" y="37" width="3" height="3" fill="#ffffff"/>
         <circle cx="34" cy="30" r="5" fill="#10b981"/>
@@ -5375,7 +5376,7 @@ ${entries.length
         <path d="M78 40H94" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="3 3"/>
         <path d="M91 36L96 40L91 44" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
 
-        <rect x="100" y="26" width="34" height="34" rx="4" fill="#00a862"/>
+        <rect x="100" y="26" width="34" height="34" rx="4" fill="var(--brand)"/>
         <rect x="106" y="32" width="6" height="6" rx="1" fill="#d1fae5"/>
         <rect x="122" y="32" width="6" height="6" rx="1" fill="#d1fae5"/>
         <path d="M112 60V50C112 47.79 113.79 46 116 46H118C120.21 46 122 47.79 122 50V60H112Z" fill="#ffffff"/>
@@ -5389,16 +5390,16 @@ ${entries.length
         <circle cx="145" cy="46" r="6" fill="#059669"/>
         <text x="145" y="49" textAnchor="middle" fontSize="7.5" fontWeight="bold" fill="#ffffff">$</text>
 
-        <circle cx="106" cy="58" r="6" fill="#00a862"/>
+        <circle cx="106" cy="58" r="6" fill="var(--brand)"/>
         <path d="M103.5 58H108.5M106 55.5V60.5" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round"/>
 
         <circle cx="152" cy="53" r="6.5" fill="#f87171"/>
         <circle cx="152" cy="55" r="5.5" fill="#fed7aa"/>
-        <path d="M145 74C145 66 148 64 152 64C156 64 159 66 159 74H145Z" fill="#00a862"/>
+        <path d="M145 74C145 66 148 64 152 64C156 64 159 66 159 74H145Z" fill="var(--brand)"/>
         <path d="M136 74L140 65H150L154 74H136Z" fill="#cbd5e1"/>
         <rect x="134" y="73" width="22" height="2.5" rx="1" fill="#94a3b8"/>
 
-        <path d="M92 20V24M90 22H94" stroke="#00a862" strokeWidth="1.2" strokeLinecap="round"/>
+        <path d="M92 20V24M90 22H94" stroke="var(--brand)" strokeWidth="1.2" strokeLinecap="round"/>
         <circle cx="94" cy="54" r="1.5" fill="#10b981"/>
         <circle cx="168" cy="52" r="1.5" fill="#34d399"/>
         <path d="M164 16V19M162.5 17.5H165.5" stroke="#10b981" strokeWidth="1" strokeLinecap="round"/>
@@ -5411,9 +5412,9 @@ ${entries.length
     <div style={{ marginBottom: 26 }}>
       <svg width="220" height="110" viewBox="0 0 220 110" fill="none" xmlns="http://www.w3.org/2000/svg">
         {/* Factory / Building Left with chimney */}
-        <path d="M46 64V40H60V64H46Z" fill="#00a862"/>
-        <path d="M42 40L53 30L64 40" stroke="#00a862" strokeWidth="2.5" strokeLinecap="round"/>
-        <rect x="58" y="24" width="4" height="10" fill="#00a862"/>
+        <path d="M46 64V40H60V64H46Z" fill="var(--brand)"/>
+        <path d="M42 40L53 30L64 40" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round"/>
+        <rect x="58" y="24" width="4" height="10" fill="var(--brand)"/>
         <rect x="49" y="44" width="3" height="3" fill="#ffffff"/>
         <rect x="54" y="44" width="3" height="3" fill="#ffffff"/>
         <rect x="49" y="52" width="3" height="3" fill="#ffffff"/>
@@ -5426,8 +5427,8 @@ ${entries.length
 
         {/* Clipboard Center */}
         <rect x="94" y="32" width="28" height="38" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5"/>
-        <path d="M102 30H114V34H102V30Z" fill="#00a862"/>
-        <circle cx="108" cy="48" r="8" fill="#00a862"/>
+        <path d="M102 30H114V34H102V30Z" fill="var(--brand)"/>
+        <circle cx="108" cy="48" r="8" fill="var(--brand)"/>
         <text x="108" y="51.5" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#ffffff">$</text>
         <path d="M100 62H116" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>
 
@@ -5437,16 +5438,16 @@ ${entries.length
 
         {/* Calendar Right */}
         <rect x="150" y="34" width="34" height="32" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5"/>
-        <path d="M150 40H184" stroke="#00a862" strokeWidth="2.5"/>
-        <rect x="156" y="30" width="2" height="4" fill="#00a862"/>
-        <rect x="166" y="30" width="2" height="4" fill="#00a862"/>
-        <rect x="176" y="30" width="2" height="4" fill="#00a862"/>
+        <path d="M150 40H184" stroke="var(--brand)" strokeWidth="2.5"/>
+        <rect x="156" y="30" width="2" height="4" fill="var(--brand)"/>
+        <rect x="166" y="30" width="2" height="4" fill="var(--brand)"/>
+        <rect x="176" y="30" width="2" height="4" fill="var(--brand)"/>
         <circle cx="157" cy="48" r="1.5" fill="#94a3b8"/>
         <circle cx="163" cy="48" r="1.5" fill="#94a3b8"/>
         <circle cx="169" cy="48" r="1.5" fill="#94a3b8"/>
         <circle cx="157" cy="56" r="1.5" fill="#94a3b8"/>
         <circle cx="163" cy="56" r="1.5" fill="#94a3b8"/>
-        <circle cx="178" cy="58" r="5" fill="#00a862"/>
+        <circle cx="178" cy="58" r="5" fill="var(--brand)"/>
         <text x="178" y="60.5" textAnchor="middle" fontSize="6.5" fontWeight="bold" fill="#ffffff">$</text>
 
         {/* Sparkles */}
@@ -5467,42 +5468,42 @@ ${entries.length
         <ellipse cx="112" cy="74" rx="34" ry="7" fill="#f8fafc" />
 
         {/* Garage Building Left */}
-        <path d="M44 65V46L60 38L76 46V65H44Z" fill="#00a862" />
+        <path d="M44 65V46L60 38L76 46V65H44Z" fill="var(--brand)" />
 
         {/* Downward Arrow on roof */}
-        <path d="M60 26V34" stroke="#007a46" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M57 32L60 35L63 32" stroke="#007a46" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M60 26V34" stroke="var(--brand-hover)" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M57 32L60 35L63 32" stroke="var(--brand-hover)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
         {/* Garage Doorway Arch */}
-        <path d="M50 65V51C50 49.5 51.5 48.5 53 48.5H67C68.5 48.5 70 49.5 70 51V65H50Z" fill="#007a46" />
+        <path d="M50 65V51C50 49.5 51.5 48.5 53 48.5H67C68.5 48.5 70 49.5 70 51V65H50Z" fill="var(--brand-hover)" />
 
         {/* White Car Front Silhouette */}
         <path d="M53.5 64C53.5 60.5 55.5 59 60 59C64.5 59 66.5 60.5 66.5 64H53.5Z" fill="#ffffff" />
         <rect x="55.5" y="55" width="9" height="4.5" rx="1.5" fill="#ffffff" />
-        <circle cx="56" cy="62" r="1.2" fill="#007a46" />
-        <circle cx="64" cy="62" r="1.2" fill="#007a46" />
+        <circle cx="56" cy="62" r="1.2" fill="var(--brand-hover)" />
+        <circle cx="64" cy="62" r="1.2" fill="var(--brand-hover)" />
 
         {/* Dashed arrow from Garage to Voucher */}
         <path d="M84 52H120" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 3" />
         <path d="M117 48L122 52L117 56" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
 
         {/* Depreciation Document Right */}
-        <rect x="132" y="34" width="30" height="38" rx="4" fill="#ffffff" stroke="#00a862" strokeWidth="1.5" />
+        <rect x="132" y="34" width="30" height="38" rx="4" fill="#ffffff" stroke="var(--brand)" strokeWidth="1.5" />
         {/* Folded Top-Right Corner */}
         <path d="M152 34V42H162" fill="#10b981" />
-        <path d="M152 34L162 44H152V34Z" fill="#007a46" />
+        <path d="M152 34L162 44H152V34Z" fill="var(--brand-hover)" />
 
         {/* Document horizontal lines */}
-        <rect x="138" y="47" width="16" height="2.5" rx="1" fill="#00a862" />
+        <rect x="138" y="47" width="16" height="2.5" rx="1" fill="var(--brand)" />
         <rect x="138" y="53" width="12" height="2" rx="1" fill="#94a3b8" />
         <rect x="138" y="58" width="14" height="2" rx="1" fill="#cbd5e1" />
 
         {/* Floating Green Dots and Sparkles */}
         <circle cx="128" cy="38" r="2" fill="#10b981" />
-        <circle cx="138" cy="28" r="2.5" fill="#00a862" />
+        <circle cx="138" cy="28" r="2.5" fill="var(--brand)" />
         <circle cx="170" cy="32" r="3" fill="#34d399" />
         <circle cx="172" cy="45" r="2" fill="#10b981" />
-        <circle cx="168" cy="62" r="1.5" fill="#007a46" />
+        <circle cx="168" cy="62" r="1.5" fill="var(--brand-hover)" />
         <path d="M162 24V27M160.5 25.5H163.5" stroke="#10b981" strokeWidth="1" strokeLinecap="round" />
       </svg>
     </div>
@@ -5516,12 +5517,12 @@ ${entries.length
         <ellipse cx="120" cy="74" rx="95" ry="10" fill="#f8fafc" />
 
         {/* Left: Garage Building with white car */}
-        <path d="M26 65V46L42 38L58 46V65H26Z" fill="#00a862" />
-        <path d="M32 65V51C32 49.5 33.5 48.5 35 48.5H49C50.5 48.5 52 49.5 52 51V65H32Z" fill="#007a46" />
+        <path d="M26 65V46L42 38L58 46V65H26Z" fill="var(--brand)" />
+        <path d="M32 65V51C32 49.5 33.5 48.5 35 48.5H49C50.5 48.5 52 49.5 52 51V65H32Z" fill="var(--brand-hover)" />
         <path d="M35.5 64C35.5 60.5 37.5 59 42 59C46.5 59 48.5 60.5 48.5 64H35.5Z" fill="#ffffff" />
         <rect x="37.5" y="55" width="9" height="4.5" rx="1.5" fill="#ffffff" />
-        <circle cx="38" cy="62" r="1.2" fill="#007a46" />
-        <circle cx="46" cy="62" r="1.2" fill="#007a46" />
+        <circle cx="38" cy="62" r="1.2" fill="var(--brand-hover)" />
+        <circle cx="46" cy="62" r="1.2" fill="var(--brand-hover)" />
 
         {/* Arrow 1: Garage to Document */}
         <path d="M66 52H96" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 3" />
@@ -5529,12 +5530,12 @@ ${entries.length
 
         {/* Middle: Document with Clock */}
         <rect x="106" y="32" width="28" height="38" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-        <path d="M112 30H128V34H112V30Z" fill="#00a862" />
-        <rect x="112" y="42" width="16" height="2" rx="1" fill="#00a862" />
+        <path d="M112 30H128V34H112V30Z" fill="var(--brand)" />
+        <rect x="112" y="42" width="16" height="2" rx="1" fill="var(--brand)" />
         <rect x="112" y="47" width="12" height="2" rx="1" fill="#94a3b8" />
         <rect x="112" y="52" width="14" height="2" rx="1" fill="#cbd5e1" />
         {/* Clock badge */}
-        <circle cx="128" cy="62" r="6" fill="#00a862" stroke="#ffffff" strokeWidth="1.5" />
+        <circle cx="128" cy="62" r="6" fill="var(--brand)" stroke="#ffffff" strokeWidth="1.5" />
         <path d="M128 59.5V62H130.5" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
 
         {/* Arrow 2: Document to Person */}
@@ -5544,13 +5545,13 @@ ${entries.length
         {/* Right: Accountant Person with Laptop */}
         <circle cx="198" cy="40" r="6" fill="#fed7aa" />
         <path d="M192 38C192 34 204 34 204 38C204 42 201 44 198 44C195 44 192 42 192 38Z" fill="#059669" />
-        <path d="M190 66C190 56 193 50 198 50C203 50 206 56 206 66H190Z" fill="#00a862" />
+        <path d="M190 66C190 56 193 50 198 50C203 50 206 56 206 66H190Z" fill="var(--brand)" />
         <rect x="180" y="62" width="18" height="3" rx="1.5" fill="#cbd5e1" />
         <path d="M184 62L190 53H194L188 62H184Z" fill="#94a3b8" />
 
         {/* Floating Green Dots and Sparkles */}
         <circle cx="68" cy="36" r="1.5" fill="#10b981" />
-        <circle cx="102" cy="26" r="2" fill="#00a862" />
+        <circle cx="102" cy="26" r="2" fill="var(--brand)" />
         <circle cx="140" cy="30" r="2.5" fill="#34d399" />
         <circle cx="212" cy="34" r="1.5" fill="#10b981" />
         <path d="M152 24V27M150.5 25.5H153.5" stroke="#10b981" strokeWidth="1" strokeLinecap="round" />
@@ -5566,15 +5567,15 @@ ${entries.length
         <ellipse cx="120" cy="74" rx="95" ry="10" fill="#f8fafc" />
 
         {/* Left: Garage Building with white car & Person */}
-        <path d="M26 65V46L42 38L58 46V65H26Z" fill="#00a862" />
-        <path d="M32 65V51C32 49.5 33.5 48.5 35 48.5H49C50.5 48.5 52 49.5 52 51V65H32Z" fill="#007a46" />
+        <path d="M26 65V46L42 38L58 46V65H26Z" fill="var(--brand)" />
+        <path d="M32 65V51C32 49.5 33.5 48.5 35 48.5H49C50.5 48.5 52 49.5 52 51V65H32Z" fill="var(--brand-hover)" />
         <path d="M35.5 64C35.5 60.5 37.5 59 42 59C46.5 59 48.5 60.5 48.5 64H35.5Z" fill="#ffffff" />
         <rect x="37.5" y="55" width="9" height="4.5" rx="1.5" fill="#ffffff" />
-        <circle cx="38" cy="62" r="1.2" fill="#007a46" />
-        <circle cx="46" cy="62" r="1.2" fill="#007a46" />
+        <circle cx="38" cy="62" r="1.2" fill="var(--brand-hover)" />
+        <circle cx="46" cy="62" r="1.2" fill="var(--brand-hover)" />
         {/* Person left */}
-        <circle cx="64" cy="50" r="3" fill="#007a46" />
-        <path d="M60 65C60 58 68 58 68 65H60Z" fill="#007a46" />
+        <circle cx="64" cy="50" r="3" fill="var(--brand-hover)" />
+        <path d="M60 65C60 58 68 58 68 65H60Z" fill="var(--brand-hover)" />
 
         {/* Bi-directional dashed line with arrows */}
         <path d="M78 52H162" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 3" />
@@ -5583,28 +5584,28 @@ ${entries.length
 
         {/* Middle Document with Plus badge */}
         <rect x="106" y="32" width="28" height="38" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-        <path d="M112 30H128V34H112V30Z" fill="#00a862" />
-        <rect x="112" y="42" width="16" height="2" rx="1" fill="#00a862" />
+        <path d="M112 30H128V34H112V30Z" fill="var(--brand)" />
+        <rect x="112" y="42" width="16" height="2" rx="1" fill="var(--brand)" />
         <rect x="112" y="47" width="12" height="2" rx="1" fill="#94a3b8" />
-        <circle cx="120" cy="58" r="6" fill="#00a862" />
+        <circle cx="120" cy="58" r="6" fill="var(--brand)" />
         <path d="M117.5 58H122.5M120 55.5V60.5" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
 
         {/* Right: Garage Building with white car & Person */}
-        <path d="M182 65V46L198 38L214 46V65H182Z" fill="#00a862" />
-        <path d="M188 65V51C188 49.5 189.5 48.5 191 48.5H205C206.5 48.5 208 49.5 208 51V65H188Z" fill="#007a46" />
+        <path d="M182 65V46L198 38L214 46V65H182Z" fill="var(--brand)" />
+        <path d="M188 65V51C188 49.5 189.5 48.5 191 48.5H205C206.5 48.5 208 49.5 208 51V65H188Z" fill="var(--brand-hover)" />
         <path d="M191.5 64C191.5 60.5 193.5 59 198 59C202.5 59 204.5 60.5 204.5 64H191.5Z" fill="#ffffff" />
         <rect x="193.5" y="55" width="9" height="4.5" rx="1.5" fill="#ffffff" />
-        <circle cx="194" cy="62" r="1.2" fill="#007a46" />
-        <circle cx="202" cy="62" r="1.2" fill="#007a46" />
+        <circle cx="194" cy="62" r="1.2" fill="var(--brand-hover)" />
+        <circle cx="202" cy="62" r="1.2" fill="var(--brand-hover)" />
         {/* Person right */}
-        <circle cx="176" cy="50" r="3" fill="#007a46" />
-        <path d="M172 65C172 58 180 58 180 65H172Z" fill="#007a46" />
+        <circle cx="176" cy="50" r="3" fill="var(--brand-hover)" />
+        <path d="M172 65C172 58 180 58 180 65H172Z" fill="var(--brand-hover)" />
 
         {/* Floating Green Dots and Sparkles */}
         <circle cx="94" cy="34" r="2" fill="#10b981" />
-        <circle cx="146" cy="30" r="2.5" fill="#00a862" />
+        <circle cx="146" cy="30" r="2.5" fill="var(--brand)" />
         <circle cx="148" cy="64" r="1.5" fill="#34d399" />
-        <circle cx="70" cy="62" r="1.5" fill="#007a46" />
+        <circle cx="70" cy="62" r="1.5" fill="var(--brand-hover)" />
         <path d="M102 24V27M100.5 25.5H103.5" stroke="#10b981" strokeWidth="1" strokeLinecap="round" />
       </svg>
     </div>
@@ -5618,7 +5619,7 @@ ${entries.length
         <ellipse cx="120" cy="74" rx="95" ry="10" fill="#f8fafc" />
 
         {/* Left: Green Office Building with 6 windows & Entrance door */}
-        <rect x="36" y="36" width="30" height="40" rx="3" fill="#00a862" />
+        <rect x="36" y="36" width="30" height="40" rx="3" fill="var(--brand)" />
         <rect x="42" y="42" width="6" height="5" rx="1" fill="#ffffff" />
         <rect x="52" y="42" width="6" height="5" rx="1" fill="#ffffff" />
         <rect x="42" y="51" width="6" height="5" rx="1" fill="#ffffff" />
@@ -5631,12 +5632,12 @@ ${entries.length
 
         {/* Middle: Document with Circular arrows */}
         <rect x="108" y="32" width="30" height="42" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-        <path d="M114 30H132V34H114V30Z" fill="#00a862" />
-        <rect x="115" y="40" width="16" height="2" rx="1" fill="#00a862" />
+        <path d="M114 30H132V34H114V30Z" fill="var(--brand)" />
+        <rect x="115" y="40" width="16" height="2" rx="1" fill="var(--brand)" />
         <circle cx="123" cy="54" r="10" fill="#ecfdf5" stroke="#10b981" strokeWidth="1.2" strokeDasharray="3 2" />
-        <path d="M123 47C126.5 47 129 49.5 129 53M123 59C119.5 59 117 56.5 117 53" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M127 50L129 53L132 51M119 56L117 53L114 55" stroke="#00a862" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="123" cy="53" r="2.5" fill="#00a862" />
+        <path d="M123 47C126.5 47 129 49.5 129 53M123 59C119.5 59 117 56.5 117 53" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M127 50L129 53L132 51M119 56L117 53L114 55" stroke="var(--brand)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="123" cy="53" r="2.5" fill="var(--brand)" />
 
         {/* Arrow 2: Document to Calendar */}
         <path d="M146 54H170" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 3" />
@@ -5644,7 +5645,7 @@ ${entries.length
 
         {/* Right: Calendar with top rings and Dollar Badge */}
         <rect x="178" y="36" width="32" height="34" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-        <path d="M178 39C178 37.3 179.3 36 181 36H207C208.7 36 210 37.3 210 39V44H178V39Z" fill="#00a862" />
+        <path d="M178 39C178 37.3 179.3 36 181 36H207C208.7 36 210 37.3 210 39V44H178V39Z" fill="var(--brand)" />
         {/* Spiral rings */}
         <rect x="183" y="33" width="2" height="6" rx="1" fill="#64748b" />
         <rect x="193" y="33" width="2" height="6" rx="1" fill="#64748b" />
@@ -5657,12 +5658,12 @@ ${entries.length
         <circle cx="184" cy="56" r="1.5" fill="#cbd5e1" />
         <circle cx="190" cy="56" r="1.5" fill="#cbd5e1" />
         {/* Dollar coin lower right */}
-        <circle cx="204" cy="64" r="7" fill="#00a862" stroke="#ffffff" strokeWidth="1.5" />
+        <circle cx="204" cy="64" r="7" fill="var(--brand)" stroke="#ffffff" strokeWidth="1.5" />
         <text x="204" y="67" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#ffffff">$</text>
 
         {/* Floating Green Dots and Sparkles */}
         <circle cx="70" cy="38" r="1.5" fill="#10b981" />
-        <circle cx="104" cy="26" r="2" fill="#00a862" />
+        <circle cx="104" cy="26" r="2" fill="var(--brand)" />
         <circle cx="148" cy="28" r="2" fill="#34d399" />
         <circle cx="218" cy="40" r="1.5" fill="#10b981" />
         <path d="M156 22V25M154.5 23.5H157.5" stroke="#10b981" strokeWidth="1" strokeLinecap="round" />
@@ -5678,12 +5679,12 @@ ${entries.length
         <ellipse cx="125" cy="74" rx="100" ry="10" fill="#f8fafc" />
 
         {/* Left: Building with garage and car + office building */}
-        <path d="M22 66V48L36 40L50 48V66H22Z" fill="#00a862" />
-        <path d="M27 66V53C27 51.5 28.5 50.5 30 50.5H42C43.5 50.5 45 51.5 45 53V66H27Z" fill="#007a46" />
+        <path d="M22 66V48L36 40L50 48V66H22Z" fill="var(--brand)" />
+        <path d="M27 66V53C27 51.5 28.5 50.5 30 50.5H42C43.5 50.5 45 51.5 45 53V66H27Z" fill="var(--brand-hover)" />
         <path d="M30 65C30 62 32 61 36 61C40 61 42 62 42 65H30Z" fill="#ffffff" />
         <rect x="32" y="57" width="8" height="4" rx="1.5" fill="#ffffff" />
-        <circle cx="32" cy="63" r="1" fill="#007a46" />
-        <circle cx="40" cy="63" r="1" fill="#007a46" />
+        <circle cx="32" cy="63" r="1" fill="var(--brand-hover)" />
+        <circle cx="40" cy="63" r="1" fill="var(--brand-hover)" />
         {/* Small office below */}
         <rect x="32" y="70" width="20" height="24" rx="2" fill="#059669" />
         <rect x="36" y="74" width="4" height="4" rx="1" fill="#ffffff" />
@@ -5695,12 +5696,12 @@ ${entries.length
 
         {/* Middle: Clipboard Document with 2 big checkmarks */}
         <rect x="94" y="30" width="34" height="46" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-        <path d="M102 28H120V32H102V28Z" fill="#00a862" />
+        <path d="M102 28H120V32H102V28Z" fill="var(--brand)" />
         {/* Checkmark 1 */}
-        <path d="M103 44L107 48L117 38" stroke="#00a862" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M103 44L107 48L117 38" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         <line x1="120" y1="44" x2="124" y2="44" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
         {/* Checkmark 2 */}
-        <path d="M103 58L107 62L117 52" stroke="#00a862" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M103 58L107 62L117 52" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         <line x1="120" y1="58" x2="124" y2="58" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
 
         {/* Arrow Center to Right (branching top & bottom) */}
@@ -5711,19 +5712,19 @@ ${entries.length
 
         {/* Right Top Building Card */}
         <rect x="174" y="24" width="28" height="32" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-        <path d="M180 34C180 30 196 30 196 34V46H180V34Z" fill="#00a862" />
+        <path d="M180 34C180 30 196 30 196 34V46H180V34Z" fill="var(--brand)" />
         <path d="M184 46V40C184 38 192 38 192 40V46H184Z" fill="#ffffff" />
         <rect x="180" y="49" width="16" height="2" rx="1" fill="#94a3b8" />
 
         {/* Right Bottom Building Card */}
         <rect x="174" y="62" width="28" height="32" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
-        <path d="M180 72C180 68 196 68 196 72V84H180V72Z" fill="#00a862" />
+        <path d="M180 72C180 68 196 68 196 72V84H180V72Z" fill="var(--brand)" />
         <path d="M184 84V78C184 76 192 76 192 78V84H184Z" fill="#ffffff" />
         <rect x="180" y="87" width="16" height="2" rx="1" fill="#94a3b8" />
 
         {/* Floating Green Dots and Sparkles */}
         <circle cx="88" cy="26" r="1.5" fill="#10b981" />
-        <circle cx="140" cy="24" r="2" fill="#00a862" />
+        <circle cx="140" cy="24" r="2" fill="var(--brand)" />
         <circle cx="212" cy="48" r="2" fill="#34d399" />
         <circle cx="144" cy="74" r="1.5" fill="#10b981" />
         <path d="M148 18V21M146.5 19.5H149.5" stroke="#10b981" strokeWidth="1" strokeLinecap="round" />
@@ -5831,7 +5832,7 @@ ${entries.length
                           setIncStartDate(e.target.value);
                         }}
                         placeholder="DD/MM/YYYY"
-                        style={{ width: "100%", height: 30, padding: "0 28px 0 8px", border: "1px solid #00a862", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                        style={{ width: "100%", height: 30, padding: "0 28px 0 8px", border: "1px solid var(--brand)", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                       />
                       <Calendar size={14} style={{ position: "absolute", right: 8, top: 8, color: "#64748b" }} />
                     </div>
@@ -5856,7 +5857,7 @@ ${entries.length
                       <button
                         type="button"
                         onClick={() => setShowAddCategoryModal(true)}
-                        style={{ width: 28, height: 30, border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", color: "#00a862", fontWeight: "bold", fontSize: 15, cursor: "pointer", display: "grid", placeItems: "center" }}
+                        style={{ width: 28, height: 30, border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", color: "var(--brand)", fontWeight: "bold", fontSize: 15, cursor: "pointer", display: "grid", placeItems: "center" }}
                         title="Thêm loại tài sản"
                       >
                         +
@@ -5929,7 +5930,7 @@ ${entries.length
                             recalcIncDepreciation(incOriginalCost, incDeprCostValue || incOriginalCost, incUseDuration, incUseDurationUnit, false, incAccumulatedDepr, incLimitTaxLaw, incTaxLawValue);
                           }
                         }}
-                        style={{ width: 14, height: 14, accentColor: "#00a862" }}
+                        style={{ width: 14, height: 14, accentColor: "var(--brand)" }}
                       />
                       <span>Không tính khấu hao</span>
                     </label>
@@ -5963,8 +5964,8 @@ ${entries.length
                       background: "transparent",
                       fontSize: 12.5,
                       fontWeight: incSubTab === st.id ? 700 : 500,
-                      color: incSubTab === st.id ? "#00a862" : "#475569",
-                      borderBottom: incSubTab === st.id ? "2px solid #00a862" : "2px solid transparent",
+                      color: incSubTab === st.id ? "var(--brand)" : "#475569",
+                      borderBottom: incSubTab === st.id ? "2px solid var(--brand)" : "2px solid transparent",
                       cursor: "pointer",
                       transition: "all 0.15s",
                     }}
@@ -6204,7 +6205,7 @@ ${entries.length
                               setIncTaxLawMonthValue(totalMonths > 0 ? Math.round(defaultCap / totalMonths) : 0);
                             }
                           }}
-                          style={{ width: 14, height: 14, accentColor: "#00a862" }}
+                          style={{ width: 14, height: 14, accentColor: "var(--brand)" }}
                         />
                         <span>Giới hạn giá trị tính KH theo luật thuế TNDN</span>
                       </label>
@@ -6323,7 +6324,7 @@ ${entries.length
                                 next[idx] = { ...next[idx], expenseAccount: e.target.value };
                                 setIncAllocations(next);
                               }}
-                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#00a862", fontWeight: 600, background: "#ffffff" }}
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "var(--brand)", fontWeight: 600, background: "#ffffff" }}
                             >
                               <option value="">-- TK --</option>
                               {expenseAccountOptions.map((acc) => (
@@ -6385,7 +6386,7 @@ ${entries.length
                           { id: `alloc-${Date.now()}`, dept: "", rate: remRate, expenseAccount: fallbackExp, expenseItem: "Chi phí khấu hao TSCĐ", costCenter: "" },
                         ]);
                       }}
-                      style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm dòng phân bổ
                     </button>
@@ -6477,7 +6478,7 @@ ${entries.length
                                 setIncOrigins(next);
                               }}
                               placeholder="Số CT / Hóa đơn..."
-                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#00a862", fontWeight: 600, boxSizing: "border-box" }}
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "var(--brand)", fontWeight: 600, boxSizing: "border-box" }}
                             />
                           </td>
                           <td style={{ padding: "6px 8px" }}>
@@ -6544,13 +6545,13 @@ ${entries.length
                            { id: `origin-${Date.now()}`, originType: "Chi phí vận chuyển, lắp đặt, chạy thử", documentNumber: "", documentDate: incVoucherDate, amount: 0, partnerCode: "", partnerName: "", sourceDocumentId: "" },
                         ])
                       }
-                      style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm chứng từ nguồn gốc hình thành
                     </button>
                     <div style={{ fontSize: 12, fontWeight: 600, color: "#1e293b" }}>
                       Tổng cộng nguồn gốc hình thành:{" "}
-                      <span style={{ color: "#00a862" }}>
+                      <span style={{ color: "var(--brand)" }}>
                         {formatVND(incOrigins.reduce((s, r) => s + (Number(r.amount) || 0), 0))}
                       </span>
                     </div>
@@ -6649,7 +6650,7 @@ ${entries.length
                     <button
                       type="button"
                       onClick={() => setIncComponents([...incComponents, { id: crypto.randomUUID(), name: "", unit: "Cái", quantity: 1, value: 0 }])}
-                      style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm bộ phận cấu thành
                     </button>
@@ -6748,7 +6749,7 @@ ${entries.length
                     <button
                       type="button"
                       onClick={() => setIncAccessories([...incAccessories, { id: crypto.randomUUID(), name: "", unit: "Bộ", quantity: 1, value: 0 }])}
-                      style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm dụng cụ, phụ tùng kèm theo
                     </button>
@@ -6855,7 +6856,7 @@ ${entries.length
                 style={{
                   height: 32,
                   padding: "0 20px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   fontSize: 12.5,
@@ -6990,7 +6991,7 @@ ${entries.length
                   setNewCatName("");
                   notify(`Đã thêm loại tài sản "${catObj.name}".`);
                 }}
-                style={{ height: 30, padding: "0 16px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 30, padding: "0 16px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
               >
                 Cất
               </button>
@@ -7039,7 +7040,7 @@ ${entries.length
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <RotateCw size={17} style={{ color: "#00a862" }} />
+                <RotateCw size={17} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
                   {isEditingAsset
                     ? `Cập nhật thông tin tài sản cố định: ${detailAsset.code}`
@@ -7062,7 +7063,7 @@ ${entries.length
                     padding: "2px 8px",
                     borderRadius: 10,
                     background: "#e0f2fe",
-                    color: "#0369a1",
+                    color: "var(--brand-hover)",
                     fontSize: 11,
                     fontWeight: 600,
                   }}
@@ -7262,7 +7263,7 @@ ${entries.length
                           style={{
                             border: "none",
                             background: "transparent",
-                            color: "#0284c7",
+                            color: "var(--brand)",
                             fontSize: 11.5,
                             fontWeight: 600,
                             cursor: "pointer",
@@ -7320,7 +7321,7 @@ ${entries.length
                       border: editNameError
                         ? "1px solid #ef4444"
                         : isEditingAsset
-                        ? "1px solid #00a862"
+                        ? "1px solid var(--brand)"
                         : "1px solid #cbd5e1",
                       borderRadius: 4,
                       fontSize: 13,
@@ -7356,7 +7357,7 @@ ${entries.length
                         width: "100%",
                         height: 32,
                         padding: "0 10px",
-                        border: editReasonError ? "1px solid #ef4444" : "1px solid #00a862",
+                        border: editReasonError ? "1px solid #ef4444" : "1px solid var(--brand)",
                         borderRadius: 4,
                         fontSize: 12.5,
                         background: "#ffffff",
@@ -7399,9 +7400,9 @@ ${entries.length
                         padding: "8px 13px",
                         border: "1px solid",
                         borderColor: active ? "#cbd5e1 #cbd5e1 #ffffff" : "transparent",
-                        borderBottom: active ? "2px solid #00a862" : "none",
+                        borderBottom: active ? "2px solid var(--brand)" : "none",
                         background: active ? "#ffffff" : "#f1f5f9",
-                        color: active ? "#00a862" : "#475569",
+                        color: active ? "var(--brand)" : "#475569",
                         fontWeight: active ? 700 : 500,
                         fontSize: 12,
                         borderRadius: "4px 4px 0 0",
@@ -7622,7 +7623,7 @@ ${entries.length
                         <tr key={idx} style={{ borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
                           <td style={{ padding: "8px" }}>{row.department || detailAsset.dept}</td>
                           <td style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>{row.rate ?? 100}%</td>
-                          <td style={{ padding: "8px", fontWeight: 600, color: "#0284c7" }}>{row.expenseAccount || detailAsset.expenseAccount || "6424"}</td>
+                          <td style={{ padding: "8px", fontWeight: 600, color: "var(--brand)" }}>{row.expenseAccount || detailAsset.expenseAccount || "6424"}</td>
                           <td style={{ padding: "8px" }}>{row.expenseItem || "Chi phí khấu hao TSCĐ"}</td>
                         </tr>
                       ))}
@@ -7679,7 +7680,7 @@ ${entries.length
                                 setEditOrigins(next);
                               }}
                               placeholder="Số CT / Hóa đơn..."
-                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#00a862", fontWeight: 600, background: isEditingAsset ? "#ffffff" : "#f1f5f9", boxSizing: "border-box" }}
+                              style={{ width: "100%", height: 28, padding: "0 6px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "var(--brand)", fontWeight: 600, background: isEditingAsset ? "#ffffff" : "#f1f5f9", boxSizing: "border-box" }}
                             />
                           </td>
                           <td style={{ padding: "6px 8px" }}>
@@ -7831,7 +7832,7 @@ ${entries.length
                       <button
                         type="button"
                         onClick={() => setEditComponents([...editComponents, { name: "", unit: "Cái", quantity: 1, value: 0 }])}
-                        style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                        style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                       >
                         + Thêm bộ phận cấu thành
                       </button>
@@ -7941,7 +7942,7 @@ ${entries.length
                       <button
                         type="button"
                         onClick={() => setEditAccessories([...editAccessories, { name: "", unit: "Bộ", quantity: 1, value: 0 }])}
-                        style={{ height: 28, padding: "0 12px", border: "1px dashed #00a862", borderRadius: 4, background: "#f0fdf4", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                        style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                       >
                         + Thêm dụng cụ, phụ tùng kèm theo
                       </button>
@@ -7967,7 +7968,7 @@ ${entries.length
                         width: "100%",
                         height: 30,
                         padding: "0 8px",
-                        border: isEditingAsset ? "1px solid #00a862" : "1px solid #cbd5e1",
+                        border: isEditingAsset ? "1px solid var(--brand)" : "1px solid #cbd5e1",
                         borderRadius: 4,
                         fontSize: 12.5,
                         background: isEditingAsset ? "#ffffff" : "#f8fafc",
@@ -8001,7 +8002,7 @@ ${entries.length
                         border: editYearError
                           ? "1px solid #ef4444"
                           : isEditingAsset
-                          ? "1px solid #00a862"
+                          ? "1px solid var(--brand)"
                           : "1px solid #cbd5e1",
                         borderRadius: 4,
                         fontSize: 12.5,
@@ -8029,7 +8030,7 @@ ${entries.length
                         width: "100%",
                         height: 30,
                         padding: "0 8px",
-                        border: isEditingAsset ? "1px solid #00a862" : "1px solid #cbd5e1",
+                        border: isEditingAsset ? "1px solid var(--brand)" : "1px solid #cbd5e1",
                         borderRadius: 4,
                         fontSize: 12.5,
                         background: isEditingAsset ? "#ffffff" : "#f8fafc",
@@ -8051,7 +8052,7 @@ ${entries.length
                         width: "100%",
                         height: 30,
                         padding: "0 8px",
-                        border: isEditingAsset ? "1px solid #00a862" : "1px solid #cbd5e1",
+                        border: isEditingAsset ? "1px solid var(--brand)" : "1px solid #cbd5e1",
                         borderRadius: 4,
                         fontSize: 12.5,
                         background: isEditingAsset ? "#ffffff" : "#f8fafc",
@@ -8149,12 +8150,12 @@ ${entries.length
                       style={{
                         height: 32,
                         padding: "0 14px",
-                        border: "1px solid #0284c7",
+                        border: "1px solid var(--brand)",
                         borderRadius: 4,
                         background: "#f0f9ff",
                         fontSize: 12.5,
                         fontWeight: 600,
-                        color: "#0284c7",
+                        color: "var(--brand)",
                         cursor: "pointer",
                       }}
                     >
@@ -8182,7 +8183,7 @@ ${entries.length
                       style={{
                         height: 32,
                         padding: "0 22px",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         border: "none",
                         borderRadius: 4,
                         fontSize: 12.5,
@@ -8218,7 +8219,7 @@ ${entries.length
                       style={{
                         height: 32,
                         padding: "0 22px",
-                        background: "#00a862",
+                        background: "var(--brand)",
                         border: "none",
                         borderRadius: 4,
                         fontSize: 12.5,
@@ -8272,7 +8273,7 @@ ${entries.length
               <button
                 type="button"
                 onClick={() => setShowDiscardEditConfirm(false)}
-                style={{ height: 30, padding: "0 14px", border: "1px solid #00a862", borderRadius: 4, background: "#ffffff", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 30, padding: "0 14px", border: "1px solid var(--brand)", borderRadius: 4, background: "#ffffff", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
               >
                 Tiếp tục chỉnh sửa
               </button>
@@ -8376,7 +8377,7 @@ ${entries.length
                         value={openingVoucherDate}
                         onChange={(e) => setOpeningVoucherDate(e.target.value)}
                         placeholder="DD/MM/YYYY"
-                        style={{ width: "100%", height: 30, padding: "0 28px 0 8px", border: "1px solid #00a862", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                        style={{ width: "100%", height: 30, padding: "0 28px 0 8px", border: "1px solid var(--brand)", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                       />
                       <Calendar size={14} style={{ position: "absolute", right: 8, top: 8, color: "#64748b" }} />
                     </div>
@@ -8401,7 +8402,7 @@ ${entries.length
                       <button
                         type="button"
                         onClick={() => notify("Thêm nhanh Loại tài sản cố định mới")}
-                        style={{ width: 28, height: 30, border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", color: "#00a862", fontWeight: "bold", fontSize: 15, cursor: "pointer", display: "grid", placeItems: "center" }}
+                        style={{ width: 28, height: 30, border: "1px solid #cbd5e1", borderRadius: 4, background: "#f8fafc", color: "var(--brand)", fontWeight: "bold", fontSize: 15, cursor: "pointer", display: "grid", placeItems: "center" }}
                         title="Thêm loại tài sản"
                       >
                         +
@@ -8462,7 +8463,7 @@ ${entries.length
                         type="checkbox"
                         checked={openingNoDepr}
                         onChange={(e) => setOpeningNoDepr(e.target.checked)}
-                        style={{ width: 14, height: 14, accentColor: "#00a862" }}
+                        style={{ width: 14, height: 14, accentColor: "var(--brand)" }}
                       />
                       <span>Không tính khấu hao</span>
                     </label>
@@ -8488,8 +8489,8 @@ ${entries.length
                       background: "transparent",
                       fontSize: 12.5,
                       fontWeight: openingSubTab === st.id ? 700 : 500,
-                      color: openingSubTab === st.id ? "#00a862" : "#475569",
-                      borderBottom: openingSubTab === st.id ? "2px solid #00a862" : "2px solid transparent",
+                      color: openingSubTab === st.id ? "var(--brand)" : "#475569",
+                      borderBottom: openingSubTab === st.id ? "2px solid var(--brand)" : "2px solid transparent",
                       cursor: "pointer",
                       transition: "all 0.15s",
                     }}
@@ -8717,7 +8718,7 @@ ${entries.length
                           type="checkbox"
                           checked={openingLimitTaxLaw}
                           onChange={(e) => setOpeningLimitTaxLaw(e.target.checked)}
-                          style={{ width: 14, height: 14, accentColor: "#00a862" }}
+                          style={{ width: 14, height: 14, accentColor: "var(--brand)" }}
                         />
                         <span>Giới hạn giá trị tính KH theo luật thuế TNDN</span>
                       </label>
@@ -8791,7 +8792,7 @@ ${entries.length
                       <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                         <td style={{ padding: "8px" }}>{openingDept}</td>
                         <td style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>100,00</td>
-                        <td style={{ padding: "8px", textAlign: "center", color: "#00a862", fontWeight: 600 }}>6422</td>
+                        <td style={{ padding: "8px", textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>6422</td>
                         <td style={{ padding: "8px", color: "#64748b" }}>Chi phí khấu hao TSCĐ</td>
                         <td style={{ padding: "8px", color: "#94a3b8" }}>—</td>
                       </tr>
@@ -8940,7 +8941,7 @@ ${entries.length
                 style={{
                   height: 32,
                   padding: "0 20px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   fontSize: 12.5,
@@ -9063,7 +9064,7 @@ ${entries.length
                     data-testid="depr-period-month"
                     value={deprMonth}
                     onChange={(e) => setDeprMonth(Number(e.target.value))}
-                    style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid #00a862", borderRadius: 4, fontSize: 13, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
+                    style={{ width: "100%", height: 32, padding: "0 10px", border: "1px solid var(--brand)", borderRadius: 4, fontSize: 13, outline: "none", background: "#ffffff", boxSizing: "border-box" }}
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
                       <option key={m} value={m}>{m}</option>
@@ -9100,7 +9101,7 @@ ${entries.length
                 type="button"
                 data-testid="depr-period-confirm"
                 onClick={() => handleOpenDeprPeriodVoucher(deprMonth, deprYear, deprProrateByDays)}
-                style={{ height: 32, padding: "0 22px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
+                style={{ height: 32, padding: "0 22px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}
               >
                 Đồng ý
               </button>
@@ -9179,7 +9180,7 @@ ${entries.length
                         ? "#166534"
                         : deprVoucherStatus === "Chưa ghi sổ"
                         ? "#854d0e"
-                        : "#0369a1",
+                        : "var(--brand-hover)",
                   }}
                 >
                   {deprVoucherStatus}
@@ -9385,7 +9386,7 @@ ${entries.length
                       notify(`Đã liên kết chứng từ tham chiếu: ${refList}`);
                     }}
                     title="Chọn chứng từ tham chiếu"
-                    style={{ color: "#00a862", fontWeight: 700, cursor: "pointer", padding: "0 4px" }}
+                    style={{ color: "var(--brand)", fontWeight: 700, cursor: "pointer", padding: "0 4px" }}
                   >
                     ...
                   </span>
@@ -9511,8 +9512,8 @@ ${entries.length
                         padding: "10px 4px",
                         fontSize: 13,
                         fontWeight: isActive ? 600 : 500,
-                        color: isActive ? "#00a862" : "#64748b",
-                        borderBottom: isActive ? "2.5px solid #00a862" : "2.5px solid transparent",
+                        color: isActive ? "var(--brand)" : "#64748b",
+                        borderBottom: isActive ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                         cursor: "pointer",
                       }}
                     >
@@ -9529,10 +9530,10 @@ ${entries.length
                   style={{
                     height: 26,
                     padding: "0 10px",
-                    border: "1px solid #00a862",
+                    border: "1px solid var(--brand)",
                     borderRadius: 4,
                     background: "#f0fdf4",
-                    color: "#00a862",
+                    color: "var(--brand)",
                     fontSize: 11.5,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -9572,7 +9573,7 @@ ${entries.length
                           <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
                           <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
-                          <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                          <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>
                             {formatVND(totalDeprMonthAmount)}
                           </td>
                           <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>
@@ -9606,7 +9607,7 @@ ${entries.length
                               <td style={{ textAlign: "center", padding: "7px 6px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>
                                 {idx + 1}
                               </td>
-                              <td style={{ padding: "7px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>
+                              <td style={{ padding: "7px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>
                                 {line.assetCode}
                               </td>
                               <td style={{ padding: "7px 10px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>
@@ -9753,9 +9754,9 @@ ${entries.length
                           gap: 8,
                         }}
                       >
-                        <Upload size={16} style={{ color: "#0284c7" }} />
+                        <Upload size={16} style={{ color: "var(--brand)" }} />
                         <span style={{ fontSize: 12, color: "#64748b" }}>
-                          <strong style={{ color: "#0284c7" }}>Chọn tệp</strong> hoặc kéo và thả tệp vào đây
+                          <strong style={{ color: "var(--brand)" }}>Chọn tệp</strong> hoặc kéo và thả tệp vào đây
                         </span>
                         <input
                           type="file"
@@ -9795,7 +9796,7 @@ ${entries.length
                             color: "#334155",
                           }}
                         >
-                          <FileText size={13} style={{ color: "#0284c7" }} />
+                          <FileText size={13} style={{ color: "var(--brand)" }} />
                           <span>{att.name}</span>
                           <span style={{ color: "#94a3b8", fontSize: 11 }}>
                             ({Math.max(1, Math.round(att.size / 1024))} KB)
@@ -9838,7 +9839,7 @@ ${entries.length
                         <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
                         <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
                         <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
-                        <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                        <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>
                           {formatVND(totalDeprAllocatedAmount)}
                         </td>
                         <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
@@ -9851,7 +9852,7 @@ ${entries.length
                           <td style={{ textAlign: "center", padding: "7px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>
                             {idx + 1}
                           </td>
-                          <td style={{ padding: "7px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>
+                          <td style={{ padding: "7px 10px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>
                             {row.assetCode}
                           </td>
                           <td style={{ padding: "7px 10px", borderRight: "1px solid #e2e8f0" }}>{row.assetName}</td>
@@ -9931,7 +9932,7 @@ ${entries.length
                                 border: "1px solid #cbd5e1",
                                 borderRadius: 4,
                                 textAlign: "center",
-                                color: "#0284c7",
+                                color: "var(--brand)",
                                 fontWeight: 600,
                                 fontSize: 12,
                                 boxSizing: "border-box",
@@ -9998,9 +9999,9 @@ ${entries.length
                           height: 26,
                           padding: "0 10px",
                           background: "#ffffff",
-                          border: "1px solid #0284c7",
+                          border: "1px solid var(--brand)",
                           borderRadius: 4,
-                          color: "#0284c7",
+                          color: "var(--brand)",
                           fontSize: 11.5,
                           fontWeight: 600,
                           cursor: "pointer",
@@ -10026,7 +10027,7 @@ ${entries.length
                         <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>Tổng tiền hạch toán</td>
                         <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
                         <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
-                        <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>
+                        <td style={{ padding: "6px 10px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>
                           {formatVND(totalDeprAccountingAmount)}
                         </td>
                         <td style={{ padding: "6px 10px", borderRight: "1px solid #e2e8f0" }}></td>
@@ -10080,7 +10081,7 @@ ${entries.length
                                 borderRadius: 4,
                                 textAlign: "center",
                                 fontWeight: 600,
-                                color: "#0284c7",
+                                color: "var(--brand)",
                                 fontSize: 12,
                                 boxSizing: "border-box",
                               }}
@@ -10131,7 +10132,7 @@ ${entries.length
                                 borderRadius: 4,
                                 textAlign: "right",
                                 fontWeight: 700,
-                                color: "#00a862",
+                                color: "var(--brand)",
                                 fontSize: 12,
                                 boxSizing: "border-box",
                               }}
@@ -10330,8 +10331,8 @@ ${entries.length
                       style={{
                         height: 32,
                         padding: "0 20px",
-                        background: "#00a862",
-                        border: "1px solid #00a862",
+                        background: "var(--brand)",
+                        border: "1px solid var(--brand)",
                         borderRadius: 4,
                         fontSize: 13,
                         fontWeight: 600,
@@ -10350,11 +10351,11 @@ ${entries.length
                         height: 32,
                         padding: "0 16px",
                         background: "#ffffff",
-                        border: "1px solid #00a862",
+                        border: "1px solid var(--brand)",
                         borderRadius: 4,
                         fontSize: 13,
                         fontWeight: 600,
-                        color: "#00a862",
+                        color: "var(--brand)",
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
@@ -10452,8 +10453,8 @@ ${entries.length
                   </div>
 
                   <div>
-                    <span onClick={() => apiConnected ? !revalReadOnly && setRevalReferenceDraft("") : notify("Chọn chứng từ tham chiếu")} style={{ fontSize: 12, color: "#00a862", cursor: "pointer", fontWeight: 500 }}>
-                      Tham chiếu <span style={{ color: "#00a862", textDecoration: "none" }}>...</span>
+                    <span onClick={() => apiConnected ? !revalReadOnly && setRevalReferenceDraft("") : notify("Chọn chứng từ tham chiếu")} style={{ fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}>
+                      Tham chiếu <span style={{ color: "var(--brand)", textDecoration: "none" }}>...</span>
                     </span>
                     {/* AF23: decisions, acceptance records or source vouchers referred to by the document. */}
                     {apiConnected && (revalReferences.length > 0 || revalReferenceDraft !== null) && (
@@ -10667,8 +10668,8 @@ ${entries.length
                       background: "transparent",
                       fontSize: 12.5,
                       fontWeight: revalTab === "adjust" ? 700 : 500,
-                      color: revalTab === "adjust" ? "#00a862" : "#475569",
-                      borderBottom: revalTab === "adjust" ? "2px solid #00a862" : "2px solid transparent",
+                      color: revalTab === "adjust" ? "var(--brand)" : "#475569",
+                      borderBottom: revalTab === "adjust" ? "2px solid var(--brand)" : "2px solid transparent",
                       cursor: "pointer",
                     }}
                   >
@@ -10686,8 +10687,8 @@ ${entries.length
                       background: "transparent",
                       fontSize: 12.5,
                       fontWeight: revalTab === "accounting" ? 700 : 500,
-                      color: revalTab === "accounting" ? "#00a862" : "#475569",
-                      borderBottom: revalTab === "accounting" ? "2px solid #00a862" : "2px solid transparent",
+                      color: revalTab === "accounting" ? "var(--brand)" : "#475569",
+                      borderBottom: revalTab === "accounting" ? "2px solid var(--brand)" : "2px solid transparent",
                       cursor: "pointer",
                     }}
                   >
@@ -11260,7 +11261,7 @@ ${entries.length
                 <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                   {apiConnected && revalTab === "accounting" && !revalReadOnly && (
                     <button type="button" onClick={proposeRevalEntries}
-                      style={{ height: 26, padding: "0 10px", border: "1px solid #00a862", borderRadius: 4, background: "#f0fdf4", fontSize: 12, fontWeight: 600, color: "#047857", cursor: "pointer" }}>
+                      style={{ height: 26, padding: "0 10px", border: "1px solid var(--brand)", borderRadius: 4, background: "#f0fdf4", fontSize: 12, fontWeight: 600, color: "#047857", cursor: "pointer" }}>
                       Đề xuất định khoản
                     </button>
                   )}
@@ -11377,7 +11378,7 @@ ${entries.length
                     <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 400 }}>Dung lượng tối đa 5MB</span>
                   </div>
                   <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, padding: "14px 16px", textAlign: "center", background: "#ffffff", cursor: "pointer" }}>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#0284c7" }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--brand)" }}>
                       <Upload size={14} />
                       <span>Chọn tệp hoặc kéo và thả tệp vào đây</span>
                     </div>
@@ -11566,14 +11567,14 @@ ${entries.length
                   window.print();
                 }}
                 disabled={apiConnected && revalReadOnly}
-                style={{ height: 32, padding: "0 16px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                style={{ height: 32, padding: "0 16px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
                 <span>Lưu và in</span>
               </button>
               {apiConnected && (
                 <div style={{ position: "relative" }}>
                   <button type="button" aria-label="Chọn mẫu in đánh giá lại" onClick={() => setShowRevalPrintMenu((open) => !open)}
-                    style={{ height: 32, padding: "0 8px", background: "#00a862", border: "none", borderRadius: 4, color: "#ffffff", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                    style={{ height: 32, padding: "0 8px", background: "var(--brand)", border: "none", borderRadius: 4, color: "#ffffff", cursor: "pointer", display: "grid", placeItems: "center" }}>
                     <ChevronDown size={14} />
                   </button>
                   {showRevalPrintMenu && (
@@ -11633,7 +11634,7 @@ ${entries.length
                         setTransferVoucherNo(e.target.value);
                         setTransferIsDirty(true);
                       }}
-                      style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid #00a862", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                      style={{ width: "100%", height: 30, padding: "0 8px", border: "1px solid var(--brand)", borderRadius: 4, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
                   <div>
@@ -11705,7 +11706,7 @@ ${entries.length
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span
                     onClick={() => setShowTransferRefInput((v) => !v)}
-                    style={{ fontSize: 12.5, color: "#0284c7", cursor: "pointer", textDecoration: "underline" }}
+                    style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", textDecoration: "underline" }}
                   >
                     Tham chiếu ...
                   </span>
@@ -11734,8 +11735,8 @@ ${entries.length
                     background: "transparent",
                     fontSize: 12.5,
                     fontWeight: 700,
-                    color: "#00a862",
-                    borderBottom: "2px solid #00a862",
+                    color: "var(--brand)",
+                    borderBottom: "2px solid var(--brand)",
                     cursor: "pointer",
                   }}
                 >
@@ -11904,7 +11905,7 @@ ${entries.length
                       e.target.value = "";
                     }}
                   />
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#0284c7" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--brand)" }}>
                     <Upload size={14} />
                     <span>Chọn tệp hoặc kéo và thả tệp vào đây</span>
                   </div>
@@ -11950,7 +11951,7 @@ ${entries.length
               <button
                 type="button"
                 onClick={() => handleSaveTransferVoucher(true)}
-                style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                style={{ height: 32, padding: "0 20px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
                 <span>Lưu và In</span>
                 <ChevronDown size={14} />
@@ -11997,7 +11998,7 @@ ${entries.length
                         width: "100%",
                         height: 28,
                         padding: "0 8px",
-                        border: showDecReasonDropdown ? "1px solid #00a862" : "1px solid #cbd5e1",
+                        border: showDecReasonDropdown ? "1px solid var(--brand)" : "1px solid #cbd5e1",
                         borderRadius: 3,
                         fontSize: 12,
                         background: "#ffffff",
@@ -12058,7 +12059,7 @@ ${entries.length
                                 fontSize: 12.5,
                                 cursor: "pointer",
                                 background: isSelected
-                                  ? "#00a862"
+                                  ? "var(--brand)"
                                   : isHovered
                                   ? "#d1fae5"
                                   : "#ffffff",
@@ -12076,7 +12077,7 @@ ${entries.length
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <button type="button" onClick={() => { setDecReferenceSelected(decReferenceIds); setShowDecReferencePicker(true); void loadDecReferenceRows(); }}
-                      style={{ border: "none", background: "transparent", fontSize: 12, color: "#00a862", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
+                      style={{ border: "none", background: "transparent", fontSize: 12, color: "var(--brand)", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
                       Tham chiếu (...)
                     </button>
                     <input
@@ -12223,8 +12224,8 @@ ${entries.length
                     background: "transparent",
                     fontSize: 12.5,
                     fontWeight: decTab === "asset" ? 700 : 500,
-                    color: decTab === "asset" ? "#00a862" : "#475569",
-                    borderBottom: decTab === "asset" ? "2px solid #00a862" : "2px solid transparent",
+                    color: decTab === "asset" ? "var(--brand)" : "#475569",
+                    borderBottom: decTab === "asset" ? "2px solid var(--brand)" : "2px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -12244,8 +12245,8 @@ ${entries.length
                     background: "transparent",
                     fontSize: 12.5,
                     fontWeight: decTab === "accounting" ? 700 : 500,
-                    color: decTab === "accounting" ? "#00a862" : "#475569",
-                    borderBottom: decTab === "accounting" ? "2px solid #00a862" : "2px solid transparent",
+                    color: decTab === "accounting" ? "var(--brand)" : "#475569",
+                    borderBottom: decTab === "accounting" ? "2px solid var(--brand)" : "2px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -12376,7 +12377,7 @@ ${entries.length
                                 }
                                 setDecIsDirty(true);
                               }}
-                              style={{ width: 72, height: 24, textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, color: "#00a862", fontWeight: 600 }}
+                              style={{ width: 72, height: 24, textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, color: "var(--brand)", fontWeight: 600 }}
                             />
                           </td>
                           <td style={{ textAlign: "center", padding: "4px" }}>
@@ -12455,7 +12456,7 @@ ${entries.length
                                 setDecAccountingCustomEdited(true);
                                 setDecIsDirty(true);
                               }}
-                              style={{ width: 72, height: 24, textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, fontWeight: 600, color: "#00a862" }}
+                              style={{ width: 72, height: 24, textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, fontWeight: 600, color: "var(--brand)" }}
                             />
                           </td>
                           <td style={{ padding: "4px 8px", textAlign: "center", borderRight: "1px solid #e2e8f0" }}>
@@ -12469,7 +12470,7 @@ ${entries.length
                                 setDecAccountingCustomEdited(true);
                                 setDecIsDirty(true);
                               }}
-                              style={{ width: 72, height: 24, textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, fontWeight: 600, color: "#00a862" }}
+                              style={{ width: 72, height: 24, textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 3, fontSize: 12, fontWeight: 600, color: "var(--brand)" }}
                             />
                           </td>
                           <td style={{ padding: "4px 8px", textAlign: "right" }}>
@@ -12568,7 +12569,7 @@ ${entries.length
                 </div>
                 <label style={{ display: "block", border: "1px solid #cbd5e1", borderRadius: 4, padding: "14px 16px", textAlign: "center", background: "#f8fafc", cursor: "pointer" }}>
                   <input type="file" multiple onChange={handleDecAttachmentSelect} style={{ display: "none" }} />
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#0284c7" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--brand)" }}>
                     <Upload size={14} />
                     <span>Chọn tệp hoặc kéo và thả tệp vào đây</span>
                   </div>
@@ -12611,7 +12612,7 @@ ${entries.length
               <button
                 type="button"
                 onClick={() => handleSaveDecrease(true)}
-                style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                style={{ height: 32, padding: "0 20px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
                 <span>Lưu và in</span>
                 <ChevronDown size={14} />
@@ -12764,7 +12765,7 @@ ${entries.length
                     <button type="button"
                       onClick={() => { setStocktakeReferenceSelected(stocktakeReferenceIds); setShowStocktakeReferencePicker(true); void loadStocktakeReferenceRows(); }}
                       aria-label="Chọn chứng từ tham chiếu"
-                      style={{ fontSize: 12.5, color: "#00a862", cursor: "pointer", fontWeight: 600, userSelect: "none" }}
+                      style={{ fontSize: 12.5, color: "var(--brand)", cursor: "pointer", fontWeight: 600, userSelect: "none" }}
                       title="Chọn chứng từ tham chiếu"
                     >
                       ...
@@ -12943,7 +12944,7 @@ ${entries.length
                           ]);
                           setStocktakeIsDirty(true);
                         }}
-                        style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, color: "#00a862", fontWeight: 600, cursor: "pointer" }}
+                        style={{ height: 26, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12, color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}
                       >
                         + Thêm thành viên
                       </button>
@@ -13012,7 +13013,7 @@ ${entries.length
                         ]);
                         setStocktakeIsDirty(true);
                       }}
-                      style={{ height: 26, padding: "0 10px", border: "1px solid #00a862", borderRadius: 4, background: "#ffffff", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{ height: 26, padding: "0 10px", border: "1px solid var(--brand)", borderRadius: 4, background: "#ffffff", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm dòng
                     </button>
@@ -13177,7 +13178,7 @@ ${entries.length
                                   <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>
                                     {r.isSurplus ? "—" : r.accumDepr > 0 ? formatVND(r.accumDepr) : "0"}
                                   </td>
-                                  <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>
+                                  <td style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>
                                     {r.isSurplus ? "—" : r.remainCost > 0 ? formatVND(r.remainCost) : "0"}
                                   </td>
                                   {/* 3-State Existence Status (Step 24, BR14, BR19) */}
@@ -13342,7 +13343,7 @@ ${entries.length
                               <td style={{ textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1" }}>
                                 {formatVND(stocktakeSummary.totalAccumDepr)}
                               </td>
-                              <td style={{ textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1", color: "#00a862" }}>
+                              <td style={{ textAlign: "right", padding: "6px 8px", borderRight: "1px solid #cbd5e1", color: "var(--brand)" }}>
                                 {formatVND(stocktakeSummary.totalRemainCost)}
                               </td>
                               <td style={{ borderRight: "1px solid #cbd5e1", padding: "6px 4px", textAlign: "center", fontSize: 11.5 }}>
@@ -13385,7 +13386,7 @@ ${entries.length
                           <div style={{ display: "flex", alignItems: "center", gap: 4, userSelect: "none", color: "#64748b" }}>
                             <span onClick={() => setStocktakeCurrentPage(1)} style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang đầu">|&lt;</span>
                             <span onClick={() => setStocktakeCurrentPage(Math.max(1, safePage - 1))} style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang trước">&lt;</span>
-                            <span style={{ display: "inline-block", minWidth: 20, textAlign: "center", padding: "2px 6px", borderRadius: 3, background: "#00a862", color: "#ffffff", fontWeight: 700, fontSize: 12 }}>
+                            <span style={{ display: "inline-block", minWidth: 20, textAlign: "center", padding: "2px 6px", borderRadius: 3, background: "var(--brand)", color: "#ffffff", fontWeight: 700, fontSize: 12 }}>
                               {safePage}/{totalPages}
                             </span>
                             <span onClick={() => setStocktakeCurrentPage(Math.min(totalPages, safePage + 1))} style={{ cursor: "pointer", padding: "2px 4px" }} title="Trang sau">&gt;</span>
@@ -13548,7 +13549,7 @@ ${entries.length
               <button
                 type="button"
                 onClick={() => handleSaveStocktake(true)}
-                style={{ height: 32, padding: "0 18px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                style={{ height: 32, padding: "0 18px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
               >
                 <span>Lưu và in</span>
               </button>
@@ -13581,7 +13582,7 @@ ${entries.length
           const body = rep.rows.map((r: any) => `<tr>${rep.columns.map((c: any) => `<td style="${cell}">${escapeHtml(fmtCell(c.key, r[c.key]))}</td>`).join("")}</tr>`).join("");
           const totalRow = rep.rows.length ? `<tr>${totalsCells(rep.columns, rep.totals).map((v: string) => `<td style="${cell};font-weight:bold">${escapeHtml(v)}</td>`).join("")}</tr>` : "";
           const sig = rep.signatures || {};
-          return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(rep.title)}</title><style>body{font-family:"Times New Roman",serif;font-size:12px}table{border-collapse:collapse;width:100%}</style></head><body>
+          return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>${escapeHtml(rep.title)}</title><style>body{font-family: Roboto, Arial, sans-serif;font-size:12px}table{border-collapse:collapse;width:100%}</style></head><body>
 <table style="border:0"><tr><td><strong>${escapeHtml(rep.header.company_name)}</strong><br>${escapeHtml(rep.header.company_address || "")}</td><td style="text-align:right"><strong>${escapeHtml(rep.form_version || rep.form_code)}</strong></td></tr></table>
 <h2 style="text-align:center">${escapeHtml(String(rep.title).toUpperCase())}</h2><p style="text-align:center">${escapeHtml(rep.header.period_label)} – ${isEn ? "Currency" : "Đơn vị tính"}: ${escapeHtml(rep.header.currency)}</p>
 <table><thead><tr>${head}</tr></thead><tbody>${body}${totalRow}</tbody></table>
@@ -13855,7 +13856,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 <button
                   type="button"
                   onClick={handleApplyReportParams}
-                  style={{ height: 28, padding: "0 14px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                  style={{ height: 28, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                 >
                   {isEn ? "View report" : "Xem báo cáo"}
                 </button>
@@ -13986,7 +13987,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                             <td style={{ padding: 7, textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{a.startDate}</td>
                             <td style={{ padding: 7, borderRight: "1px solid #e2e8f0", fontWeight: 500 }}>{a.name}</td>
                             <td style={{ padding: 7, textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{a.countryOfOrigin || "Việt Nam"}</td>
-                            <td onClick={() => openAssetDetailModal(a)} style={{ padding: 7, fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline", borderRight: "1px solid #e2e8f0" }}>{a.code}</td>
+                            <td onClick={() => openAssetDetailModal(a)} style={{ padding: 7, fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline", borderRight: "1px solid #e2e8f0" }}>{a.code}</td>
                             <td style={{ padding: 7, textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{formatVND(a.originalCost)}</td>
                             <td style={{ padding: 7, textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{a.rateDisplay}</td>
                             <td style={{ padding: 7, textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{formatVND(a.deprYearValue || Math.round((a.originalCost * (a.rateYear || 0)) / 100))}</td>
@@ -13999,7 +14000,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                       )}
                       <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
                         <td colSpan={6} style={{ padding: 7, textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{isEn ? "Total:" : "Tổng cộng:"}</td>
-                        <td style={{ padding: 7, textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>{formatVND(rTotOrig)}</td>
+                        <td style={{ padding: 7, textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>{formatVND(rTotOrig)}</td>
                         <td style={{ padding: 7, textAlign: "center", borderRight: "1px solid #e2e8f0" }}>-</td>
                         <td style={{ padding: 7, textAlign: "right", borderRight: "1px solid #e2e8f0" }}>
                           {formatVND(reportAssets.reduce((s, a) => s + Number(a.deprYearValue || Math.round((a.originalCost * (a.rateYear || 0)) / 100)), 0))}
@@ -14015,7 +14016,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                     {reportAssets.map((a: any) => (
                       <div key={a.code} style={{ border: "1px solid #cbd5e1", borderRadius: 6, padding: 16 }}>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12, fontSize: 12.5, background: "#f8fafc", padding: 12, borderRadius: 4 }}>
-                          <div><strong>Mã TSCĐ:</strong> <span style={{ color: "#00a862", fontWeight: 700 }}>{a.code}</span></div>
+                          <div><strong>Mã TSCĐ:</strong> <span style={{ color: "var(--brand)", fontWeight: 700 }}>{a.code}</span></div>
                           <div><strong>Tên TSCĐ:</strong> {a.name}</div>
                           <div><strong>Đơn vị sử dụng:</strong> {a.dept}</div>
                           <div><strong>Loại TSCĐ:</strong> {a.category}</div>
@@ -14067,7 +14068,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                         const yAmt = mAmt * 12;
                         return (
                           <tr key={a.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                            <td style={{ padding: 6, fontWeight: 600, color: "#00a862", borderRight: "1px solid #e2e8f0" }}>{a.code}</td>
+                            <td style={{ padding: 6, fontWeight: 600, color: "var(--brand)", borderRight: "1px solid #e2e8f0" }}>{a.code}</td>
                             <td style={{ padding: 6, borderRight: "1px solid #e2e8f0" }}>{a.name}</td>
                             <td style={{ padding: 6, textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{formatVND(a.originalCost)}</td>
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
@@ -14102,7 +14103,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                         .map((r, idx) => (
                           <tr key={r.acc} style={{ borderBottom: "1px solid #e2e8f0" }}>
                             <td style={{ padding: 8, textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{idx + 1}</td>
-                            <td style={{ padding: 8, textAlign: "center", fontWeight: 700, color: "#0284c7", borderRight: "1px solid #e2e8f0" }}>{r.acc}</td>
+                            <td style={{ padding: 8, textAlign: "center", fontWeight: 700, color: "var(--brand)", borderRight: "1px solid #e2e8f0" }}>{r.acc}</td>
                             <td style={{ padding: 8, borderRight: "1px solid #e2e8f0" }}>{r.label}</td>
                             <td style={{ padding: 8, textAlign: "right", fontWeight: 600, borderRight: "1px solid #e2e8f0" }}>{formatVND(r.faVal)}</td>
                             <td style={{ padding: 8, textAlign: "right", fontWeight: 600, borderRight: "1px solid #e2e8f0" }}>{formatVND(r.glVal)}</td>
@@ -14136,7 +14137,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                       {reportAssets.map((a: any, idx: number) => (
                         <tr key={a.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ padding: 8, textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{idx + 1}</td>
-                          <td style={{ padding: 8, fontWeight: 600, color: "#00a862", borderRight: "1px solid #e2e8f0" }}>{a.code}</td>
+                          <td style={{ padding: 8, fontWeight: 600, color: "var(--brand)", borderRight: "1px solid #e2e8f0" }}>{a.code}</td>
                           <td style={{ padding: 8, borderRight: "1px solid #e2e8f0" }}>{a.name}</td>
                           <td style={{ padding: 8, borderRight: "1px solid #e2e8f0" }}>{a.dept}</td>
                           <td style={{ padding: 8, borderRight: "1px solid #e2e8f0" }}>{a.dept}</td>
@@ -14170,10 +14171,10 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                       {reportAssets.map((a: any, i: number) => (
                         <tr key={a.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
                           <td style={{ padding: 8, textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{i + 1}</td>
-                          <td onClick={() => openAssetDetailModal(a)} style={{ padding: 8, fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline", borderRight: "1px solid #e2e8f0" }}>{a.code}</td>
+                          <td onClick={() => openAssetDetailModal(a)} style={{ padding: 8, fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline", borderRight: "1px solid #e2e8f0" }}>{a.code}</td>
                           <td style={{ padding: 8, borderRight: "1px solid #e2e8f0" }}>{a.name}</td>
                           <td style={{ padding: 8, borderRight: "1px solid #e2e8f0" }}>{a.dept}</td>
-                          <td style={{ padding: 8, textAlign: "center", borderRight: "1px solid #e2e8f0", color: "#0284c7", fontWeight: 600 }}>{a.costAccount || "2111"}</td>
+                          <td style={{ padding: 8, textAlign: "center", borderRight: "1px solid #e2e8f0", color: "var(--brand)", fontWeight: 600 }}>{a.costAccount || "2111"}</td>
                           <td style={{ padding: 8, textAlign: "center", borderRight: "1px solid #e2e8f0" }}>{a.rateDisplay}</td>
                           <td style={{ padding: 8, textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{formatVND(a.originalCost)}</td>
                           <td style={{ padding: 8, textAlign: "right", color: "#64748b", borderRight: "1px solid #e2e8f0" }}>{formatVND(a.depreciatedAmount)}</td>
@@ -14182,7 +14183,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                       ))}
                       <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
                         <td colSpan={6} style={{ padding: 8, textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{isEn ? "Total:" : "Tổng cộng:"}</td>
-                        <td style={{ padding: 8, textAlign: "right", borderRight: "1px solid #e2e8f0", color: "#00a862" }}>{formatVND(rTotOrig)}</td>
+                        <td style={{ padding: 8, textAlign: "right", borderRight: "1px solid #e2e8f0", color: "var(--brand)" }}>{formatVND(rTotOrig)}</td>
                         <td style={{ padding: 8, textAlign: "right", borderRight: "1px solid #e2e8f0" }}>{formatVND(rTotDepr)}</td>
                         <td style={{ padding: 8, textAlign: "right", color: "#16a34a" }}>{formatVND(rTotRem)}</td>
                       </tr>
@@ -14227,7 +14228,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                     onClick={apiConnected ? printApiReport : handlePrintCurrentReport}
                     style={{ height: 32, padding: "0 16px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#334155", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
-                    <Printer size={14} style={{ color: "#0284c7" }} />
+                    <Printer size={14} style={{ color: "var(--brand)" }} />
                     <span>{isEn ? "Print" : "In báo cáo"}</span>
                   </button>
                   <button
@@ -14238,7 +14239,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                     <FileSpreadsheet size={14} style={{ color: "#16a34a" }} />
                     <span>{apiConnected ? (isEn ? "Export Excel (data)" : "Xuất Excel dạng dữ liệu") : (isEn ? "Export Excel" : "Xuất Excel")}</span>
                   </button>
-                  <button type="button" onClick={() => setPreviewReportName(null)} style={{ height: 32, padding: "0 20px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}>
+                  <button type="button" onClick={() => setPreviewReportName(null)} style={{ height: 32, padding: "0 20px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}>
                     {isEn ? "Close" : "Đóng"}
                   </button>
                 </div>
@@ -14352,7 +14353,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   setShowHideReportsModal(false);
                   notify("Đã lưu cấu hình ẩn/hiện báo cáo tài sản cố định.");
                 }}
-                style={{ height: 30, padding: "0 16px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 30, padding: "0 16px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
               >
                 Lưu thiết lập
               </button>
@@ -14369,7 +14370,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
   if (tab === "process") {
     return (
       <div className="ref-process-wrapper" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9", overflowY: "auto", overflowX: "hidden" }}>
-        <div className="ref-process-layout" style={{ flex: 1, padding: "16px 20px", display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px", gap: 16 }}>
+        <div className="ref-process-layout" style={{ flex: "0 0 auto", padding: "16px 20px", display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px", gap: 16 }}>
           <div
             style={{
               background: "#ffffff",
@@ -14400,8 +14401,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               </h2>
             </div>
 
-            <div style={{ position: "relative", width: "100%", minHeight: 330, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div
+            <div className="sv-flow-nodes" style={{ position: "relative", width: "100%", minHeight: 330, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div className="sv-flow-connector"
                 style={{
                   position: "absolute",
                   left: 100,
@@ -14417,7 +14418,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               </div>
 
               {/* NODE 1: GHI TĂNG */}
-              <div
+              <div className="sv-flow-node"
                 onClick={openNewIncreaseModal}
                 style={{
                   position: "absolute",
@@ -14453,7 +14454,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               </div>
 
               {/* HÀNG TRÊN: Điều chuyển | Tính khấu hao | Chuyển TS thuê TC */}
-              <div
+              <div className="sv-flow-node"
                 onClick={() => navigateTo("transfer")}
                 style={{ position: "absolute", left: "28%", top: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}
               >
@@ -14476,10 +14477,10 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   </span>
                 </span>
                 <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Điều chuyển</span>
-                <div style={{ position: "absolute", top: 48, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
+                <div className="sv-flow-connector" style={{ position: "absolute", top: 48, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
               </div>
 
-              <div
+              <div className="sv-flow-node"
                 onClick={() => setShowDeprModal(true)}
                 style={{ position: "absolute", left: "52%", top: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}
               >
@@ -14502,10 +14503,10 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   </span>
                 </span>
                 <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Tính khấu hao</span>
-                <div style={{ position: "absolute", top: 48, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
+                <div className="sv-flow-connector" style={{ position: "absolute", top: 48, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
               </div>
 
-              <div
+              <div className="sv-flow-node"
                 onClick={() => navigateTo("register")}
                 style={{ position: "absolute", left: "76%", top: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", maxWidth: 140, textAlign: "center" }}
               >
@@ -14528,15 +14529,15 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   </span>
                 </span>
                 <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", lineHeight: 1.3, textAlign: "center" }}>Chuyển TS thuê tài chính thành TS sở hữu</span>
-                <div style={{ position: "absolute", top: 48, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
+                <div className="sv-flow-connector" style={{ position: "absolute", top: 48, bottom: -70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
               </div>
 
               {/* HÀNG DƯỚI: Đánh giá lại | Ghi giảm | Kiểm kê tài sản */}
-              <div
+              <div className="sv-flow-node"
                 onClick={() => navigateTo("revaluation")}
                 style={{ position: "absolute", left: "40%", bottom: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", textAlign: "center" }}
               >
-                <div style={{ position: "absolute", top: -70, height: 70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
+                <div className="sv-flow-connector" style={{ position: "absolute", top: -70, height: 70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
                 <span className="ref-business-icon reval" style={{ marginBottom: 6 }}>
                   <span
                     className="ref-document-sheet"
@@ -14558,11 +14559,11 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Đánh giá<br />lại tài sản</span>
               </div>
 
-              <div
+              <div className="sv-flow-node"
                 onClick={() => navigateTo("decrease")}
                 style={{ position: "absolute", left: "58%", bottom: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}
               >
-                <div style={{ position: "absolute", top: -70, height: 70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
+                <div className="sv-flow-connector" style={{ position: "absolute", top: -70, height: 70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
                 <span className="ref-business-icon decrease" style={{ marginBottom: 6 }}>
                   <span
                     className="ref-document-sheet"
@@ -14584,11 +14585,11 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 <span style={{ fontSize: 11.5, fontWeight: 500, color: "#334155", textAlign: "center" }}>Ghi giảm</span>
               </div>
 
-              <div
+              <div className="sv-flow-node"
                 onClick={() => navigateTo("stocktake")}
                 style={{ position: "absolute", left: "82%", bottom: 24, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}
               >
-                <div style={{ position: "absolute", top: -70, height: 70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
+                <div className="sv-flow-connector" style={{ position: "absolute", top: -70, height: 70, width: 1.5, background: "#cbd5e1", zIndex: -1 }} />
                 <span className="ref-business-icon audit" style={{ marginBottom: 6 }}>
                   <span
                     className="ref-document-sheet"
@@ -14613,15 +14614,15 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #f1f5f9", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", textAlign: "center" }}>
               <div onClick={() => navigate((href ? href("/directory") : "/reference/directory") + "?directory=" + encodeURIComponent("Cơ cấu tổ chức"))} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", padding: "6px 0", borderRight: "1px solid #e2e8f0" }}>
-                <GitBranch size={16} style={{ color: "#00a862" }} />
+                <GitBranch size={16} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>Cơ cấu tổ chức</span>
               </div>
               <div onClick={() => navigate((href ? href("/directory") : "/reference/directory") + "?directory=" + encodeURIComponent("Loại tài sản cố định"))} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", padding: "6px 0", borderRight: "1px solid #e2e8f0" }}>
-                <Car size={16} style={{ color: "#00a862" }} />
+                <Car size={16} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>Loại tài sản</span>
               </div>
               <div onClick={() => setShowOpeningModal(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", padding: "6px 0" }}>
-                <Lightbulb size={16} style={{ color: "#00a862" }} />
+                <Lightbulb size={16} style={{ color: "var(--brand)" }} />
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#334155" }}>Tiện ích</span>
               </div>
             </div>
@@ -14644,7 +14645,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                     key={idx}
                     onClick={() => setPreviewReportName(item)}
                     style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "#334155", cursor: "pointer", lineHeight: 1.45, transition: "color 0.15s" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "#00a862")}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
                     onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                   >
                     <span style={{ color: "#94a3b8", fontSize: 14, lineHeight: "16px" }}>•</span>
@@ -14654,7 +14655,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               </div>
             </div>
             <div style={{ textAlign: "right", marginTop: 24, paddingTop: 14, borderTop: "1px solid #f1f5f9" }}>
-              <span onClick={() => navigateTo("reports")} style={{ fontSize: 13, color: "#0284c7", fontWeight: 600, cursor: "pointer" }}>
+              <span onClick={() => navigateTo("reports")} style={{ fontSize: 13, color: "var(--brand)", fontWeight: 600, cursor: "pointer" }}>
                 Tất cả báo cáo
               </span>
             </div>
@@ -14738,8 +14739,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 padding: "0 22px",
                 borderRadius: 4,
                 background: "#ffffff",
-                color: "#00a862",
-                border: "1px solid #00a862",
+                color: "var(--brand)",
+                border: "1px solid var(--brand)",
                 fontSize: 12.5,
                 fontWeight: 500,
                 cursor: "pointer",
@@ -14760,7 +14761,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={() => setShowOpeningModal(true)}
-              style={{ height: 30, padding: "0 12px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+              style={{ height: 30, padding: "0 12px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
             >
               <RotateCw size={13} />
               <span>Khai báo TSCĐ đầu kỳ</span>
@@ -14768,7 +14769,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={openNewIncreaseModal}
-              style={{ height: 30, padding: "0 12px", background: "#ffffff", color: "#00a862", border: "1px solid #00a862", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+              style={{ height: 30, padding: "0 12px", background: "#ffffff", color: "var(--brand)", border: "1px solid var(--brand)", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
             >
               <Plus size={14} />
               <span>Ghi tăng TSCĐ</span>
@@ -14910,7 +14911,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                     <td
                       onClick={() => openAssetDetailModal(row)}
                       title="Nhấn để xem chi tiết / cập nhật thông tin TSCĐ"
-                      style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
+                      style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline" }}
                     >
                       {row.code}
                     </td>
@@ -14928,7 +14929,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                     <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(row.depreciatedAmount)}</td>
                     <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#16a34a" }}>{formatVND(row.remainingAmount)}</td>
                     <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{(row as any).rateDisplay || `${row.rateYear}%`}</td>
-                    {registerShowsCostAccount && <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#0284c7", fontWeight: 600 }}>{row.costAccount}</td>}
+                    {registerShowsCostAccount && <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>{row.costAccount}</td>}
                     <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
                       <span style={{ padding: "2px 8px", borderRadius: 10, background: assetStatus === "Đang sử dụng" ? "#dcfce7" : "#f1f5f9", color: assetStatus === "Đang sử dụng" ? "#166534" : "#475569", fontSize: 11.5, fontWeight: 500 }}>
                         {assetStatus}
@@ -14940,7 +14941,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                           padding: "2px 8px",
                           borderRadius: 10,
                           background: reconStatus === "Đã đối chiếu" ? "#e0f2fe" : reconStatus === "Có chênh lệch" ? "#fee2e2" : "#fef3c7",
-                          color: reconStatus === "Đã đối chiếu" ? "#0369a1" : reconStatus === "Có chênh lệch" ? "#b91c1c" : "#92400e",
+                          color: reconStatus === "Đã đối chiếu" ? "var(--brand-hover)" : reconStatus === "Có chênh lệch" ? "#b91c1c" : "#92400e",
                           fontSize: 11.5,
                           fontWeight: 500,
                         }}
@@ -15002,7 +15003,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             </div>
           </div>
           <div style={{ display: "flex", gap: 20 }}>
-            <span>Tổng nguyên giá: <strong style={{ color: "#00a862" }}>{formatVND(totalOriginalCost)}</strong></span>
+            <span>Tổng nguyên giá: <strong style={{ color: "var(--brand)" }}>{formatVND(totalOriginalCost)}</strong></span>
             <span>Tổng hao mòn: <strong>{formatVND(totalDepreciated)}</strong></span>
             <span>Tổng còn lại: <strong style={{ color: "#16a34a" }}>{formatVND(totalRemaining)}</strong></span>
           </div>
@@ -15058,7 +15059,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   height: 34,
                   padding: "0 22px",
                   borderRadius: 6,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontSize: 13,
@@ -15108,8 +15109,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 padding: "0 22px",
                 borderRadius: 4,
                 background: "#ffffff",
-                color: "#00a862",
-                border: "1px solid #00a862",
+                color: "var(--brand)",
+                border: "1px solid var(--brand)",
                 fontSize: 12.5,
                 fontWeight: 500,
                 cursor: "pointer",
@@ -15132,7 +15133,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={openNewIncreaseModal}
-              style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+              style={{ height: 30, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={14} />
               <span>Thêm chứng từ ghi tăng</span>
@@ -15164,7 +15165,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             </button>
             <button
               type="button"
-              onClick={() => notify("Đang xuất khẩu danh sách chứng từ ghi tăng ra Excel...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "danh sách chứng từ ghi tăng"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               style={{ height: 30, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Download size={13} />
@@ -15197,7 +15198,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <td
                     onClick={() => openAssetDetailModal(a.assetCode)}
                     title="Nhấn để mở chi tiết tài sản từ chứng từ ghi tăng"
-                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
+                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline" }}
                   >
                     {a.voucherNo}
                   </td>
@@ -15205,12 +15206,12 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <td
                     onClick={() => openAssetDetailModal(a.assetCode)}
                     title="Nhấn để mở chi tiết tài sản"
-                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
+                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline" }}
                   >
                     {a.assetCode}
                   </td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{a.assetName}</td>
-                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#00a862" }}>{formatVND(a.originalCost)}</td>
+                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "var(--brand)" }}>{formatVND(a.originalCost)}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{a.dept}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
                     <span style={{ padding: "2px 8px", borderRadius: 10, background: "#dcfce7", color: "#166534", fontSize: 11.5, fontWeight: 500 }}>
@@ -15227,7 +15228,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                         padding: "2px 8px",
                         borderRadius: 10,
                         background: reconStatus === "Đã đối chiếu" ? "#e0f2fe" : reconStatus === "Có chênh lệch" ? "#fee2e2" : "#fef3c7",
-                        color: reconStatus === "Đã đối chiếu" ? "#0369a1" : reconStatus === "Có chênh lệch" ? "#b91c1c" : "#92400e",
+                        color: reconStatus === "Đã đối chiếu" ? "var(--brand-hover)" : reconStatus === "Có chênh lệch" ? "#b91c1c" : "#92400e",
                         fontSize: 11.5,
                         fontWeight: 500,
                       }}
@@ -15292,7 +15293,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   height: 34,
                   padding: "0 24px",
                   borderRadius: 6,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontSize: 13,
@@ -15316,8 +15317,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                 padding: "0 22px",
                 borderRadius: 4,
                 background: "#ffffff",
-                color: "#00a862",
-                border: "1px solid #00a862",
+                color: "var(--brand)",
+                border: "1px solid var(--brand)",
                 fontSize: 12.5,
                 fontWeight: 500,
                 cursor: "pointer",
@@ -15340,7 +15341,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={() => setShowDeprModal(true)}
-              style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+              style={{ height: 30, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={14} />
               <span>Thêm chứng từ khấu hao</span>
@@ -15365,7 +15366,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             </button>
             <button
               type="button"
-              onClick={() => notify("Đang xuất khẩu danh sách chứng từ trích khấu hao ra Excel...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "danh sách chứng từ trích khấu hao"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               style={{ height: 30, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Download size={13} />
@@ -15428,11 +15429,11 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   style={{ borderBottom: "1px solid #e2e8f0", cursor: "pointer" }}
                 >
                   <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{i + 1}</td>
-                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862" }}>{v.voucherNo}</td>
+                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)" }}>{v.voucherNo}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#64748b" }}>{v.date}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", fontWeight: 500 }}>{v.period}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{v.reason}</td>
-                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#00a862" }}>{formatVND(v.amount)}</td>
+                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "var(--brand)" }}>{formatVND(v.amount)}</td>
                   <td style={{ padding: "8px", textAlign: "center", borderRight: "1px solid #e2e8f0" }}>
                     <span
                       style={{
@@ -15458,7 +15459,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                         style={{
                           height: 24,
                           padding: "0 10px",
-                          background: "#00a862",
+                          background: "var(--brand)",
                           border: "none",
                           borderRadius: 4,
                           color: "#ffffff",
@@ -15500,7 +15501,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                           setDeprActiveTab("depreciation");
                           setShowDeprVoucherModal(true);
                         }}
-                        style={{ color: "#0284c7", fontWeight: 600, fontSize: 12, cursor: "pointer" }}
+                        style={{ color: "var(--brand)", fontWeight: 600, fontSize: 12, cursor: "pointer" }}
                       >
                         Xem
                       </span>
@@ -15514,7 +15515,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
 
         <div style={{ height: 38, background: "#f8fafc", borderTop: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", fontSize: 12.5, fontWeight: 600, color: "#1e293b" }}>
           <span>Số lượng chứng từ: {deprVouchers.length}</span>
-          <span>Tổng tiền trích khấu hao: <strong style={{ color: "#00a862" }}>{formatVND(deprVouchers.reduce((s, v) => s + v.amount, 0))}</strong></span>
+          <span>Tổng tiền trích khấu hao: <strong style={{ color: "var(--brand)" }}>{formatVND(deprVouchers.reduce((s, v) => s + v.amount, 0))}</strong></span>
         </div>
 
         {renderModals()}
@@ -15546,7 +15547,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               <button
                 type="button"
                 onClick={openNewReval}
-                style={{ height: 34, padding: "0 22px", borderRadius: 6, background: "#00a862", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 34, padding: "0 22px", borderRadius: 6, background: "var(--brand)", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Thêm
               </button>
@@ -15556,7 +15557,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={() => setRevalView("table")}
-              style={{ height: 32, padding: "0 22px", borderRadius: 4, background: "#ffffff", color: "#00a862", border: "1px solid #00a862", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}
+              style={{ height: 32, padding: "0 22px", borderRadius: 4, background: "#ffffff", color: "var(--brand)", border: "1px solid var(--brand)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}
             >
               Xem danh sách chứng từ
             </button>
@@ -15573,7 +15574,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={openNewReval}
-              style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+              style={{ height: 30, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={14} />
               <span>Thêm đánh giá lại</span>
@@ -15598,7 +15599,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             </button>
             <button
               type="button"
-              onClick={() => notify("Đang xuất khẩu danh sách chứng từ đánh giá lại TSCĐ ra Excel...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "danh sách chứng từ đánh giá lại TSCĐ"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               style={{ height: 30, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Download size={13} />
@@ -15632,7 +15633,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                       setRevalVoucherNo(v.voucherNo);
                       setShowRevalModal(true);
                     }}
-                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
+                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline" }}
                   >
                     {v.voucherNo}
                   </td>
@@ -15657,7 +15658,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
         {/* Footer Summary */}
         <div style={{ height: 38, background: "#f8fafc", borderTop: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", fontSize: 12.5, fontWeight: 600, color: "#1e293b" }}>
           <span>Số lượng chứng từ: {revalVouchers.length}</span>
-          <span>Tổng tiền chênh lệch: <strong style={{ color: "#00a862" }}>{formatVND(revalVouchers.reduce((s, v) => s + v.diffAmount, 0))}</strong></span>
+          <span>Tổng tiền chênh lệch: <strong style={{ color: "var(--brand)" }}>{formatVND(revalVouchers.reduce((s, v) => s + v.diffAmount, 0))}</strong></span>
         </div>
 
         {renderModals()}
@@ -15689,7 +15690,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               <button
                 type="button"
                 onClick={handleOpenNewTransferModal}
-                style={{ height: 34, padding: "0 22px", borderRadius: 6, background: "#00a862", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 34, padding: "0 22px", borderRadius: 6, background: "var(--brand)", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Thêm
               </button>
@@ -15699,7 +15700,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={() => setTransferView("table")}
-              style={{ height: 32, padding: "0 22px", borderRadius: 4, background: "#ffffff", color: "#00a862", border: "1px solid #00a862", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}
+              style={{ height: 32, padding: "0 22px", borderRadius: 4, background: "#ffffff", color: "var(--brand)", border: "1px solid var(--brand)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}
             >
               Xem danh sách chứng từ
             </button>
@@ -15716,7 +15717,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={handleOpenNewTransferModal}
-              style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+              style={{ height: 30, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={14} />
               <span>Thêm điều chuyển</span>
@@ -15741,7 +15742,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             </button>
             <button
               type="button"
-              onClick={() => notify("Đang xuất khẩu danh sách chứng từ điều chuyển TSCĐ ra Excel...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "danh sách chứng từ điều chuyển TSCĐ"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               style={{ height: 30, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Download size={13} />
@@ -15775,7 +15776,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                       setTransferVoucherNo(v.voucherNo);
                       setShowTransferModal(true);
                     }}
-                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
+                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline" }}
                   >
                     {v.voucherNo}
                   </td>
@@ -15783,7 +15784,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b" }}>{v.assetCode}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{v.assetName}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{v.fromDept}</td>
-                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#00a862", fontWeight: 500 }}>{v.toDept}</td>
+                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "var(--brand)", fontWeight: 500 }}>{v.toDept}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{v.reason}</td>
                   <td style={{ padding: "8px", textAlign: "center" }}>
                     <span style={{ padding: "2px 8px", borderRadius: 10, background: "#dcfce7", color: "#166534", fontSize: 11.5, fontWeight: 500 }}>
@@ -15834,7 +15835,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               <button
                 type="button"
                 onClick={handleOpenNewDecreaseModal}
-                style={{ height: 34, padding: "0 22px", borderRadius: 6, background: "#00a862", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 34, padding: "0 22px", borderRadius: 6, background: "var(--brand)", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Thêm
               </button>
@@ -15844,7 +15845,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={() => setDecreaseView("table")}
-              style={{ height: 32, padding: "0 22px", borderRadius: 4, background: "#ffffff", color: "#00a862", border: "1px solid #00a862", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}
+              style={{ height: 32, padding: "0 22px", borderRadius: 4, background: "#ffffff", color: "var(--brand)", border: "1px solid var(--brand)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}
             >
               Xem danh sách chứng từ
             </button>
@@ -15861,7 +15862,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={handleOpenNewDecreaseModal}
-              style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+              style={{ height: 30, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={14} />
               <span>Thêm ghi giảm</span>
@@ -15886,7 +15887,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             </button>
             <button
               type="button"
-              onClick={() => notify("Đang xuất khẩu danh sách chứng từ ghi giảm TSCĐ ra Excel...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "danh sách chứng từ ghi giảm TSCĐ"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               style={{ height: 30, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Download size={13} />
@@ -15920,7 +15921,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                       setDecVoucherNo(v.voucherNo);
                       setShowDecreaseModal(true);
                     }}
-                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
+                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline" }}
                   >
                     {v.voucherNo}
                   </td>
@@ -15928,7 +15929,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{v.reason}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b" }}>{v.assetCode}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#1e293b" }}>{v.assetName}</td>
-                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#00a862" }}>{formatVND(v.originalCost)}</td>
+                  <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "var(--brand)" }}>{formatVND(v.originalCost)}</td>
                   <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#ef4444" }}>{formatVND(v.remainingValue)}</td>
                   <td style={{ padding: "8px", textAlign: "center" }}>
                     <span style={{ padding: "2px 8px", borderRadius: 10, background: "#dcfce7", color: "#166534", fontSize: 11.5, fontWeight: 500 }}>
@@ -15948,7 +15949,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
         {/* Footer Summary */}
         <div style={{ height: 38, background: "#f8fafc", borderTop: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", fontSize: 12.5, fontWeight: 600, color: "#1e293b" }}>
           <span>Số lượng chứng từ: {decVouchers.length}</span>
-          <span>Tổng nguyên giá ghi giảm: <strong style={{ color: "#00a862" }}>{formatVND(decVouchers.reduce((s, v) => s + v.originalCost, 0))}</strong></span>
+          <span>Tổng nguyên giá ghi giảm: <strong style={{ color: "var(--brand)" }}>{formatVND(decVouchers.reduce((s, v) => s + v.originalCost, 0))}</strong></span>
         </div>
 
         {renderModals()}
@@ -15980,7 +15981,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
               <button
                 type="button"
                 onClick={handleOpenNewStocktake}
-                style={{ height: 34, padding: "0 22px", borderRadius: 6, background: "#00a862", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ height: 34, padding: "0 22px", borderRadius: 6, background: "var(--brand)", color: "#ffffff", border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Thêm
               </button>
@@ -15990,7 +15991,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={() => setStocktakeView("table")}
-              style={{ height: 32, padding: "0 22px", borderRadius: 4, background: "#ffffff", color: "#00a862", border: "1px solid #00a862", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}
+              style={{ height: 32, padding: "0 22px", borderRadius: 4, background: "#ffffff", color: "var(--brand)", border: "1px solid var(--brand)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}
             >
               Xem danh sách chứng từ
             </button>
@@ -16007,7 +16008,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
             <button
               type="button"
               onClick={handleOpenNewStocktake}
-              style={{ height: 30, padding: "0 16px", background: "#00a862", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+              style={{ height: 30, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
             >
               <Plus size={14} />
               <span>Thêm kiểm kê</span>
@@ -16063,7 +16064,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{i + 1}</td>
                   <td
                     onClick={() => void openSavedStocktake(v)}
-                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "#00a862", cursor: "pointer", textDecoration: "underline" }}
+                    style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline" }}
                   >
                     {v.voucherNo}
                   </td>
@@ -16211,9 +16212,9 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                             transition: "all 0.15s",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = "#00a862";
+                            e.currentTarget.style.borderColor = "var(--brand)";
                             e.currentTarget.style.background = "#f0fdf4";
-                            e.currentTarget.style.color = "#00a862";
+                            e.currentTarget.style.color = "var(--brand)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.borderColor = "#e2e8f0";
@@ -16263,9 +16264,9 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                             transition: "all 0.15s",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = "#00a862";
+                            e.currentTarget.style.borderColor = "var(--brand)";
                             e.currentTarget.style.background = "#f0fdf4";
-                            e.currentTarget.style.color = "#00a862";
+                            e.currentTarget.style.color = "var(--brand)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.borderColor = "#e2e8f0";

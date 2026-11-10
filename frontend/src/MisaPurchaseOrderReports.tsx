@@ -115,7 +115,7 @@ export default function MisaPurchaseOrderReports({
           </button>
           <button
             type="button"
-            style={{ height: 32, padding: "0 18px", background: "#00a862", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, color: "#ffffff" }}
+            style={{ height: 32, padding: "0 18px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, color: "#ffffff" }}
             onClick={() => setIsParamDrawerOpen(true)}
           >
             Chọn tham số
@@ -290,8 +290,8 @@ export default function MisaPurchaseOrderReports({
                     <svg width="60" height="60" viewBox="0 0 96 96" fill="none">
                       <rect x="24" y="24" width="48" height="48" rx="8" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="2" />
                       <path d="M36 44H60M36 52H52" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
-                      <circle cx="58" cy="58" r="14" fill="#ffffff" stroke="#00a862" strokeWidth="2.5" />
-                      <path d="M68 68L78 78" stroke="#00a862" strokeWidth="2.5" strokeLinecap="round" />
+                      <circle cx="58" cy="58" r="14" fill="#ffffff" stroke="var(--brand)" strokeWidth="2.5" />
+                      <path d="M68 68L78 78" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" />
                     </svg>
                     <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>
                       Không có dữ liệu
@@ -335,7 +335,7 @@ export default function MisaPurchaseOrderReports({
             <button
               type="button"
               onClick={() => setIsParamDrawerOpen(false)}
-              style={{ marginTop: 20, background: "#00a862", color: "#ffffff", border: "none", padding: "8px 16px", borderRadius: 4 }}
+              style={{ marginTop: 20, background: "var(--brand)", color: "#ffffff", border: "none", padding: "8px 16px", borderRadius: 4 }}
             >
               Xem báo cáo
             </button>

@@ -150,7 +150,7 @@ export function ReferenceProcess({
             className={`ref-process-canvas ${cash ? "cash-process" : purchase ? "purchase-process" : "sales-process"}`}
           >
             <svg
-              className="ref-flow-lines"
+              className="ref-flow-lines sv-flow-connector"
               viewBox="0 0 600 310"
               preserveAspectRatio="none"
               aria-hidden="true"

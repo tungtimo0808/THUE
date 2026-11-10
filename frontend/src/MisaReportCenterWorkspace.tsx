@@ -1163,7 +1163,7 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
     type="button" role="switch" aria-label={`Hiển thị ${reportName}`}
     aria-checked={reportVisibilityDraft[reportName] !== false}
     onClick={()=>setReportVisibilityDraft(current=>({...current,[reportName]:current[reportName] === false}))}
-    style={{ width: 30, height: 18, marginRight: 8, flexShrink: 0, border: 0, borderRadius: 12, padding: 2, background: reportVisibilityDraft[reportName] !== false ? "#009b71" : "#aeb6bd", display: "flex", justifyContent: reportVisibilityDraft[reportName] !== false ? "flex-end" : "flex-start", alignItems: "center", cursor: "pointer" }}
+    style={{ width: 30, height: 18, marginRight: 8, flexShrink: 0, border: 0, borderRadius: 12, padding: 2, background: reportVisibilityDraft[reportName] !== false ? "var(--brand)" : "#aeb6bd", display: "flex", justifyContent: reportVisibilityDraft[reportName] !== false ? "flex-end" : "flex-start", alignItems: "center", cursor: "pointer" }}
   ><span style={{ width: 14, height: 14, borderRadius: "50%", background: "white" }}/></button>;
   const renderReportCell = (reportName: string | null) => {
     if (!reportName) {
@@ -1205,8 +1205,8 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
             <Star
               size={15}
               strokeWidth={1.2}
-              fill={isFav ? "#00a862" : "none"}
-              color={isFav ? "#00a862" : "#94a3b8"}
+              fill={isFav ? "var(--brand)" : "none"}
+              color={isFav ? "var(--brand)" : "#94a3b8"}
             />
           </button>
         </div>
@@ -2131,7 +2131,7 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
               >
                 <span>{cat.label}</span>
                 {cat.id === "favorites" && (
-                  <span style={{ fontSize: 11, color: "#00a862", fontWeight: 700 }}>
+                  <span style={{ fontSize: 11, color: "var(--brand)", fontWeight: 700 }}>
                     {favorites.size}
                   </span>
                 )}
@@ -2219,8 +2219,8 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
                         >
                           <Star
                             size={16}
-                            fill={favorites.has(report) ? "#00a862" : "none"}
-                            color={favorites.has(report) ? "#00a862" : "#94a3b8"}
+                            fill={favorites.has(report) ? "var(--brand)" : "none"}
+                            color={favorites.has(report) ? "var(--brand)" : "#94a3b8"}
                           />
                         </button>
                       </div>
@@ -2260,8 +2260,8 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
                         >
                           <Star
                             size={16}
-                            fill={favorites.has(report) ? "#00a862" : "none"}
-                            color={favorites.has(report) ? "#00a862" : "#94a3b8"}
+                            fill={favorites.has(report) ? "var(--brand)" : "none"}
+                            color={favorites.has(report) ? "var(--brand)" : "#94a3b8"}
                           />
                         </button>
                       </div>
@@ -2284,7 +2284,7 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
               style={{
                 height: 34,
                 padding: "0 18px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -2309,14 +2309,14 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
             </thead>
             <tbody>
               <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                <td style={{ padding: "10px 14px", fontWeight: 600, color: "#00a862" }}>Báo cáo bán hàng theo nhóm Khách VIP</td>
+                <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--brand)" }}>Báo cáo bán hàng theo nhóm Khách VIP</td>
                 <td style={{ padding: "10px 14px" }}>Tổng hợp bán hàng theo mặt hàng</td>
                 <td style={{ padding: "10px 14px" }}>Nguyễn Văn Kế Toán</td>
                 <td style={{ padding: "10px 14px" }}>15/09/2026</td>
                 <td style={{ padding: "10px 14px", textAlign: "center" }}>
                   <button
                     type="button"
-                    style={{ background: "none", border: "none", color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                    style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     onClick={() => setSelectedReport("Tổng hợp bán hàng theo mặt hàng")}
                   >
                     Mở báo cáo
@@ -2324,14 +2324,14 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
                 </td>
               </tr>
               <tr>
-                <td style={{ padding: "10px 14px", fontWeight: 600, color: "#00a862" }}>Theo dõi công nợ NCC quá hạn 30 ngày</td>
+                <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--brand)" }}>Theo dõi công nợ NCC quá hạn 30 ngày</td>
                 <td style={{ padding: "10px 14px" }}>Tổng hợp công nợ phải trả nhà cung cấp</td>
                 <td style={{ padding: "10px 14px" }}>Nguyễn Văn Kế Toán</td>
                 <td style={{ padding: "10px 14px" }}>22/09/2026</td>
                 <td style={{ padding: "10px 14px", textAlign: "center" }}>
                   <button
                     type="button"
-                    style={{ background: "none", border: "none", color: "#0284c7", cursor: "pointer", fontWeight: 500 }}
+                    style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", fontWeight: 500 }}
                     onClick={() => setSelectedReport("Tổng hợp công nợ phải trả nhà cung cấp")}
                   >
                     Mở báo cáo
@@ -2358,7 +2358,7 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
               style={{
                 height: 34,
                 padding: "0 18px",
-                background: "#00a862",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 4,
@@ -2564,7 +2564,7 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
                     <td colSpan={3} style={{ padding: "9px 12px", color: "#166534" }}>TỔNG CỘNG</td>
                     <td style={{ padding: "9px 12px", textAlign: "right" }}>85</td>
                     <td style={{ padding: "9px 12px" }}></td>
-                    <td style={{ padding: "9px 12px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>
+                    <td style={{ padding: "9px 12px", textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>
                       431.500.000
                     </td>
                   </tr>
@@ -2658,7 +2658,7 @@ function MisaReportCenterWorkspaceInner({ notify,initialCategory="favorites",ini
                 style={{
                   height: 34,
                   padding: "0 22px",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 4,
                   color: "#ffffff",

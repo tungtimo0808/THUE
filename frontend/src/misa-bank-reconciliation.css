@@ -18,9 +18,9 @@
   cursor: default;
 }
 .br-workspace .br-primary {
-  background: #009b60;
+  background: var(--brand);
   color: white;
-  border-color: #009b60;
+  border-color: var(--brand);
 }
 .br-workspace nav {
   display: flex;
@@ -35,8 +35,8 @@
   border-radius: 0;
 }
 .br-workspace nav button.active {
-  border-color: #009b60;
-  color: #009b60;
+  border-color: var(--brand);
+  color: var(--brand);
   font-weight: 600;
 }
 .br-workspace small {
@@ -69,7 +69,7 @@
   box-sizing: border-box;
 }
 .br-workspace input[type="checkbox"] {
-  accent-color: #009b60;
+  accent-color: var(--brand);
   width: 15px;
   height: 15px;
 }

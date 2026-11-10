@@ -1,3 +1,4 @@
+import { openSavedTableReports, saveVisibleTable, exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -183,7 +184,7 @@ export default function MisaPayablesAgingAnalysisReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -201,7 +202,7 @@ export default function MisaPayablesAgingAnalysisReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu báo cáo.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -211,7 +212,7 @@ export default function MisaPayablesAgingAnalysisReport({
             style={{
               height: 30,
               padding: "0 16px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 12.5,
@@ -429,7 +430,7 @@ export default function MisaPayablesAgingAnalysisReport({
             style={{
               background: "none",
               border: "none",
-              color: "#0284c7",
+              color: "var(--brand)",
               cursor: "pointer",
               padding: 4,
             }}
@@ -464,7 +465,7 @@ export default function MisaPayablesAgingAnalysisReport({
           <div style={{ display: "flex", alignItems: "center" }}>
             <button
               type="button"
-              onClick={() => notify?.("Đang xuất khẩu báo cáo...")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Bảng dữ liệu"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không xuất được dữ liệu."); } }}
               style={{
                 background: "none",
                 border: "none",
@@ -519,7 +520,7 @@ export default function MisaPayablesAgingAnalysisReport({
               padding: "36px 44px",
               boxSizing: "border-box",
               color: "#0f172a",
-              fontFamily: "'Times New Roman', Times, serif, system-ui",
+              fontFamily: "Roboto, Arial, sans-serif",
               fontSize: 11,
             }}
           >
@@ -859,7 +860,7 @@ export default function MisaPayablesAgingAnalysisReport({
                     </>
                   ) : (
                     <tr>
-                      <td colSpan={19} style={{ padding: 30, textAlign: "center", color: "#94a3b8" }}>
+                      <td colSpan={19} style={{ padding: 30, textAlign: "center", color: "#64748b" }}>
                         Không có dữ liệu
                       </td>
                     </tr>
@@ -900,7 +901,7 @@ export default function MisaPayablesAgingAnalysisReport({
                   <option value="100">100</option>
                 </select>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+                  <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
                   <span
                     style={{
                       display: "inline-block",
@@ -912,7 +913,7 @@ export default function MisaPayablesAgingAnalysisReport({
                   >
                     1
                   </span>
-                  <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
+                  <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
                 </div>
               </div>
             </div>
@@ -1144,7 +1145,7 @@ export default function MisaPayablesAgingAnalysisReport({
                         filteredSuppliers.every((s) => draftSuppliers.includes(s.code))
                       }
                       onChange={toggleSelectAllSuppliers}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả</span>
                     <span
@@ -1238,7 +1239,7 @@ export default function MisaPayablesAgingAnalysisReport({
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => toggleSelectSupplier(s.code)}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td style={{ padding: "6px 10px", fontWeight: 500 }}>{s.code}</td>
@@ -1281,9 +1282,9 @@ export default function MisaPayablesAgingAnalysisReport({
                         <option value="20">20</option>
                       </select>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
                         <span style={{ fontWeight: 600, color: "#0075c0" }}>1</span>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
                       </div>
                     </div>
                   </div>
@@ -1342,7 +1343,7 @@ export default function MisaPayablesAgingAnalysisReport({
                   style={{
                     height: 32,
                     padding: "0 18px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 12.5,

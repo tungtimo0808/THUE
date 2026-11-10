@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  ShieldCheck,
   ArrowLeft,
   Building2,
   CheckCircle2,
@@ -76,7 +77,7 @@ export default function LiveSession() {
       style={{
         minHeight: "100vh",
         background: "#f8fafc",
-        fontFamily: "'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "Roboto, Arial, sans-serif",
         padding: "24px 20px 48px",
         boxSizing: "border-box",
       }}
@@ -108,7 +109,7 @@ export default function LiveSession() {
                 gap: 6,
                 padding: "8px 14px",
                 borderRadius: 8,
-                background: "#0284c7",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 fontWeight: 600,
@@ -164,7 +165,7 @@ export default function LiveSession() {
                   background: "#e0f2fe",
                   display: "grid",
                   placeItems: "center",
-                  color: "#0284c7",
+                  color: "var(--brand)",
                 }}
               >
                 <User size={20} />
@@ -197,7 +198,7 @@ export default function LiveSession() {
                     border: "1px solid #fde68a",
                   }}
                 >
-                  👑 Quản trị doanh nghiệp / Kế toán trưởng
+                  <ShieldCheck size={14} className="ui-inline-icon" aria-hidden="true" /> Quản trị doanh nghiệp / Kế toán trưởng
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -244,7 +245,7 @@ export default function LiveSession() {
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   textDecoration: "none",
                   display: "inline-flex",
                   alignItems: "center",
@@ -270,7 +271,7 @@ export default function LiveSession() {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 13, color: "#64748b" }}>Chi nhánh / Đơn vị:</span>
-                <span style={{ fontSize: 13, color: "#0284c7", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 13, color: "var(--brand)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <MapPin size={13} /> {branchLabel}
                 </span>
               </div>
@@ -326,7 +327,7 @@ export default function LiveSession() {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 13, color: "#64748b" }}>Dữ liệu chứng từ:</span>
-                <span style={{ fontSize: 12, color: "#0284c7", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 12, color: "var(--brand)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <FileCheck2 size={13} /> Đồng bộ trực tuyến
                 </span>
               </div>
@@ -387,7 +388,7 @@ export default function LiveSession() {
                   gap: 8,
                   padding: "10px 16px",
                   borderRadius: 8,
-                  background: "#0284c7",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 700,

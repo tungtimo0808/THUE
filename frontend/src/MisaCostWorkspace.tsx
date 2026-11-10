@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import { useState, useId, useEffect } from "react";
 import { formatMoneyInput, parseMoneyInput, parseMoneyInputString } from "./formatMoney";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
@@ -9,6 +10,7 @@ import {
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import {
+  Pin,
   Search,
   RotateCw,
   Plus,
@@ -316,7 +318,7 @@ const COST_PROCESS_DATA: Record<CostMethod, CostProcessSubtabConfig> = {
     videoTopLabel: "[Sổ Việt ERP] Hướng dẫn",
     videoMainTitle: "CÔNG TRÌNH VỤ VIỆC - DỊCH VỤ",
     videoSubtitle: "THÔNG TƯ 99",
-    videoBg: "linear-gradient(135deg, #09203f 0%, #1e3a8a 50%, #0369a1 100%)",
+    videoBg: "linear-gradient(135deg, #09203f 0%, #1e3a8a 50%, var(--brand-hover) 100%)",
     hasUtilitiesBottom: true,
     row1: [
       { step: 1, title: "1. Khai báo nguyên vật liệu", icon: FolderPlus, desc: "Khai báo danh mục vật tư, thiết bị dùng cho công trình" },
@@ -1433,10 +1435,10 @@ if (apiConnected) {
                     padding: "6px 16px",
                     fontSize: 13,
                     fontWeight: active ? 700 : 500,
-                    color: active ? "#00a862" : "#334155",
+                    color: active ? "var(--brand)" : "#334155",
                     background: active ? "#ffffff" : "transparent",
                     border: active ? "1px solid #cbd5e1" : "1px solid transparent",
-                    borderBottom: active ? "2.5px solid #00a862" : "1px solid transparent",
+                    borderBottom: active ? "2.5px solid var(--brand)" : "1px solid transparent",
                     borderRadius: 4,
                     cursor: "pointer",
                     boxShadow: active ? "0 1px 3px rgba(0,0,0,0.06)" : "none",
@@ -1531,7 +1533,7 @@ if (apiConnected) {
                 }}
               >
                 {/* SVG Connecting Flow Lines */}
-                <svg
+                <svg className="sv-flow-connector"
                   style={{
                     position: "absolute",
                     top: 0,
@@ -1667,10 +1669,10 @@ if (apiConnected) {
                 </svg>
 
                 {/* Row 1 Nodes: Steps 1, 2, 3, 4, 5 */}
-                <div
+                <div className="sv-cost-flow-row"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(5, 1fr)",
+                    gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
                     gap: 16,
                     position: "relative",
                     zIndex: step1MenuOpen || step5MenuOpen ? 50 : 2,
@@ -1689,6 +1691,7 @@ if (apiConnected) {
                     return (
                       <div
                         key={stepItem.step}
+                        className="sv-cost-flow-node"
                         onClick={() => {
                           if (hasStep1Dropdown) {
                             setStep1MenuOpen(!step1MenuOpen);
@@ -1934,10 +1937,10 @@ if (apiConnected) {
                 </div>
 
                 {/* Row 2 Nodes */}
-                <div
+                <div className="sv-cost-flow-row"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(5, 1fr)",
+                    gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
                     gap: 16,
                     position: "relative",
                     zIndex: 1,
@@ -1948,6 +1951,7 @@ if (apiConnected) {
                     return (
                       <div
                         key={stepItem.step}
+                        className="sv-cost-flow-node"
                         onClick={() => setActiveStepModal(stepItem.step)}
                         style={{
                           display: "flex",
@@ -2033,11 +2037,11 @@ if (apiConnected) {
                     padding: "6px 4px 10px 4px",
                     fontSize: 13,
                     fontWeight: 700,
-                    color: guideTab === "guide" ? "#00a862" : "#64748b",
+                    color: guideTab === "guide" ? "var(--brand)" : "#64748b",
                     background: "none",
                     border: "none",
                     borderBottom:
-                      guideTab === "guide" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                      guideTab === "guide" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -2050,11 +2054,11 @@ if (apiConnected) {
                     padding: "6px 4px 10px 4px",
                     fontSize: 13,
                     fontWeight: 700,
-                    color: guideTab === "report" ? "#00a862" : "#64748b",
+                    color: guideTab === "report" ? "var(--brand)" : "#64748b",
                     background: "none",
                     border: "none",
                     borderBottom:
-                      guideTab === "report" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                      guideTab === "report" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -2089,11 +2093,11 @@ if (apiConnected) {
                           width: 16,
                           height: 16,
                           borderRadius: 4,
-                          background: "#00a862",
+                          background: "var(--brand)",
                           display: "grid",
                           placeItems: "center",
                           color: "#fff",
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: 800,
                         }}
                       >
@@ -2191,7 +2195,7 @@ if (apiConnected) {
                       type="button"
                       onClick={() => setArticleModalOpen(true)}
                       style={{
-                        color: "#00a862",
+                        color: "var(--brand)",
                         background: "none",
                         border: "none",
                         cursor: "pointer",
@@ -2220,11 +2224,11 @@ if (apiConnected) {
                       marginTop: 4,
                     }}
                   >
-                    <HelpCircle size={16} color="#0284c7" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <HelpCircle size={16} color="var(--brand)" style={{ flexShrink: 0, marginTop: 2 }} />
                     <span
                       style={{
                         fontSize: 12,
-                        color: "#0369a1",
+                        color: "var(--brand-hover)",
                         lineHeight: 1.35,
                         fontWeight: 500,
                       }}
@@ -2262,7 +2266,7 @@ if (apiConnected) {
                       onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "#f8fafc")}
                     >
-                      <FileSpreadsheet size={15} color="#00a862" />
+                      <FileSpreadsheet size={15} color="var(--brand)" />
                       <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {rpt}
                       </span>
@@ -2307,7 +2311,7 @@ if (apiConnected) {
                   e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.03)";
                 }}
               >
-                <Tags size={18} color="#00a862" />
+                <Tags size={18} color="var(--brand)" />
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>
                   Khoản mục chi phí
                 </span>
@@ -2337,7 +2341,7 @@ if (apiConnected) {
                   e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.03)";
                 }}
               >
-                <Lightbulb size={18} color="#00a862" />
+                <Lightbulb size={18} color="var(--brand)" />
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>
                   Tiện ích
                 </span>
@@ -2370,7 +2374,7 @@ if (apiConnected) {
                 e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.03)";
               }}
             >
-              <Tags size={18} color="#00a862" />
+              <Tags size={18} color="var(--brand)" />
               <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>
                 Khoản mục chi phí
               </span>
@@ -2537,10 +2541,10 @@ if (apiConnected) {
                 padding: "10px 4px",
                 fontSize: 13,
                 fontWeight: simpleSubtab === "period" ? 700 : 500,
-                color: simpleSubtab === "period" ? "#00a862" : "#334155",
+                color: simpleSubtab === "period" ? "var(--brand)" : "#334155",
                 background: "none",
                 border: "none",
-                borderBottom: simpleSubtab === "period" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                borderBottom: simpleSubtab === "period" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
               }}
@@ -2554,10 +2558,10 @@ if (apiConnected) {
                 padding: "10px 4px",
                 fontSize: 13,
                 fontWeight: simpleSubtab === "transfer" ? 700 : 500,
-                color: simpleSubtab === "transfer" ? "#00a862" : "#334155",
+                color: simpleSubtab === "transfer" ? "var(--brand)" : "#334155",
                 background: "none",
                 border: "none",
-                borderBottom: simpleSubtab === "transfer" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                borderBottom: simpleSubtab === "transfer" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
               }}
@@ -2601,19 +2605,19 @@ if (apiConnected) {
                     {/* Centered Graphic Illustration matching Screenshot 1 & 3 */}
                     <svg width="220" height="150" viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M45 40L47 45L52 47L47 49L45 54L43 49L38 47L43 45L45 40Z" fill="#94a3b8" opacity="0.6"/>
-                      <path d="M185 30L186.5 34L190.5 35.5L186.5 37L185 41L183.5 37L179.5 35.5L183.5 34L185 30Z" fill="#00a862"/>
+                      <path d="M185 30L186.5 34L190.5 35.5L186.5 37L185 41L183.5 37L179.5 35.5L183.5 34L185 30Z" fill="var(--brand)"/>
                       <path d="M190 95L191 98L194 99L191 100L190 103L189 100L186 99L189 98L190 95Z" fill="#94a3b8" opacity="0.5"/>
-                      <path d="M70 120L71 123L74 124L71 125L70 128L69 125L66 124L69 123L70 120Z" fill="#00a862"/>
+                      <path d="M70 120L71 123L74 124L71 125L70 128L69 125L66 124L69 123L70 120Z" fill="var(--brand)"/>
                       <path d="M52 70 C46 70 42 66 42 60 C42 55 45 51 50 50 C52 44 58 40 65 40 C73 40 79 45 80 52 C83 52 86 55 86 59 C86 65 82 70 76 70 Z" fill="#e8f5e9" stroke="#a7f3d0" strokeWidth="1.5"/>
-                      <circle cx="64" cy="57" r="10" fill="#00a862" />
-                      <text x="64" y="61" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="700" fontFamily="sans-serif">$</text>
-                      <path d="M84 60 C105 60 115 72 130 82" stroke="#00a862" strokeWidth="1.5" strokeDasharray="3 3"/>
-                      <path d="M127 77 L132 83 L124 85" fill="none" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      <circle cx="106" cy="69" r="7.5" fill="#00a862" />
-                      <text x="106" y="72.5" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <circle cx="64" cy="57" r="10" fill="var(--brand)" />
+                      <text x="64" y="61" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
+                      <path d="M84 60 C105 60 115 72 130 82" stroke="var(--brand)" strokeWidth="1.5" strokeDasharray="3 3"/>
+                      <path d="M127 77 L132 83 L124 85" fill="none" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="106" cy="69" r="7.5" fill="var(--brand)" />
+                      <text x="106" y="72.5" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
                       <ellipse cx="145" cy="120" rx="38" ry="10" fill="#e2e8f0" opacity="0.7"/>
-                      <path d="M120 78 L145 92 L145 116 L120 102 Z" fill="#008f53"/>
-                      <path d="M145 92 L170 78 L170 102 L145 116 Z" fill="#00a862"/>
+                      <path d="M120 78 L145 92 L145 116 L120 102 Z" fill="var(--brand-hover)"/>
+                      <path d="M145 92 L170 78 L170 102 L145 116 Z" fill="var(--brand)"/>
                       <path d="M145 68 L170 78 L145 92 L120 78 Z" fill="#10b981"/>
                       <path d="M138 88 L152 96 L152 102 L138 94 Z" fill="#ffffff" opacity="0.9"/>
                     </svg>
@@ -2639,7 +2643,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setAddSimplePeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -2709,7 +2713,7 @@ if (apiConnected) {
                                   }}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.background = "#f8fafc";
-                                    e.currentTarget.style.color = "#00a862";
+                                    e.currentTarget.style.color = "var(--brand)";
                                   }}
                                   onMouseLeave={(e) => {
                                     e.currentTarget.style.background = "none";
@@ -2737,7 +2741,7 @@ if (apiConnected) {
                                   }}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.background = "#f8fafc";
-                                    e.currentTarget.style.color = "#00a862";
+                                    e.currentTarget.style.color = "var(--brand)";
                                   }}
                                   onMouseLeave={(e) => {
                                     e.currentTarget.style.background = "none";
@@ -2765,7 +2769,7 @@ if (apiConnected) {
                                   }}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.background = "#f8fafc";
-                                    e.currentTarget.style.color = "#00a862";
+                                    e.currentTarget.style.color = "var(--brand)";
                                   }}
                                   onMouseLeave={(e) => {
                                     e.currentTarget.style.background = "none";
@@ -2793,7 +2797,7 @@ if (apiConnected) {
                                   }}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.background = "#f8fafc";
-                                    e.currentTarget.style.color = "#00a862";
+                                    e.currentTarget.style.color = "var(--brand)";
                                   }}
                                   onMouseLeave={(e) => {
                                     e.currentTarget.style.background = "none";
@@ -2826,7 +2830,7 @@ if (apiConnected) {
                                     gap: 8,
                                   }}
                                 >
-                                  <Calculator size={14} color="#00a862" />
+                                  <Calculator size={14} color="var(--brand)" />
                                   <span>Phân bổ chi phí chung (TK 627)</span>
                                 </button>
                                 <button
@@ -2849,7 +2853,7 @@ if (apiConnected) {
                                     gap: 8,
                                   }}
                                 >
-                                  <SlidersHorizontal size={14} color="#00a862" />
+                                  <SlidersHorizontal size={14} color="var(--brand)" />
                                   <span>Đánh giá sản phẩm dở dang</span>
                                 </button>
                                 <button
@@ -2872,7 +2876,7 @@ if (apiConnected) {
                                     gap: 8,
                                   }}
                                 >
-                                  <FolderPlus size={14} color="#00a862" />
+                                  <FolderPlus size={14} color="var(--brand)" />
                                   <span>Thiết lập định mức NVL</span>
                                 </button>
                                 <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
@@ -2914,8 +2918,8 @@ if (apiConnected) {
                       style={{
                         marginTop: 48,
                         background: "#ffffff",
-                        border: "1px solid #00a862",
-                        color: "#00a862",
+                        border: "1px solid var(--brand)",
+                        color: "var(--brand)",
                         borderRadius: 20,
                         padding: "6px 20px",
                         fontSize: 13,
@@ -2962,7 +2966,7 @@ if (apiConnected) {
                           type="button"
                           onClick={() => setAddSimplePeriodModalOpen(true)}
                           style={{
-                            background: "#00a862",
+                            background: "var(--brand)",
                             color: "#ffffff",
                             border: "none",
                             borderRadius: 4,
@@ -3010,7 +3014,7 @@ if (apiConnected) {
                             simplePeriods.map((item, idx) => (
                               <tr key={item.id}>
                                 <td style={{ textAlign: "center" }}>{idx + 1}</td>
-                                <td style={{ fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                                <td style={{ fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                                 <td style={{ fontWeight: 500 }}>{item.name}</td>
                                 <td>{item.targetObject}</td>
                                 <td>{item.fromDate}</td>
@@ -3018,7 +3022,7 @@ if (apiConnected) {
                                 <td style={{ textAlign: "right" }}>{formatMoney(item.openingWip)}</td>
                                 <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(item.incurredCost)}</td>
                                 <td style={{ textAlign: "right", color: "#d97706" }}>{formatMoney(item.endingWip)}</td>
-                                <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(item.totalFinishedCost)}</td>
+                                <td style={{ textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(item.totalFinishedCost)}</td>
                                 <td style={{ textAlign: "center" }}>
                                   <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
                                     {item.status === "completed" ? "Đã hoàn thành" : "Đang tính"}
@@ -3065,27 +3069,27 @@ if (apiConnected) {
                         <ellipse cx="110" cy="124" rx="55" ry="10" fill="#e2e8f0" opacity="0.7"/>
 
                         {/* Rounded Emerald Base / Tray */}
-                        <path d="M72 100 L148 100 C154 100 158 104 156 110 L152 118 C150 122 144 124 138 124 L82 124 C76 124 70 122 68 118 L64 110 C62 104 66 100 72 100 Z" fill="#00a862"/>
+                        <path d="M72 100 L148 100 C154 100 158 104 156 110 L152 118 C150 122 144 124 138 124 L82 124 C76 124 70 122 68 118 L64 110 C62 104 66 100 72 100 Z" fill="var(--brand)"/>
                         <path d="M72 100 L148 100 C154 100 156 103 154 107 L66 107 C64 103 66 100 72 100 Z" fill="#10b981"/>
 
                         {/* Left Card: 621, 622, 627 */}
                         <rect x="74" y="62" width="34" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1"/>
-                        <text x="79" y="74" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="sans-serif">621</text>
-                        <text x="79" y="85" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="sans-serif">622</text>
-                        <text x="79" y="96" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="sans-serif">627</text>
+                        <text x="79" y="74" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="Roboto, Arial, sans-serif">621</text>
+                        <text x="79" y="85" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="Roboto, Arial, sans-serif">622</text>
+                        <text x="79" y="96" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="Roboto, Arial, sans-serif">627</text>
 
                         {/* Upward curved arrow to 154 */}
-                        <path d="M96 66 C105 60 114 62 118 68" stroke="#00a862" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 3"/>
-                        <path d="M115 62 L121 68 L113 71" fill="none" stroke="#00a862" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M96 66 C105 60 114 62 118 68" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 3"/>
+                        <path d="M115 62 L121 68 L113 71" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         
                         {/* Target Badge 154 */}
                         <rect x="122" y="60" width="22" height="12" rx="2" fill="#e8f5e9"/>
-                        <text x="133" y="69" textAnchor="middle" fill="#00a862" fontSize="7.5" fontWeight="700" fontFamily="sans-serif">154</text>
+                        <text x="133" y="69" textAnchor="middle" fill="var(--brand)" fontSize="7.5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">154</text>
 
                         {/* Right Bar Chart (3 bars with increasing heights) */}
                         <rect x="114" y="86" width="7" height="15" rx="1.5" fill="#a7f3d0"/>
                         <rect x="124" y="78" width="7" height="23" rx="1.5" fill="#34d399"/>
-                        <rect x="134" y="70" width="7" height="31" rx="1.5" fill="#00a862"/>
+                        <rect x="134" y="70" width="7" height="31" rx="1.5" fill="var(--brand)"/>
                         
                         {/* Trending Arrow over bars */}
                         <path d="M114 84 L126 74 L142 66" stroke="#059669" strokeWidth="1.5" strokeLinecap="round"/>
@@ -3095,19 +3099,19 @@ if (apiConnected) {
                       /* Package Illustration for continuous-simple */
                       <svg width="220" height="150" viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M45 40L47 45L52 47L47 49L45 54L43 49L38 47L43 45L45 40Z" fill="#94a3b8" opacity="0.6"/>
-                        <path d="M185 30L186.5 34L190.5 35.5L186.5 37L185 41L183.5 37L179.5 35.5L183.5 34L185 30Z" fill="#00a862"/>
+                        <path d="M185 30L186.5 34L190.5 35.5L186.5 37L185 41L183.5 37L179.5 35.5L183.5 34L185 30Z" fill="var(--brand)"/>
                         <path d="M190 95L191 98L194 99L191 100L190 103L189 100L186 99L189 98L190 95Z" fill="#94a3b8" opacity="0.5"/>
-                        <path d="M70 120L71 123L74 124L71 125L70 128L69 125L66 124L69 123L70 120Z" fill="#00a862"/>
+                        <path d="M70 120L71 123L74 124L71 125L70 128L69 125L66 124L69 123L70 120Z" fill="var(--brand)"/>
                         <path d="M52 70 C46 70 42 66 42 60 C42 55 45 51 50 50 C52 44 58 40 65 40 C73 40 79 45 80 52 C83 52 86 55 86 59 C86 65 82 70 76 70 Z" fill="#e8f5e9" stroke="#a7f3d0" strokeWidth="1.5"/>
-                        <circle cx="64" cy="57" r="10" fill="#00a862" />
-                        <text x="64" y="61" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="700" fontFamily="sans-serif">$</text>
-                        <path d="M84 60 C105 60 115 72 130 82" stroke="#00a862" strokeWidth="1.5" strokeDasharray="3 3"/>
-                        <path d="M127 77 L132 83 L124 85" fill="none" stroke="#00a862" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <circle cx="106" cy="69" r="7.5" fill="#00a862" />
-                        <text x="106" y="72.5" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="700" fontFamily="sans-serif">$</text>
+                        <circle cx="64" cy="57" r="10" fill="var(--brand)" />
+                        <text x="64" y="61" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
+                        <path d="M84 60 C105 60 115 72 130 82" stroke="var(--brand)" strokeWidth="1.5" strokeDasharray="3 3"/>
+                        <path d="M127 77 L132 83 L124 85" fill="none" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <circle cx="106" cy="69" r="7.5" fill="var(--brand)" />
+                        <text x="106" y="72.5" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
                         <ellipse cx="145" cy="120" rx="38" ry="10" fill="#e2e8f0" opacity="0.7"/>
-                        <path d="M120 78 L145 92 L145 116 L120 102 Z" fill="#008f53"/>
-                        <path d="M145 92 L170 78 L170 102 L145 116 Z" fill="#00a862"/>
+                        <path d="M120 78 L145 92 L145 116 L120 102 Z" fill="var(--brand-hover)"/>
+                        <path d="M145 92 L170 78 L170 102 L145 116 Z" fill="var(--brand)"/>
                         <path d="M145 68 L170 78 L145 92 L120 78 Z" fill="#10b981"/>
                         <path d="M138 88 L152 96 L152 102 L138 94 Z" fill="#ffffff" opacity="0.9"/>
                       </svg>
@@ -3136,7 +3140,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -3158,8 +3162,8 @@ if (apiConnected) {
                       style={{
                         marginTop: 48,
                         background: "#ffffff",
-                        border: "1px solid #00a862",
-                        color: "#00a862",
+                        border: "1px solid var(--brand)",
+                        color: "var(--brand)",
                         borderRadius: 20,
                         padding: "6px 20px",
                         fontSize: 13,
@@ -3205,7 +3209,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -3250,11 +3254,11 @@ if (apiConnected) {
                               <tr key={v.id}>
                                 <td style={{ textAlign: "center" }}>{idx + 1}</td>
                                 <td>{v.postDate}</td>
-                                <td style={{ fontWeight: 600, color: "#00a862" }}>{v.docNo}</td>
+                                <td style={{ fontWeight: 600, color: "var(--brand)" }}>{v.docNo}</td>
                                 <td>{v.desc}</td>
                                 <td style={{ textAlign: "center", fontWeight: 600 }}>{v.debitAcc}</td>
                                 <td style={{ textAlign: "center", color: "#64748b" }}>{v.creditAcc}</td>
-                                <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>
+                                <td style={{ textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>
                                   {formatMoney(v.amount)}
                                 </td>
                                 <td>{v.targetObj}</td>
@@ -3364,10 +3368,10 @@ if (apiConnected) {
                   padding: "10px 4px",
                   fontSize: 13,
                   fontWeight: stepSubtab === tabItem.id ? 700 : 500,
-                  color: stepSubtab === tabItem.id ? "#00a862" : "#334155",
+                  color: stepSubtab === tabItem.id ? "var(--brand)" : "#334155",
                   background: "none",
                   border: "none",
-                  borderBottom: stepSubtab === tabItem.id ? "2.5px solid #00a862" : "2.5px solid transparent",
+                  borderBottom: stepSubtab === tabItem.id ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                   cursor: "pointer",
                   whiteSpace: "nowrap",
                   transition: "all 0.15s ease",
@@ -3416,9 +3420,9 @@ if (apiConnected) {
                       <path d="M42 42 L48 42 M45 39 L45 45" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
                       <path d="M192 34 L198 34 M195 31 L195 37" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                       <path d="M202 96 L203 98.5 L205.5 99.5 L203 100.5 L202 103 L201 100.5 L198.5 99.5 L201 98.5 Z" fill="#94a3b8" opacity="0.5" />
-                      <path d="M72 122 L73 124.5 L75.5 125.5 L73 126.5 L72 129 L71 126.5 L68.5 125.5 L71 124.5 Z" fill="#00a862" />
-                      <circle cx="178" cy="44" r="1.5" fill="#00a862" />
-                      <circle cx="44" cy="98" r="1.5" fill="#00a862" />
+                      <path d="M72 122 L73 124.5 L75.5 125.5 L73 126.5 L72 129 L71 126.5 L68.5 125.5 L71 124.5 Z" fill="var(--brand)" />
+                      <circle cx="178" cy="44" r="1.5" fill="var(--brand)" />
+                      <circle cx="44" cy="98" r="1.5" fill="var(--brand)" />
 
                       {/* Soft cloud background */}
                       <path d="M85 70 C75 70 70 64 70 56 C70 48 76 42 84 42 C88 34 98 30 108 32 C118 34 126 42 128 50 C134 50 140 54 140 60 C140 68 134 70 126 70 Z" fill="#f8fafc" opacity="0.9" />
@@ -3426,32 +3430,32 @@ if (apiConnected) {
 
                       {/* Card 1 (Left) */}
                       <rect x="52" y="44" width="34" height="42" rx="4" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1.2" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.03))" />
-                      <path d="M60 55 C58 55 56.5 53.5 56.5 51.5 C56.5 49.5 58 48 60 48 C61 46 64 45 66 46 C69 47 70 49 70 51.5 C72 51.5 73.5 53 73.5 55 Z" fill="#00a862" />
-                      <circle cx="65" cy="68" r="7" fill="#00a862" />
-                      <text x="65" y="71.5" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <path d="M60 55 C58 55 56.5 53.5 56.5 51.5 C56.5 49.5 58 48 60 48 C61 46 64 45 66 46 C69 47 70 49 70 51.5 C72 51.5 73.5 53 73.5 55 Z" fill="var(--brand)" />
+                      <circle cx="65" cy="68" r="7" fill="var(--brand)" />
+                      <text x="65" y="71.5" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                       {/* Dotted curve from Card 1 upwards to Card 2 */}
-                      <path d="M74 50 C80 43 85 43 90 45" stroke="#00a862" strokeWidth="1.5" strokeDasharray="2 3" />
-                      <circle cx="80" cy="46" r="1.8" fill="#00a862" />
-                      <circle cx="86" cy="44" r="1.8" fill="#00a862" />
+                      <path d="M74 50 C80 43 85 43 90 45" stroke="var(--brand)" strokeWidth="1.5" strokeDasharray="2 3" />
+                      <circle cx="80" cy="46" r="1.8" fill="var(--brand)" />
+                      <circle cx="86" cy="44" r="1.8" fill="var(--brand)" />
 
                       {/* Card 2 (Center-Left) */}
                       <rect x="94" y="44" width="34" height="42" rx="4" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1.2" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.03))" />
-                      <path d="M102 55 C100 55 98.5 53.5 98.5 51.5 C98.5 49.5 100 48 102 48 C103 46 106 45 108 46 C111 47 112 49 112 51.5 C114 51.5 115.5 53 115.5 55 Z" fill="#00a862" />
+                      <path d="M102 55 C100 55 98.5 53.5 98.5 51.5 C98.5 49.5 100 48 102 48 C103 46 106 45 108 46 C111 47 112 49 112 51.5 C114 51.5 115.5 53 115.5 55 Z" fill="var(--brand)" />
                       <path d="M103 51 L108 51 M108 51 L106 49 M108 51 L106 53" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
                       <path d="M110 54 L105 54 M105 54 L107 52 M105 54 L107 56" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="107" cy="68" r="7" fill="#00a862" />
-                      <text x="107" y="71.5" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <circle cx="107" cy="68" r="7" fill="var(--brand)" />
+                      <text x="107" y="71.5" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                       {/* Connecting dashed line from Card 2 to Coin 3 */}
                       <path d="M128 62 L137 62" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 2" />
-                      <circle cx="144" cy="62" r="6" fill="#00a862" />
-                      <text x="144" y="65" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <circle cx="144" cy="62" r="6" fill="var(--brand)" />
+                      <text x="144" y="65" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                       {/* Connecting dashed line from Coin 3 to Coin 4 */}
                       <path d="M150 62 L160 62" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 2" />
-                      <circle cx="167" cy="62" r="6" fill="#00a862" />
-                      <text x="167" y="65" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <circle cx="167" cy="62" r="6" fill="var(--brand)" />
+                      <text x="167" y="65" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                       {/* Dropping dashed lines from upper flow to bottom stages */}
                       <path d="M107 86 L107 101" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="2 2" />
@@ -3461,26 +3465,26 @@ if (apiConnected) {
                       {/* Bottom 3 Stage Blocks (Công đoạn 1, Công đoạn 2, Công đoạn 3) */}
                       {/* Stage 1 */}
                       <g transform="translate(97, 102)">
-                        <path d="M0 6 C0 4 2 2 4 2 L8 2 L8 8 L16 8 L16 2 L20 2 C22 2 24 4 24 6 L24 18 C24 20 22 22 20 22 L4 22 C2 22 0 20 0 18 Z" fill="#008f53" />
-                        <path d="M2 6 L2 18 C2 19 3 20 4 20 L20 20 C21 20 22 19 22 18 L22 6 L16 6 L16 10 L8 10 L8 6 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="12" cy="14" r="5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="12" y="16.5" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="sans-serif">1</text>
+                        <path d="M0 6 C0 4 2 2 4 2 L8 2 L8 8 L16 8 L16 2 L20 2 C22 2 24 4 24 6 L24 18 C24 20 22 22 20 22 L4 22 C2 22 0 20 0 18 Z" fill="var(--brand-hover)" />
+                        <path d="M2 6 L2 18 C2 19 3 20 4 20 L20 20 C21 20 22 19 22 18 L22 6 L16 6 L16 10 L8 10 L8 6 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="12" cy="14" r="5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="12" y="16.5" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">1</text>
                       </g>
 
                       {/* Stage 2 */}
                       <g transform="translate(132, 102)">
-                        <path d="M0 6 C0 4 2 2 4 2 L8 2 L8 8 L16 8 L16 2 L20 2 C22 2 24 4 24 6 L24 18 C24 20 22 22 20 22 L4 22 C2 22 0 20 0 18 Z" fill="#008f53" />
-                        <path d="M2 6 L2 18 C2 19 3 20 4 20 L20 20 C21 20 22 19 22 18 L22 6 L16 6 L16 10 L8 10 L8 6 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="12" cy="14" r="5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="12" y="16.5" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="sans-serif">2</text>
+                        <path d="M0 6 C0 4 2 2 4 2 L8 2 L8 8 L16 8 L16 2 L20 2 C22 2 24 4 24 6 L24 18 C24 20 22 22 20 22 L4 22 C2 22 0 20 0 18 Z" fill="var(--brand-hover)" />
+                        <path d="M2 6 L2 18 C2 19 3 20 4 20 L20 20 C21 20 22 19 22 18 L22 6 L16 6 L16 10 L8 10 L8 6 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="12" cy="14" r="5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="12" y="16.5" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">2</text>
                       </g>
 
                       {/* Stage 3 */}
                       <g transform="translate(162, 102)">
-                        <path d="M0 6 C0 4 2 2 4 2 L6 2 L6 8 L12 8 L12 2 L16 2 L16 8 L22 8 L22 2 L24 2 C26 2 28 4 28 6 L28 18 C28 20 26 22 24 22 L4 22 C2 22 0 20 0 18 Z" fill="#008f53" />
-                        <path d="M2 6 L2 18 C2 19 3 20 4 20 L24 20 C25 20 26 19 26 18 L26 6 L22 6 L22 10 L16 10 L16 6 L12 6 L12 10 L6 10 L6 6 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="14" cy="14" r="5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="14" y="16.5" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="sans-serif">3</text>
+                        <path d="M0 6 C0 4 2 2 4 2 L6 2 L6 8 L12 8 L12 2 L16 2 L16 8 L22 8 L22 2 L24 2 C26 2 28 4 28 6 L28 18 C28 20 26 22 24 22 L4 22 C2 22 0 20 0 18 Z" fill="var(--brand-hover)" />
+                        <path d="M2 6 L2 18 C2 19 3 20 4 20 L24 20 C25 20 26 19 26 18 L26 6 L22 6 L22 10 L16 10 L16 6 L12 6 L12 10 L6 10 L6 6 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="14" cy="14" r="5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="14" y="16.5" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">3</text>
                       </g>
                     </svg>
 
@@ -3503,7 +3507,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setAddStepPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -3569,7 +3573,7 @@ if (apiConnected) {
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.background = "#f8fafc";
-                                e.currentTarget.style.color = "#00a862";
+                                e.currentTarget.style.color = "var(--brand)";
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.background = "none";
@@ -3596,7 +3600,7 @@ if (apiConnected) {
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.background = "#f8fafc";
-                                e.currentTarget.style.color = "#00a862";
+                                e.currentTarget.style.color = "var(--brand)";
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.background = "none";
@@ -3623,7 +3627,7 @@ if (apiConnected) {
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.background = "#f8fafc";
-                                e.currentTarget.style.color = "#00a862";
+                                e.currentTarget.style.color = "var(--brand)";
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.background = "none";
@@ -3650,7 +3654,7 @@ if (apiConnected) {
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.background = "#f8fafc";
-                                e.currentTarget.style.color = "#00a862";
+                                e.currentTarget.style.color = "var(--brand)";
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.background = "none";
@@ -3671,8 +3675,8 @@ if (apiConnected) {
                       style={{
                         marginTop: 48,
                         background: "#ffffff",
-                        border: "1px solid #00a862",
-                        color: "#00a862",
+                        border: "1px solid var(--brand)",
+                        color: "var(--brand)",
                         borderRadius: 20,
                         padding: "6px 20px",
                         fontSize: 13,
@@ -3719,7 +3723,7 @@ if (apiConnected) {
                           type="button"
                           onClick={() => setAddStepPeriodModalOpen(true)}
                           style={{
-                            background: "#00a862",
+                            background: "var(--brand)",
                             color: "#ffffff",
                             border: "none",
                             borderRadius: 4,
@@ -3766,7 +3770,7 @@ if (apiConnected) {
                             stepPeriods.map((item, idx) => (
                               <tr key={item.id}>
                                 <td style={{ textAlign: "center" }}>{idx + 1}</td>
-                                <td style={{ fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                                <td style={{ fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                                 <td style={{ fontWeight: 500 }}>{item.name}</td>
                                 <td>{item.targetObject}</td>
                                 <td>{item.fromDate}</td>
@@ -3774,7 +3778,7 @@ if (apiConnected) {
                                 <td style={{ textAlign: "right" }}>{formatMoney(item.openingWip)}</td>
                                 <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(item.incurredCost)}</td>
                                 <td style={{ textAlign: "right", color: "#d97706" }}>{formatMoney(item.endingWip)}</td>
-                                <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(item.totalFinishedCost)}</td>
+                                <td style={{ textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(item.totalFinishedCost)}</td>
                                 <td style={{ textAlign: "center" }}>
                                   <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 600, background: "#dcfce7", color: "#166534" }}>
                                     {item.status === "completed" ? "Đã hoàn thành" : "Đang tính"}
@@ -3813,7 +3817,7 @@ if (apiConnected) {
                       <path d="M198 34 L204 34 M201 31 L201 37" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                       <circle cx="115" cy="42" r="1.5" fill="#94a3b8" />
                       <circle cx="216" cy="52" r="1.5" fill="#94a3b8" />
-                      <path d="M68 116 L69 118.5 L71.5 119.5 L69 120.5 L68 123 L67 120.5 L64.5 119.5 L67 118.5 Z" fill="#00a862" />
+                      <path d="M68 116 L69 118.5 L71.5 119.5 L69 120.5 L68 123 L67 120.5 L64.5 119.5 L67 118.5 Z" fill="var(--brand)" />
 
                       {/* Soft cloud background */}
                       <path d="M120 65 C110 65 105 60 105 53 C105 46 110 40 118 40 C122 33 131 30 140 32 C150 34 157 41 159 48 C165 48 170 52 170 57 C170 64 165 65 158 65 Z" fill="#f8fafc" opacity="0.9" />
@@ -3822,26 +3826,26 @@ if (apiConnected) {
                       {/* Left: 3 Process Stage Blocks */}
                       {/* Stage 1 */}
                       <g transform="translate(32, 68)">
-                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="#008f53" />
-                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="10" cy="12" r="4.5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="sans-serif">1</text>
+                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="var(--brand-hover)" />
+                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="10" cy="12" r="4.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">1</text>
                       </g>
 
                       {/* Stage 2 */}
                       <g transform="translate(60, 68)">
-                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="#008f53" />
-                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="10" cy="12" r="4.5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="sans-serif">2</text>
+                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="var(--brand-hover)" />
+                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="10" cy="12" r="4.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">2</text>
                       </g>
 
                       {/* Stage 3 */}
                       <g transform="translate(88, 68)">
-                        <path d="M0 5 C0 3 1.5 1 3 1 L5 1 L5 6 L10 6 L10 1 L13 1 L13 6 L18 6 L18 1 L20 1 C21.5 1 23 3 23 5 L23 16 C23 18 21.5 20 20 20 L3 20 C1.5 20 0 18 0 16 Z" fill="#008f53" />
-                        <path d="M2 5 L2 16 C2 17 2.5 18 3.5 18 L19.5 18 C20.5 18 21 17 21 16 L21 5 L18 5 L18 8 L13 8 L13 5 L10 5 L10 8 L5 8 L5 5 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="11.5" cy="12" r="4.5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="11.5" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="sans-serif">3</text>
+                        <path d="M0 5 C0 3 1.5 1 3 1 L5 1 L5 6 L10 6 L10 1 L13 1 L13 6 L18 6 L18 1 L20 1 C21.5 1 23 3 23 5 L23 16 C23 18 21.5 20 20 20 L3 20 C1.5 20 0 18 0 16 Z" fill="var(--brand-hover)" />
+                        <path d="M2 5 L2 16 C2 17 2.5 18 3.5 18 L19.5 18 C20.5 18 21 17 21 16 L21 5 L18 5 L18 8 L13 8 L13 5 L10 5 L10 8 L5 8 L5 5 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="11.5" cy="12" r="4.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="11.5" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">3</text>
                       </g>
 
                       {/* Connecting dashed line from Stages to Card */}
@@ -3849,25 +3853,25 @@ if (apiConnected) {
 
                       {/* Middle Card: BTP Voucher */}
                       <rect x="130" y="60" width="28" height="36" rx="3.5" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.2" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.03))" />
-                      <path d="M137 69 C135 69 133.5 67.5 133.5 66 C133.5 64.5 135 63 137 63 C138 61.5 140 61 142 62 C144 63 145 64.5 145 66 C146.5 66 148 67 148 69 Z" fill="#00a862" />
+                      <path d="M137 69 C135 69 133.5 67.5 133.5 66 C133.5 64.5 135 63 137 63 C138 61.5 140 61 142 62 C144 63 145 64.5 145 66 C146.5 66 148 67 148 69 Z" fill="var(--brand)" />
                       {/* Sync arrows */}
-                      <path d="M139 74 L144 74 M144 74 L142 72 M144 74 L142 76" stroke="#00a862" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M145 77 L140 77 M140 77 L142 75 M140 77 L142 79" stroke="#00a862" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="144" cy="85" r="4" fill="#00a862" />
-                      <text x="144" y="87.2" textAnchor="middle" fill="#ffffff" fontSize="5" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <path d="M139 74 L144 74 M144 74 L142 72 M144 74 L142 76" stroke="var(--brand)" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M145 77 L140 77 M140 77 L142 75 M140 77 L142 79" stroke="var(--brand)" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="144" cy="85" r="4" fill="var(--brand)" />
+                      <text x="144" y="87.2" textAnchor="middle" fill="#ffffff" fontSize="5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                       {/* Connecting dashed line from Card to SL */}
                       <path d="M162 78 L171 78" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 2" />
 
                       {/* Green circle badge with "SL" */}
-                      <circle cx="180" cy="78" r="9.5" fill="#00a862" />
-                      <text x="180" y="81.5" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="800" fontFamily="sans-serif">SL</text>
+                      <circle cx="180" cy="78" r="9.5" fill="var(--brand)" />
+                      <text x="180" y="81.5" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="800" fontFamily="Roboto, Arial, sans-serif">SL</text>
 
                       {/* Connecting dashed line from SL to Calculator */}
                       <path d="M193 78 L202 78" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 2" />
 
                       {/* Right Calculator & Coin */}
-                      <rect x="206" y="67" width="16" height="22" rx="2.5" fill="#00a862" />
+                      <rect x="206" y="67" width="16" height="22" rx="2.5" fill="var(--brand)" />
                       <rect x="209" y="70" width="10" height="4.5" rx="0.8" fill="#ffffff" />
                       <circle cx="211" cy="78" r="0.9" fill="#ffffff" />
                       <circle cx="214" cy="78" r="0.9" fill="#ffffff" />
@@ -3877,14 +3881,14 @@ if (apiConnected) {
                       <circle cx="217" cy="82" r="0.9" fill="#ffffff" />
 
                       {/* Coin next to calculator */}
-                      <circle cx="227" cy="81" r="5.5" fill="#00a862" />
-                      <text x="227" y="83.8" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <circle cx="227" cy="81" r="5.5" fill="var(--brand)" />
+                      <text x="227" y="83.8" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                       {/* Rising dots above coin */}
-                      <path d="M218 64 L224 59 L230 54" stroke="#00a862" strokeWidth="1.2" strokeDasharray="2 2" />
-                      <circle cx="218" cy="64" r="1.8" fill="#00a862" />
-                      <circle cx="224" cy="59" r="2.2" fill="#00a862" />
-                      <circle cx="230" cy="54" r="2.6" fill="#00a862" />
+                      <path d="M218 64 L224 59 L230 54" stroke="var(--brand)" strokeWidth="1.2" strokeDasharray="2 2" />
+                      <circle cx="218" cy="64" r="1.8" fill="var(--brand)" />
+                      <circle cx="224" cy="59" r="2.2" fill="var(--brand)" />
+                      <circle cx="230" cy="54" r="2.6" fill="var(--brand)" />
                     </svg>
 
                     {/* Headline matching Screenshot 1 */}
@@ -3908,7 +3912,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectQtyPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -3930,8 +3934,8 @@ if (apiConnected) {
                       style={{
                         marginTop: 48,
                         background: "#ffffff",
-                        border: "1px solid #00a862",
-                        color: "#00a862",
+                        border: "1px solid var(--brand)",
+                        color: "var(--brand)",
                         borderRadius: 20,
                         padding: "6px 20px",
                         fontSize: 13,
@@ -4013,7 +4017,7 @@ if (apiConnected) {
                           type="button"
                           onClick={() => notify("Thêm dòng thống kê")}
                           style={{
-                            background: "#00a862",
+                            background: "var(--brand)",
                             color: "#ffffff",
                             border: "none",
                             borderRadius: 4,
@@ -4095,10 +4099,10 @@ if (apiConnected) {
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td style={{ fontWeight: 600, color: "#2563eb" }}>{row.processCode}</td>
                               <td style={{ fontWeight: 600 }}>{row.stage}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.itemCode}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.itemCode}</td>
                               <td>{row.itemName}</td>
                               <td style={{ textAlign: "center", color: "#64748b" }}>{row.unit}</td>
-                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{row.completedQty}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{row.completedQty}</td>
                               <td style={{ textAlign: "right", color: "#d97706" }}>{row.wipQty}</td>
                               <td style={{ textAlign: "right" }}>{row.wipPct}</td>
                               <td style={{ textAlign: "right" }}>{formatMoney(row.unitPrice)}</td>
@@ -4135,7 +4139,7 @@ if (apiConnected) {
                       <path d="M198 34 L204 34 M201 31 L201 37" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                       <circle cx="115" cy="42" r="1.5" fill="#94a3b8" />
                       <circle cx="216" cy="52" r="1.5" fill="#94a3b8" />
-                      <path d="M68 116 L69 118.5 L71.5 119.5 L69 120.5 L68 123 L67 120.5 L64.5 119.5 L67 118.5 Z" fill="#00a862" />
+                      <path d="M68 116 L69 118.5 L71.5 119.5 L69 120.5 L68 123 L67 120.5 L64.5 119.5 L67 118.5 Z" fill="var(--brand)" />
 
                       {/* Soft cloud background */}
                       <path d="M110 65 C100 65 95 60 95 53 C95 46 100 40 108 40 C112 33 121 30 130 32 C140 34 147 41 149 48 C155 48 160 52 160 57 C160 64 155 65 148 65 Z" fill="#f8fafc" opacity="0.9" />
@@ -4144,40 +4148,40 @@ if (apiConnected) {
                       {/* 3 Process Stage Blocks */}
                       {/* Stage 1 */}
                       <g transform="translate(48, 68)">
-                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="#008f53" />
-                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="10" cy="12" r="4.5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="sans-serif">1</text>
+                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="var(--brand-hover)" />
+                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="10" cy="12" r="4.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">1</text>
                       </g>
 
                       {/* Stage 2 */}
                       <g transform="translate(76, 68)">
-                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="#008f53" />
-                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="10" cy="12" r="4.5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="sans-serif">2</text>
+                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="var(--brand-hover)" />
+                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="10" cy="12" r="4.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">2</text>
                       </g>
 
                       {/* Stage 3 */}
                       <g transform="translate(104, 68)">
-                        <path d="M0 5 C0 3 1.5 1 3 1 L5 1 L5 6 L10 6 L10 1 L13 1 L13 6 L18 6 L18 1 L20 1 C21.5 1 23 3 23 5 L23 16 C23 18 21.5 20 20 20 L3 20 C1.5 20 0 18 0 16 Z" fill="#008f53" />
-                        <path d="M2 5 L2 16 C2 17 2.5 18 3.5 18 L19.5 18 C20.5 18 21 17 21 16 L21 5 L18 5 L18 8 L13 8 L13 5 L10 5 L10 8 L5 8 L5 5 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="11.5" cy="12" r="4.5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="11.5" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="sans-serif">3</text>
+                        <path d="M0 5 C0 3 1.5 1 3 1 L5 1 L5 6 L10 6 L10 1 L13 1 L13 6 L18 6 L18 1 L20 1 C21.5 1 23 3 23 5 L23 16 C23 18 21.5 20 20 20 L3 20 C1.5 20 0 18 0 16 Z" fill="var(--brand-hover)" />
+                        <path d="M2 5 L2 16 C2 17 2.5 18 3.5 18 L19.5 18 C20.5 18 21 17 21 16 L21 5 L18 5 L18 8 L13 8 L13 5 L10 5 L10 8 L5 8 L5 5 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="11.5" cy="12" r="4.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="11.5" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">3</text>
                       </g>
 
                       {/* Connecting dashed line from Stages to Plus badge */}
                       <path d="M130 78 L146 78" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 2" />
 
                       {/* Green circle badge with "+" */}
-                      <circle cx="156" cy="78" r="9.5" fill="#00a862" />
+                      <circle cx="156" cy="78" r="9.5" fill="var(--brand)" />
                       <path d="M152 78 L160 78 M156 74 L156 82" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
 
                       {/* Connecting dashed line from Plus to Calculator */}
                       <path d="M168 78 L180 78" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 2" />
 
                       {/* Right Calculator & Coin */}
-                      <rect x="184" y="67" width="16" height="22" rx="2.5" fill="#00a862" />
+                      <rect x="184" y="67" width="16" height="22" rx="2.5" fill="var(--brand)" />
                       <rect x="187" y="70" width="10" height="4.5" rx="0.8" fill="#ffffff" />
                       <circle cx="189" cy="78" r="0.9" fill="#ffffff" />
                       <circle cx="192" cy="78" r="0.9" fill="#ffffff" />
@@ -4187,14 +4191,14 @@ if (apiConnected) {
                       <circle cx="195" cy="82" r="0.9" fill="#ffffff" />
 
                       {/* Coin next to calculator */}
-                      <circle cx="205" cy="81" r="5.5" fill="#00a862" />
-                      <text x="205" y="83.8" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <circle cx="205" cy="81" r="5.5" fill="var(--brand)" />
+                      <text x="205" y="83.8" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                       {/* Rising dots above coin */}
-                      <path d="M196 64 L202 59 L208 54" stroke="#00a862" strokeWidth="1.2" strokeDasharray="2 2" />
-                      <circle cx="196" cy="64" r="1.8" fill="#00a862" />
-                      <circle cx="202" cy="59" r="2.2" fill="#00a862" />
-                      <circle cx="208" cy="54" r="2.6" fill="#00a862" />
+                      <path d="M196 64 L202 59 L208 54" stroke="var(--brand)" strokeWidth="1.2" strokeDasharray="2 2" />
+                      <circle cx="196" cy="64" r="1.8" fill="var(--brand)" />
+                      <circle cx="202" cy="59" r="2.2" fill="var(--brand)" />
+                      <circle cx="208" cy="54" r="2.6" fill="var(--brand)" />
                     </svg>
 
                     {/* Headline matching Screenshot 1 */}
@@ -4218,7 +4222,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectStageTransferPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -4240,8 +4244,8 @@ if (apiConnected) {
                       style={{
                         marginTop: 48,
                         background: "#ffffff",
-                        border: "1px solid #00a862",
-                        color: "#00a862",
+                        border: "1px solid var(--brand)",
+                        color: "var(--brand)",
                         borderRadius: 20,
                         padding: "6px 20px",
                         fontSize: 13,
@@ -4303,7 +4307,7 @@ if (apiConnected) {
                           type="button"
                           onClick={() => notify("Lập chứng từ chuyển công đoạn mới")}
                           style={{
-                            background: "#00a862",
+                            background: "var(--brand)",
                             color: "#ffffff",
                             border: "none",
                             borderRadius: 4,
@@ -4371,14 +4375,14 @@ if (apiConnected) {
                             <tr key={row.stt}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.docNo}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.docNo}</td>
                               <td style={{ fontWeight: 500, color: "#1e293b" }}>{row.fromStage}</td>
                               <td style={{ fontWeight: 500, color: "#2563eb" }}>{row.toStage}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.itemCode}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.itemCode}</td>
                               <td>{row.itemName}</td>
                               <td style={{ textAlign: "right", fontWeight: 600 }}>{row.qty}</td>
                               <td style={{ textAlign: "right" }}>{formatMoney(row.price)}</td>
-                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(row.amount)}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatMoney(row.amount)}</td>
                               <td style={{ color: "#64748b", fontSize: 12 }}>{row.desc}</td>
                             </tr>
                           ))}
@@ -4412,7 +4416,7 @@ if (apiConnected) {
                       <path d="M208 34 L214 34 M211 31 L211 37" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                       <circle cx="125" cy="42" r="1.5" fill="#94a3b8" />
                       <circle cx="226" cy="52" r="1.5" fill="#94a3b8" />
-                      <path d="M58 116 L59 118.5 L61.5 119.5 L59 120.5 L58 123 L57 120.5 L54.5 119.5 L57 118.5 Z" fill="#00a862" />
+                      <path d="M58 116 L59 118.5 L61.5 119.5 L59 120.5 L58 123 L57 120.5 L54.5 119.5 L57 118.5 Z" fill="var(--brand)" />
 
                       {/* Soft cloud background */}
                       <path d="M130 65 C120 65 115 60 115 53 C115 46 120 40 128 40 C132 33 141 30 150 32 C160 34 167 41 169 48 C175 48 180 52 180 57 C180 64 175 65 168 65 Z" fill="#f8fafc" opacity="0.9" />
@@ -4420,17 +4424,17 @@ if (apiConnected) {
 
                       {/* Left: General Cost Card */}
                       <rect x="36" y="60" width="28" height="36" rx="3.5" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.2" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.03))" />
-                      <path d="M43 69 C41 69 39.5 67.5 39.5 66 C39.5 64.5 41 63 43 63 C44 61.5 46 61 48 62 C50 63 51 64.5 51 66 C52.5 66 54 67 54 69 Z" fill="#00a862" />
-                      <path d="M45 74 L50 74 M50 74 L48 72 M50 74 L48 76" stroke="#00a862" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="50" cy="85" r="4" fill="#00a862" />
-                      <text x="50" y="87.2" textAnchor="middle" fill="#ffffff" fontSize="5" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <path d="M43 69 C41 69 39.5 67.5 39.5 66 C39.5 64.5 41 63 43 63 C44 61.5 46 61 48 62 C50 63 51 64.5 51 66 C52.5 66 54 67 54 69 Z" fill="var(--brand)" />
+                      <path d="M45 74 L50 74 M50 74 L48 72 M50 74 L48 76" stroke="var(--brand)" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="50" cy="85" r="4" fill="var(--brand)" />
+                      <text x="50" y="87.2" textAnchor="middle" fill="#ffffff" fontSize="5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                       {/* Connecting dashed line from Card to Dollar Badge */}
                       <path d="M66 78 L78 78" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 2" />
 
                       {/* Green circle badge with "$" */}
-                      <circle cx="86" cy="78" r="8" fill="#00a862" />
-                      <text x="86" y="81" textAnchor="middle" fill="#ffffff" fontSize="7.5" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <circle cx="86" cy="78" r="8" fill="var(--brand)" />
+                      <text x="86" y="81" textAnchor="middle" fill="#ffffff" fontSize="7.5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                       {/* Connecting dashed line from Dollar to Stages */}
                       <path d="M96 78 L108 78" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 2" />
@@ -4438,40 +4442,40 @@ if (apiConnected) {
                       {/* 3 Process Stage Blocks */}
                       {/* Stage 1 */}
                       <g transform="translate(110, 68)">
-                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="#008f53" />
-                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="10" cy="12" r="4.5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="sans-serif">1</text>
+                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="var(--brand-hover)" />
+                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="10" cy="12" r="4.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">1</text>
                       </g>
 
                       {/* Stage 2 */}
                       <g transform="translate(138, 68)">
-                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="#008f53" />
-                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="10" cy="12" r="4.5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="sans-serif">2</text>
+                        <path d="M0 5 C0 3 2 1 4 1 L7 1 L7 6 L13 6 L13 1 L16 1 C18 1 20 3 20 5 L20 16 C20 18 18 20 16 20 L4 20 C2 20 0 18 0 16 Z" fill="var(--brand-hover)" />
+                        <path d="M2 5 L2 16 C2 17 3 18 4 18 L16 18 C17 18 18 17 18 16 L18 5 L13 5 L13 8 L7 8 L7 5 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="10" cy="12" r="4.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="10" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">2</text>
                       </g>
 
                       {/* Stage 3 */}
                       <g transform="translate(166, 68)">
-                        <path d="M0 5 C0 3 1.5 1 3 1 L5 1 L5 6 L10 6 L10 1 L13 1 L13 6 L18 6 L18 1 L20 1 C21.5 1 23 3 23 5 L23 16 C23 18 21.5 20 20 20 L3 20 C1.5 20 0 18 0 16 Z" fill="#008f53" />
-                        <path d="M2 5 L2 16 C2 17 2.5 18 3.5 18 L19.5 18 C20.5 18 21 17 21 16 L21 5 L18 5 L18 8 L13 8 L13 5 L10 5 L10 8 L5 8 L5 5 Z" fill="#00a862" opacity="0.4" />
-                        <circle cx="11.5" cy="12" r="4.5" fill="#00a862" stroke="#ffffff" strokeWidth="1" />
-                        <text x="11.5" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="sans-serif">3</text>
+                        <path d="M0 5 C0 3 1.5 1 3 1 L5 1 L5 6 L10 6 L10 1 L13 1 L13 6 L18 6 L18 1 L20 1 C21.5 1 23 3 23 5 L23 16 C23 18 21.5 20 20 20 L3 20 C1.5 20 0 18 0 16 Z" fill="var(--brand-hover)" />
+                        <path d="M2 5 L2 16 C2 17 2.5 18 3.5 18 L19.5 18 C20.5 18 21 17 21 16 L21 5 L18 5 L18 8 L13 8 L13 5 L10 5 L10 8 L5 8 L5 5 Z" fill="var(--brand)" opacity="0.4" />
+                        <circle cx="11.5" cy="12" r="4.5" fill="var(--brand)" stroke="#ffffff" strokeWidth="1" />
+                        <text x="11.5" y="14.2" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">3</text>
                       </g>
 
                       {/* Connecting dashed line from Stages to Plus badge */}
                       <path d="M192 78 L204 78" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 2" />
 
                       {/* Green circle badge with "+" */}
-                      <circle cx="212" cy="78" r="8.5" fill="#00a862" />
+                      <circle cx="212" cy="78" r="8.5" fill="var(--brand)" />
                       <path d="M209 78 L215 78 M212 75 L212 81" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" />
 
                       {/* Connecting dashed line from Plus to Calculator */}
                       <path d="M222 78 L230 78" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 2" />
 
                       {/* Right Calculator & Coin */}
-                      <rect x="232" y="67" width="16" height="22" rx="2.5" fill="#00a862" />
+                      <rect x="232" y="67" width="16" height="22" rx="2.5" fill="var(--brand)" />
                       <rect x="235" y="70" width="10" height="4.5" rx="0.8" fill="#ffffff" />
                       <circle cx="237" cy="78" r="0.9" fill="#ffffff" />
                       <circle cx="240" cy="78" r="0.9" fill="#ffffff" />
@@ -4481,14 +4485,14 @@ if (apiConnected) {
                       <circle cx="243" cy="82" r="0.9" fill="#ffffff" />
 
                       {/* Coin next to calculator */}
-                      <circle cx="253" cy="81" r="5.5" fill="#00a862" />
-                      <text x="253" y="83.8" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="sans-serif">$</text>
+                      <circle cx="253" cy="81" r="5.5" fill="var(--brand)" />
+                      <text x="253" y="83.8" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                       {/* Rising dots above coin */}
-                      <path d="M244 64 L250 59 L256 54" stroke="#00a862" strokeWidth="1.2" strokeDasharray="2 2" />
-                      <circle cx="244" cy="64" r="1.8" fill="#00a862" />
-                      <circle cx="250" cy="59" r="2.2" fill="#00a862" />
-                      <circle cx="256" cy="54" r="2.6" fill="#00a862" />
+                      <path d="M244 64 L250 59 L256 54" stroke="var(--brand)" strokeWidth="1.2" strokeDasharray="2 2" />
+                      <circle cx="244" cy="64" r="1.8" fill="var(--brand)" />
+                      <circle cx="250" cy="59" r="2.2" fill="var(--brand)" />
+                      <circle cx="256" cy="54" r="2.6" fill="var(--brand)" />
                     </svg>
 
                     {/* Headline matching Screenshot 3 */}
@@ -4512,7 +4516,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectAllocGeneralPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -4534,8 +4538,8 @@ if (apiConnected) {
                       style={{
                         marginTop: 48,
                         background: "#ffffff",
-                        border: "1px solid #00a862",
-                        color: "#00a862",
+                        border: "1px solid var(--brand)",
+                        color: "var(--brand)",
                         borderRadius: 20,
                         padding: "6px 20px",
                         fontSize: 13,
@@ -4597,7 +4601,7 @@ if (apiConnected) {
                           type="button"
                           onClick={() => notify("Thực hiện phân bổ chi phí chung")}
                           style={{
-                            background: "#00a862",
+                            background: "var(--brand)",
                             color: "#ffffff",
                             border: "none",
                             borderRadius: 4,
@@ -4620,7 +4624,7 @@ if (apiConnected) {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
                       <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: "12px 16px", background: "#f8fafc" }}>
                         <div style={{ fontSize: 12, color: "#64748b" }}>Tổng CP 627 cần phân bổ</div>
-                        <div style={{ fontSize: 17, fontWeight: 700, color: "#00a862", marginTop: 4 }}>96.500.000 đ</div>
+                        <div style={{ fontSize: 17, fontWeight: 700, color: "var(--brand)", marginTop: 4 }}>96.500.000 đ</div>
                       </div>
                       <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: "12px 16px", background: "#f8fafc" }}>
                         <div style={{ fontSize: 12, color: "#64748b" }}>Tiêu thức phân bổ</div>
@@ -4653,11 +4657,11 @@ if (apiConnected) {
                           ].map((row) => (
                             <tr key={row.stt}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                               <td style={{ fontWeight: 500 }}>{row.name}</td>
                               <td style={{ textAlign: "right" }}>{formatMoney(row.baseCost)}</td>
                               <td style={{ textAlign: "right", fontWeight: 600, color: "#2563eb" }}>{row.pct}</td>
-                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(row.allocAmount)}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatMoney(row.allocAmount)}</td>
                               <td style={{ textAlign: "center", fontWeight: 600, color: "#1e293b" }}>{row.acc}</td>
                             </tr>
                           ))}
@@ -4695,16 +4699,16 @@ if (apiConnected) {
                       <path d="M70 70 C60 70 54 64 54 56 C54 48 60 42 68 42 C72 34 82 30 92 32 C102 34 110 42 112 50 C118 50 124 54 124 60 C124 68 118 70 110 70 Z" fill="#f1f5f9" opacity="0.8"/>
                       <ellipse cx="110" cy="124" rx="55" ry="10" fill="#e2e8f0" opacity="0.7"/>
 
-                      <path d="M72 100 L148 100 C154 100 158 104 156 110 L152 118 C150 122 144 124 138 124 L82 124 C76 124 70 122 68 118 L64 110 C62 104 66 100 72 100 Z" fill="#00a862"/>
+                      <path d="M72 100 L148 100 C154 100 158 104 156 110 L152 118 C150 122 144 124 138 124 L82 124 C76 124 70 122 68 118 L64 110 C62 104 66 100 72 100 Z" fill="var(--brand)"/>
                       <path d="M72 100 L148 100 C154 100 156 103 154 107 L66 107 C64 103 66 100 72 100 Z" fill="#10b981"/>
 
                       <rect x="74" y="62" width="34" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1"/>
-                      <text x="79" y="74" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="sans-serif">621</text>
-                      <text x="79" y="85" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="sans-serif">622</text>
-                      <text x="79" y="96" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="sans-serif">627</text>
+                      <text x="79" y="74" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="Roboto, Arial, sans-serif">621</text>
+                      <text x="79" y="85" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="Roboto, Arial, sans-serif">622</text>
+                      <text x="79" y="96" fill="#64748b" fontSize="8" fontWeight="600" fontFamily="Roboto, Arial, sans-serif">627</text>
 
-                      <path d="M96 66 L118 66 L118 72 L124 64 L118 56 L118 62 L96 62 Z" fill="#00a862"/>
-                      <text x="127" y="67" fill="#00a862" fontSize="9" fontWeight="700" fontFamily="sans-serif">154</text>
+                      <path d="M96 66 L118 66 L118 72 L124 64 L118 56 L118 62 L96 62 Z" fill="var(--brand)"/>
+                      <text x="127" y="67" fill="var(--brand)" fontSize="9" fontWeight="700" fontFamily="Roboto, Arial, sans-serif">154</text>
 
                       <rect x="115" y="86" width="7" height="14" rx="1.5" fill="#10b981"/>
                       <rect x="125" y="78" width="7" height="22" rx="1.5" fill="#059669"/>
@@ -4731,7 +4735,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectStepPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -4752,8 +4756,8 @@ if (apiConnected) {
                       style={{
                         marginTop: 48,
                         background: "#ffffff",
-                        border: "1px solid #00a862",
-                        color: "#00a862",
+                        border: "1px solid var(--brand)",
+                        color: "var(--brand)",
                         borderRadius: 20,
                         padding: "6px 20px",
                         fontSize: 13,
@@ -4795,7 +4799,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectStepPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -4839,11 +4843,11 @@ if (apiConnected) {
                               <tr key={v.id}>
                                 <td style={{ textAlign: "center" }}>{idx + 1}</td>
                                 <td>{v.postDate}</td>
-                                <td style={{ fontWeight: 600, color: "#00a862" }}>{v.docNo}</td>
+                                <td style={{ fontWeight: 600, color: "var(--brand)" }}>{v.docNo}</td>
                                 <td>{v.desc}</td>
                                 <td style={{ textAlign: "center", fontWeight: 600 }}>{v.debitAcc}</td>
                                 <td style={{ textAlign: "center", color: "#64748b" }}>{v.creditAcc}</td>
-                                <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>
+                                <td style={{ textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>
                                   {formatMoney(v.amount)}
                                 </td>
                                 <td>{v.processName}</td>
@@ -4948,8 +4952,8 @@ if (apiConnected) {
                   style={{
                     background: "none",
                     border: "none",
-                    borderBottom: projectSubtab === tab.id ? "2px solid #00a862" : "2px solid transparent",
-                    color: projectSubtab === tab.id ? "#00a862" : "#475569",
+                    borderBottom: projectSubtab === tab.id ? "2px solid var(--brand)" : "2px solid transparent",
+                    color: projectSubtab === tab.id ? "var(--brand)" : "#475569",
                     fontWeight: projectSubtab === tab.id ? 600 : 500,
                     fontSize: 13,
                     padding: "12px 4px",
@@ -5008,7 +5012,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setAddProjectPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -5145,7 +5149,7 @@ if (apiConnected) {
                           type="button"
                           onClick={() => setAddProjectPeriodModalOpen(true)}
                           style={{
-                            background: "#00a862",
+                            background: "var(--brand)",
                             color: "#ffffff",
                             border: "none",
                             borderRadius: 4,
@@ -5213,7 +5217,7 @@ if (apiConnected) {
                           ].map((item, idx) => (
                             <tr key={item.id}>
                               <td style={{ textAlign: "center" }}>{idx + 1}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                               <td style={{ fontWeight: 500 }}>{item.name}</td>
                               <td>{item.from}</td>
                               <td>{item.to}</td>
@@ -5221,7 +5225,7 @@ if (apiConnected) {
                               <td style={{ textAlign: "right" }}>{formatMoney(item.opening)}</td>
                               <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(item.incurred)}</td>
                               <td style={{ textAlign: "right", color: "#d97706" }}>{formatMoney(item.ending)}</td>
-                              <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(item.total)}</td>
+                              <td style={{ textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(item.total)}</td>
                               <td style={{ textAlign: "center" }}>
                                 <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 600, background: item.status === "Đã hoàn thành" ? "#dcfce7" : "#fef3c7", color: item.status === "Đã hoàn thành" ? "#166534" : "#b45309" }}>
                                   {item.status}
@@ -5231,7 +5235,7 @@ if (apiConnected) {
                                 <button
                                   type="button"
                                   onClick={() => notify(`Mở thẻ giá thành ${item.code}`)}
-                                  style={{ background: "none", border: "none", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                                  style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                                 >
                                   Thẻ giá thành
                                 </button>
@@ -5286,7 +5290,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectProjectTransferPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -5346,7 +5350,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectProjectTransferPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -5383,11 +5387,11 @@ if (apiConnected) {
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                               <td>{row.desc}</td>
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{row.dr}</td>
                               <td style={{ textAlign: "center", color: "#64748b" }}>{row.cr}</td>
-                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(Number(row.amount || 0))}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatMoney(Number(row.amount || 0))}</td>
                               <td>{row.object}</td>
                             </tr>
                           ))}
@@ -5417,10 +5421,10 @@ if (apiConnected) {
                   >
                     <svg width="220" height="150" viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <rect x="50" y="35" width="120" height="85" rx="8" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5"/>
-                      <rect x="65" y="50" width="90" height="10" rx="3" fill="#00a862" opacity="0.8"/>
+                      <rect x="65" y="50" width="90" height="10" rx="3" fill="var(--brand)" opacity="0.8"/>
                       <rect x="65" y="68" width="60" height="8" rx="2" fill="#94a3b8" opacity="0.5"/>
                       <rect x="65" y="82" width="75" height="8" rx="2" fill="#94a3b8" opacity="0.5"/>
-                      <circle cx="155" cy="95" r="16" fill="#00a862"/>
+                      <circle cx="155" cy="95" r="16" fill="var(--brand)"/>
                       <path d="M149 95 L153 99 L162 90" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
 
@@ -5433,7 +5437,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setProjectAcceptanceModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -5493,7 +5497,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setProjectAcceptanceModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -5530,16 +5534,16 @@ if (apiConnected) {
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                               <td style={{ fontWeight: 600 }}>{row.pcode}</td>
                               <td>{row.pname}</td>
                               <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{row.rev == null ? "—" : formatMoney(row.rev)}</td>
-                              <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.cogs)}</td>
+                              <td style={{ textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(row.cogs)}</td>
                               <td style={{ textAlign: "center" }}>
                                 <button
                                   type="button"
                                   onClick={() => notify(`Xem biên bản nghiệm thu ${row.code}`)}
-                                  style={{ background: "none", border: "none", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                                  style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                                 >
                                   Chi tiết
                                 </button>
@@ -5573,13 +5577,13 @@ if (apiConnected) {
                     <svg width="220" height="150" viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <rect x="50" y="30" width="120" height="95" rx="6" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5"/>
                       <line x1="65" y1="48" x2="155" y2="48" stroke="#cbd5e1" strokeWidth="1.5"/>
-                      <rect x="65" y="58" width="50" height="6" rx="2" fill="#00a862"/>
+                      <rect x="65" y="58" width="50" height="6" rx="2" fill="var(--brand)"/>
                       <rect x="125" y="58" width="30" height="6" rx="2" fill="#94a3b8"/>
-                      <rect x="65" y="72" width="40" height="6" rx="2" fill="#00a862"/>
+                      <rect x="65" y="72" width="40" height="6" rx="2" fill="var(--brand)"/>
                       <rect x="125" y="72" width="30" height="6" rx="2" fill="#94a3b8"/>
-                      <rect x="65" y="86" width="60" height="6" rx="2" fill="#00a862"/>
+                      <rect x="65" y="86" width="60" height="6" rx="2" fill="var(--brand)"/>
                       <rect x="125" y="86" width="30" height="6" rx="2" fill="#94a3b8"/>
-                      <circle cx="150" cy="108" r="14" fill="#0284c7"/>
+                      <circle cx="150" cy="108" r="14" fill="var(--brand)"/>
                       <text x="150" y="112" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="bold">%</text>
                     </svg>
 
@@ -5592,7 +5596,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setAddProjectNormModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -5652,7 +5656,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setAddProjectNormModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -5689,18 +5693,18 @@ if (apiConnected) {
                           {projectNormRows.map((row) => (
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                               <td style={{ fontWeight: 600 }}>{row.pcode}</td>
                               <td>{row.pname}</td>
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{row.count} vật tư</td>
-                              <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.total)}</td>
+                              <td style={{ textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(row.total)}</td>
                               <td style={{ textAlign: "center" }}>{row.from}</td>
                               <td style={{ textAlign: "center" }}>{row.to}</td>
                               <td style={{ textAlign: "center" }}>
                                 <button
                                   type="button"
                                   onClick={() => notify(`Xem chi tiết định mức ${row.code}`)}
-                                  style={{ background: "none", border: "none", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                                  style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                                 >
                                   Xem
                                 </button>
@@ -5734,8 +5738,8 @@ if (apiConnected) {
                     {/* Graphic: House card $ -> curve -> VS -> curve -> building card $ */}
                     <svg width="340" height="130" viewBox="0 0 340 130" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <rect x="20" y="25" width="80" height="75" rx="8" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5"/>
-                      <path d="M40 70 L40 55 L60 40 L80 55 L80 70 Z" fill="#e0f2fe" stroke="#0284c7" strokeWidth="1.5"/>
-                      <rect x="52" y="58" width="16" height="12" fill="#ffffff" stroke="#0284c7" strokeWidth="1"/>
+                      <path d="M40 70 L40 55 L60 40 L80 55 L80 70 Z" fill="#e0f2fe" stroke="var(--brand)" strokeWidth="1.5"/>
+                      <rect x="52" y="58" width="16" height="12" fill="#ffffff" stroke="var(--brand)" strokeWidth="1"/>
                       <circle cx="82" cy="35" r="10" fill="#10b981"/>
                       <text x="82" y="39" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="bold">$</text>
                       <text x="60" y="88" textAnchor="middle" fill="#64748b" fontSize="11" fontWeight="500">Dự toán</text>
@@ -5753,7 +5757,7 @@ if (apiConnected) {
                       <line x1="286" y1="48" x2="292" y2="48" stroke="#16a34a" strokeWidth="1.5"/>
                       <line x1="268" y1="58" x2="274" y2="58" stroke="#16a34a" strokeWidth="1.5"/>
                       <line x1="286" y1="58" x2="292" y2="58" stroke="#16a34a" strokeWidth="1.5"/>
-                      <circle cx="302" cy="35" r="10" fill="#00a862"/>
+                      <circle cx="302" cy="35" r="10" fill="var(--brand)"/>
                       <text x="302" y="39" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="bold">$</text>
                       <text x="280" y="88" textAnchor="middle" fill="#64748b" fontSize="11" fontWeight="500">Thực tế</text>
                     </svg>
@@ -5768,7 +5772,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setProjectEstimateModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -5849,7 +5853,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setProjectEstimateModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -5886,18 +5890,18 @@ if (apiConnected) {
                           {projectEstimateRows.map((row) => (
                             <tr key={row.pcode}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.pcode}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.pcode}</td>
                               <td style={{ fontWeight: 500 }}>{row.pname}</td>
                               <td>{row.desc}</td>
                               <td style={{ textAlign: "right", fontWeight: 600 }}>{formatMoney(row.est)}</td>
                               <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(row.act)}</td>
                               <td style={{ textAlign: "right", color: row.diff < 0 ? "#16a34a" : "#dc2626", fontWeight: 700 }}>{formatMoney(row.diff)}</td>
-                              <td style={{ textAlign: "center", fontWeight: 600, color: "#00a862" }}>{row.pct}</td>
+                              <td style={{ textAlign: "center", fontWeight: 600, color: "var(--brand)" }}>{row.pct}</td>
                               <td style={{ textAlign: "center" }}>
                                 <button
                                   type="button"
                                   onClick={() => notify(`Xem bảng đối chiếu dự toán ${row.pcode}`)}
-                                  style={{ background: "none", border: "none", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                                  style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                                 >
                                   Đối chiếu
                                 </button>
@@ -5954,8 +5958,8 @@ if (apiConnected) {
                     style={{
                       background: "none",
                       border: "none",
-                      borderBottom: orderSubtab === tab.id ? "2px solid #00a862" : "2px solid transparent",
-                      color: orderSubtab === tab.id ? "#00a862" : "#475569",
+                      borderBottom: orderSubtab === tab.id ? "2px solid var(--brand)" : "2px solid transparent",
+                      color: orderSubtab === tab.id ? "var(--brand)" : "#475569",
                       fontWeight: orderSubtab === tab.id ? 600 : 500,
                       fontSize: 13,
                       padding: "12px 4px",
@@ -5975,7 +5979,7 @@ if (apiConnected) {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#00a862",
+                  color: "var(--brand)",
                   fontSize: 13,
                   fontWeight: 500,
                   cursor: "pointer",
@@ -6029,7 +6033,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setAddOrderPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -6159,7 +6163,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setAddOrderPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -6200,13 +6204,13 @@ if (apiConnected) {
                           ].map((item, idx) => (
                             <tr key={item.id}>
                               <td style={{ textAlign: "center" }}>{idx + 1}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                               <td style={{ fontWeight: 500 }}>{item.name}</td>
                               <td>{item.from}</td>
                               <td>{item.to}</td>
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{item.count} đơn hàng</td>
                               <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(item.incurred)}</td>
-                              <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(item.total)}</td>
+                              <td style={{ textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(item.total)}</td>
                               <td style={{ textAlign: "center" }}>
                                 <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 600, background: item.status === "Đã hoàn thành" ? "#dcfce7" : "#fef3c7", color: item.status === "Đã hoàn thành" ? "#166534" : "#b45309" }}>
                                   {item.status}
@@ -6216,7 +6220,7 @@ if (apiConnected) {
                                 <button
                                   type="button"
                                   onClick={() => notify(`Mở thẻ giá thành ${item.code}`)}
-                                  style={{ background: "none", border: "none", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                                  style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                                 >
                                   Thẻ giá thành
                                 </button>
@@ -6251,7 +6255,7 @@ if (apiConnected) {
                       <polygon points="110,65 145,82 110,98 75,82" fill="#10b981" />
                       <polygon points="75,82 110,98 110,122 75,106" fill="#059669" />
                       <polygon points="110,98 145,82 145,106 110,122" fill="#047857" />
-                      <circle cx="110" cy="50" r="14" fill="#00a862"/>
+                      <circle cx="110" cy="50" r="14" fill="var(--brand)"/>
                       <text x="110" y="55" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="bold">154</text>
                     </svg>
 
@@ -6264,7 +6268,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectOrderTransferPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -6324,7 +6328,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectOrderTransferPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -6361,11 +6365,11 @@ if (apiConnected) {
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                               <td>{row.desc}</td>
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{row.dr}</td>
                               <td style={{ textAlign: "center", color: "#64748b" }}>{row.cr}</td>
-                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(Number(row.amount || 0))}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatMoney(Number(row.amount || 0))}</td>
                               <td>{row.object}</td>
                             </tr>
                           ))}
@@ -6413,7 +6417,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setOrderAcceptanceModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -6474,7 +6478,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setOrderAcceptanceModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -6511,16 +6515,16 @@ if (apiConnected) {
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                               <td style={{ fontWeight: 600 }}>{row.order}</td>
                               <td>{row.customer}</td>
                               <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{row.rev == null ? "—" : formatMoney(row.rev)}</td>
-                              <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.cogs)}</td>
+                              <td style={{ textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(row.cogs)}</td>
                               <td style={{ textAlign: "center" }}>
                                 <button
                                   type="button"
                                   onClick={() => notify(`Xem biên bản nghiệm thu ${row.code}`)}
-                                  style={{ background: "none", border: "none", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                                  style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                                 >
                                   Chi tiết
                                 </button>
@@ -6577,8 +6581,8 @@ if (apiConnected) {
                     style={{
                       background: "none",
                       border: "none",
-                      borderBottom: contractSubtab === tab.id ? "2px solid #00a862" : "2px solid transparent",
-                      color: contractSubtab === tab.id ? "#00a862" : "#475569",
+                      borderBottom: contractSubtab === tab.id ? "2px solid var(--brand)" : "2px solid transparent",
+                      color: contractSubtab === tab.id ? "var(--brand)" : "#475569",
                       fontWeight: contractSubtab === tab.id ? 600 : 500,
                       fontSize: 13,
                       padding: "12px 4px",
@@ -6598,7 +6602,7 @@ if (apiConnected) {
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#00a862",
+                  color: "var(--brand)",
                   fontSize: 13,
                   fontWeight: 500,
                   cursor: "pointer",
@@ -6632,7 +6636,7 @@ if (apiConnected) {
                       <polygon points="110,65 145,82 110,98 75,82" fill="#10b981" />
                       <polygon points="75,82 110,98 110,122 75,106" fill="#059669" />
                       <polygon points="110,98 145,82 145,106 110,122" fill="#047857" />
-                      <circle cx="110" cy="50" r="14" fill="#00a862"/>
+                      <circle cx="110" cy="50" r="14" fill="var(--brand)"/>
                       <text x="110" y="55" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="bold">HĐ</text>
                     </svg>
 
@@ -6645,7 +6649,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setAddContractPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -6775,7 +6779,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setAddContractPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -6816,13 +6820,13 @@ if (apiConnected) {
                           ].map((item, idx) => (
                             <tr key={item.id}>
                               <td style={{ textAlign: "center" }}>{idx + 1}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                               <td style={{ fontWeight: 500 }}>{item.name}</td>
                               <td>{item.from}</td>
                               <td>{item.to}</td>
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{item.count} hợp đồng</td>
                               <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{formatMoney(item.incurred)}</td>
-                              <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(item.total)}</td>
+                              <td style={{ textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(item.total)}</td>
                               <td style={{ textAlign: "center" }}>
                                 <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 600, background: item.status === "Đã hoàn thành" ? "#dcfce7" : "#fef3c7", color: item.status === "Đã hoàn thành" ? "#166534" : "#b45309" }}>
                                   {item.status}
@@ -6832,7 +6836,7 @@ if (apiConnected) {
                                 <button
                                   type="button"
                                   onClick={() => notify(`Mở thẻ giá thành ${item.code}`)}
-                                  style={{ background: "none", border: "none", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                                  style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                                 >
                                   Thẻ giá thành
                                 </button>
@@ -6872,11 +6876,11 @@ if (apiConnected) {
                       <text x="65" y="71" textAnchor="middle" fill="#d97706" fontSize="11" fontWeight="600">TK 627 (SXC)</text>
                       <text x="65" y="93" textAnchor="middle" fill="#64748b" fontSize="10">Chi phí SXKD</text>
 
-                      <path d="M120 65 Q 160 30 200 65" stroke="#00a862" strokeWidth="2.5" fill="none"/>
-                      <polygon points="196,58 206,67 197,73" fill="#00a862"/>
+                      <path d="M120 65 Q 160 30 200 65" stroke="var(--brand)" strokeWidth="2.5" fill="none"/>
+                      <polygon points="196,58 206,67 197,73" fill="var(--brand)"/>
 
                       <rect x="210" y="25" width="90" height="80" rx="8" fill="#f0fdf4" stroke="#86efac" strokeWidth="1.5"/>
-                      <circle cx="255" cy="55" r="20" fill="#00a862"/>
+                      <circle cx="255" cy="55" r="20" fill="var(--brand)"/>
                       <text x="255" y="60" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="bold">154</text>
                       <text x="255" y="93" textAnchor="middle" fill="#15803d" fontSize="10" fontWeight="600">Dở dang HĐ</text>
                     </svg>
@@ -6890,7 +6894,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectContractTransferPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -6950,7 +6954,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setSelectContractTransferPeriodModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -6987,11 +6991,11 @@ if (apiConnected) {
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                               <td>{row.desc}</td>
                               <td style={{ textAlign: "center", fontWeight: 600 }}>{row.dr}</td>
                               <td style={{ textAlign: "center", color: "#64748b" }}>{row.cr}</td>
-                              <td style={{ textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(Number(row.amount || 0))}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatMoney(Number(row.amount || 0))}</td>
                               <td>{row.object}</td>
                             </tr>
                           ))}
@@ -7022,12 +7026,12 @@ if (apiConnected) {
                     {/* Graphic: voucher card 154 -> curved green arrow -> 632 chart */}
                     <svg width="320" height="130" viewBox="0 0 320 130" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <rect x="20" y="25" width="90" height="80" rx="8" fill="#f0fdf4" stroke="#86efac" strokeWidth="1.5"/>
-                      <circle cx="65" cy="55" r="20" fill="#00a862"/>
+                      <circle cx="65" cy="55" r="20" fill="var(--brand)"/>
                       <text x="65" y="60" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="bold">154</text>
                       <text x="65" y="93" textAnchor="middle" fill="#15803d" fontSize="10" fontWeight="600">Chi phí SXKD</text>
 
-                      <path d="M120 65 Q 160 30 200 65" stroke="#00a862" strokeWidth="2.5" fill="none"/>
-                      <polygon points="196,58 206,67 197,73" fill="#00a862"/>
+                      <path d="M120 65 Q 160 30 200 65" stroke="var(--brand)" strokeWidth="2.5" fill="none"/>
+                      <polygon points="196,58 206,67 197,73" fill="var(--brand)"/>
 
                       <rect x="210" y="25" width="90" height="80" rx="8" fill="#eff6ff" stroke="#93c5fd" strokeWidth="1.5"/>
                       <circle cx="255" cy="55" r="20" fill="#2563eb"/>
@@ -7044,7 +7048,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setContractAcceptanceModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -7104,7 +7108,7 @@ if (apiConnected) {
                         type="button"
                         onClick={() => setContractAcceptanceModalOpen(true)}
                         style={{
-                          background: "#00a862",
+                          background: "var(--brand)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: 4,
@@ -7141,16 +7145,16 @@ if (apiConnected) {
                             <tr key={row.code}>
                               <td style={{ textAlign: "center" }}>{row.stt}</td>
                               <td>{row.date}</td>
-                              <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                              <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                               <td style={{ fontWeight: 600 }}>{row.contract}</td>
                               <td>{row.customer}</td>
                               <td style={{ textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{row.rev == null ? "—" : formatMoney(row.rev)}</td>
-                              <td style={{ textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.cogs)}</td>
+                              <td style={{ textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(row.cogs)}</td>
                               <td style={{ textAlign: "center" }}>
                                 <button
                                   type="button"
                                   onClick={() => notify(`Xem biên bản nghiệm thu ${row.code}`)}
-                                  style={{ background: "none", border: "none", color: "#00a862", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                                  style={{ background: "none", border: "none", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                                 >
                                   Chi tiết
                                 </button>
@@ -7316,7 +7320,7 @@ if (apiConnected) {
                     transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#00a862";
+                    e.currentTarget.style.borderColor = "var(--brand)";
                     e.currentTarget.style.background = "#f0fdf4";
                   }}
                   onMouseLeave={(e) => {
@@ -7325,7 +7329,7 @@ if (apiConnected) {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <FileText size={16} color="#00a862" />
+                    <FileText size={16} color="var(--brand)" />
                     <span style={{ fontSize: 13, fontWeight: 500, color: "#1e293b" }}>{title}</span>
                   </div>
                   <button
@@ -7410,7 +7414,7 @@ if (apiConnected) {
                           transition: "all 0.15s ease",
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = "#00a862";
+                          e.currentTarget.style.borderColor = "var(--brand)";
                           e.currentTarget.style.background = "#f0fdf4";
                         }}
                         onMouseLeave={(e) => {
@@ -7419,7 +7423,7 @@ if (apiConnected) {
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <FileText size={16} color="#00a862" />
+                          <FileText size={16} color="var(--brand)" />
                           <span style={{ fontSize: 13, fontWeight: 500, color: "#1e293b" }}>{title}</span>
                         </div>
                         <button
@@ -7500,11 +7504,11 @@ if (apiConnected) {
                         background: "#ffffff",
                         cursor: "pointer",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#00a862")}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--brand)")}
                       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <FileText size={16} color="#00a862" />
+                        <FileText size={16} color="var(--brand)" />
                         <span style={{ fontSize: 13, fontWeight: 500, color: "#1e293b" }}>{title}</span>
                       </div>
                       <ChevronRight size={14} color="#94a3b8" />
@@ -7568,11 +7572,11 @@ if (apiConnected) {
                         background: "#ffffff",
                         cursor: "pointer",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#00a862")}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--brand)")}
                       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <FileText size={16} color="#00a862" />
+                        <FileText size={16} color="var(--brand)" />
                         <span style={{ fontSize: 13, fontWeight: 500, color: "#1e293b" }}>{title}</span>
                       </div>
                       <ChevronRight size={14} color="#94a3b8" />
@@ -7636,11 +7640,11 @@ if (apiConnected) {
                         background: "#ffffff",
                         cursor: "pointer",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#00a862")}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--brand)")}
                       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <FileText size={16} color="#00a862" />
+                        <FileText size={16} color="var(--brand)" />
                         <span style={{ fontSize: 13, fontWeight: 500, color: "#1e293b" }}>{title}</span>
                       </div>
                       <ChevronRight size={14} color="#94a3b8" />
@@ -7703,11 +7707,11 @@ if (apiConnected) {
                         background: "#ffffff",
                         cursor: "pointer",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#00a862")}
+                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--brand)")}
                       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <FileText size={16} color="#00a862" />
+                        <FileText size={16} color="var(--brand)" />
                         <span style={{ fontSize: 13, fontWeight: 500, color: "#1e293b" }}>{title}</span>
                       </div>
                       <ChevronRight size={14} color="#94a3b8" />
@@ -7793,7 +7797,7 @@ if (apiConnected) {
                 style={{
                   padding: "6px 16px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -7852,11 +7856,11 @@ if (apiConnected) {
               </button>
             </div>
             <div style={{ padding: "20px 24px", fontSize: 13.5, lineHeight: 1.6, color: "#334155" }}>
-              <h4 style={{ color: "#00a862", marginTop: 0 }}>I. Nguyên tắc tính giá thành</h4>
+              <h4 style={{ color: "var(--brand)", marginTop: 0 }}>I. Nguyên tắc tính giá thành</h4>
               <p>
                 Phương pháp tính giá thành {currentSubtabData.label} áp dụng cho các doanh nghiệp có quy trình sản xuất liên tục, sản phẩm được hoàn thành tuần tự và khối lượng sản phẩm sản xuất ra lớn.
               </p>
-              <h4 style={{ color: "#00a862" }}>II. Trình tự hạch toán</h4>
+              <h4 style={{ color: "var(--brand)" }}>II. Trình tự hạch toán</h4>
               <ol style={{ paddingLeft: 20 }}>
                 <li><b>Tập hợp chi phí trực tiếp:</b> NVL trực tiếp (TK 621), Nhân công trực tiếp (TK 622).</li>
                 <li><b>Tập hợp & phân bổ chi phí SXC:</b> Chi phí máy thi công, khấu hao, dịch vụ mua ngoài (TK 627).</li>
@@ -7872,7 +7876,7 @@ if (apiConnected) {
                 style={{
                   padding: "6px 18px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -7919,7 +7923,7 @@ if (apiConnected) {
                 borderBottom: "1px solid #e2e8f0",
               }}
             >
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0284c7" }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--brand)" }}>
                 Một số nguyên nhân tính giá thành sai số liệu & Cách xử lý
               </h3>
               <button
@@ -7966,7 +7970,7 @@ if (apiConnected) {
                 style={{
                   padding: "6px 18px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -8042,7 +8046,7 @@ if (apiConnected) {
                     { code: "SXC_TIEN", name: "Chi phí khác bằng tiền tại phân xưởng", type: "Sản xuất chung", acc: "6278" },
                   ].map((row, i) => (
                     <tr key={i}>
-                      <td style={{ fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                      <td style={{ fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                       <td>{row.name}</td>
                       <td>{row.type}</td>
                       <td style={{ fontWeight: 600 }}>{row.acc}</td>
@@ -8058,7 +8062,7 @@ if (apiConnected) {
                 style={{
                   padding: "6px 18px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -8137,7 +8141,7 @@ if (apiConnected) {
                   onMouseEnter={(e) => (e.currentTarget.style.background = "#f1f5f9")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "#f8fafc")}
                 >
-                  <div style={{ fontWeight: 600, fontSize: 13.5, color: "#00a862", marginBottom: 3 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13.5, color: "var(--brand)", marginBottom: 3 }}>
                     {item.title}
                   </div>
                   <div style={{ fontSize: 12.5, color: "#64748b" }}>{item.desc}</div>
@@ -8151,7 +8155,7 @@ if (apiConnected) {
                 style={{
                   padding: "6px 18px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -8321,7 +8325,7 @@ if (apiConnected) {
                 { name: "6. Tính giá thành theo Hợp đồng", desc: "Tập hợp chi phí và xác định giá thành theo từng hợp đồng kinh tế ký kết với đối tác." },
               ].map((m, i) => (
                 <div key={i} style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: 10 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13.5, color: "#00a862", marginBottom: 3 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--brand)", marginBottom: 3 }}>
                     {m.name}
                   </div>
                   <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>{m.desc}</div>
@@ -8335,7 +8339,7 @@ if (apiConnected) {
                 style={{
                   padding: "6px 18px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -8386,7 +8390,7 @@ if (apiConnected) {
                 );
                 return (
                   <>
-                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#00a862" }}>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--brand)" }}>
                       {currentStepItem?.title}
                     </h3>
                   </>
@@ -8508,7 +8512,7 @@ if (apiConnected) {
                 style={{
                   padding: "6px 18px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -8655,7 +8659,7 @@ if (apiConnected) {
               {wizardStep === 2 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div style={{ background: "#f8fafc", padding: 12, borderRadius: 6, border: "1px solid #e2e8f0" }}>
-                    <div style={{ fontWeight: 600, color: "#00a862", marginBottom: 6 }}>
+                    <div style={{ fontWeight: 600, color: "var(--brand)", marginBottom: 6 }}>
                       Tập hợp chi phí phát sinh trong kỳ:
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
@@ -8791,7 +8795,7 @@ if (apiConnected) {
                 style={{
                   padding: "6px 18px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -8890,7 +8894,7 @@ if (apiConnected) {
                     <td style={{ textAlign: "right" }}>{formatMoney(costCardModalRecord.openingWip)}</td>
                     <td style={{ textAlign: "right", color: "#2563eb" }}>{formatMoney(costCardModalRecord.incurredCost)}</td>
                     <td style={{ textAlign: "right", color: "#d97706" }}>{formatMoney(costCardModalRecord.endingWip)}</td>
-                    <td style={{ textAlign: "right", color: "#00a862" }}>{formatMoney(costCardModalRecord.totalFinishedCost)}</td>
+                    <td style={{ textAlign: "right", color: "var(--brand)" }}>{formatMoney(costCardModalRecord.totalFinishedCost)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -8921,7 +8925,7 @@ if (apiConnected) {
                 style={{
                   padding: "6px 16px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   border: "none",
                   fontWeight: 600,
@@ -9031,7 +9035,7 @@ if (apiConnected) {
                   width: 28,
                   height: 28,
                   borderRadius: "50%",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   display: "grid",
                   placeItems: "center",
                   color: "#ffffff",
@@ -9068,7 +9072,7 @@ if (apiConnected) {
                 }}
                 style={{
                   fontSize: 13,
-                  color: "#0284c7",
+                  color: "var(--brand)",
                   cursor: "pointer",
                   marginLeft: 6,
                 }}
@@ -9126,7 +9130,7 @@ if (apiConnected) {
                     boxSizing: "border-box",
                     outline: "none",
                   }}
-                  onFocus={(e) => (e.target.style.borderColor = "#00a862")}
+                  onFocus={(e) => (e.target.style.borderColor = "var(--brand)")}
                   onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
                 />
               </div>
@@ -9237,7 +9241,7 @@ if (apiConnected) {
                         >
                           <Plus
                             size={16}
-                            style={{ cursor: "pointer", color: "#00a862" }}
+                            style={{ cursor: "pointer", color: "var(--brand)" }}
                             onClick={() => notify("Thêm nhóm VTHH mới")}
                           />
                           <ChevronDown size={14} style={{ cursor: "pointer" }} />
@@ -9295,7 +9299,7 @@ if (apiConnected) {
                       >
                         <Plus
                           size={16}
-                          color="#00a862"
+                          color="var(--brand)"
                           style={{ cursor: "pointer" }}
                           onClick={() => notify("Thêm đơn vị tính mới")}
                         />
@@ -9397,7 +9401,7 @@ if (apiConnected) {
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      color: "#00a862",
+                      color: "var(--brand)",
                       cursor: "pointer",
                       fontSize: 13,
                       fontWeight: 500,
@@ -10078,7 +10082,7 @@ if (apiConnected) {
                 style={{
                   padding: "7px 22px",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   border: "none",
                   color: "#ffffff",
                   fontSize: 13,
@@ -10234,7 +10238,7 @@ if (apiConnected) {
                   padding: "6px 22px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -10396,7 +10400,7 @@ if (apiConnected) {
                   padding: "6px 22px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -10548,7 +10552,7 @@ if (apiConnected) {
                   padding: "6px 22px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -10616,7 +10620,7 @@ if (apiConnected) {
                   width: "100%",
                   height: 36,
                   padding: "6px 12px",
-                  border: "1px solid #00a862",
+                  border: "1px solid var(--brand)",
                   borderRadius: 4,
                   fontSize: 13.5,
                   background: "#ffffff",
@@ -10677,7 +10681,7 @@ if (apiConnected) {
                   padding: "6px 22px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -10729,7 +10733,7 @@ if (apiConnected) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <RotateCw size={18} color="#00a862" />
+                <RotateCw size={18} color="var(--brand)" />
                 <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1e293b" }}>
                   Chứng từ nghiệp vụ khác {voucherNumber}
                 </h2>
@@ -10746,7 +10750,7 @@ if (apiConnected) {
                   }}
                 >
                   <span>4. Khác</span>
-                  <Plus size={14} color="#00a862" style={{ cursor: "pointer" }} />
+                  <Plus size={14} color="var(--brand)" style={{ cursor: "pointer" }} />
                   <ChevronDown size={14} color="#64748b" style={{ cursor: "pointer" }} />
                 </div>
               </div>
@@ -10827,7 +10831,7 @@ if (apiConnected) {
                     <label style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "#475569", marginBottom: 4 }}>
                       Tham chiếu
                     </label>
-                    <span style={{ color: "#00a862", cursor: "pointer", fontSize: 14 }}>...</span>
+                    <span style={{ color: "var(--brand)", cursor: "pointer", fontSize: 14 }}>...</span>
                   </div>
                 </div>
               </div>
@@ -10926,8 +10930,8 @@ if (apiConnected) {
                     border: "none",
                     fontSize: 13,
                     fontWeight: 700,
-                    color: voucherTab === "posting" ? "#00a862" : "#64748b",
-                    borderBottom: voucherTab === "posting" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                    color: voucherTab === "posting" ? "var(--brand)" : "#64748b",
+                    borderBottom: voucherTab === "posting" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -10942,8 +10946,8 @@ if (apiConnected) {
                     border: "none",
                     fontSize: 13,
                     fontWeight: 500,
-                    color: voucherTab === "tax" ? "#00a862" : "#64748b",
-                    borderBottom: voucherTab === "tax" ? "2.5px solid #00a862" : "2.5px solid transparent",
+                    color: voucherTab === "tax" ? "var(--brand)" : "#64748b",
+                    borderBottom: voucherTab === "tax" ? "2.5px solid var(--brand)" : "2.5px solid transparent",
                     cursor: "pointer",
                   }}
                 >
@@ -10987,7 +10991,7 @@ if (apiConnected) {
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155", textAlign: "left" }}>
                     <th style={{ padding: "8px 10px", width: 35, textAlign: "center" }}>#</th>
-                    <th style={{ padding: "8px 10px", minWidth: 260 }}>📌 Diễn giải</th>
+                    <th style={{ padding: "8px 10px", minWidth: 260 }}>Diễn giải</th>
                     <th style={{ padding: "8px 10px", width: 75 }}>TK Nợ</th>
                     <th style={{ padding: "8px 10px", width: 75 }}>TK Có</th>
                     <th style={{ padding: "8px 10px", width: 130, textAlign: "right" }}>Số tiền</th>
@@ -11051,7 +11055,7 @@ if (apiConnected) {
                         />
                       </td>
                       <td style={{ padding: "6px 10px", color: "#64748b" }}>{line.bizType}</td>
-                      <td style={{ padding: "6px 10px", color: "#00a862", fontWeight: 600 }}>{line.debitObj}</td>
+                      <td style={{ padding: "6px 10px", color: "var(--brand)", fontWeight: 600 }}>{line.debitObj}</td>
                       <td style={{ padding: "6px 10px", color: "#64748b" }}>{line.debitObjName}</td>
                       <td style={{ padding: "6px 10px", color: "#2563eb", fontWeight: 600 }}>{line.creditObj}</td>
                     </tr>
@@ -11097,7 +11101,7 @@ if (apiConnected) {
                       color: "#1e293b",
                     }}
                   >
-                    <Plus size={14} color="#00a862" />
+                    <Plus size={14} color="var(--brand)" />
                     <span>Thêm dòng</span>
                   </button>
                   <button
@@ -11152,7 +11156,7 @@ if (apiConnected) {
                     cursor: "pointer",
                   }}
                 >
-                  <Paperclip size={14} color="#00a862" />
+                  <Paperclip size={14} color="var(--brand)" />
                   <span>Chọn tệp hoặc kéo và thả tệp vào đây</span>
                 </div>
               </div>
@@ -11219,7 +11223,7 @@ if (apiConnected) {
                   padding: "6px 22px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -11318,7 +11322,7 @@ if (apiConnected) {
                         padding: "5px 24px 5px 8px",
                         fontSize: 13,
                         borderRadius: 4,
-                        border: "1px solid #00a862",
+                        border: "1px solid var(--brand)",
                         outline: "none",
                         background: "#ffffff",
                         appearance: "none",
@@ -11492,7 +11496,7 @@ if (apiConnected) {
                         )
                         .map((obj) => (
                           <tr key={obj.code} style={{ borderTop: "1px solid #f1f5f9" }}>
-                            <td style={{ padding: "8px 12px", fontWeight: 600, color: "#00a862" }}>
+                            <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>
                               {obj.code}
                             </td>
                             <td style={{ padding: "8px 12px" }}>{obj.name}</td>
@@ -11577,7 +11581,7 @@ if (apiConnected) {
                       e.preventDefault();
                       notify("Xem hướng dẫn khai báo đối tượng tập hợp chi phí");
                     }}
-                    style={{ color: "#00a862", fontWeight: 700, textDecoration: "underline" }}
+                    style={{ color: "var(--brand)", fontWeight: 700, textDecoration: "underline" }}
                   >
                     TẠI ĐÂY
                   </a>
@@ -11620,7 +11624,7 @@ if (apiConnected) {
                   padding: "6px 24px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -11715,7 +11719,7 @@ if (apiConnected) {
                     padding: "6px 30px 6px 10px",
                     fontSize: 13,
                     borderRadius: 4,
-                    border: "1.5px solid #00a862",
+                    border: "1.5px solid var(--brand)",
                     background: "#ffffff",
                     display: "flex",
                     alignItems: "center",
@@ -11799,7 +11803,7 @@ if (apiConnected) {
                               cursor: "pointer",
                               borderBottom: "1px solid #f8fafc",
                               background: selectedTransferPeriod === p.name ? "#f0fdf4" : "transparent",
-                              color: selectedTransferPeriod === p.name ? "#00a862" : "#1e293b",
+                              color: selectedTransferPeriod === p.name ? "var(--brand)" : "#1e293b",
                               fontWeight: selectedTransferPeriod === p.name ? 600 : 400,
                             }}
                             onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
@@ -11853,7 +11857,7 @@ if (apiConnected) {
                   padding: "6px 24px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -11952,7 +11956,7 @@ if (apiConnected) {
                         padding: "6px 26px 6px 10px",
                         fontSize: 13,
                         borderRadius: 4,
-                        border: "1.5px solid #00a862",
+                        border: "1.5px solid var(--brand)",
                         background: "#ffffff",
                         outline: "none",
                         color: "#0f172a",
@@ -12141,7 +12145,7 @@ if (apiConnected) {
                         )
                         .map((proc) => (
                           <tr key={proc.code} style={{ borderTop: "1px solid #f1f5f9" }}>
-                            <td style={{ padding: "8px 12px", fontWeight: 600, color: "#00a862" }}>
+                            <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>
                               {proc.code}
                             </td>
                             <td style={{ padding: "8px 12px" }}>{proc.name}</td>
@@ -12225,7 +12229,7 @@ if (apiConnected) {
                       e.preventDefault();
                       notify("Xem hướng dẫn khai báo quy trình sản xuất và đối tượng THCP");
                     }}
-                    style={{ color: "#00a862", fontWeight: 700, textDecoration: "underline" }}
+                    style={{ color: "var(--brand)", fontWeight: 700, textDecoration: "underline" }}
                   >
                     TẠI ĐÂY
                   </a>
@@ -12268,7 +12272,7 @@ if (apiConnected) {
                   padding: "6px 24px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -12375,10 +12379,10 @@ if (apiConnected) {
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => {}}
-                              style={{ accentColor: "#00a862" }}
+                              style={{ accentColor: "var(--brand)" }}
                             />
                           </td>
-                          <td style={{ padding: "8px 12px", fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                          <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                           <td style={{ padding: "8px 12px" }}>{item.name}</td>
                         </tr>
                       );
@@ -12409,7 +12413,7 @@ if (apiConnected) {
               <button
                 type="button"
                 onClick={() => setPickStepProcessModalOpen(false)}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Đồng ý
               </button>
@@ -12508,7 +12512,7 @@ if (apiConnected) {
                       { code: "QT-DONG-HO", name: "Quy trình chế biến đóng hộp", stagesCount: 3, stages: "1. Sơ chế ➔ 2. Nấu thanh trùng ➔ 3. Đóng hộp", status: "Đang sử dụng" },
                     ]).map((row) => (
                       <tr key={row.code} style={{ borderTop: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                         <td style={{ padding: "8px 10px", fontWeight: 500 }}>{row.name}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 600, color: "#2563eb" }}>{row.stagesCount}</td>
                         <td style={{ padding: "8px 10px", color: "#334155" }}>{row.stages}</td>
@@ -12548,7 +12552,7 @@ if (apiConnected) {
                   notify("Đã lưu khai báo quy trình sản xuất!");
                   setStepProcessModalOpen(false);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >Lưu</button>
             </div>
           </div>
@@ -12634,7 +12638,7 @@ if (apiConnected) {
                     padding: "6px 30px 6px 10px",
                     fontSize: 13,
                     borderRadius: 4,
-                    border: "1.5px solid #00a862",
+                    border: "1.5px solid var(--brand)",
                     background: "#ffffff",
                     display: "flex",
                     alignItems: "center",
@@ -12715,7 +12719,7 @@ if (apiConnected) {
                               cursor: "pointer",
                               borderBottom: "1px solid #f8fafc",
                               background: selectedStepTransferPeriod === p.name ? "#f0fdf4" : "transparent",
-                              color: selectedStepTransferPeriod === p.name ? "#00a862" : "#1e293b",
+                              color: selectedStepTransferPeriod === p.name ? "var(--brand)" : "#1e293b",
                               fontWeight: selectedStepTransferPeriod === p.name ? 600 : 400,
                             }}
                             onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
@@ -12768,7 +12772,7 @@ if (apiConnected) {
                   padding: "6px 24px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -12875,7 +12879,7 @@ if (apiConnected) {
                       padding: "6px 30px 6px 10px",
                       fontSize: 13,
                       borderRadius: 4,
-                      border: "1.5px solid #00a862",
+                      border: "1.5px solid var(--brand)",
                       background: "#ffffff",
                       display: "flex",
                       alignItems: "center",
@@ -12954,7 +12958,7 @@ if (apiConnected) {
                             cursor: "pointer",
                             borderBottom: "1px solid #f8fafc",
                             background: selectedQtyPeriod === name ? "#f0fdf4" : "transparent",
-                            color: selectedQtyPeriod === name ? "#00a862" : "#1e293b",
+                            color: selectedQtyPeriod === name ? "var(--brand)" : "#1e293b",
                             fontWeight: selectedQtyPeriod === name ? 600 : 400,
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
@@ -13065,7 +13069,7 @@ if (apiConnected) {
                             cursor: "pointer",
                             borderBottom: "1px solid #f8fafc",
                             background: selectedQtyProcess === name ? "#f0fdf4" : "transparent",
-                            color: selectedQtyProcess === name ? "#00a862" : "#1e293b",
+                            color: selectedQtyProcess === name ? "var(--brand)" : "#1e293b",
                             fontWeight: selectedQtyProcess === name ? 600 : 400,
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
@@ -13121,7 +13125,7 @@ if (apiConnected) {
                   padding: "6px 22px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -13305,7 +13309,7 @@ if (apiConnected) {
                             cursor: "pointer",
                             borderBottom: "1px solid #f8fafc",
                             background: selectedStageTransferPeriod === name ? "#f0fdf4" : "transparent",
-                            color: selectedStageTransferPeriod === name ? "#00a862" : "#1e293b",
+                            color: selectedStageTransferPeriod === name ? "var(--brand)" : "#1e293b",
                             fontWeight: selectedStageTransferPeriod === name ? 600 : 400,
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
@@ -13416,7 +13420,7 @@ if (apiConnected) {
                             cursor: "pointer",
                             borderBottom: "1px solid #f8fafc",
                             background: selectedStageTransferProcess === name ? "#f0fdf4" : "transparent",
-                            color: selectedStageTransferProcess === name ? "#00a862" : "#1e293b",
+                            color: selectedStageTransferProcess === name ? "var(--brand)" : "#1e293b",
                             fontWeight: selectedStageTransferProcess === name ? 600 : 400,
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
@@ -13472,7 +13476,7 @@ if (apiConnected) {
                   padding: "6px 22px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -13579,7 +13583,7 @@ if (apiConnected) {
                       padding: "6px 30px 6px 10px",
                       fontSize: 13,
                       borderRadius: 4,
-                      border: "1.5px solid #00a862",
+                      border: "1.5px solid var(--brand)",
                       background: "#ffffff",
                       display: "flex",
                       alignItems: "center",
@@ -13658,7 +13662,7 @@ if (apiConnected) {
                             cursor: "pointer",
                             borderBottom: "1px solid #f8fafc",
                             background: selectedAllocGeneralPeriod === name ? "#f0fdf4" : "transparent",
-                            color: selectedAllocGeneralPeriod === name ? "#00a862" : "#1e293b",
+                            color: selectedAllocGeneralPeriod === name ? "var(--brand)" : "#1e293b",
                             fontWeight: selectedAllocGeneralPeriod === name ? 600 : 400,
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
@@ -13769,7 +13773,7 @@ if (apiConnected) {
                             cursor: "pointer",
                             borderBottom: "1px solid #f8fafc",
                             background: selectedAllocGeneralProcess === name ? "#f0fdf4" : "transparent",
-                            color: selectedAllocGeneralProcess === name ? "#00a862" : "#1e293b",
+                            color: selectedAllocGeneralProcess === name ? "var(--brand)" : "#1e293b",
                             fontWeight: selectedAllocGeneralProcess === name ? 600 : 400,
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
@@ -13825,7 +13829,7 @@ if (apiConnected) {
                   padding: "6px 22px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -13938,10 +13942,10 @@ if (apiConnected) {
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => {}}
-                              style={{ cursor: "pointer", accentColor: "#00a862" }}
+                              style={{ cursor: "pointer", accentColor: "var(--brand)" }}
                             />
                           </td>
-                          <td style={{ padding: "8px 12px", fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                          <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                           <td style={{ padding: "8px 12px" }}>{item.name}</td>
                           <td style={{ padding: "8px 12px", color: "#64748b" }}>{item.type}</td>
                         </tr>
@@ -13987,7 +13991,7 @@ if (apiConnected) {
                   padding: "6px 24px",
                   border: "none",
                   borderRadius: 4,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
@@ -14075,7 +14079,7 @@ if (apiConnected) {
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     type="button"
-                    onClick={() => notify("Đã xuất khẩu dữ liệu chi phí dở dang ra file Excel")}
+                    onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất khẩu dữ liệu chi phí dở dang ra file Excel"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
                     style={{ padding: "5px 12px", border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 4, fontSize: 12.5, cursor: "pointer" }}
                   >
                     Xuất khẩu
@@ -14111,7 +14115,7 @@ if (apiConnected) {
                       const total = row.c621 + row.c622 + row.c627;
                       return (
                         <tr key={row.code} style={{ borderTop: "1px solid #f1f5f9" }}>
-                          <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                          <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                           <td style={{ padding: "8px 10px" }}>{row.name}</td>
                           <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatMoney(row.c621)}</td>
                           <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatMoney(row.c622)}</td>
@@ -14168,7 +14172,7 @@ if (apiConnected) {
                   notify("Đã cất số liệu chi phí dở dang đầu kỳ thành công!");
                   setWipOpeningModalOpen(false);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >Lưu</button>
             </div>
           </div>
@@ -14267,7 +14271,7 @@ if (apiConnected) {
                       { code: "CG-90", name: "Cút nối gang đúc 90 độ", unit: "Cái", standard: false, factor: "0,65", pct: "65%", ws: "Phân xưởng Đúc" },
                     ].map((row) => (
                       <tr key={row.code} style={{ borderTop: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                         <td style={{ padding: "8px 10px" }}>{row.name}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center", color: "#64748b" }}>{row.unit}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center" }}>
@@ -14283,7 +14287,7 @@ if (apiConnected) {
                           </span>
                         </td>
                         <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{row.factor}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>{row.pct}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{row.pct}</td>
                         <td style={{ padding: "8px 10px", color: "#64748b" }}>{row.ws}</td>
                       </tr>
                     ))}
@@ -14320,7 +14324,7 @@ if (apiConnected) {
                   notify("Đã cất định mức giá thành hệ số, tỷ lệ thành công!");
                   setNormCostModalOpen(false);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >Lưu</button>
             </div>
           </div>
@@ -14464,7 +14468,7 @@ if (apiConnected) {
                   }
                   notify("Cần kết nối API để lưu tiêu thức phân bổ chi phí.");
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >Lưu</button>
             </div>
           </div>
@@ -14562,10 +14566,10 @@ if (apiConnected) {
                       { code: "CG-90", name: "Cút nối gang đúc 90 độ", unit: "Cái", cost: 120000, date: "01/01/2026", note: "Kế hoạch năm 2026" },
                     ].map((row) => (
                       <tr key={row.code} style={{ borderTop: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                         <td style={{ padding: "8px 10px" }}>{row.name}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center", color: "#64748b" }}>{row.unit}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>
                           {formatMoney(row.cost)}
                         </td>
                         <td style={{ padding: "8px 10px", textAlign: "center", color: "#64748b" }}>{row.date}</td>
@@ -14605,7 +14609,7 @@ if (apiConnected) {
                   notify("Đã cất giá thành kế hoạch thành công!");
                   setPlannedCostModalOpen(false);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >Lưu</button>
             </div>
           </div>
@@ -14852,7 +14856,7 @@ if (apiConnected) {
                         )
                         .map((item) => (
                           <tr key={item.code} style={{ borderTop: "1px solid #f1f5f9" }}>
-                            <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                            <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                             <td style={{ padding: "8px 10px" }}>{item.name}</td>
                             <td style={{ padding: "8px 10px", color: "#64748b" }}>{item.type}</td>
                             <td style={{ padding: "8px 10px", textAlign: "center" }}>
@@ -14924,7 +14928,7 @@ if (apiConnected) {
                   ⓘ Nếu không thấy công trình, bạn vui lòng xem hướng dẫn{" "}
                   <span
                     onClick={() => notify("Xem hướng dẫn khai báo đối tượng công trình")}
-                    style={{ color: "#00a862", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                    style={{ color: "var(--brand)", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
                   >
                     TẠI ĐÂY
                   </span>
@@ -14963,7 +14967,7 @@ if (apiConnected) {
                   setAddProjectPeriodModalOpen(false);
                   setShowProjectPeriodList(true);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >Lưu</button>
             </div>
           </div>
@@ -15044,7 +15048,7 @@ if (apiConnected) {
                   width: "100%",
                   padding: "8px 10px",
                   borderRadius: 4,
-                  border: "1.5px solid #00a862",
+                  border: "1.5px solid var(--brand)",
                   fontSize: 13,
                   background: "#ffffff",
                   outline: "none",
@@ -15089,7 +15093,7 @@ if (apiConnected) {
                   setSelectProjectTransferPeriodModalOpen(false);
                   setShowProjectTransferList(true);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Đồng ý
               </button>
@@ -15210,7 +15214,7 @@ if (apiConnected) {
                       if (e.target.checked) setSelectedAcceptanceProjects(["CT-SKYTOWER", "CT-CAU-NHATHAN"]);
                       else setSelectedAcceptanceProjects([]);
                     }}
-                    style={{ accentColor: "#00a862" }}
+                    style={{ accentColor: "var(--brand)" }}
                   />
                   <span>Chọn tất cả</span>
                 </div>
@@ -15238,7 +15242,7 @@ if (apiConnected) {
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
                       <th style={{ width: 40, padding: "8px 10px", textAlign: "center" }}></th>
-                      <th style={{ width: 140, padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Mã công trình 📌</th>
+                      <th style={{ width: 140, padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Mã công trình </th>
                       <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Tên công trình</th>
                       <th style={{ width: 150, padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>Doanh thu</th>
                       <th style={{ width: 150, padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>Số chưa nghiệm thu</th>
@@ -15262,13 +15266,13 @@ if (apiConnected) {
                                   if (e.target.checked) setSelectedAcceptanceProjects([...selectedAcceptanceProjects, row.code]);
                                   else setSelectedAcceptanceProjects(selectedAcceptanceProjects.filter((c) => c !== row.code));
                                 }}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
-                            <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                            <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                             <td style={{ padding: "8px 10px" }}>{row.name}</td>
                             <td style={{ padding: "8px 10px", textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{row.rev == null ? "—" : formatMoney(row.rev)}</td>
-                            <td style={{ padding: "8px 10px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.unacc)}</td>
+                            <td style={{ padding: "8px 10px", textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(row.unacc)}</td>
                           </tr>
                         );
                       })}
@@ -15307,7 +15311,7 @@ if (apiConnected) {
                   setProjectAcceptanceModalOpen(false);
                   setShowProjectAcceptanceList(true);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Đồng ý
               </button>
@@ -15431,12 +15435,12 @@ if (apiConnected) {
                   <tbody>
                     {projectNormLines.map((row) => (
                       <tr key={row.id} style={{ borderTop: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                         <td style={{ padding: "8px 10px" }}>{row.name}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center", color: "#64748b" }}>{row.unit}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right" }}>{row.qty.toLocaleString("vi-VN")}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatMoney(row.price)}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#00a862" }}>{formatMoney(row.amount)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatMoney(row.amount)}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center" }}>
                           <button
                             type="button"
@@ -15531,7 +15535,7 @@ if (apiConnected) {
                   setAddProjectNormModalOpen(false);
                   setShowProjectNormList(true);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >Lưu</button>
               <button
                 type="button"
@@ -15545,7 +15549,7 @@ if (apiConnected) {
                   }
                   notify("Đã lưu và sẵn sàng thêm định mức mới!");
                 }}
-                style={{ padding: "6px 18px", border: "1px solid #00a862", borderRadius: 4, background: "#ffffff", color: "#00a862", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 18px", border: "1px solid var(--brand)", borderRadius: 4, background: "#ffffff", color: "var(--brand)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Lưu & Thêm
               </button>
@@ -15685,8 +15689,8 @@ if (apiConnected) {
                       display: "inline-block",
                       fontSize: 13,
                       fontWeight: 700,
-                      color: "#00a862",
-                      borderBottom: "2px solid #00a862",
+                      color: "var(--brand)",
+                      borderBottom: "2px solid var(--brand)",
                       paddingBottom: 6,
                       cursor: "pointer",
                     }}
@@ -16052,7 +16056,7 @@ if (apiConnected) {
                   <tbody>
                     {orderModalItems.map((item) => (
                       <tr key={item.code} style={{ borderTop: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                         <td style={{ padding: "8px 10px" }}>{item.date}</td>
                         <td style={{ padding: "8px 10px" }}>{item.customer}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center" }}>
@@ -16123,7 +16127,7 @@ if (apiConnected) {
                   setAddOrderPeriodModalOpen(false);
                   setShowOrderPeriodList(true);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >Lưu</button>
             </div>
           </div>
@@ -16175,7 +16179,7 @@ if (apiConnected) {
               <select
                 value={apiConnected ? selectedOrderTransferPeriod : selectedOrderTransferPeriod || "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"}
                 onChange={(e) => setSelectedOrderTransferPeriod(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: 4, border: "1.5px solid #00a862", fontSize: 13, background: "#ffffff" }}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 4, border: "1.5px solid var(--brand)", fontSize: 13, background: "#ffffff" }}
               >
                 {apiConnected ? [<option key="" value="">Chọn kỳ tính giá thành</option>, ...(apiRows.costPeriods || []).filter((row) => row.method === "ORDER" && row.status === "CALCULATED").map((row) => <option key={row.id} value={row.name}>{row.name}</option>)] : <option value="Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026">
                   Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026
@@ -16197,7 +16201,7 @@ if (apiConnected) {
                   setSelectOrderTransferPeriodModalOpen(false);
                   setShowOrderTransferList(true);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Đồng ý
               </button>
@@ -16396,7 +16400,7 @@ if (apiConnected) {
                         setSelectedOrderCodes([]);
                       }
                     }}
-                    style={{ accentColor: "#00a862" }}
+                    style={{ accentColor: "var(--brand)" }}
                   />
                   <span>Chọn tất cả</span>
                 </label>
@@ -16451,11 +16455,11 @@ if (apiConnected) {
                             if (e.target.checked) setSelectedOrderCodes(acceptanceOrderRows.map((row) => row.code));
                             else setSelectedOrderCodes([]);
                           }}
-                          style={{ accentColor: "#00a862" }}
+                          style={{ accentColor: "var(--brand)" }}
                         />
                       </th>
                       <th style={{ width: 140, textAlign: "left", padding: "6px 10px", fontWeight: 600, borderRight: "1px dotted #94a3b8" }}>
-                        <span>📌 Số đơn hàng</span>
+                        <span><Pin size={14} className="ui-inline-icon" aria-hidden="true" /> Số đơn hàng</span>
                       </th>
                       <th style={{ width: 120, textAlign: "left", padding: "6px 10px", fontWeight: 600, borderRight: "1px dotted #94a3b8" }}>
                         Ngày đơn hàng
@@ -16492,10 +16496,10 @@ if (apiConnected) {
                                   if (e.target.checked) setSelectedOrderCodes([...selectedOrderCodes, row.code]);
                                   else setSelectedOrderCodes(selectedOrderCodes.filter((c) => c !== row.code));
                                 }}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
-                            <td style={{ padding: "6px 10px", fontWeight: 600, color: "#00a862", borderRight: "1px dotted #cbd5e1" }}>
+                            <td style={{ padding: "6px 10px", fontWeight: 600, color: "var(--brand)", borderRight: "1px dotted #cbd5e1" }}>
                               {row.code}
                             </td>
                             <td style={{ padding: "6px 10px", borderRight: "1px dotted #cbd5e1" }}>
@@ -16507,7 +16511,7 @@ if (apiConnected) {
                             <td style={{ padding: "6px 12px", textAlign: "right", color: "#2563eb", fontWeight: 600, borderRight: "1px dotted #cbd5e1" }}>
                               {row.rev == null ? "—" : formatMoney(row.rev)}
                             </td>
-                            <td style={{ padding: "6px 12px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>
+                            <td style={{ padding: "6px 12px", textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>
                               {formatMoney(row.unacc)}
                             </td>
                           </tr>
@@ -16575,7 +16579,7 @@ if (apiConnected) {
                   padding: "0 22px",
                   border: "none",
                   borderRadius: 3,
-                  background: "#00a862",
+                  background: "var(--brand)",
                   fontSize: 13,
                   fontWeight: 600,
                   color: "#ffffff",
@@ -16712,7 +16716,7 @@ if (apiConnected) {
                   <tbody>
                     {contractModalItems.map((item) => (
                       <tr key={item.code} style={{ borderTop: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{item.code}</td>
+                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{item.code}</td>
                         <td style={{ padding: "8px 10px" }}>{item.date}</td>
                         <td style={{ padding: "8px 10px" }}>{item.note}</td>
                         <td style={{ padding: "8px 10px", color: "#64748b" }}>{item.customer}</td>
@@ -16768,7 +16772,7 @@ if (apiConnected) {
                   setAddContractPeriodModalOpen(false);
                   setShowContractPeriodList(true);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >Lưu</button>
             </div>
           </div>
@@ -16820,7 +16824,7 @@ if (apiConnected) {
               <select
                 value={apiConnected ? selectedContractTransferPeriod : selectedContractTransferPeriod || "Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026"}
                 onChange={(e) => setSelectedContractTransferPeriod(e.target.value)}
-                style={{ width: "100%", padding: "8px 10px", borderRadius: 4, border: "1.5px solid #00a862", fontSize: 13, background: "#ffffff" }}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 4, border: "1.5px solid var(--brand)", fontSize: 13, background: "#ffffff" }}
               >
                 {apiConnected ? [<option key="" value="">Chọn kỳ tính giá thành</option>, ...(apiRows.costPeriods || []).filter((row) => row.method === "CONTRACT" && row.status === "CALCULATED").map((row) => <option key={row.id} value={row.name}>{row.name}</option>)] : <option value="Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026">
                   Kỳ tính giá thành từ ngày 01/10/2026 đến ngày 31/10/2026
@@ -16842,7 +16846,7 @@ if (apiConnected) {
                   setSelectContractTransferPeriodModalOpen(false);
                   setShowContractTransferList(true);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Đồng ý
               </button>
@@ -16896,7 +16900,7 @@ if (apiConnected) {
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#1e293b" }}>
                       <th style={{ width: 40, padding: "8px 10px", textAlign: "center" }}></th>
-                      <th style={{ width: 140, padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Số hợp đồng 📌</th>
+                      <th style={{ width: 140, padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Số hợp đồng </th>
                       <th style={{ width: 110, padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Ngày ký</th>
                       <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600 }}>Khách hàng</th>
                       <th style={{ width: 140, padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>Doanh thu</th>
@@ -16917,14 +16921,14 @@ if (apiConnected) {
                               if (e.target.checked) setSelectedAcceptanceContracts([...selectedAcceptanceContracts, row.code]);
                               else setSelectedAcceptanceContracts(selectedAcceptanceContracts.filter((c) => c !== row.code));
                             }}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </td>
-                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+                        <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
                         <td style={{ padding: "8px 10px" }}>{row.date}</td>
                         <td style={{ padding: "8px 10px" }}>{row.customer}</td>
                         <td style={{ padding: "8px 10px", textAlign: "right", color: "#2563eb", fontWeight: 600 }}>{row.rev == null ? "—" : formatMoney(row.rev)}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", color: "#00a862", fontWeight: 700 }}>{formatMoney(row.unacc)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", color: "var(--brand)", fontWeight: 700 }}>{formatMoney(row.unacc)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -16946,7 +16950,7 @@ if (apiConnected) {
                   setContractAcceptanceModalOpen(false);
                   setShowContractAcceptanceList(true);
                 }}
-                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "#00a862", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                style={{ padding: "6px 24px", border: "none", borderRadius: 4, background: "var(--brand)", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
               >
                 Đồng ý
               </button>
@@ -16978,7 +16982,7 @@ function CostNormEditor({ rows, columns, value, onChange }: {
       <tbody>
         {rows.map((row) => (
           <tr key={row.code} style={{ borderBottom: "1px solid #f1f5f9" }}>
-            <td style={{ padding: "8px 12px", fontWeight: 600, color: "#00a862" }}>{row.code}</td>
+            <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>{row.code}</td>
             <td style={{ padding: "8px 12px" }}>{row.name}</td>
             {columns.map(([field, , fallback]) => (
               <td key={field} style={{ padding: "6px 12px" }}>

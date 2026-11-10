@@ -15,8 +15,8 @@ const list = <T,>(value: List<T>): T[] => Array.isArray(value) ? value : value.r
 const money = (value: string) => Number(value).toLocaleString("vi-VN");
 const statusText: Record<string, string> = { MATCHED: "Khớp", VARIANCE: "Có chênh lệch",
   REVIEW_REQUIRED: "Cần rà soát", MISSING_SOURCE: "Thiếu nguồn" };
-const button = { border: "1px solid #00a862", borderRadius: 4, padding: "7px 13px",
-  color: "#008a50", background: "white", cursor: "pointer" };
+const button = { border: "1px solid var(--brand)", borderRadius: 4, padding: "7px 13px",
+  color: "var(--brand-hover)", background: "white", cursor: "pointer" };
 
 export default function TaxReconciliationModal({ companyId, companyName, token, title, reconciliationType, onClose }: {
   companyId: string; companyName: string; token?: string; title: string;
@@ -82,7 +82,7 @@ export default function TaxReconciliationModal({ companyId, companyName, token, 
             style={{ display: "block", height: 34, minWidth: 180, border: "1px solid #cbd5e1", borderRadius: 4 }}>
             {periods.map((period) => <option key={period.id} value={period.id}>{period.code} · {period.tax_type}</option>)}
           </select></label>
-          <button type="button" style={{ ...button, background: "#00a862", color: "white" }} disabled={!periodId || busy} onClick={() => void run()}>{busy ? "Đang đối chiếu..." : "Chạy đối chiếu"}</button>
+          <button type="button" style={{ ...button, background: "var(--brand)", color: "white" }} disabled={!periodId || busy} onClick={() => void run()}>{busy ? "Đang đối chiếu..." : "Chạy đối chiếu"}</button>
           <button type="button" style={button} disabled={!selected} onClick={exportCsv}>Xuất CSV</button>
           <button type="button" style={button} onClick={() => void load()}>Tải lại</button>
         </div>

@@ -4,16 +4,34 @@ import { useApiSession } from "./ApiSession";
 import { FileText, Monitor, BookOpen, X, CheckCircle2 } from "lucide-react";
 import { apiClient } from "./apiClient";
 import "./misa-invoice-workspace.css";
+// Flow diagram geometry, in the same 1000×460 coordinate space as the SVG viewBox. The box keeps
+// that aspect ratio (see .iw-flow), so node positions (icon centers) and connectors stay aligned.
+const FLOW_W = 1000;
+const FLOW_H = 460;
 const flowNodes = [
-  ["Tự động lấy hóa đơn từ TCT", "sync", 10, 28],
-  ["Khởi tạo mẫu & Đăng ký", "outgoing", 10, 68],
-  ["Xuất và gửi hóa đơn", "outgoing", 29, 49],
-  ["Thông báo hóa đơn lập sai", "adjustments", 57, 20],
-  ["Xử lý hóa đơn không hợp lệ", "adjustments", 45, 68],
-  ["Biên bản điều chỉnh/ thay thế hóa đơn", "adjustments", 68, 68],
-  ["Lập hóa đơn thay thế", "adjustments", 89, 20],
-  ["Lập hóa đơn điều chỉnh", "adjustments", 89, 68],
+  // [label, route, x, y, label above icon]
+  ["Tự động lấy hóa đơn từ TCT", "sync", 100, 150, true],
+  ["Khởi tạo mẫu & Đăng ký", "outgoing", 100, 330, false],
+  ["Xuất và gửi hóa đơn", "outgoing", 290, 240, false],
+  ["Thông báo hóa đơn lập sai", "adjustments", 570, 150, true],
+  ["Xử lý hóa đơn không hợp lệ", "adjustments", 480, 330, false],
+  ["Biên bản điều chỉnh/ thay thế hóa đơn", "adjustments", 680, 330, false],
+  ["Lập hóa đơn thay thế", "adjustments", 880, 150, true],
+  ["Lập hóa đơn điều chỉnh", "adjustments", 880, 330, false],
 ] as const;
+// Each connector is its own path so every step gets an arrowhead; ends stop at the icon edge.
+const flowConnectors = [
+  "M146 150 H170 Q190 150 190 170 V240",
+  "M146 330 H170 Q190 330 190 310 V240",
+  "M190 240 H242",
+  "M336 240 H880",
+  "M480 240 V284",
+  "M570 240 V196",
+  "M680 240 V284",
+  "M880 240 V196",
+  "M880 240 V284",
+] as const;
+const flowArrowed = new Set([2, 4, 5, 6, 7, 8]);
 const kinds = [
   "HĐ có mã của CQT",
   "HĐ không có mã của CQT",
@@ -111,7 +129,7 @@ export default function MisaInvoiceWorkspace({
                 padding: "8px 20px",
                 borderRadius: 6,
                 border: "none",
-                background: "#0284c7",
+                background: "var(--brand)",
                 color: "#ffffff",
                 cursor: "pointer",
                 fontWeight: 600,
@@ -344,36 +362,38 @@ export default function MisaInvoiceWorkspace({
         <section className="iw-business">
           <h2>NGHIỆP VỤ HÓA ĐƠN ĐIỆN TỬ</h2>
           <div className="iw-flow">
-            <svg
-              viewBox="0 0 760 420"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
+            <svg viewBox={`0 0 ${FLOW_W} ${FLOW_H}`} aria-hidden="true">
               <defs>
                 <marker
                   id="iw-arrow"
-                  markerWidth="5"
-                  markerHeight="5"
-                  refX="4"
-                  refY="2.5"
-                  orient="auto"
+                  viewBox="0 0 10 10"
+                  markerWidth="12"
+                  markerHeight="12"
+                  refX="9"
+                  refY="5"
+                  orient="auto-start-reverse"
+                  markerUnits="userSpaceOnUse"
                 >
-                  <path d="M0 0 L5 2.5 L0 5" fill="#9ba2a9" />
+                  <path d="M0 0 L10 5 L0 10 Z" fill="#8a929b" />
                 </marker>
               </defs>
-              <path
-                d="M130 120 Q160 120 160 165 L160 250 Q160 280 130 280 M160 200 L220 200 M300 200 L740 200 M435 200 L435 125 M342 200 L342 265 M516 200 L516 265 M675 200 L675 125 M675 200 L675 265"
-                fill="none"
-                stroke="#a1a6ad"
-                strokeWidth="1"
-                markerEnd="url(#iw-arrow)"
-              />
+              {flowConnectors.map((d, index) => (
+                <path
+                  key={d}
+                  d={d}
+                  fill="none"
+                  stroke="#a1a6ad"
+                  strokeWidth="1.5"
+                  markerEnd={flowArrowed.has(index) ? "url(#iw-arrow)" : undefined}
+                />
+              ))}
             </svg>
-            {flowNodes.map(([label, path, left, top]) => (
+            {flowNodes.map(([label, path, x, y, labelAbove]) => (
               <Link
                 key={label}
+                className={labelAbove ? "label-above" : undefined}
                 to={href("/invoices/" + path)}
-                style={{ left: `${left}%`, top: `${top}%` }}
+                style={{ left: `${(x / FLOW_W) * 100}%`, top: `${(y / FLOW_H) * 100}%` }}
               >
                 <span className="iw-flow-icon">
                   <Monitor size={35} />

@@ -1,0 +1,30 @@
+.common-hub { min-height: 100dvh; background: var(--canvas); color: var(--ink); display: flex; flex-direction: column; }
+.common-hub .common-hub-header { box-shadow: none !important; padding: 16px 24px !important; }
+.common-hub-title h1 { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 700; }
+.common-hub-title p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.common-hub .common-hub-main { max-width: 1440px !important; padding: 24px !important; }
+.common-hub .common-hub-panel { border-radius: 6px !important; box-shadow: none !important; }
+.common-hub-panel > div:first-child { background: white !important; padding: 0 20px !important; gap: 8px !important; }
+.common-hub .common-hub-tabs { gap: 0 !important; }
+.common-hub .common-hub-tabs button { border: 0 !important; border-bottom: 2px solid transparent !important; border-radius: 0 !important; background: transparent !important; color: var(--muted) !important; min-height: 52px; font-weight: 500 !important; }
+.common-hub .common-hub-tabs button[aria-current="page"] { color: var(--brand) !important; border-bottom-color: var(--brand) !important; }
+.common-hub .common-hub-tabs button > span:last-child:not(:first-of-type) { background: #f1f5f9 !important; color: #475569 !important; }
+.common-hub .common-hub-filter { border-radius: 5px !important; background: white !important; }
+.common-hub .common-hub-filter[aria-pressed="true"] { background: var(--brand-soft) !important; color: var(--brand) !important; }
+.common-hub-empty { padding: 56px 20px; text-align: center; color: var(--muted); border-top: 1px solid #eef2f6; }
+.common-hub-empty > svg { color: #94a3b8; margin-bottom: 12px; }
+.common-hub-empty h3 { margin: 0 0 8px; color: var(--ink); font-size: 16px; font-weight: 600; }
+.common-hub-empty p { margin: 0; font-size: 14px; }
+.common-hub-empty button { margin-top: 18px; padding: 8px 16px; background: white; border: 1px solid var(--brand-border); border-radius: 5px; color: var(--brand); cursor: pointer; }
+.common-hub button:focus-visible, .common-hub a:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.common-hub select { max-width: 100%; min-width: 0; }
+.common-hub-header > div { min-width: 0; max-width: 100%; }
+.common-hub-header > div > div { max-width: 100%; min-width: 0; }
+.common-hub input:focus-visible { outline: 2px solid var(--brand) !important; outline-offset: 3px; }
+@media (max-width: 700px) {
+  .common-hub .common-hub-header { position: static !important; padding: 16px !important; }
+  .common-hub .common-hub-main { padding: 16px !important; }
+  .common-hub .common-hub-tabs button { padding: 8px 10px !important; }
+  .common-hub-panel > div:first-child { padding: 0 12px 12px !important; }
+  .common-hub-panel table { display: block; max-width: 100%; overflow-x: auto; }
+}

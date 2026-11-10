@@ -663,7 +663,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
               width: 30,
               height: 30,
               borderRadius: "50%",
-              background: "#00a862",
+              background: "var(--brand)",
               display: "grid",
               placeItems: "center",
               flexShrink: 0,
@@ -683,7 +683,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
             }}
             style={{
               fontSize: 13,
-              color: "#00a862",
+              color: "var(--brand)",
               cursor: "pointer",
               fontWeight: 500,
               textDecoration: "none",
@@ -794,7 +794,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                         </span>
                       ))}
                       {vthhGroups.length === 0 && !isCombo && (
-                        <span style={{ fontSize: 12, color: "#94a3b8" }}>Nhóm vật tư hàng hóa</span>
+                        <span style={{ fontSize: 12, color: "#64748b" }}>Nhóm vật tư hàng hóa</span>
                       )}
                     </div>
                     <button
@@ -805,7 +805,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                           setVthhGroups([...vthhGroups, newGrp]);
                         }
                       }}
-                      style={{ background: "none", border: "none", color: "#00a862", cursor: "pointer", padding: "0 4px" }}
+                      style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "0 4px" }}
                       title="Thêm nhóm VTHH"
                     >
                       <Plus size={14} />
@@ -846,7 +846,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                   <button
                     type="button"
                     onClick={() => notify("Thêm mới đơn vị tính")}
-                    style={{ background: "none", border: "none", color: "#00a862", cursor: "pointer", padding: "0 4px" }}
+                    style={{ background: "none", border: "none", color: "var(--brand)", cursor: "pointer", padding: "0 4px" }}
                     title="Thêm đơn vị tính"
                   >
                     <Plus size={14} />
@@ -899,7 +899,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                       onClick={() => notify("Mở bảng tra cứu chính sách giảm thuế GTGT")}
                       style={{
                         fontSize: 12.5,
-                        color: "#00a862",
+                        color: "var(--brand)",
                         cursor: "pointer",
                         display: "inline-flex",
                         alignItems: "center",
@@ -938,7 +938,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                 {imageUrl ? (
                   <img src={imageUrl} alt="Item" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
-                  <ImageIcon size={38} style={{ color: "#94a3b8" }} />
+                  <ImageIcon size={38} style={{ color: "#64748b" }} />
                 )}
               </div>
 
@@ -1103,7 +1103,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                 <label style={{ fontSize: 12.5, fontWeight: 600, color: "#334155" }}>
                   Loại hàng hóa đặc trưng
                 </label>
-                <HelpCircle size={14} style={{ color: "#94a3b8", cursor: "pointer" }} />
+                <HelpCircle size={14} style={{ color: "#64748b", cursor: "pointer" }} />
               </div>
               <div style={{ position: "relative" }}>
                 <select
@@ -1235,7 +1235,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                   <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748b" }}>
                     <span style={{ cursor: "pointer" }}>&laquo;</span>
                     <span style={{ cursor: "pointer" }}>&lsaquo;</span>
-                    <span style={{ color: "#00a862", fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>1</span>
+                    <span style={{ color: "var(--brand)", fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>1</span>
                     <span style={{ cursor: "pointer" }}>&rsaquo;</span>
                     <span style={{ cursor: "pointer" }}>&raquo;</span>
                   </div>
@@ -1723,7 +1723,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                           placeholder="Chọn kho..."
                           style={{ border: "none", outline: "none", width: "100%", fontSize: 12 }}
                         />
-                        <Plus size={13} style={{ color: "#00a862", cursor: "pointer", marginRight: 2 }} />
+                        <Plus size={13} style={{ color: "var(--brand)", cursor: "pointer", marginRight: 2 }} />
                         <ChevronDown size={13} style={{ color: "#64748b", cursor: "pointer" }} />
                       </div>
                     </div>
@@ -2002,8 +2002,8 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                   padding: "4px 0",
                 }}
               >
-                {openSections.serviceUnits ? <ChevronDown size={16} color="#00a862" /> : <ChevronRight size={16} color="#475569" />}
-                <span style={{ fontSize: 14, fontWeight: 700, color: openSections.serviceUnits ? "#00a862" : "#1e293b" }}>
+                {openSections.serviceUnits ? <ChevronDown size={16} color="var(--brand)" /> : <ChevronRight size={16} color="#475569" />}
+                <span style={{ fontSize: 14, fontWeight: 700, color: openSections.serviceUnits ? "var(--brand)" : "#1e293b" }}>
                   Đơn vị tính khác
                 </span>
               </div>
@@ -2122,7 +2122,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
               {openSections.discount && (
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12.5, color: "#475569" }}>
-                    <Info size={15} style={{ color: "#00a862", flexShrink: 0, marginTop: 2 }} />
+                    <Info size={15} style={{ color: "var(--brand)", flexShrink: 0, marginTop: 2 }} />
                     <div>
                       <span>Thiết lập chiết khấu thương mại theo số lượng bán trên chứng từ bán hàng.</span>
                       <br />
@@ -2168,7 +2168,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                     <tbody>
                       {discountTiers.length === 0 ? (
                         <tr>
-                          <td colSpan={3} style={{ padding: "14px", textAlign: "center", color: "#94a3b8" }}>
+                          <td colSpan={3} style={{ padding: "14px", textAlign: "center", color: "#64748b" }}>
                             Chưa có bậc chiết khấu. Bấm "Thêm dòng" bên dưới để thiết lập.
                           </td>
                         </tr>
@@ -2293,7 +2293,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
               {openSections.conversion && (
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12.5, color: "#475569" }}>
-                    <Info size={15} style={{ color: "#00a862", flexShrink: 0, marginTop: 2 }} />
+                    <Info size={15} style={{ color: "var(--brand)", flexShrink: 0, marginTop: 2 }} />
                     <div>
                       <span>Trường hợp vật tư, hàng hóa sử dụng đơn vị tính khác nhau khi nhập/xuất thì khai báo thêm các đơn vị tính ở đây.</span>
                       <br />
@@ -2463,12 +2463,12 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                   padding: "4px 0",
                 }}
               >
-                {openSections.bom ? <ChevronDown size={16} color="#00a862" /> : <ChevronRight size={16} color="#475569" />}
+                {openSections.bom ? <ChevronDown size={16} color="var(--brand)" /> : <ChevronRight size={16} color="#475569" />}
                 <span
                   style={{
                     fontSize: 14,
                     fontWeight: 700,
-                    color: openSections.bom ? "#00a862" : "#1e293b",
+                    color: openSections.bom ? "var(--brand)" : "#1e293b",
                   }}
                 >
                   Định mức nguyên vật liệu
@@ -2478,7 +2478,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
               {openSections.bom && (
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#475569" }}>
-                    <Info size={15} style={{ color: "#00a862", flexShrink: 0 }} />
+                    <Info size={15} style={{ color: "var(--brand)", flexShrink: 0 }} />
                     <span>(Định nghĩa định mức các thành phần, nguyên liệu để cấu thành thành phẩm)</span>
                   </div>
 
@@ -2506,7 +2506,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                       <tbody>
                         {bomItems.length === 0 ? (
                           <tr>
-                            <td colSpan={6} style={{ padding: "14px", textAlign: "center", color: "#94a3b8" }}>
+                            <td colSpan={6} style={{ padding: "14px", textAlign: "center", color: "#64748b" }}>
                               Chưa có nguyên vật liệu trong định mức. Bấm "Thêm dòng" bên dưới để thiết lập.
                             </td>
                           </tr>
@@ -2692,7 +2692,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                 }}
               >
                 {openSections.formula ? <ChevronDown size={16} color="#475569" /> : <ChevronRight size={16} color="#475569" />}
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#00a862" }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--brand)" }}>
                   Công thức tính số lượng
                 </span>
               </div>
@@ -2700,7 +2700,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
               {openSections.formula && (
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12.5, color: "#475569" }}>
-                    <Info size={15} style={{ color: "#00a862", flexShrink: 0, marginTop: 2 }} />
+                    <Info size={15} style={{ color: "var(--brand)", flexShrink: 0, marginTop: 2 }} />
                     <div>
                       <span>Chức năng này cho phép thiết lập công thức tính toán Số lượng trên chứng từ.</span>
                       <br />
@@ -2755,7 +2755,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                           border: "1px solid #cbd5e1",
                           borderRadius: 4,
                           fontSize: 13,
-                          fontFamily: "monospace",
+                          fontFamily: "Roboto, Arial, sans-serif",
                           boxSizing: "border-box",
                         }}
                       />
@@ -2822,7 +2822,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                             fontSize: 12,
                             fontWeight: 500,
                             cursor: "pointer",
-                            color: "#00a862",
+                            color: "var(--brand)",
                           }}
                         >
                           Kiểm tra công thức
@@ -2937,14 +2937,14 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
               }}
             >
               <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
-                <Info size={14} style={{ color: "#00a862", marginTop: 2, flexShrink: 0 }} />
+                <Info size={14} style={{ color: "var(--brand)", marginTop: 2, flexShrink: 0 }} />
                 <div>
                   {!isService && (
                     <div>
                       - Để theo dõi vật tư hàng hóa theo quy cách bạn có thể thiết lập{" "}
                       <span
                         onClick={() => notify("Mở thiết lập theo dõi quy cách")}
-                        style={{ color: "#0284c7", cursor: "pointer", textDecoration: "none" }}
+                        style={{ color: "var(--brand)", cursor: "pointer", textDecoration: "none" }}
                         onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                         onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                       >
@@ -2956,7 +2956,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                     - Để <strong>phân bổ doanh thu nhận trước</strong> khi bán sản phẩm bạn có thể thiết lập{" "}
                     <span
                       onClick={() => notify("Mở thiết lập phân bổ doanh thu nhận trước")}
-                      style={{ color: "#0284c7", cursor: "pointer", textDecoration: "none" }}
+                      style={{ color: "var(--brand)", cursor: "pointer", textDecoration: "none" }}
                       onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                       onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                     >

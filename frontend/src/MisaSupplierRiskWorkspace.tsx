@@ -79,7 +79,7 @@ export default function MisaSupplierRiskWorkspace({ companyId, notify }: { compa
         style={{
           border: 0,
           background: "none",
-          color: "#0284c7",
+          color: "var(--brand)",
           display: "inline-flex",
           alignItems: "center",
           gap: 6,
@@ -414,7 +414,7 @@ export default function MisaSupplierRiskWorkspace({ companyId, notify }: { compa
                   padding: "8px 20px",
                   borderRadius: 6,
                   border: "none",
-                  background: "#0284c7",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,

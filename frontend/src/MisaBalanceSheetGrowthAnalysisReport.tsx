@@ -1,3 +1,4 @@
+import { exportVisibleTable } from "./table-actions";
 import React, { useState, useMemo } from "react";
 import {
   ChevronLeft,
@@ -1058,7 +1059,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
             style={{
               position: "absolute",
               left: 10,
-              color: "#94a3b8",
+              color: "#64748b",
             }}
           />
           <input
@@ -1127,7 +1128,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
             justifyContent: "center",
             background: "transparent",
             border: "none",
-            color: "#0284c7",
+            color: "var(--brand)",
             cursor: "pointer",
           }}
           title="Bình luận / Trao đổi"
@@ -1169,7 +1170,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
             cursor: "pointer",
           }}
           title="Xuất khẩu Excel"
-          onClick={() => notify?.("Đang xuất khẩu báo cáo ra Excel...")}
+          onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
         >
           <span style={{ fontSize: 13, fontWeight: 700 }}>XLS</span>
           <ChevronDown size={13} color="#64748b" />
@@ -1180,7 +1181,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
           style={{
             height: 32,
             padding: "0 18px",
-            background: "#00a862",
+            background: "var(--brand)",
             border: "none",
             borderRadius: 4,
             fontSize: 13,
@@ -1551,7 +1552,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
                       name="growthPeriodType"
                       checked={draftPeriodType === "month"}
                       onChange={() => setDraftPeriodType("month")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Tháng</span>
                   </label>
@@ -1562,7 +1563,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
                       name="growthPeriodType"
                       checked={draftPeriodType === "quarter"}
                       onChange={() => setDraftPeriodType("quarter")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Quý</span>
                   </label>
@@ -1573,7 +1574,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
                       name="growthPeriodType"
                       checked={draftPeriodType === "halfYear"}
                       onChange={() => setDraftPeriodType("halfYear")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>6 tháng</span>
                   </label>
@@ -1584,7 +1585,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
                       name="growthPeriodType"
                       checked={draftPeriodType === "year"}
                       onChange={() => setDraftPeriodType("year")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Năm</span>
                   </label>
@@ -1595,7 +1596,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
                       name="growthPeriodType"
                       checked={draftPeriodType === "samePeriod"}
                       onChange={() => setDraftPeriodType("samePeriod")}
-                      style={{ accentColor: "#00a862", width: 16, height: 16 }}
+                      style={{ accentColor: "var(--brand)", width: 16, height: 16 }}
                     />
                     <span>Cùng kỳ giữa các năm</span>
                   </label>
@@ -1763,7 +1764,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
                     type="checkbox"
                     checked={draftFromPreparedReport}
                     onChange={(e) => setDraftFromPreparedReport(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer" }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16, cursor: "pointer" }}
                   />
                   <span>Lấy số liệu từ báo cáo tài chính đã lập</span>
                 </label>
@@ -1773,7 +1774,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
                     type="checkbox"
                     checked={draftHideZeroRows}
                     onChange={(e) => setDraftHideZeroRows(e.target.checked)}
-                    style={{ accentColor: "#00a862", width: 16, height: 16, cursor: "pointer" }}
+                    style={{ accentColor: "var(--brand)", width: 16, height: 16, cursor: "pointer" }}
                   />
                   <span>Không hiển thị các chỉ tiêu có số liệu = 0</span>
                 </label>
@@ -1831,7 +1832,7 @@ export default function MisaBalanceSheetGrowthAnalysisReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

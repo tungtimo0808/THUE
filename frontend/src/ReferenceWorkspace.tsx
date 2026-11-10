@@ -1,3 +1,6 @@
+import { NotificationPanel, type NotificationItem } from "./NotificationPanel";
+import { notificationRoute } from "./notification-routing";
+import { BrandMark } from "./components/BrandMark";
 import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, lazy, Suspense, useTransition, memo, type ReactNode } from "react";
 import { GlobalFeedbackPopupHost, showGlobalPopup, classifyNoticeType, humanizeErrorMessage } from "./global-popup";
 import {
@@ -9,8 +12,10 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import {
+  UserRound,
   AlertTriangle,
   ArrowDownLeft,
+  ArrowRight,
   ArrowUpRight,
   Bell,
   Building2,
@@ -126,7 +131,7 @@ const CashPaymentLimitWarningWorkspace = lazyWithRetry(() => import("./CashPayme
 
 const WorkspaceLoader = () => (
   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 360, gap: 12, width: "100%" }}>
-    <div style={{ width: 32, height: 32, border: "3px solid #e2e8f0", borderTopColor: "#00b06b", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
+    <div style={{ width: 32, height: 32, border: "3px solid #e2e8f0", borderTopColor: "var(--brand)", borderRadius: "50%", animation: "sv-spin 0.8s linear infinite" }} />
     <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Đang tải dữ liệu phân hệ...</span>
     <style>{`@keyframes sv-spin { to { transform: rotate(360deg); } }`}</style>
   </div>
@@ -1107,19 +1112,37 @@ function ReferenceWorkspace() {
       const pType = classifyNoticeType(cleaned);
       showGlobalPopup({
         type: pType,
-        title: pType === "error" ? "Thông báo lỗi" : pType === "warning" ? "Cảnh báo kiểm tra" : "Lưu dữ liệu thành công",
+        title: pType === "error" ? "Không thực hiện được" : pType === "warning" ? "Cần kiểm tra" : pType === "success" ? "Đã hoàn tất" : "Thông báo",
         message: cleaned,
       });
     }
   }, []);
   const href: ReferenceHref = (path, extra) =>
     `${path}?${new URLSearchParams({ company: company.id, period, ...extra })}`;
-  const detail = items.find((t) => t.id === detailId),
-    pending = scoped.filter((t) => t.status === "pending");
+  const detail = items.find((t) => t.id === detailId);
 
   const [notifFilter, setNotifFilter] = useState<"all" | "pending" | "system">("all");
   const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set());
-  const [liveApiNotifs, setLiveApiNotifs] = useState<any[]>([]);
+  const [liveApiNotifs, setLiveApiNotifs] = useState<NotificationItem[]>([]);
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifBusy, setNotifBusy] = useState(false);
+  const [notifError, setNotifError] = useState("");
+  const [notifReload, setNotifReload] = useState(0);
+  const notifReadKey = `sv_notification_read_${apiSession?.user?.id || apiSession?.user?.username || "user"}_${company?.id}`;
+  useEffect(() => {
+    setLiveApiNotifs([]);
+    setNotifError("");
+    try { setReadNotifIds(new Set(JSON.parse(localStorage.getItem(notifReadKey) || "[]"))); }
+    catch { setReadNotifIds(new Set()); }
+  }, [notifReadKey]);
+  useEffect(() => { if (panel === "notifications") setNotifReload((value) => value + 1); }, [panel]);
+  const rememberRead = (ids: string[]) => {
+    setReadNotifIds((current) => {
+      const next = new Set([...current, ...ids]);
+      try { localStorage.setItem(notifReadKey, JSON.stringify([...next].slice(-1000))); } catch {}
+      return next;
+    });
+  };
   const [payrollOptionOpen, setPayrollOptionOpen] = useState(false);
   const [payrollOption, setPayrollOption] = useState("Tiền lương Sổ Việt ERP");
 
@@ -1127,13 +1150,15 @@ function ReferenceWorkspace() {
     if (!apiToken || !company?.id) return;
     let active = true;
     const branchParam = effectiveBranchId && effectiveBranchId !== "all" ? `&branch_id=${encodeURIComponent(effectiveBranchId)}` : "";
+    setNotifLoading(true);
+    setNotifError("");
     Promise.allSettled([
       request<any>(`/api/v1/common/notifications/?company_id=${encodeURIComponent(company.id)}`, apiToken),
       request<any>(`/api/v1/cash/payment-requests/?company_id=${encodeURIComponent(company.id)}${branchParam}`, apiToken),
       request<any>(`/api/v1/cash/advance-settlement-docs/?company_id=${encodeURIComponent(company.id)}${branchParam}`, apiToken),
     ]).then(([notifRes, prRes, asRes]) => {
       if (!active) return;
-      const merged: any[] = [];
+      const merged: NotificationItem[] = [];
       const readSet = new Set<string>();
 
       if (prRes.status === "fulfilled") {
@@ -1171,7 +1196,7 @@ function ReferenceWorkspace() {
               partner: `${st.person || st.employee_name || "Nhân viên"} · ${st.dept || st.department || "Bộ phận"}`,
               amount: Number(st.spentAmount || st.spent_amount || st.advanceAmount || 0),
               date: st.date || (st.settlement_date ? String(st.settlement_date).split("-").reverse().join("/") : "Hôm nay"),
-              actionUrl: "/cash/advance-settlement-request",
+              actionUrl: "/cash/advance-settlement",
               isVoucher: false,
             });
           }
@@ -1190,20 +1215,24 @@ function ReferenceWorkspace() {
             id: nid,
             dbId: n.id,
             category: (isPendingType ? "pending" : "system") as "pending" | "system",
-            code: n.source_module === "TAX" ? "Thuế & Tờ khai" : n.source_module === "BANK" ? "Ngân hàng" : n.source_module === "CASH" ? "Ngân quỹ" : "Hệ thống",
+            code: n.title || (n.source_module === "TAX" ? "Thuế & Tờ khai" : n.source_module === "BANK" ? "Ngân hàng" : n.source_module === "CASH" ? "Ngân quỹ" : "Hệ thống"),
             kindLabel: n.level === "IMPORTANT" ? "Quan trọng" : n.level === "WARNING" ? "Cảnh báo" : "Thông báo",
             kind: (n.source_module === "TAX" ? "tax" : n.source_module === "BANK" ? "bank" : n.level === "WARNING" || n.level === "IMPORTANT" ? "alert" : "info") as any,
-            description: `${n.title}: ${n.message}`,
+            description: n.message || "",
             partner: n.company_name || company.name,
             amount: 0,
             date: n.created_at ? new Date(n.created_at).toLocaleString("vi-VN") : "Hôm nay",
-            actionUrl: n.link || "/overview",
+            actionUrl: n.link || "/common?tab=notifications",
             isVoucher: false,
           });
         }
       }
 
       setLiveApiNotifs(merged);
+      setNotifLoading(false);
+      if ([notifRes, prRes, asRes].some((result) => result.status === "rejected")) {
+        setNotifError("Chưa tải được đầy đủ thông báo. Vui lòng thử lại.");
+      }
       if (readSet.size > 0) {
         setReadNotifIds((prev) => new Set([...prev, ...readSet]));
       }
@@ -1211,91 +1240,42 @@ function ReferenceWorkspace() {
     return () => {
       active = false;
     };
-  }, [apiToken, company?.id, company?.name, effectiveBranchId, dataset]);
+  }, [apiToken, company?.id, company?.name, effectiveBranchId, dataset, notifReload]);
 
-  const systemAlerts = [
-    {
-      id: "sys-cashflow",
-      category: "system" as const,
-      code: "Cảnh báo quỹ",
-      kindLabel: "Dự báo dòng tiền",
-      kind: "alert" as const,
-      description: "Dự kiến số dư quỹ tiền mặt giảm dưới ngưỡng an toàn (25.000.000 đ) vào ngày 28/09. Đề xuất gửi nhắc nợ đối tác sớm.",
-      partner: "Hệ thống cảnh báo",
-      amount: 18250000,
-      date: "25/09/2026 14:15",
-      actionUrl: "/cash/cashflow",
-    },
-    {
-      id: "sys-tax",
-      category: "system" as const,
-      code: "Hạn nộp thuế Q3",
-      kindLabel: "Thuế & Tờ khai",
-      kind: "tax" as const,
-      description: "Hạn nộp Tờ khai thuế GTGT và Báo cáo tình hình sử dụng hóa đơn Quý 3/2026 (Hạn cuối: 31/10/2026).",
-      partner: "Cơ quan Thuế",
-      amount: 0,
-      date: "24/09/2026 09:00",
-      actionUrl: "/tax",
-    },
-    {
-      id: "sys-tt99",
-      category: "system" as const,
-      code:
-        activeCompanyRegime === "TT58"
-          ? "Thông tư 58/2026"
-          : activeCompanyRegime === "TT133"
-          ? "Thông tư 133/2016"
-          : activeCompanyRegime === "TT200"
-          ? "Thông tư 200/2014"
-          : "Thông tư 99/2025",
-      kindLabel: "Chế độ kế toán",
-      kind: "info" as const,
-      description:
-        activeCompanyRegime === "TT58"
-          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp siêu nhỏ theo Thông tư 58/2026/TT-BTC (20 TK rút gọn cốt lõi, 3 Role tinh gọn mặc định, Bộ BCTC B01-DNSN, B02-DNSN)."
-          : activeCompanyRegime === "TT133"
-          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp nhỏ và vừa theo Thông tư 133/2016/TT-BTC (101 TK, 8 Role cốt lõi, Bộ BCTC B01a/B01b-DNN, B02-DNN, B03-DNN, B09-DNN)."
-          : activeCompanyRegime === "TT200"
-          ? "Doanh nghiệp đang áp dụng Chế độ kế toán Doanh nghiệp theo Thông tư 200/2014/TT-BTC (135 TK, 14 Role chuyên môn, Bộ BCTC B01/B02/B03/B09-DN)."
-          : "Hệ thống đã cập nhật đầy đủ Hệ thống 138 TK, 21 Role chuẩn, sổ quỹ S07-DN, S07a-DN và bộ BCTC B01/B02/B03/B09-DN theo Thông tư 99/2025/TT-BTC áp dụng từ 01/01/2026.",
-      partner: "Bộ Tài chính",
-      amount: 0,
-      date: "20/09/2026 08:30",
-      actionUrl: "/reports",
-    },
-  ];
+  const allNotifs = liveApiNotifs;
+  const unreadCount = allNotifs.filter((item) => !readNotifIds.has(item.id)).length;
 
-  const voucherNotifs = [
-    ...liveApiNotifs.filter((n) => n.category === "pending"),
-    ...pending.map((t) => ({
-      id: t.id,
-      category: "pending" as const,
-      code: t.code,
-      kindLabel: kinds[t.kind] || "Chứng từ",
-      kind: t.kind,
-      description: t.description,
-      partner: t.partner,
-      amount: t.amount,
-      date: `${t.date.split("-").reverse().join("/")} 09:30`,
-      actionUrl: "",
-      isVoucher: true,
-    })),
-  ];
-
-  const combinedSystemAlerts = [
-    ...liveApiNotifs.filter((n) => n.category === "system"),
-    ...systemAlerts,
-  ];
-
-  const allNotifs = [...voucherNotifs, ...combinedSystemAlerts];
-  const displayedNotifs =
-    notifFilter === "pending"
-      ? voucherNotifs
-      : notifFilter === "system"
-        ? combinedSystemAlerts
-        : allNotifs;
-  const unreadCount = allNotifs.filter((n) => !readNotifIds.has(n.id)).length;
+  const readAllNotifications = async () => {
+    if (notifBusy || !apiToken) return;
+    setNotifBusy(true);
+    setNotifError("");
+    try {
+      await request(`/api/v1/common/notifications/read-all/?company_id=${encodeURIComponent(company.id)}`, apiToken, { method: "POST", body: "{}" });
+      rememberRead(allNotifs.map((item) => item.id));
+    } catch (cause) {
+      setNotifError(cause instanceof Error ? cause.message : "Không cập nhật được trạng thái đọc.");
+    } finally { setNotifBusy(false); }
+  };
+  const openNotification = async (item: NotificationItem) => {
+    if (notifBusy) return;
+    setNotifBusy(true);
+    setNotifError("");
+    try {
+      let link = item.actionUrl;
+      if (item.dbId) {
+        const opened = await request<{ available: boolean; link: string | null; detail?: string }>(`/api/v1/common/notifications/${encodeURIComponent(item.dbId)}/open/?company_id=${encodeURIComponent(company.id)}`, apiToken, { method: "POST", body: "{}" });
+        rememberRead([item.id]);
+        if (!opened.available) { setNotifError(opened.detail || "Nội dung này không còn khả dụng."); return; }
+        link = opened.link || link;
+      }
+      const target = notificationRoute(link, company.id, period);
+      rememberRead([item.id]);
+      setPanel(null);
+      navigate(target);
+    } catch (cause) {
+      setNotifError(cause instanceof Error ? cause.message : "Không mở được nội dung thông báo.");
+    } finally { setNotifBusy(false); }
+  };
 
   useEffect(() => {
     document.title = `${module?.label || "Kế toán"} | Sổ Việt`;
@@ -1360,6 +1340,8 @@ function ReferenceWorkspace() {
     }
   };
   const quickAccessRoutes: Record<string, string> = {
+    "Kiểm tra đối chiếu chứng từ, sổ sách": href("/ledger/transactions", { action: "reconcile" }),
+    "Ghi sổ/Bỏ ghi theo lô": href("/ledger/transactions", { action: "list" }),
     "Quản lý danh mục": href("/directory"),
     "Nhập số dư ban đầu": href("/opening"),
     "Cập nhật số dư dữ liệu năm trước": href("/opening"),
@@ -1446,7 +1428,7 @@ function ReferenceWorkspace() {
                   padding: "8px 16px",
                   borderRadius: 6,
                   border: "none",
-                  background: "#00a862",
+                  background: "var(--brand)",
                   color: "#ffffff",
                   fontWeight: 600,
                   fontSize: 13,
@@ -1793,9 +1775,7 @@ function ReferenceWorkspace() {
           {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         </button>
         <Link to={href("/overview")} className="ref-brand" title="Sổ Việt ERP">
-          <div className="ref-brand-logo-icon">
-            <Building2 size={18} />
-          </div>
+          <BrandMark compact />
           <div className="ref-brand-text">
             <strong className="ref-brand-name">SỔ VIỆT ERP</strong>
             <span className="ref-brand-sub">KẾ TOÁN & THUẾ</span>
@@ -1923,7 +1903,7 @@ function ReferenceWorkspace() {
                     style={{
                       background: "transparent",
                       border: "none",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       fontSize: 11,
                       fontWeight: 600,
                       cursor: "pointer",
@@ -2012,7 +1992,7 @@ function ReferenceWorkspace() {
                       borderRadius: 4,
                       border: "none",
                       background: "#f0f9ff",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       fontSize: 12,
                       fontWeight: 600,
                       cursor: "pointer",
@@ -2078,7 +2058,7 @@ function ReferenceWorkspace() {
                     style={{
                       background: "transparent",
                       border: "none",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       fontSize: 11,
                       fontWeight: 600,
                       cursor: "pointer",
@@ -2098,7 +2078,7 @@ function ReferenceWorkspace() {
                         applyBranchSwitch("all", "Toàn doanh nghiệp");
                       }}
                     >
-                      <span className="ref-cluster-item-name">🏢 Toàn doanh nghiệp (Tất cả)</span>
+                      <span className="ref-cluster-item-name"><Building2 size={14} className="ui-inline-icon" aria-hidden="true" /> Toàn doanh nghiệp (Tất cả)</span>
                       {branch === "all" && <Check size={14} className="ref-cluster-check" />}
                     </button>
                   )}
@@ -2159,7 +2139,7 @@ function ReferenceWorkspace() {
                       borderRadius: 4,
                       border: "none",
                       background: "#f0f9ff",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       fontSize: 12,
                       fontWeight: 600,
                       cursor: "pointer",
@@ -2281,7 +2261,7 @@ function ReferenceWorkspace() {
                       borderRadius: 4,
                       border: "none",
                       background: "#f8fafc",
-                      color: "#0284c7",
+                      color: "var(--brand)",
                       fontSize: 12,
                       fontWeight: 600,
                       cursor: "pointer",
@@ -2414,17 +2394,17 @@ function ReferenceWorkspace() {
                       <div className="ref-user-dropdown-title">{userDisplayName}</div>
                       {(Boolean((apiCompanies.find(item => item.id === apiCompanyId) as any)?.is_company_admin) || Boolean((apiSession?.user as any)?.is_company_admin) || userEmail === "tungtimo0808@gmail.com") ? (
                         <span style={{ background: "#f59e0b", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
-                          👑 ADMIN DOANH NGHIỆP
+                          <ShieldCheck size={14} className="ui-inline-icon" aria-hidden="true" /> ADMIN DOANH NGHIỆP
                         </span>
                       ) : (
-                        <span style={{ background: "#0284c7", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
-                          👤 {activeRoleSpec.shortLabel.toUpperCase()}
+                        <span style={{ background: "var(--brand)", color: "#ffffff", padding: "2.5px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>
+                          <UserRound size={14} className="ui-inline-icon" aria-hidden="true" /> {activeRoleSpec.shortLabel.toUpperCase()}
                         </span>
                       )}
                     </div>
                     {userEmail && <div className="ref-user-dropdown-email">{userEmail}</div>}
                     <div className="ref-user-dropdown-company">
-                      🏢 {apiCompanies.find(item => item.id === apiCompanyId)?.name || company.name || "Doanh nghiệp"}
+                      <Building2 size={14} className="ui-inline-icon" aria-hidden="true" /> {apiCompanies.find(item => item.id === apiCompanyId)?.name || company.name || "Doanh nghiệp"}
                     </div>
                   </div>
 
@@ -2586,7 +2566,7 @@ function ReferenceWorkspace() {
                 left: 0,
                 right: 0,
                 height: 2.5,
-                background: "linear-gradient(90deg, #00b06b 0%, #0284c7 50%, #00b06b 100%)",
+                background: "linear-gradient(90deg, var(--brand) 0%, var(--brand) 50%, var(--brand) 100%)",
                 backgroundSize: "200% 100%",
                 animation: "sv-progress-flow 0.8s linear infinite",
                 zIndex: 9999,
@@ -2696,7 +2676,7 @@ function ReferenceWorkspace() {
                   width: 32,
                   height: 32,
                   borderRadius: "50%",
-                  background: "#0284c7",
+                  background: "var(--brand)",
                   border: "none",
                   display: "flex",
                   alignItems: "center",
@@ -2756,7 +2736,7 @@ function ReferenceWorkspace() {
                         style={{
                           padding: "8px 14px",
                           fontSize: 13,
-                          color: payrollOption === "Tiền lương Sổ Việt ERP" ? "#0284c7" : "#334155",
+                          color: payrollOption === "Tiền lương Sổ Việt ERP" ? "var(--brand)" : "#334155",
                           fontWeight: payrollOption === "Tiền lương Sổ Việt ERP" ? 600 : 400,
                           cursor: "pointer",
                           display: "flex",
@@ -2776,7 +2756,7 @@ function ReferenceWorkspace() {
                         style={{
                           padding: "8px 14px",
                           fontSize: 13,
-                          color: payrollOption === "Sổ Việt Tiền lương" ? "#0284c7" : "#334155",
+                          color: payrollOption === "Sổ Việt Tiền lương" ? "var(--brand)" : "#334155",
                           fontWeight: payrollOption === "Sổ Việt Tiền lương" ? 600 : 400,
                           cursor: "pointer",
                           display: "flex",
@@ -2799,7 +2779,7 @@ function ReferenceWorkspace() {
                   width: 26,
                   height: 26,
                   borderRadius: "50%",
-                  background: "#0284c7",
+                  background: "var(--brand)",
                   border: "none",
                   display: "grid",
                   placeItems: "center",
@@ -3115,237 +3095,20 @@ function ReferenceWorkspace() {
                 </section>
               </div>
             ) : panel === "notifications" ? (
-              <div className="misa-notif-container">
-                {/* 1. Top filter & Mark as read */}
-                <div className="misa-notif-topbar">
-                  <div className="misa-notif-tabs">
-                    <button
-                      type="button"
-                      className={`misa-notif-tab ${notifFilter === "all" ? "active" : ""}`}
-                      onClick={() => setNotifFilter("all")}
-                    >
-                      <span>Tất cả</span>
-                      <span className="misa-notif-badge-pill">{allNotifs.length}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`misa-notif-tab ${notifFilter === "pending" ? "active" : ""}`}
-                      onClick={() => setNotifFilter("pending")}
-                    >
-                      <span>Chờ duyệt</span>
-                      <span className="misa-notif-badge-pill">{voucherNotifs.length}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`misa-notif-tab ${notifFilter === "system" ? "active" : ""}`}
-                      onClick={() => setNotifFilter("system")}
-                    >
-                      <span>Cảnh báo & Nhắc việc</span>
-                      <span className="misa-notif-badge-pill">{combinedSystemAlerts.length}</span>
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="misa-notif-mark-read"
-                    onClick={() => {
-                      setReadNotifIds(new Set(allNotifs.map((n) => n.id)));
-                      if (apiToken) {
-                        void request(`/api/v1/common/notifications/read-all/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
-                          method: "POST",
-                          body: "{}",
-                        }).catch(() => {});
-                      }
-                      setNotice("Đã đánh dấu đọc tất cả thông báo.");
-                    }}
-                  >
-                    <CheckCheck size={14} />
-                    <span>Đánh dấu đã đọc</span>
-                  </button>
-                </div>
-
-                {/* 2. Notification Cards List */}
-                <div className="misa-notif-list">
-                  {displayedNotifs.length === 0 ? (
-                    <div className="misa-notif-empty">
-                      <CheckCheck size={36} style={{ color: "#10b981" }} />
-                      <h4>Không có thông báo nào</h4>
-                      <p>Mọi chứng từ và cảnh báo trong mục này đã được xử lý xong.</p>
-                    </div>
-                  ) : (
-                    displayedNotifs.map((n) => {
-                      const isUnread = !readNotifIds.has(n.id);
-                      return (
-                        <div
-                          key={n.id}
-                          className={`misa-notif-card ${isUnread ? "unread" : ""}`}
-                          onClick={() => {
-                            setReadNotifIds((prev) => new Set([...prev, n.id]));
-                            if ("isVoucher" in n && n.isVoucher) {
-                              setPanel(null);
-                              setDetailId(n.id);
-                            } else if ("actionUrl" in n && n.actionUrl) {
-                              setPanel(null);
-                              navigate(href(n.actionUrl));
-                            }
-                          }}
-                        >
-                          <div
-                            className="misa-notif-card-icon"
-                            style={{
-                              background:
-                                n.kind === "receipt"
-                                  ? "#ecfdf5"
-                                  : n.kind === "payment"
-                                    ? "#fef2f2"
-                                    : n.kind === "bank"
-                                      ? "#eff6ff"
-                                      : n.kind === "alert"
-                                        ? "#fff7ed"
-                                        : n.kind === "tax"
-                                          ? "#f0fdfa"
-                                          : "#f5f3ff",
-                              color:
-                                n.kind === "receipt"
-                                  ? "#059669"
-                                  : n.kind === "payment"
-                                    ? "#dc2626"
-                                    : n.kind === "bank"
-                                      ? "#0284c7"
-                                      : n.kind === "alert"
-                                        ? "#ea580c"
-                                        : n.kind === "tax"
-                                          ? "#0d9488"
-                                          : "#7c3aed",
-                            }}
-                          >
-                            {n.kind === "receipt" ? (
-                              <ArrowDownLeft size={18} />
-                            ) : n.kind === "payment" ? (
-                              <ArrowUpRight size={18} />
-                            ) : n.kind === "bank" ? (
-                              <Landmark size={18} />
-                            ) : n.kind === "alert" ? (
-                              <AlertTriangle size={18} />
-                            ) : n.kind === "tax" ? (
-                              <Calendar size={18} />
-                            ) : (
-                              <Sparkles size={18} />
-                            )}
-                          </div>
-
-                          <div className="misa-notif-card-body">
-                            <div className="misa-notif-card-header">
-                              <div className="misa-notif-code-group">
-                                <span className="misa-notif-code">{n.code}</span>
-                                <span
-                                  className="misa-notif-type-tag"
-                                  style={{
-                                    background:
-                                      n.kind === "receipt"
-                                        ? "#ecfdf5"
-                                        : n.kind === "payment"
-                                          ? "#fef2f2"
-                                          : n.kind === "bank"
-                                            ? "#eff6ff"
-                                            : "#f1f5f9",
-                                    color:
-                                      n.kind === "receipt"
-                                        ? "#059669"
-                                        : n.kind === "payment"
-                                          ? "#dc2626"
-                                          : n.kind === "bank"
-                                            ? "#0284c7"
-                                            : "#475569",
-                                  }}
-                                >
-                                  {n.kindLabel}
-                                </span>
-                              </div>
-
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                {n.amount > 0 && (
-                                  <span
-                                    className="misa-notif-amount"
-                                    style={{
-                                      color: n.kind === "payment" ? "#dc2626" : "#059669",
-                                    }}
-                                  >
-                                    {n.kind === "payment" ? "-" : "+"}
-                                    {n.amount.toLocaleString("vi-VN")} đ
-                                  </span>
-                                )}
-                                {isUnread && <span className="misa-notif-dot" />}
-                              </div>
-                            </div>
-
-                            <p className="misa-notif-desc">{n.description}</p>
-
-                            <div className="misa-notif-partner">
-                              {n.category === "pending"
-                                ? `Đối tác: ${n.partner}`
-                                : `Nguồn: ${n.partner}`}
-                            </div>
-
-                            <div className="misa-notif-card-footer">
-                              <div className="misa-notif-date">
-                                <Clock size={12} />
-                                <span>{n.date}</span>
-                              </div>
-
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                {n.category === "pending" ? (
-                                  <span className="misa-notif-status-pill">Chờ duyệt</span>
-                                ) : (
-                                  <span
-                                    className="misa-notif-status-pill"
-                                    style={{ background: "#e0f2fe", color: "#0369a1" }}
-                                  >
-                                    Hệ thống
-                                  </span>
-                                )}
-                                <span className="misa-notif-action-hint">
-                                  Xem {n.category === "pending" ? "chứng từ" : "chi tiết"} →
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                {/* 3. Bottom bar */}
-                <div className="misa-notif-bottom-bar">
-                  <span className="misa-notif-summary">
-                    {unreadCount > 0
-                      ? `Còn ${unreadCount} thông báo chưa đọc`
-                      : "Đã đọc tất cả thông báo"}
-                  </span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <button
-                      type="button"
-                      className="misa-btn-secondary"
-                      style={{ height: 30, fontSize: 12.5, padding: "0 12px", color: "#0284c7", borderColor: "#bae6fd", background: "#f0f9ff" }}
-                      onClick={() => {
-                        setPanel(null);
-                        navigate("/common");
-                      }}
-                    >
-                      Mở Trung tâm Thông báo & Việc cần xử lý →
-                    </button>
-                    <button
-                      type="button"
-                      className="misa-btn-secondary"
-                      style={{ height: 30, fontSize: 12.5, padding: "0 14px" }}
-                      onClick={() => setPanel(null)}
-                    >
-                      Đóng
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <NotificationPanel
+                items={allNotifs}
+                readIds={readNotifIds}
+                filter={notifFilter}
+                onFilter={setNotifFilter}
+                loading={notifLoading}
+                busy={notifBusy}
+                error={notifError}
+                onRetry={() => setNotifReload((value) => value + 1)}
+                onReadAll={() => { void readAllNotifications(); }}
+                onOpen={(item) => { void openNotification(item); }}
+                onViewAll={() => { setPanel(null); navigate(href("/common", { tab: "notifications" })); }}
+                onClose={() => setPanel(null)}
+              />
             ) : (
               <p>Không có dữ liệu hiển thị.</p>
             )}

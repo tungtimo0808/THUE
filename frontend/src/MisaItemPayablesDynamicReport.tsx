@@ -1,3 +1,4 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
 import ReportOutputMenu from "./ReportOutputMenu";
 import React, { useState, useMemo } from "react";
 import ReportCustomizationMenu from "./ReportCustomizationMenu";
@@ -197,8 +198,7 @@ export default function MisaItemPayablesDynamicReport({
         width: "100%",
         background: "#ffffff",
         overflow: "hidden",
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        fontFamily: "Roboto, Arial, sans-serif",
       }}
     >
       {/* 1. Header Bar */}
@@ -258,7 +258,7 @@ export default function MisaItemPayablesDynamicReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -276,7 +276,7 @@ export default function MisaItemPayablesDynamicReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu báo cáo.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -286,7 +286,7 @@ export default function MisaItemPayablesDynamicReport({
             style={{
               height: 30,
               padding: "0 16px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 12.5,
@@ -445,7 +445,7 @@ export default function MisaItemPayablesDynamicReport({
             style={{
               background: "none",
               border: "none",
-              color: "#0284c7",
+              color: "var(--brand)",
               cursor: "pointer",
               padding: 4,
             }}
@@ -950,7 +950,7 @@ export default function MisaItemPayablesDynamicReport({
                 <option value="100">100</option>
               </select>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
                 <span
                   style={{
                     display: "inline-block",
@@ -962,7 +962,7 @@ export default function MisaItemPayablesDynamicReport({
                 >
                   1
                 </span>
-                <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
+                <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
               </div>
             </div>
           </div>
@@ -1210,7 +1210,7 @@ export default function MisaItemPayablesDynamicReport({
                         filteredDrawerAccounts.every((a) => draftAccounts.includes(a.code))
                       }
                       onChange={toggleSelectAllAccounts}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả tài khoản</span>
                   </label>
@@ -1295,7 +1295,7 @@ export default function MisaItemPayablesDynamicReport({
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => toggleSelectAccount(a.code)}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td style={{ padding: "6px 10px", fontWeight: 500 }}>{a.code}</td>
@@ -1336,7 +1336,7 @@ export default function MisaItemPayablesDynamicReport({
                         filteredDrawerSuppliers.every((s) => draftSuppliers.includes(s.code))
                       }
                       onChange={toggleSelectAllSuppliers}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span>Chọn tất cả nhà cung cấp</span>
                   </label>
@@ -1417,7 +1417,7 @@ export default function MisaItemPayablesDynamicReport({
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => toggleSelectSupplier(s.code)}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td style={{ padding: "6px 10px", fontWeight: 500 }}>{s.code}</td>
@@ -1460,9 +1460,9 @@ export default function MisaItemPayablesDynamicReport({
                         <option value="20">20</option>
                       </select>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
                         <span style={{ fontWeight: 600, color: "#0075c0" }}>1</span>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
                       </div>
                     </div>
                   </div>
@@ -1485,7 +1485,7 @@ export default function MisaItemPayablesDynamicReport({
                     type="checkbox"
                     checked={draftCombineTax}
                     onChange={(e) => setDraftCombineTax(e.target.checked)}
-                    style={{ accentColor: "#00a862" }}
+                    style={{ accentColor: "var(--brand)" }}
                   />
                   <span>Cộng gộp tiền thuế của các mặt hàng khác nhau</span>
                 </label>
@@ -1543,7 +1543,7 @@ export default function MisaItemPayablesDynamicReport({
                   style={{
                     height: 32,
                     padding: "0 18px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 12.5,

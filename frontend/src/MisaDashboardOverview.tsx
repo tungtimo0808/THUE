@@ -673,7 +673,7 @@ export function MisaDashboardOverview({
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div className="sv-dashboard-filters" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#334155", whiteSpace: "nowrap" }}>
             <Calendar size={14} style={{ color: "#64748b" }} />
             <span>Kỳ:</span>
@@ -814,7 +814,7 @@ export function MisaDashboardOverview({
         className="metrics"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 230px), 1fr))",
           gap: 12,
           alignItems: "stretch",
         }}
@@ -903,7 +903,7 @@ export function MisaDashboardOverview({
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={card.subtext}>
                   {card.subtext}
                 </span>
-                <span style={{ color: "#0284c7", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>Chi tiết →</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>Chi tiết →</span>
               </div>
             </article>
           );
@@ -914,7 +914,7 @@ export function MisaDashboardOverview({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))",
           gap: 16,
           alignItems: "stretch",
         }}
@@ -947,7 +947,7 @@ export function MisaDashboardOverview({
             </div>
           </div>
 
-          <div
+          <div className="sv-dashboard-stats"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(4, 1fr)",
@@ -978,8 +978,8 @@ export function MisaDashboardOverview({
               </strong>
             </div>
             <div>
-              <span style={{ color: "#0284c7", display: "block" }}>Tồn cuối kỳ</span>
-              <strong style={{ color: "#0284c7" }}>
+              <span style={{ color: "var(--brand)", display: "block" }}>Tồn cuối kỳ</span>
+              <strong style={{ color: "var(--brand)" }}>
                 {fmtMoney(dash05.closing_cash_balance ?? dash05.closing_balance ?? 0)}
               </strong>
             </div>
@@ -987,7 +987,7 @@ export function MisaDashboardOverview({
 
           {cashFlowSeries.length > 0 ? (
             <div style={{ maxHeight: 195, overflowY: "auto" }}>
-              <table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
+              <div className="sv-dashboard-table-scroll"><table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
                 <thead>
                   <tr>
                     <th>Kỳ / Nhóm ngày</th>
@@ -1014,7 +1014,7 @@ export function MisaDashboardOverview({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           ) : (
             <div style={{ padding: 20, textAlign: "center", color: "#64748b", fontSize: 12.5 }}>
@@ -1073,7 +1073,7 @@ export function MisaDashboardOverview({
             </div>
           ))}
 
-          <div
+          <div className="sv-dashboard-stats"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(4, 1fr)",
@@ -1087,7 +1087,7 @@ export function MisaDashboardOverview({
           >
             <div>
               <span style={{ color: "#64748b", display: "block" }}>Doanh thu thuần</span>
-              <strong style={{ color: "#0284c7" }}>
+              <strong style={{ color: "var(--brand)" }}>
                 {fmtMoney(dash06.net_revenue ?? dash06.revenue_net ?? dash06.total_revenue ?? 0)}
               </strong>
             </div>
@@ -1117,7 +1117,7 @@ export function MisaDashboardOverview({
 
           {profitSeries.length > 0 ? (
             <div style={{ maxHeight: 175, overflowY: "auto" }}>
-              <table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
+              <div className="sv-dashboard-table-scroll"><table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
                 <thead>
                   <tr>
                     <th>Kỳ</th>
@@ -1132,7 +1132,7 @@ export function MisaDashboardOverview({
                     return (
                       <tr key={pt.period_key || pt.bucket_key || pt.bucket}>
                         <td>{pt.label || pt.period_key || pt.bucket_key || pt.bucket}</td>
-                        <td className="numeric" style={{ color: "#0284c7" }}>
+                        <td className="numeric" style={{ color: "var(--brand)" }}>
                           {fmtMoney(pt.net_revenue ?? pt.revenue)}
                         </td>
                         <td className="numeric" style={{ color: "#d97706" }}>
@@ -1151,7 +1151,7 @@ export function MisaDashboardOverview({
                     );
                   })}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           ) : (
             <div style={{ padding: 20, textAlign: "center", color: "#64748b", fontSize: 12.5 }}>
@@ -1193,7 +1193,7 @@ export function MisaDashboardOverview({
           </div>
 
           {dash07.aging_buckets && (
-            <div
+            <div className="sv-dashboard-stats"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(4, 1fr)",
@@ -1226,7 +1226,7 @@ export function MisaDashboardOverview({
             </div>
           )}
 
-          <table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
+          <div className="sv-dashboard-table-scroll"><table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
             <thead>
               <tr>
                 <th>Khách hàng nợ cao nhất</th>
@@ -1255,7 +1255,7 @@ export function MisaDashboardOverview({
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></div>
         </section>
 
         {/* DASH-08: Công nợ phải trả */}
@@ -1281,7 +1281,7 @@ export function MisaDashboardOverview({
           </div>
 
           {dash08.aging_buckets && (
-            <div
+            <div className="sv-dashboard-stats"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(4, 1fr)",
@@ -1314,7 +1314,7 @@ export function MisaDashboardOverview({
             </div>
           )}
 
-          <table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
+          <div className="sv-dashboard-table-scroll"><table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
             <thead>
               <tr>
                 <th>Nhà cung cấp phải trả lớn nhất</th>
@@ -1343,7 +1343,7 @@ export function MisaDashboardOverview({
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></div>
         </section>
 
         {/* DASH-09: Tổng quan tồn kho */}
@@ -1370,7 +1370,7 @@ export function MisaDashboardOverview({
             </button>
           </div>
 
-          <div
+          <div className="sv-dashboard-stats"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
@@ -1398,7 +1398,7 @@ export function MisaDashboardOverview({
             </div>
           </div>
 
-          <table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
+          <div className="sv-dashboard-table-scroll"><table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
             <thead>
               <tr>
                 <th>Vật tư / Kho cần chú ý</th>
@@ -1445,7 +1445,7 @@ export function MisaDashboardOverview({
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></div>
         </section>
 
         {/* DASH-10: Tổng quan nghĩa vụ thuế */}
@@ -1469,7 +1469,7 @@ export function MisaDashboardOverview({
             </Link>
           </div>
 
-          <div
+          <div className="sv-dashboard-stats"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
@@ -1495,7 +1495,7 @@ export function MisaDashboardOverview({
             </div>
           </div>
 
-          <table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
+          <div className="sv-dashboard-table-scroll"><table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
             <thead>
               <tr>
                 <th>Nghĩa vụ / Tờ khai thuế</th>
@@ -1521,15 +1521,15 @@ export function MisaDashboardOverview({
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></div>
         </section>
       </div>
 
       {/* NHÓM 4: ĐIỀU HÀNH – CÔNG VIỆC CẦN XỬ LÝ (DASH-11) & CHỨNG TỪ GẦN ĐÂY (DASH-12) */}
-      <div
+      <div className="sv-dashboard-work"
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1.5fr",
+          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.5fr)",
           gap: 16,
           alignItems: "stretch",
         }}
@@ -1667,7 +1667,7 @@ export function MisaDashboardOverview({
           </div>
 
           <div style={{ maxHeight: 280, overflowY: "auto" }}>
-            <table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
+            <div className="sv-dashboard-table-scroll"><table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
               <thead>
                 <tr>
                   <th>Số CT</th>
@@ -1686,7 +1686,7 @@ export function MisaDashboardOverview({
                     onClick={() => navigate(href(doc.target_url || "/ledger/transactions"))}
                   >
                     <td>
-                      <strong style={{ color: "#0284c7" }}>{doc.document_number || doc.document_no}</strong>
+                      <strong style={{ color: "var(--brand)" }}>{doc.document_number || doc.document_no}</strong>
                     </td>
                     <td>
                       <span style={{ fontSize: 11, color: "#475569" }}>
@@ -1732,7 +1732,7 @@ export function MisaDashboardOverview({
                   </tr>
                 )}
               </tbody>
-            </table>
+            </table></div>
           </div>
         </section>
       </div>
@@ -1873,7 +1873,7 @@ export function MisaDashboardOverview({
                     )}
                   </div>
 
-                  <table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
+                  <div className="sv-dashboard-table-scroll"><table className="ref-overview-table" style={{ width: "100%", fontSize: 12 }}>
                     <thead>
                       <tr>
                         <th>Số chứng từ / Mã</th>
@@ -1928,7 +1928,7 @@ export function MisaDashboardOverview({
                         </tr>
                       )}
                     </tbody>
-                  </table>
+                  </table></div>
                 </>
               ) : null}
             </div>

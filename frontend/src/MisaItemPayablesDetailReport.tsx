@@ -1,3 +1,4 @@
+import { openSavedTableReports, saveVisibleTable } from "./table-actions";
 import React, { useState } from "react";
 import {
   ChevronLeft,
@@ -164,7 +165,7 @@ export default function MisaItemPayablesDetailReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Xem danh sách báo cáo đã lưu...")}
+            onClick={openSavedTableReports}
           >
             Danh sách báo cáo đã lưu
           </button>
@@ -182,7 +183,7 @@ export default function MisaItemPayablesDetailReport({
               color: "#334155",
               cursor: "pointer",
             }}
-            onClick={() => notify?.("Đã lưu báo cáo thành công.")}
+            onClick={(event) => { try { saveVisibleTable(event.currentTarget, "Báo cáo"); notify?.("Đã lưu báo cáo trên trình duyệt này."); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không lưu được báo cáo."); } }}
           >
             Lưu báo cáo
           </button>
@@ -192,7 +193,7 @@ export default function MisaItemPayablesDetailReport({
             style={{
               height: 32,
               padding: "0 18px",
-              background: "#00a862",
+              background: "var(--brand)",
               border: "none",
               borderRadius: 4,
               fontSize: 13,
@@ -266,7 +267,7 @@ export default function MisaItemPayablesDetailReport({
               width: 22,
               height: 22,
               borderRadius: "50%",
-              background: "#0284c7",
+              background: "var(--brand)",
               border: "none",
               color: "#ffffff",
               cursor: "pointer",
@@ -332,7 +333,7 @@ export default function MisaItemPayablesDetailReport({
             flexDirection: "column",
             color: "#0f172a",
             fontSize: 12,
-            fontFamily: "'Times New Roman', Times, serif, system-ui",
+            fontFamily: "Roboto, Arial, sans-serif",
           }}
         >
           {/* Header Top Left matching Screenshot 5 */}
@@ -677,7 +678,7 @@ export default function MisaItemPayablesDetailReport({
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <button
                   type="button"
-                  style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer" }}
+                  style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer" }}
                   title="Trợ giúp"
                 >
                   <HelpCircle size={18} />
@@ -879,10 +880,10 @@ export default function MisaItemPayablesDetailReport({
                           setSelectedAccounts([]);
                         }
                       }}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span style={{ fontWeight: 600 }}>Chọn tất cả tài khoản</span>
-                    <span style={{ color: "#00a862", fontWeight: 600, marginLeft: 4 }}>
+                    <span style={{ color: "var(--brand)", fontWeight: 600, marginLeft: 4 }}>
                       {selectedAccounts.length} tài khoản được chọn
                     </span>
                   </label>
@@ -937,7 +938,7 @@ export default function MisaItemPayablesDetailReport({
                                 setSelectedAccounts([]);
                               }
                             }}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th style={{ padding: "6px 10px", textAlign: "left", width: 140, fontWeight: 600 }}>Số tài khoản</th>
@@ -969,7 +970,7 @@ export default function MisaItemPayablesDetailReport({
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => {}}
-                                style={{ accentColor: "#00a862" }}
+                                style={{ accentColor: "var(--brand)" }}
                               />
                             </td>
                             <td style={{ padding: "5px 10px", fontWeight: acc.level === 1 ? 600 : 400 }}>
@@ -1002,10 +1003,10 @@ export default function MisaItemPayablesDetailReport({
                       onChange={(e) => {
                         setSelectedSuppliers(e.target.checked ? ["NCC00001"] : []);
                       }}
-                      style={{ accentColor: "#00a862" }}
+                      style={{ accentColor: "var(--brand)" }}
                     />
                     <span style={{ fontWeight: 600 }}>Chọn tất cả nhà cung cấp</span>
-                    <span style={{ color: "#00a862", fontWeight: 600, marginLeft: 4 }}>
+                    <span style={{ color: "var(--brand)", fontWeight: 600, marginLeft: 4 }}>
                       {selectedSuppliers.length} nhà cung cấp được chọn
                     </span>
                   </label>
@@ -1049,7 +1050,7 @@ export default function MisaItemPayablesDetailReport({
                             onChange={(e) => {
                               setSelectedSuppliers(e.target.checked ? ["NCC00001"] : []);
                             }}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </th>
                         <th style={{ padding: "6px 10px", textAlign: "left", width: 130, fontWeight: 600 }}>Mã NCC</th>
@@ -1075,7 +1076,7 @@ export default function MisaItemPayablesDetailReport({
                             type="checkbox"
                             checked={selectedSuppliers.includes("NCC00001")}
                             onChange={() => {}}
-                            style={{ accentColor: "#00a862" }}
+                            style={{ accentColor: "var(--brand)" }}
                           />
                         </td>
                         <td style={{ padding: "5px 10px" }}>NCC00001</td>
@@ -1117,8 +1118,8 @@ export default function MisaItemPayablesDetailReport({
                         <option value="30">30</option>
                       </select>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>|&lt;</span>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&lt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>|&lt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&lt;</span>
                         <span
                           style={{
                             display: "inline-flex",
@@ -1128,14 +1129,14 @@ export default function MisaItemPayablesDetailReport({
                             height: 18,
                             borderRadius: 2,
                             background: "#e8f5ec",
-                            color: "#00a862",
+                            color: "var(--brand)",
                             fontWeight: 700,
                           }}
                         >
                           1
                         </span>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;</span>
-                        <span style={{ cursor: "pointer", color: "#94a3b8" }}>&gt;|</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;</span>
+                        <span style={{ cursor: "pointer", color: "#64748b" }}>&gt;|</span>
                       </div>
                     </div>
                   </div>
@@ -1158,7 +1159,7 @@ export default function MisaItemPayablesDetailReport({
                   type="checkbox"
                   checked={draftCombineTax}
                   onChange={(e) => setDraftCombineTax(e.target.checked)}
-                  style={{ accentColor: "#00a862" }}
+                  style={{ accentColor: "var(--brand)" }}
                 />
                 <span>Cộng gộp tiền thuế của các mặt hàng khác nhau</span>
               </label>
@@ -1216,7 +1217,7 @@ export default function MisaItemPayablesDetailReport({
                   style={{
                     height: 32,
                     padding: "0 20px",
-                    background: "#00a862",
+                    background: "var(--brand)",
                     border: "none",
                     borderRadius: 4,
                     fontSize: 13,

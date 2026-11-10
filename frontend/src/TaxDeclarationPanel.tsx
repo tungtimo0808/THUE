@@ -70,7 +70,7 @@ export default function TaxDeclarationPanel({ companyId, token, notify }: {
       </select>
       <button type="button" disabled={!periodId || busy} onClick={() => void run(`/api/v1/tax/declarations/${base}`,
         { company: companyId, period: periodId, form_code: "01/GTGT" }, "Đã mở hồ sơ 01/GTGT.")}
-        style={{ padding: "8px 14px", border: 0, borderRadius: 4, background: "#00a862", color: "white", cursor: "pointer" }}>
+        style={{ padding: "8px 14px", border: 0, borderRadius: 4, background: "var(--brand)", color: "white", cursor: "pointer" }}>
         Lập tờ khai 01/GTGT
       </button>
       <button type="button" onClick={() => void load()} style={{ padding: "7px 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "white" }}>Tải lại</button>
@@ -86,7 +86,7 @@ export default function TaxDeclarationPanel({ companyId, token, notify }: {
           <td>{statusLabel[row.preparation_status] || row.preparation_status}{!row.source_is_current ? " · Nguồn đã đổi" : ""}</td>
           <td>{amount(row.indicators.payable)}</td>
           <td><button type="button" onClick={() => { setSelected(row); setNotes(row.notes); setSources(null); }}
-            style={{ border: 0, background: "transparent", color: "#008a50", cursor: "pointer" }}>Xem</button></td>
+            style={{ border: 0, background: "transparent", color: "var(--brand-hover)", cursor: "pointer" }}>Xem</button></td>
         </tr>)}{!rows.length && <tr><td colSpan={6} style={{ padding: 18, textAlign: "center", color: "#64748b" }}>Chưa có hồ sơ kê khai</td></tr>}</tbody>
       </table>
     </div>

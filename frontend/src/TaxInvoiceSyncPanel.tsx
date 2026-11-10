@@ -92,7 +92,7 @@ export default function TaxInvoiceSyncPanel({
               cursor: syncing ? "not-allowed" : "pointer",
               fontWeight: 600,
               fontSize: 13,
-              background: "#0284c7",
+              background: "var(--brand)",
               color: "#fff",
               border: "none",
               boxShadow: "0 1px 2px rgba(2,132,199,0.25)",
@@ -138,7 +138,7 @@ export default function TaxInvoiceSyncPanel({
         {/* Connection status card */}
         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 14px", color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
-            <ShieldCheck size={18} color="#0284c7" />
+            <ShieldCheck size={18} color="var(--brand)" />
             Thông số kết nối Cơ quan Thuế
           </h3>
           <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
@@ -171,7 +171,7 @@ export default function TaxInvoiceSyncPanel({
         {/* Filter and sync controls */}
         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 14px", color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
-            <FileSpreadsheet size={18} color="#0284c7" />
+            <FileSpreadsheet size={18} color="var(--brand)" />
             Tùy chọn đồng bộ dữ liệu
           </h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
@@ -220,7 +220,7 @@ export default function TaxInvoiceSyncPanel({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
-                background: "#0284c7",
+                background: "var(--brand)",
                 color: "#ffffff",
                 border: "none",
                 padding: "8px 18px",
@@ -244,7 +244,7 @@ export default function TaxInvoiceSyncPanel({
       <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: 18, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
-            <Clock size={18} color="#0284c7" />
+            <Clock size={18} color="var(--brand)" />
             Nhật ký truyền nhận & Đồng bộ với Cơ quan Thuế
           </h3>
           <span style={{ fontSize: 12.5, color: "#64748b" }}>Hiển thị các phiên đồng bộ gần nhất</span>
@@ -267,7 +267,7 @@ export default function TaxInvoiceSyncPanel({
                 <td style={{ padding: "10px 12px", fontWeight: 600, color: "#1e293b" }}>{log.time}</td>
                 <td style={{ padding: "10px 12px" }}>{log.type}</td>
                 <td style={{ padding: "10px 12px", color: "#64748b" }}>{log.period}</td>
-                <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#0284c7" }}>
+                <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>
                   {log.invoicesCount} HĐ
                 </td>
                 <td style={{ padding: "10px 12px" }}>

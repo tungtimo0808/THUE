@@ -1,0 +1,374 @@
+/* Shared visual language taken from the overview workspace. */
+:root {
+  --sidebar-surface: #14243b;
+  --app-font: Roboto, Arial, sans-serif;
+  --control-radius: 6px;
+  --panel-radius: 10px;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+dialog {
+  font-family: var(--app-font);
+}
+
+.reference-app .ref-sidebar {
+  background: var(--sidebar-surface);
+}
+
+.reference-app .ref-nav-item.misa-active,
+.reference-app .ref-nav-item.active {
+  background: linear-gradient(135deg, var(--brand), var(--brand-hover)) !important;
+  box-shadow: 0 3px 10px rgb(47 120 168 / 22%) !important;
+}
+
+.reference-app .ref-quick button {
+  background: var(--brand);
+  box-shadow: 0 2px 6px rgb(47 120 168 / 20%);
+}
+
+.reference-app .ref-quick button:hover {
+  background: var(--brand-hover);
+}
+
+.admin-workspace .admin-header,
+.admin-workspace .admin-header-super {
+  background: linear-gradient(135deg, var(--brand), var(--brand-hover));
+}
+
+.misa-btn-primary {
+  gap: 6px;
+  box-shadow: 0 2px 6px rgb(47 120 168 / 18%);
+}
+
+.reference-app .ref-shortcuts button:hover {
+  background: var(--brand-soft);
+}
+
+.sv-ledger-actions > button {
+  background: var(--surface) !important;
+  border-color: var(--brand-border) !important;
+  color: var(--brand) !important;
+}
+
+.sv-ledger-actions > button:hover {
+  background: var(--brand-soft) !important;
+}
+
+.lucide {
+  flex-shrink: 0;
+  vertical-align: -0.125em;
+}
+
+.ui-inline-icon {
+  display: inline-block;
+  margin-inline-end: 4px;
+  vertical-align: -0.15em;
+}
+
+.sv-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-hover));
+  color: #fff;
+  box-shadow: 0 4px 10px -2px rgb(2 132 199 / 25%);
+}
+
+.sv-brand-mark-compact {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+.account-page {
+  background-color: var(--canvas);
+  background-image: none;
+}
+
+.account-page::before,
+.account-page::after {
+  content: none;
+}
+
+.account-page .account-card {
+  border: 1px solid var(--border);
+  border-radius: var(--panel-radius);
+  box-shadow: 0 8px 28px rgb(15 23 42 / 6%);
+}
+
+.account-page .auth-input {
+  border-radius: var(--control-radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.account-page .auth-input-wrap:has(.auth-input-suffix) .auth-input {
+  padding-right: 48px;
+}
+
+.account-page .auth-input-icon {
+  color: var(--muted);
+}
+
+.account-page .auth-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgb(2 132 199 / 12%);
+}
+
+.account-page .auth-input-wrap:focus-within .auth-input-icon {
+  color: var(--brand);
+}
+
+.account-page .auth-submit-btn {
+  border: 1px solid var(--brand);
+  border-radius: var(--control-radius);
+  background: var(--brand);
+  box-shadow: 0 2px 6px rgb(2 132 199 / 18%);
+}
+
+.account-page .auth-submit-btn:hover:not(:disabled) {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+  box-shadow: 0 3px 10px rgb(2 132 199 / 20%);
+  transform: none;
+  filter: none;
+}
+
+.account-page .auth-input-suffix {
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+}
+
+.account-page .auth-input-suffix:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.sv-auth-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 40px 24px;
+  background: var(--canvas);
+}
+
+.sv-auth-page .auth-branding {
+  margin-bottom: 28px;
+}
+
+.auth-workspace {
+  width: 100%;
+  max-width: 520px;
+}
+
+.auth-form-panel {
+  width: 100%;
+  min-width: 0;
+}
+
+.sv-auth-page .account-card {
+  max-width: none;
+  padding: 36px;
+  background: white;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--brand);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgb(36 95 134 / 6%);
+  animation: none;
+}
+
+.sv-auth-page .account-card-header {
+  margin-bottom: 28px;
+}
+
+.sv-auth-page .account-card-header h1 {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.sv-auth-page .account-card-header p {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.sv-auth-page .auth-label,
+.sv-auth-page .auth-input,
+.sv-auth-page .auth-row-meta,
+.sv-auth-page .auth-card-footer {
+  font-size: 15px;
+}
+
+.sv-auth-page .auth-input {
+  height: 50px;
+}
+
+.sv-auth-page .auth-submit-btn {
+  height: 50px;
+  font-size: 16px;
+}
+
+.auth-legal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 900px;
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .sv-auth-page {
+    padding: 28px 16px;
+  }
+
+  .sv-auth-page .account-card {
+    padding: 28px 22px;
+  }
+
+  .sv-auth-page .account-card-header h1 {
+    font-size: 25px;
+  }
+
+  .sv-auth-page .auth-card-footer {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+.modal.misa-notif-modal .misa-notif-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+.modal.misa-notif-modal[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal.misa-notif-modal .modal-header,
+.modal.misa-notif-modal .misa-notif-topbar,
+.modal.misa-notif-modal .misa-notif-bottom-bar {
+  flex-shrink: 0;
+}
+
+.modal.misa-notif-modal .misa-notif-container {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+.modal.misa-notif-modal .misa-btn-secondary {
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.modal.misa-notif-modal .misa-notif-card {
+  border-radius: 8px;
+}
+
+.modal.misa-notif-modal .misa-notif-card:hover {
+  border-color: var(--brand-border);
+  background: var(--brand-soft);
+  box-shadow: none;
+  transform: none;
+}
+
+.modal.misa-notif-modal .misa-notif-card:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.modal.misa-notif-modal .misa-notif-code-group,
+.modal.misa-notif-modal .misa-notif-card-footer {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.modal.misa-notif-modal .misa-notif-card-header {
+  align-items: flex-start;
+}
+
+.modal.misa-notif-modal .misa-notif-list {
+  min-height: 0;
+  flex: 1;
+  overscroll-behavior: contain;
+}
+
+.modal.misa-notif-modal .misa-notif-bottom-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modal.misa-notif-modal .misa-notif-center-link {
+  min-height: 32px;
+  height: auto;
+  padding: 6px 10px;
+  color: var(--brand);
+  border-color: var(--brand-border);
+  background: var(--brand-soft);
+  white-space: normal;
+  gap: 6px;
+}
+
+@media (max-width: 600px) {
+  .account-page .auth-row-meta {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .modal.misa-notif-modal .misa-notif-topbar,
+  .modal.misa-notif-modal .misa-notif-bottom-bar {
+    padding: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .modal.misa-notif-modal .misa-notif-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .modal.misa-notif-modal .misa-notif-tab {
+    flex-shrink: 0;
+    padding: 6px 8px;
+    white-space: nowrap;
+  }
+
+  .modal.misa-notif-modal .misa-notif-list {
+    padding: 12px;
+  }
+
+  .modal.misa-notif-modal .misa-notif-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .modal.misa-notif-modal .misa-notif-card-header {
+    flex-wrap: wrap;
+  }
+
+  .modal.misa-notif-modal .misa-notif-bottom-actions {
+    width: 100%;
+  }
+
+  .modal.misa-notif-modal .misa-notif-center-link {
+    flex: 1;
+  }
+}
