@@ -9818,11 +9818,25 @@ export default function MisaLedgerWorkspace({
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() =>
+                                          onClick={() => {
+                                            const regLabel =
+                                              activeRegimeCode === "TT133"
+                                                ? "TT133/2016/TT-BTC"
+                                                : activeRegimeCode === "TT200"
+                                                ? "TT200/2014/TT-BTC"
+                                                : activeRegimeCode === "TT88"
+                                                ? "TT88/2021/TT-BTC"
+                                                : "TT99/2025/TT-BTC";
+                                            const statusVn =
+                                              row.batchStatus === "FINALIZED"
+                                                ? "Đã chốt chính thức"
+                                                : row.batchStatus === "OUTDATED"
+                                                ? "Cần lập lại"
+                                                : "Đã lập";
                                             notify(
-                                              `Đang xuất/in biểu mẫu ${row.code} (${row.batchNumber} - Trạng thái: ${row.batchStatus}) theo chuẩn TT99/2025/TT-BTC`,
-                                            )
-                                          }
+                                              `Đang xuất/in biểu mẫu ${row.code} (${row.batchNumber} - Trạng thái: ${statusVn}) theo chuẩn ${regLabel}`,
+                                            );
+                                          }}
                                           title="In báo cáo"
                                           style={{
                                             padding: "4px 8px",

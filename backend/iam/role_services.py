@@ -304,8 +304,7 @@ STANDARD_ROLE_DEFINITIONS = [
         "description": "Tổng hợp số liệu, sổ cái, bút toán tổng hợp, phân bổ, kết chuyển cuối kỳ, đối chiếu và lập báo cáo.",
         "permission_prefixes": [
             "GL.", "OPENING_BALANCE_", "COST.", "RPT.", "RPT_",
-            "TAX.RECONCILIATION", "TAX.SUMMARY", "MD.ACCOUNT", "MD.EXPENSE_ITEM",
-            "MD.STATISTICAL_CODE", "COM.DASHBOARD",
+            "TAX.", "MD.", "COM.DASHBOARD",
         ],
         "excluded_suffixes": [".APPROVE", ".UNLOCK", ".LOCK_PERIOD"],
     },
@@ -423,8 +422,9 @@ STANDARD_ROLE_DEFINITIONS = [
         "group": "Operation",
         "description": "Thực hiện và xác nhận thu/chi tiền mặt thực tế, theo dõi sổ quỹ và kiểm kê tồn quỹ.",
         "permission_prefixes": [
-            "CASH.TRANSACTION.VIEW", "CASH.TRANSACTION.CONFIRM", "CASH.COUNT.",
-            "CASH.FUND.VIEW", "CASH.ADVANCE.VIEW", "RPT.MONEY.VIEW", "RPT.MONEY.PRINT", "COM.DASHBOARD",
+            "CASH.", "BANK.ACCOUNT.VIEW", "BANK.TRANSACTION.VIEW", "BANK.TRANSACTION.CONFIRM",
+            "BANK.STATEMENT.VIEW", "BANK.TRANSFER.VIEW", "BANK.RECONCILIATION.VIEW",
+            "RPT.MONEY.VIEW", "RPT.MONEY.PRINT", "RPT.CASH_FLOW.VIEW", "COM.DASHBOARD",
         ],
         "excluded_suffixes": [".POST", ".UNPOST", ".REVERSE", ".DELETE", ".APPROVE"],
     },
@@ -654,12 +654,43 @@ def seed_standard_roles_for_company(company, actor=None, preset: str | None = No
             prefixes = role_def["permission_prefixes"]
             allowed_suffixes = role_def.get("allowed_suffixes")
             excluded_suffixes = role_def.get("excluded_suffixes")
+            baseline_codes = {
+                "COM.SETTING.VIEW",
+                "COM.NOTIFICATION.VIEW",
+                "COM.SEARCH.USE",
+                "COM.DASHBOARD.VIEW",
+                "RPT.DASHBOARD.VIEW",
+                "RPT.DASHBOARD.CONFIG",
+                "SYS.COMPANY_PROFILE.VIEW",
+                "SYS.PERIOD.VIEW",
+                "SYS.POLICY.VIEW",
+                "SYS.NUMBERING.VIEW",
+                "MD.COMMON.VIEW",
+                "MD.ACCOUNT.VIEW",
+                "MD.PARTY.VIEW",
+                "MD.EMPLOYEE.VIEW",
+                "MD.ORGANIZATION.VIEW",
+                "MD.BANK_ACCOUNT.VIEW",
+                "MD.ITEM.VIEW",
+                "MD.ITEM_GROUP.VIEW",
+                "MD.UOM.VIEW",
+                "MD.WAREHOUSE.VIEW",
+                "MD.TAX_RATE.VIEW",
+                "MD.TAX_TYPE.VIEW",
+                "MD.PAYMENT_METHOD.VIEW",
+                "MD.PAYMENT_TERM.VIEW",
+                "MD.EXPENSE_ITEM.VIEW",
+                "MD.STATISTICAL_CODE.VIEW",
+            }
 
             if "*" in prefixes or is_admin:
                 matched_perms = all_perms
             else:
                 matched_perms = []
                 for p in all_perms:
+                    if p.code in baseline_codes:
+                        matched_perms.append(p)
+                        continue
                     if not any(p.code.startswith(prefix) for prefix in prefixes):
                         continue
                     if allowed_suffixes and not any(p.code.endswith(sfx) or sfx in p.code for sfx in allowed_suffixes):

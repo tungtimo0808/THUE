@@ -57,16 +57,24 @@ def is_company_admin_member(user_account, company):
         return False
     if not getattr(getattr(user_account, "auth_user", None), "is_active", False):
         return False
-    if not CompanyMembership.objects.filter(
+    has_membership = CompanyMembership.objects.filter(
         user=user_account,
         company=company,
         membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
-    ).exists():
-        return False
+    ).exists()
+    if not has_membership:
+        if getattr(user_account.auth_user, "is_superuser", False):
+            CompanyMembership.objects.get_or_create(
+                user=user_account,
+                company=company,
+                defaults={"membership_status": ActiveStatus.ACTIVE, "created_by": user_account},
+            )
+        else:
+            return False
     if str(getattr(company, "created_by_user_id", "") or "") == str(user_account.id):
         return True
     now = timezone.now()
-    return UserRoleAssignment.objects.filter(
+    assignments = UserRoleAssignment.objects.filter(
         company_membership__user=user_account,
         company_membership__company=company,
         role__status=RoleStatus.ACTIVE,
@@ -74,9 +82,14 @@ def is_company_admin_member(user_account, company):
         valid_from__lte=now,
     ).filter(
         Q(valid_to__isnull=True) | Q(valid_to__gte=now)
-    ).filter(
+    )
+    if assignments.filter(
         Q(role__is_system_admin=True) | Q(role__code__in=("COMPANY_ADMIN", "ROLE_ADMIN"))
-    ).exists()
+    ).exists():
+        return True
+    if getattr(user_account.auth_user, "is_superuser", False) and not assignments.exists():
+        return True
+    return False
 
 
 
@@ -184,6 +197,8 @@ def memberships_in_scope(user_account, company, permission_code):
     from .models import CompanyMembership
 
     queryset = CompanyMembership.objects.filter(company=company)
+    if is_company_admin_member(user_account, company):
+        return queryset
     permitted = [
         assignment for assignment in effective_assignments(user_account, company)
         if permission_code in assignment_permission_codes(assignment)
@@ -206,13 +221,15 @@ def has_effective_permission(
     warehouse_id=None, bank_account_id=None, project_id=None, cost_center_id=None,
 ):
     from .models import Permission
-    if not CompanyMembership.objects.filter(
-        user=user_account, company=company, membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
-    ).exists() or not user_account.auth_user.is_active:
+    if not user_account or not getattr(getattr(user_account, "auth_user", None), "is_active", False):
         return False
     permission = Permission.objects.select_related("resource", "action").filter(code=permission_code).first()
     if is_company_admin_member(user_account, company) and (not permission or _permission_enabled(company, permission)):
         return True
+    if not CompanyMembership.objects.filter(
+        user=user_account, company=company, membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
+    ).exists():
+        return False
     if not permission or not _permission_enabled(company, permission):
         if permission_code in ("SYS.USER.LOCK", "SYS.USER.UNLOCK", "SYS.USER.TERMINATE", "SYS.MEMBERSHIP.TERMINATE"):
             return has_effective_permission(

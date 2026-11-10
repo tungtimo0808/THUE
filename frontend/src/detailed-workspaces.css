@@ -2,13 +2,24 @@
   padding: 22px 24px 40px;
   min-height: calc(100vh - 88px);
   background: #f8fafc;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 .erp3-page-header {
   display: flex;
   justify-content: space-between;
-  gap: 24px;
+  gap: 16px;
   align-items: flex-start;
   margin-bottom: 18px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.erp3-page-header > div:first-child {
+  flex: 1 1 320px;
+  min-width: 0;
 }
 .erp3-page-header h2 {
   font-size: 24px !important;
@@ -32,6 +43,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 .erp3-workspace button {
   display: inline-flex;

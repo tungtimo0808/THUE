@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import "./misa-payment-workflow.css";
 
@@ -11,6 +11,11 @@ export default function MisaPaymentWorkflow({
   notify?: (text: string) => void;
 }) {
   const [view, setView] = useState<"list" | "workflow">("list");
+  useEffect(() => {
+    const onOpenNotif = () => setView("list");
+    window.addEventListener("sv_open_voucher_notif", onOpenNotif);
+    return () => window.removeEventListener("sv_open_voucher_notif", onOpenNotif);
+  }, []);
   const settlement = variant === "settlement";
   const subject = settlement ? "đề nghị quyết toán tạm ứng" : "đề nghị chi tiền";
   return (

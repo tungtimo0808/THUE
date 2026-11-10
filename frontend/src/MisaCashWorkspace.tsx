@@ -7323,14 +7323,72 @@ export function PaymentRequestsTab({
   const [editingDoc, setEditingDoc] = useState<PaymentRequestDoc | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"view" | "edit">("view");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dismissedOpenDocRef = useRef<string | null>(null);
+
+  const clearOpenDocParam = () => {
+    const cur = searchParams.get("openDoc");
+    if (cur) {
+      dismissedOpenDocRef.current = cur;
+      const next = new URLSearchParams(searchParams);
+      next.delete("openDoc");
+      setSearchParams(next, { replace: true });
+    }
+  };
+
+  useEffect(() => {
+    const openDocParam = searchParams.get("openDoc");
+    if (!openDocParam || requests.length === 0) return;
+    if (dismissedOpenDocRef.current === openDocParam) return;
+    const matched =
+      requests.find(
+        (r) =>
+          r.code.toLowerCase() === openDocParam.toLowerCase() ||
+          r.id.toLowerCase() === openDocParam.toLowerCase(),
+      ) ||
+      requests.find((r) => r.status === "pending") ||
+      requests[0];
+    if (matched) {
+      setEditingDoc({ ...matched });
+      setModalMode("view");
+      setIsModalOpen(true);
+    }
+  }, [searchParams, requests]);
+
+  useEffect(() => {
+    const handleOpenNotif = (ev: Event) => {
+      const detail = (ev as CustomEvent)?.detail || {};
+      if (detail.notifTarget && detail.notifTarget !== "payment-requests") return;
+      dismissedOpenDocRef.current = null;
+      const targetKey = String(detail.openDoc || detail.code || "pending").toLowerCase();
+      const matched =
+        requests.find(
+          (r) =>
+            r.code.toLowerCase() === targetKey ||
+            r.id.toLowerCase() === targetKey ||
+            targetKey.includes(r.code.toLowerCase()),
+        ) ||
+        requests.find((r) => r.status === "pending") ||
+        requests[0];
+      if (matched) {
+        setEditingDoc({ ...matched });
+        setModalMode("view");
+        setIsModalOpen(true);
+      }
+    };
+    window.addEventListener("sv_open_voucher_notif", handleOpenNotif);
+    return () => window.removeEventListener("sv_open_voucher_notif", handleOpenNotif);
+  }, [requests]);
 
   const effectiveCompanyId = useMemo(() => {
+    const urlComp = searchParams.get("company");
+    if (urlComp) return urlComp;
     try {
       return localStorage.getItem("ref_company_id") || sessionCompanyId || "";
     } catch {
       return sessionCompanyId || "";
     }
-  }, [sessionCompanyId]);
+  }, [searchParams, sessionCompanyId]);
 
   useEffect(() => {
     const onCtxChange = () => setBranchScope(resolveActiveBranchScope());
@@ -7363,15 +7421,32 @@ export function PaymentRequestsTab({
     };
   }, [token, effectiveCompanyId, branchScope]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem("sv_pr_docs_sync", JSON.stringify(requests));
+      window.dispatchEvent(new CustomEvent("sv_vouchers_updated", { detail: { type: "pr", docs: requests } }));
+    } catch {}
+  }, [requests]);
+
   const persistDoc = async (doc: PaymentRequestDoc, successMsg: string) => {
+    clearOpenDocParam();
+    try {
+      const rawMap = localStorage.getItem("sv_voucher_status_overrides");
+      const map = rawMap ? JSON.parse(rawMap) : {};
+      map[doc.code] = {
+        status: doc.status,
+        voucherCode: doc.voucherCode || "",
+        revertedUnread: doc.status === "pending",
+      };
+      localStorage.setItem("sv_voucher_status_overrides", JSON.stringify(map));
+    } catch {}
     setRequests((prev) => {
-      const idx = prev.findIndex((item) => item.id === doc.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = doc;
-        return next;
-      }
-      return [doc, ...prev];
+      const idx = prev.findIndex((item) => item.id === doc.id || item.code === doc.code);
+      const next = idx >= 0 ? prev.map((item, i) => (i === idx ? doc : item)) : [doc, ...prev];
+      try {
+        localStorage.setItem("sv_pr_docs_sync", JSON.stringify(next));
+      } catch {}
+      return next;
     });
     if (token && effectiveCompanyId) {
       const branchParam = branchScope && branchScope !== "all" ? `&branch_id=${encodeURIComponent(branchScope)}` : "";
@@ -7389,6 +7464,7 @@ export function PaymentRequestsTab({
         }
       } catch {}
     }
+    window.dispatchEvent(new CustomEvent("sv_vouchers_updated", { detail: { type: "pr", doc } }));
     notify(successMsg);
   };
 
@@ -7690,7 +7766,10 @@ export function PaymentRequestsTab({
               </div>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  clearOpenDocParam();
+                  setIsModalOpen(false);
+                }}
                 style={{ border: "none", background: "transparent", cursor: "pointer", color: "#64748b" }}
               >
                 <X size={18} />
@@ -7885,16 +7964,32 @@ export function PaymentRequestsTab({
             )}
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
-              <div>
+              <div style={{ display: "flex", gap: 8 }}>
                 {modalMode === "view" && (
-                  <button
-                    type="button"
-                    className="misa-btn-secondary"
-                    style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0284c7", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
-                    onClick={() => setModalMode("edit")}
-                  >
-                    ✎ Chỉnh sửa thông tin
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="misa-btn-secondary"
+                      style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0284c7", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => setModalMode("edit")}
+                    >
+                      ✎ Chỉnh sửa thông tin
+                    </button>
+                    {(editingDoc.status === "approved" || editingDoc.status === "rejected") && (
+                      <button
+                        type="button"
+                        className="misa-btn-secondary"
+                        style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a", borderRadius: 6, cursor: "pointer" }}
+                        onClick={() => {
+                          const updated = { ...editingDoc, status: "pending" as const, voucherCode: "" };
+                          setEditingDoc(updated);
+                          void persistDoc(updated, `↺ Đã chuyển đề nghị chi ${editingDoc.code} về trạng thái Chờ duyệt`);
+                        }}
+                      >
+                        ↺ Chuyển về Chờ duyệt
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
               <div style={{ display: "flex", gap: 10 }}>
@@ -7902,7 +7997,10 @@ export function PaymentRequestsTab({
                   type="button"
                   className="misa-btn-secondary"
                   style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    clearOpenDocParam();
+                    setIsModalOpen(false);
+                  }}
                 >
                   Đóng
                 </button>
@@ -7934,17 +8032,30 @@ export function PaymentRequestsTab({
                 ) : (
                   <>
                     {editingDoc.status === "pending" && (
-                      <button
-                        type="button"
-                        className="misa-btn-primary"
-                        style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#0284c7", color: "#ffffff", border: "1px solid #0284c7", borderRadius: 6, cursor: "pointer" }}
-                        onClick={() => {
-                          void persistDoc({ ...editingDoc, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${editingDoc.code}`);
-                          setIsModalOpen(false);
-                        }}
-                      >
-                        Phê duyệt đề nghị
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          className="misa-btn-secondary"
+                          style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#fef2f2", color: "#dc2626", border: "1px solid #fca5a5", borderRadius: 6, cursor: "pointer" }}
+                          onClick={() => {
+                            void persistDoc({ ...editingDoc, status: "rejected" }, `Đã từ chối đề nghị chi ${editingDoc.code}`);
+                            setIsModalOpen(false);
+                          }}
+                        >
+                          Từ chối
+                        </button>
+                        <button
+                          type="button"
+                          className="misa-btn-primary"
+                          style={{ padding: "7px 16px", fontSize: 12.5, fontWeight: 600, background: "#0284c7", color: "#ffffff", border: "1px solid #0284c7", borderRadius: 6, cursor: "pointer" }}
+                          onClick={() => {
+                            void persistDoc({ ...editingDoc, status: "approved" }, `✓ Đã phê duyệt đề nghị chi ${editingDoc.code}`);
+                            setIsModalOpen(false);
+                          }}
+                        >
+                          Phê duyệt đề nghị
+                        </button>
+                      </>
                     )}
                     {editingDoc.status === "approved" && (
                       <button
@@ -8048,14 +8159,72 @@ export function AdvanceSettlementTab({
   const [editingDoc, setEditingDoc] = useState<AdvanceSettlementDoc | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"view" | "edit">("view");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dismissedOpenDocRef = useRef<string | null>(null);
+
+  const clearOpenDocParam = () => {
+    const cur = searchParams.get("openDoc");
+    if (cur) {
+      dismissedOpenDocRef.current = cur;
+      const next = new URLSearchParams(searchParams);
+      next.delete("openDoc");
+      setSearchParams(next, { replace: true });
+    }
+  };
+
+  useEffect(() => {
+    const openDocParam = searchParams.get("openDoc");
+    if (!openDocParam || settlements.length === 0) return;
+    if (dismissedOpenDocRef.current === openDocParam) return;
+    const matched =
+      settlements.find(
+        (s) =>
+          s.code.toLowerCase() === openDocParam.toLowerCase() ||
+          s.id.toLowerCase() === openDocParam.toLowerCase(),
+      ) ||
+      settlements.find((s) => s.status === "pending") ||
+      settlements[0];
+    if (matched) {
+      setEditingDoc({ ...matched });
+      setModalMode("view");
+      setIsModalOpen(true);
+    }
+  }, [searchParams, settlements]);
+
+  useEffect(() => {
+    const handleOpenNotif = (ev: Event) => {
+      const detail = (ev as CustomEvent)?.detail || {};
+      if (detail.notifTarget && detail.notifTarget !== "advance-settlement") return;
+      dismissedOpenDocRef.current = null;
+      const targetKey = String(detail.openDoc || detail.code || "pending").toLowerCase();
+      const matched =
+        settlements.find(
+          (s) =>
+            s.code.toLowerCase() === targetKey ||
+            s.id.toLowerCase() === targetKey ||
+            targetKey.includes(s.code.toLowerCase()),
+        ) ||
+        settlements.find((s) => s.status === "pending") ||
+        settlements[0];
+      if (matched) {
+        setEditingDoc({ ...matched });
+        setModalMode("view");
+        setIsModalOpen(true);
+      }
+    };
+    window.addEventListener("sv_open_voucher_notif", handleOpenNotif);
+    return () => window.removeEventListener("sv_open_voucher_notif", handleOpenNotif);
+  }, [settlements]);
 
   const effectiveCompanyId = useMemo(() => {
+    const urlComp = searchParams.get("company");
+    if (urlComp) return urlComp;
     try {
       return localStorage.getItem("ref_company_id") || sessionCompanyId || "";
     } catch {
       return sessionCompanyId || "";
     }
-  }, [sessionCompanyId]);
+  }, [searchParams, sessionCompanyId]);
 
   useEffect(() => {
     const onCtxChange = () => setBranchScope(resolveActiveBranchScope());
@@ -8088,17 +8257,34 @@ export function AdvanceSettlementTab({
     };
   }, [token, effectiveCompanyId, branchScope]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem("sv_as_docs_sync", JSON.stringify(settlements));
+      window.dispatchEvent(new CustomEvent("sv_vouchers_updated", { detail: { type: "as", docs: settlements } }));
+    } catch {}
+  }, [settlements]);
+
   const persistSettlement = async (doc: AdvanceSettlementDoc, successMsg: string) => {
+    clearOpenDocParam();
     const computedRefund = Math.max(0, (Number(doc.advanceAmount) || 0) - (Number(doc.spentAmount) || 0));
     const normalized: AdvanceSettlementDoc = { ...doc, refundAmount: computedRefund };
+    try {
+      const rawMap = localStorage.getItem("sv_voucher_status_overrides");
+      const map = rawMap ? JSON.parse(rawMap) : {};
+      map[normalized.code] = {
+        status: normalized.status,
+        receiptCode: normalized.receiptCode || "",
+        revertedUnread: normalized.status === "pending",
+      };
+      localStorage.setItem("sv_voucher_status_overrides", JSON.stringify(map));
+    } catch {}
     setSettlements((prev) => {
-      const idx = prev.findIndex((item) => item.id === normalized.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = normalized;
-        return next;
-      }
-      return [normalized, ...prev];
+      const idx = prev.findIndex((item) => item.id === normalized.id || item.code === normalized.code);
+      const next = idx >= 0 ? prev.map((item, i) => (i === idx ? normalized : item)) : [normalized, ...prev];
+      try {
+        localStorage.setItem("sv_as_docs_sync", JSON.stringify(next));
+      } catch {}
+      return next;
     });
     if (token && effectiveCompanyId) {
       const branchParam = branchScope && branchScope !== "all" ? `&branch_id=${encodeURIComponent(branchScope)}` : "";
@@ -8116,6 +8302,7 @@ export function AdvanceSettlementTab({
         }
       } catch {}
     }
+    window.dispatchEvent(new CustomEvent("sv_vouchers_updated", { detail: { type: "as", doc: normalized } }));
     notify(successMsg);
   };
 
@@ -8357,7 +8544,10 @@ export function AdvanceSettlementTab({
               </div>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  clearOpenDocParam();
+                  setIsModalOpen(false);
+                }}
                 style={{ border: "none", background: "transparent", cursor: "pointer", color: "#64748b" }}
               >
                 <X size={18} />
@@ -8518,16 +8708,32 @@ export function AdvanceSettlementTab({
             )}
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
-              <div>
+              <div style={{ display: "flex", gap: 8 }}>
                 {modalMode === "view" && (
-                  <button
-                    type="button"
-                    className="misa-btn-secondary"
-                    style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0284c7", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
-                    onClick={() => setModalMode("edit")}
-                  >
-                    ✎ Chỉnh sửa bảng quyết toán
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="misa-btn-secondary"
+                      style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#0284c7", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}
+                      onClick={() => setModalMode("edit")}
+                    >
+                      ✎ Chỉnh sửa bảng quyết toán
+                    </button>
+                    {editingDoc.status === "settled" && (
+                      <button
+                        type="button"
+                        className="misa-btn-secondary"
+                        style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a", borderRadius: 6, cursor: "pointer" }}
+                        onClick={() => {
+                          const updated = { ...editingDoc, status: "pending" as const, receiptCode: "" };
+                          setEditingDoc(updated);
+                          void persistSettlement(updated, `↺ Đã chuyển quyết toán ${editingDoc.code} về trạng thái Chờ duyệt`);
+                        }}
+                      >
+                        ↺ Chuyển về Chờ duyệt
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
               <div style={{ display: "flex", gap: 10 }}>
@@ -8535,7 +8741,10 @@ export function AdvanceSettlementTab({
                   type="button"
                   className="misa-btn-secondary"
                   style={{ padding: "7px 14px", fontSize: 12.5, fontWeight: 600, background: "#ffffff", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer" }}
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    clearOpenDocParam();
+                    setIsModalOpen(false);
+                  }}
                 >
                   Đóng
                 </button>
@@ -11459,7 +11668,7 @@ export default function MisaCashWorkspace({
   // --------------------------------------------------------------------
   // RENDER TAB: "Đề nghị quyết toán tạm ứng"
   // --------------------------------------------------------------------
-  if (tab === "advance-settlement") {
+  if (tab === "advance-settlement" || tab === "advance-settlement-request") {
     return (
       <><MisaPaymentWorkflow variant="settlement" notify={notify}><AdvanceSettlementTab
         notify={notify}

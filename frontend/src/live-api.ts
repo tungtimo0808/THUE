@@ -250,7 +250,7 @@ export async function request<T>(path: string, token?: string, options?: Request
       }
       const isSilentCheck =
         path.includes("/duplicates/") ||
-        (isGet && (path.includes("/notifications") || path.includes("/work-items")));
+        (isGet && (path.includes("/notifications") || path.includes("/work-items") || path.includes("/common/settings")));
       if (!isSilentCheck) {
         showGlobalPopup({
           type: "error",
@@ -261,6 +261,7 @@ export async function request<T>(path: string, token?: string, options?: Request
       throw new ApiError(detail, response.status);
     }
     if (!isGet) {
+      clearLiveApiGetCache();
       const isSilentMutation =
         path.startsWith("/api/token/") ||
         path.includes("/auth/login/") ||
@@ -268,6 +269,10 @@ export async function request<T>(path: string, token?: string, options?: Request
         path.includes("/iam/platform/login/") ||
         path.includes("/companies/switch/") ||
         path.includes("/scopes/switch/") ||
+        path.includes("/notifications/") ||
+        path.includes("/work-items/") ||
+        path.includes("/cash/payment-requests/") ||
+        path.includes("/cash/advance-settlement-docs/") ||
         path.includes("/duplicates/") ||
         path.includes("/preview") ||
         path.includes("/validate") ||
@@ -278,8 +283,10 @@ export async function request<T>(path: string, token?: string, options?: Request
         path.includes("/reports/export/") ||
         path.includes("/reports/drilldown/");
       if (!isSilentMutation) {
+        const isEntityRecord =
+          body && typeof body === "object" && ("source_module" in (body as any) || "entity_type" in (body as any));
         const serverMsg =
-          body && typeof body === "object" && typeof (body as any).message === "string"
+          !isEntityRecord && body && typeof body === "object" && typeof (body as any).message === "string"
             ? (body as any).message
             : "";
         const defaultActionMsg =
@@ -317,7 +324,7 @@ export async function request<T>(path: string, token?: string, options?: Request
     inFlightRequests.set(dedupeKey, exec);
     exec.finally(() => {
       inFlightRequests.delete(dedupeKey);
-    });
+    }).catch(() => {});
   }
 
   return exec;

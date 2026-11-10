@@ -330,12 +330,87 @@ export default function SuperAdminWorkspace() {
         method: "POST",
         body: JSON.stringify({ status: newStatus }),
       });
-      setAlertMsg({ type: "success", text: res.message || `Đã chuyển trạng thái doanh nghiệp thành ${newStatus}.` });
+      const statusVn =
+        newStatus === "ACTIVE"
+          ? "Đang hoạt động"
+          : newStatus === "SUSPENDED"
+          ? "Tạm khóa"
+          : newStatus === "PENDING_SETUP"
+          ? "Chờ thiết lập"
+          : "Ngừng hoạt động";
+      setAlertMsg({ type: "success", text: res.message || `Đã chuyển trạng thái doanh nghiệp sang '${statusVn}'.` });
       loadCompanies();
       loadPlatformStats();
     } catch (err: any) {
       setAlertMsg({ type: "error", text: err.message || "Không thể đổi trạng thái doanh nghiệp." });
     }
+  };
+
+  const enterCompanyAsSuperAdmin = (targetCompanyId: string, destination: "/" | "/admin") => {
+    const t = resolveToken();
+    if (t) {
+      const mappedCompanies = companies.map((c) => ({
+        id: c.id,
+        code: c.code,
+        name: c.name,
+        tax_code: c.tax_code,
+        status: c.status,
+        accounting_regime: c.accounting_regime || "TT99",
+        legal_representative: c.legal_representative || "",
+        is_company_admin: true,
+        is_platform_admin: true,
+        role_codes: ["ROLE_ADMIN"],
+        role_names: ["Quản trị doanh nghiệp"],
+      }));
+      const activeComp = mappedCompanies.find((c) => c.id === targetCompanyId) || mappedCompanies[0] || null;
+      const sessionObj = {
+        token: t,
+        access: t,
+        access_token: t,
+        refresh: "",
+        companyId: targetCompanyId,
+        companies: mappedCompanies,
+        company: activeComp,
+        user: {
+          username: "admin",
+          email: "admin@soviet.vn",
+          display_name: "Super Admin Hệ Thống",
+          is_superuser: true,
+        },
+      };
+      try {
+        localStorage.setItem("erp_token", t);
+        localStorage.setItem("erp_company_id", targetCompanyId);
+        localStorage.setItem("erp_api_session", JSON.stringify(sessionObj));
+        window.dispatchEvent(new CustomEvent("erp_api_token_changed", { detail: sessionObj }));
+      } catch {}
+    }
+    if (selectCompany) selectCompany(targetCompanyId);
+    navigate(destination);
+  };
+
+  const formatAuditActionLabel = (action: string) => {
+    const map: Record<string, string> = {
+      COMPANY_SETUP_COMPLETE: "Hoàn tất thiết lập doanh nghiệp",
+      COMPANY_STATUS_CHANGE: "Thay đổi trạng thái doanh nghiệp",
+      CREATE_COMPANY: "Khởi tạo doanh nghiệp mới",
+      SCOPE_SWITCH: "Chuyển đổi phạm vi làm việc",
+      USER_MEMBERSHIP_UPDATE: "Cập nhật hồ sơ thành viên",
+      ROLE_CREATE: "Tạo vai trò mới",
+      ROLE_EDIT: "Cập nhật vai trò",
+      ROLE_CLONE: "Sao chép vai trò",
+      ROLE_ASSIGN: "Phân công vai trò",
+      ROLE_REVOKE: "Thu hồi vai trò",
+      APPROVED: "Phê duyệt yêu cầu gia nhập",
+      REJECTED: "Từ chối yêu cầu gia nhập",
+      JOIN_REQUEST_EXPIRED: "Yêu cầu gia nhập hết hạn",
+      LOGIN: "Đăng nhập hệ thống",
+      LOGOUT: "Đăng xuất hệ thống",
+      CREATE: "Tạo mới dữ liệu",
+      UPDATE: "Cập nhật dữ liệu",
+      DELETE: "Xóa dữ liệu",
+    };
+    return map[String(action || "").toUpperCase()] || action;
   };
 
   // Assign Company Admin / Owner
@@ -1037,7 +1112,7 @@ export default function SuperAdminWorkspace() {
                         }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <strong>{log.action}</strong>
+                          <strong>{formatAuditActionLabel(log.action)}</strong>
                           <span style={{ color: "var(--admin-text-muted)", fontSize: "12px" }}>
                             {new Date(log.occurred_at).toLocaleTimeString("vi-VN")}
                           </span>
@@ -1143,20 +1218,14 @@ export default function SuperAdminWorkspace() {
                           <div style={{ display: "inline-flex", gap: "0.4rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
                             <button
                               className="admin-btn admin-btn-primary admin-btn-sm"
-                              onClick={() => {
-                                if (selectCompany) selectCompany(c.id);
-                                navigate("/");
-                              }}
+                              onClick={() => enterCompanyAsSuperAdmin(c.id, "/")}
                               title="Vào không gian làm việc kế toán của doanh nghiệp này"
                             >
                               <ExternalLink size={13} /> Vào Workspace
                             </button>
                             <button
                               className="admin-btn admin-btn-secondary admin-btn-sm"
-                              onClick={() => {
-                                if (selectCompany) selectCompany(c.id);
-                                navigate("/admin");
-                              }}
+                              onClick={() => enterCompanyAsSuperAdmin(c.id, "/admin")}
                               title="Quản trị phân quyền doanh nghiệp này"
                             >
                               <ShieldCheck size={13} /> Quản trị
@@ -1431,20 +1500,14 @@ export default function SuperAdminWorkspace() {
                               <button
                                 type="button"
                                 className="admin-btn admin-btn-secondary admin-btn-sm"
-                                onClick={() => {
-                                  if (selectCompany) selectCompany(comp.id);
-                                  navigate("/admin");
-                                }}
+                                onClick={() => enterCompanyAsSuperAdmin(comp.id, "/admin")}
                               >
                                 Quản trị DN
                               </button>
                               <button
                                 type="button"
                                 className="admin-btn admin-btn-secondary admin-btn-sm"
-                                onClick={() => {
-                                  if (selectCompany) selectCompany(comp.id);
-                                  navigate("/");
-                                }}
+                                onClick={() => enterCompanyAsSuperAdmin(comp.id, "/")}
                               >
                                 Mở Sổ kế toán
                               </button>
@@ -1712,7 +1775,7 @@ export default function SuperAdminWorkspace() {
                         <td>{log.company_name}</td>
                         <td><code>{log.module}</code></td>
                         <td>
-                          <span className="admin-badge admin-badge-active">{log.action}</span>
+                          <span className="admin-badge admin-badge-active">{formatAuditActionLabel(log.action)}</span>
                         </td>
                       </tr>
                     ))}

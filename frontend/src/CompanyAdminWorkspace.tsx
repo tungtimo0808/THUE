@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Building2,
   Users,
@@ -945,8 +945,20 @@ const formatRoleScopeSummary = (role: RoleItem): string => {
 
 export default function CompanyAdminWorkspace() {
   const { token, companyId, companies, selectCompany, restoring } = useApiSession();
+  const [searchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    const t = searchParams.get("tab");
+    if (t === "overview" || t === "personnel" || t === "roles" || t === "config") return t;
+    return "overview";
+  });
+
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t === "overview" || t === "personnel" || t === "roles" || t === "config") {
+      setActiveTab(t);
+    }
+  }, [searchParams]);
   const [_loading, setLoading] = useState<boolean>(false);
   const [alertMsg, setRawAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const setAlertMsg = (val: { type: "success" | "error"; text: string } | null) => {
@@ -1106,8 +1118,24 @@ export default function CompanyAdminWorkspace() {
           tax_code: activeComp.tax_code || "",
           status: activeComp.status || "ACTIVE",
           legal_representative: activeComp.legal_representative || "",
+          representative_title: (activeComp as any).representative_title || "",
+          address: activeComp.address || "",
           accounting_regime: activeComp.accounting_regime || "TT99",
         });
+        const compAny = activeComp as any;
+        if (Array.isArray(compAny.ui_enabled_modules) && compAny.ui_enabled_modules.length > 0) {
+          setEnabledErpModules(compAny.ui_enabled_modules);
+          try {
+            localStorage.setItem(`sv_enabled_modules_${effectiveCompanyId}`, JSON.stringify(compAny.ui_enabled_modules));
+          } catch {}
+        }
+        if (compAny.ui_role_modules && typeof compAny.ui_role_modules === "object") {
+          try {
+            const key = `sv_role_modules_${effectiveCompanyId}`;
+            const existing = JSON.parse(localStorage.getItem(key) || "{}");
+            localStorage.setItem(key, JSON.stringify({ ...compAny.ui_role_modules, ...existing }));
+          } catch {}
+        }
       }
 
       // Load essential personnel & org data
@@ -1328,6 +1356,10 @@ export default function CompanyAdminWorkspace() {
         existing[selectedRole.code] = Array.from(derivedModules);
         localStorage.setItem(key, JSON.stringify(existing));
         window.dispatchEvent(new Event("sv_rbac_updated"));
+        void request(`/api/v1/common/settings/?company_id=${encodeURIComponent(companyId)}`, token, {
+          method: "PATCH",
+          body: JSON.stringify({ configuration: { ui_role_modules: existing } }),
+        }).catch(() => {});
       } catch {}
 
       setAlertMsg({
@@ -1400,6 +1432,16 @@ export default function CompanyAdminWorkspace() {
     } catch {}
   }, [companyId]);
 
+  const persistEnabledModulesToBackend = (mods: string[]) => {
+    const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || "";
+    const effectiveToken = token || localStorage.getItem("erp_token") || "";
+    if (!effectiveCompanyId || !effectiveToken) return;
+    void request(`/api/v1/common/settings/?company_id=${encodeURIComponent(effectiveCompanyId)}`, effectiveToken, {
+      method: "PATCH",
+      body: JSON.stringify({ configuration: { ui_enabled_modules: mods } }),
+    }).catch(() => {});
+  };
+
   const toggleErpModule = (modId: string, isCore?: boolean) => {
     if (isCore) {
       setAlertMsg({ type: "success", text: "Phân hệ cốt lõi (Tổng quan, Tiền mặt, Ngân hàng, Tổng hợp, Báo cáo) luôn được duy trì bật để đảm bảo tính toàn vẹn sổ sách." });
@@ -1411,6 +1453,7 @@ export default function CompanyAdminWorkspace() {
         const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || "";
         localStorage.setItem(`sv_enabled_modules_${effectiveCompanyId}`, JSON.stringify(next));
         window.dispatchEvent(new Event("sv_modules_updated"));
+        persistEnabledModulesToBackend(next);
       } catch {}
       return next;
     });
@@ -1440,6 +1483,7 @@ export default function CompanyAdminWorkspace() {
       const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || "";
       localStorage.setItem(`sv_enabled_modules_${effectiveCompanyId}`, JSON.stringify(next));
       window.dispatchEvent(new Event("sv_modules_updated"));
+      persistEnabledModulesToBackend(next);
     } catch {}
     setAlertMsg({
       type: "success",
@@ -1687,6 +1731,8 @@ export default function CompanyAdminWorkspace() {
       if (decidingJoinReq.decision === "APPROVED") {
         if (decidingJoinReq.roleId) {
           payload.role_assignments = [{ role: decidingJoinReq.roleId }];
+        } else {
+          payload.role_code = "ROLE_GENERAL_ACCOUNTANT";
         }
         payload.reactivate_membership = decidingJoinReq.reactivate;
       }
@@ -1873,7 +1919,16 @@ export default function CompanyAdminWorkspace() {
                 </div>
               )}
               <span className="admin-badge admin-badge-active">
-                <CheckCircle2 size={12} /> {companyInfo?.status === "ACTIVE" || !companyInfo?.status ? "Hoạt động" : companyInfo?.status}
+                <CheckCircle2 size={12} />{" "}
+                {companyInfo?.status === "ACTIVE" || !companyInfo?.status
+                  ? "Hoạt động"
+                  : companyInfo?.status === "PENDING_SETUP"
+                  ? "Chờ thiết lập"
+                  : companyInfo?.status === "SUSPENDED"
+                  ? "Tạm khóa"
+                  : companyInfo?.status === "INACTIVE"
+                  ? "Ngừng hoạt động"
+                  : companyInfo?.status}
               </span>
             </div>
             <div className="admin-header-subtitle">
@@ -2012,7 +2067,7 @@ export default function CompanyAdminWorkspace() {
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Mã doanh nghiệp / MST</td>
                         <td>
-                          <strong>{companyInfo?.code || "TUNG_TIMO"}</strong> · MST: <strong>{companyInfo?.tax_code || "Chưa đăng ký"}</strong>
+                          <strong>{companyInfo?.code || "—"}</strong> · MST: <strong>{companyInfo?.tax_code || "Chưa đăng ký"}</strong>
                         </td>
                       </tr>
                       <tr>
@@ -2025,7 +2080,7 @@ export default function CompanyAdminWorkspace() {
                       </tr>
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Địa chỉ trụ sở</td>
-                        <td>{companyInfo?.address || "198 Trần Quang Khải, P. Hoàn Kiếm, Hà Nội"}</td>
+                        <td>{companyInfo?.address || "Chưa cập nhật địa chỉ trụ sở"}</td>
                       </tr>
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)", borderBottom: "none" }}>Trạng thái vận hành</td>
@@ -2435,7 +2490,13 @@ export default function CompanyAdminWorkspace() {
                               </div>
                             </td>
                             <td>
-                              <span className="admin-badge admin-badge-active">Hoạt động</span>
+                              {m.membership_status === "LOCKED" || (m as any).is_locked ? (
+                                <span className="admin-badge admin-badge-suspended">Tạm khóa</span>
+                              ) : m.membership_status === "INACTIVE" || m.membership_status === "TERMINATED" ? (
+                                <span className="admin-badge admin-badge-suspended">Ngừng hoạt động</span>
+                              ) : (
+                                <span className="admin-badge admin-badge-active">Hoạt động</span>
+                              )}
                             </td>
                             <td style={{ textAlign: "center", width: 220, minWidth: 220, whiteSpace: "nowrap" }}>
                               <div style={{ display: "inline-flex", gap: "0.45rem", alignItems: "center", justifyContent: "center", flexWrap: "nowrap" }}>
@@ -2580,7 +2641,18 @@ export default function CompanyAdminWorkspace() {
                                     : "admin-badge-suspended"
                                 }`}
                               >
-                                {req.status_display || (req.status === "PENDING" ? "Chờ xử lý" : req.status === "APPROVED" ? "Đã duyệt" : req.status)}
+                                {req.status_display ||
+                                  (req.status === "PENDING"
+                                    ? "Chờ xử lý"
+                                    : req.status === "APPROVED"
+                                    ? "Đã duyệt"
+                                    : req.status === "REJECTED"
+                                    ? "Từ chối"
+                                    : req.status === "EXPIRED"
+                                    ? "Hết hạn"
+                                    : req.status === "CANCELLED"
+                                    ? "Đã hủy"
+                                    : req.status)}
                               </span>
                             </div>
                             <div style={{ fontSize: "12.8px", color: "#475569", marginTop: 3 }}>
@@ -3482,7 +3554,21 @@ export default function CompanyAdminWorkspace() {
                           justifyContent: "space-between",
                         }}
                       >
-                        <span>{rule.voucher_type}</span>
+                        <span>
+                          {{
+                            CASH_RECEIPT: "Phiếu thu tiền mặt",
+                            CASH_PAYMENT: "Phiếu chi tiền mặt",
+                            BANK_RECEIPT: "Báo có ngân hàng",
+                            BANK_PAYMENT: "Ủy nhiệm chi ngân hàng",
+                            SALES_INVOICE: "Hóa đơn bán hàng",
+                            PURCHASE_INVOICE: "Hóa đơn mua hàng",
+                            INVENTORY_IN: "Phiếu nhập kho",
+                            INVENTORY_OUT: "Phiếu xuất kho",
+                            INVENTORY_TRANSFER: "Phiếu chuyển kho",
+                            GENERAL_VOUCHER: "Chứng từ nghiệp vụ khác",
+                            JOURNAL: "Bút toán sổ cái",
+                          }[String(rule.voucher_type || "").toUpperCase()] || rule.voucher_type}
+                        </span>
                         <code>
                           {rule.prefix || "CT"}-{String(1).padStart(rule.padding_length || 5, "0")}
                         </code>

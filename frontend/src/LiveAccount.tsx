@@ -119,17 +119,24 @@ export default function LiveAccount() {
               Tôi đã đọc và đồng ý với{" "}
               <button
                 type="button"
-                onClick={() => setLegalTab("terms")}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setLegalTab("terms");
+                }}
                 style={{
+                  display: "inline",
                   background: "none",
                   border: "none",
                   padding: 0,
+                  margin: 0,
                   color: "#0284c7",
                   fontWeight: 600,
                   textDecoration: "underline",
                   cursor: "pointer",
                   fontFamily: "inherit",
                   fontSize: "inherit",
+                  lineHeight: "inherit",
+                  textAlign: "left",
                 }}
               >
                 Điều khoản sử dụng hệ thống
@@ -143,20 +150,27 @@ export default function LiveAccount() {
               Tôi đồng ý cho phép thu thập, xử lý dữ liệu cá nhân theo{" "}
               <button
                 type="button"
-                onClick={() => setLegalTab("privacy")}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setLegalTab("privacy");
+                }}
                 style={{
+                  display: "inline",
                   background: "none",
                   border: "none",
                   padding: 0,
+                  margin: 0,
                   color: "#0284c7",
                   fontWeight: 600,
                   textDecoration: "underline",
                   cursor: "pointer",
                   fontFamily: "inherit",
                   fontSize: "inherit",
+                  lineHeight: "inherit",
+                  textAlign: "left",
                 }}
               >
-                Chính sách bảo vệ dữ liệu cá nhân (Luật 91/2025/QH15 & NĐ 356/2025/NĐ-CP)
+                Chính sách bảo vệ dữ liệu cá nhân (Luật 91/2025/QH15 &amp; NĐ 356/2025/NĐ-CP)
               </button>
               .
             </span>

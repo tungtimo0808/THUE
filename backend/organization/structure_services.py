@@ -30,6 +30,10 @@ def snapshot(unit):
 
 
 def authorize(account, company, code):
+    if account and getattr(getattr(account, "auth_user", None), "is_superuser", False):
+        CompanyMembership.objects.get_or_create(
+            company=company, user=account, defaults={"membership_status": ActiveStatus.ACTIVE, "created_by": account}
+        )
     if not CompanyMembership.objects.filter(company=company, user=account, membership_status=ActiveStatus.ACTIVE).exists():
         raise PermissionDenied("Bạn không còn là thành viên ACTIVE của doanh nghiệp.")
     if not has_effective_permission(account, company, code):

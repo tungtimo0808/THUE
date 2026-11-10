@@ -346,6 +346,15 @@ export function getRoleWorkspaceSpec(roleOrMode: string): RoleWorkspaceSpec {
     (r) => r.name.toLowerCase() === clean.toLowerCase() || r.shortLabel.toLowerCase() === clean.toLowerCase()
   );
   if (byName) return byName;
+  if (clean === "COMPANY_ADMIN" || clean === "ADMIN" || clean === "SYSTEM_ADMIN") {
+    return STANDARD_ROLES_WORKSPACE_SPEC.find((r) => r.code === "ROLE_ADMIN")!;
+  }
+  if (clean === "ROLE_VIEWER") {
+    return STANDARD_ROLES_WORKSPACE_SPEC.find((r) => r.code === "ROLE_REPORT_VIEWER")!;
+  }
+  if (clean === "MEMBER") {
+    return STANDARD_ROLES_WORKSPACE_SPEC.find((r) => r.code === "ROLE_GENERAL_ACCOUNTANT")!;
+  }
   if (clean === "Thủ kho" || clean === "KT_KHO") {
     return STANDARD_ROLES_WORKSPACE_SPEC.find((r) => r.code === "ROLE_STOREKEEPER")!;
   }

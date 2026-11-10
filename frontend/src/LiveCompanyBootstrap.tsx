@@ -1,4 +1,4 @@
-﻿import { useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -70,14 +70,14 @@ export default function LiveCompanyBootstrap() {
     {!token ? <p>Bạn cần <Link to="/login">đăng nhập</Link> bằng tài khoản đã xác thực email.</p> : <>
       {error && <p className="account-error" role="alert">{error}</p>}
       {created ? <div role="status" className="account-message">
-        <strong>Đã tạo {created.name}</strong><br />Mã {created.code} · Mã số thuế {created.tax_code} · Trạng thái {created.status}.
+        <strong>Đã tạo {created.name}</strong><br />Mã {created.code} · Mã số thuế {created.tax_code} · Trạng thái {created.status === "ACTIVE" ? "Đang hoạt động" : created.status === "PENDING_SETUP" ? "Chờ thiết lập" : created.status}.
         <p><Link to="/company-profile">Tiếp tục thiết lập thông tin doanh nghiệp</Link></p>
       </div> : <>
         <form onSubmit={lookupTax}>
           <label>Mã số thuế<input value={taxCode} onChange={event => { setTaxCode(event.target.value); setLookup(null); }} pattern="[0-9]{10}(-[0-9]{3})?" required /></label>
           <button type="submit" disabled={busy}>Tra cứu mã số thuế</button>
         </form>
-        {lookup?.exists_on_system ? <p className="account-message">{lookup.company_name} đã có trên hệ thống. <Link to="/join">Gửi yêu cầu tham gia</Link>.</p> : lookup && <>
+        {lookup?.exists_on_system ? <p className="account-message">{lookup.company_name} đã có trên hệ thống. <Link to="/join?manual=1">Gửi yêu cầu tham gia</Link>.</p> : lookup && <>
           <p className="account-message">Thông tin tra cứu là gợi ý. Hãy kiểm tra và sửa theo giấy đăng ký doanh nghiệp trước khi tạo.</p>
           <form className="account-change-email" onSubmit={create}>
             <label>Mã doanh nghiệp (tùy chọn)<input value={code} onChange={event => setCode(event.target.value)} pattern="[A-Za-z0-9_-]+" maxLength={30} /></label>

@@ -276,8 +276,8 @@ export function MisaSystemUtilitiesModal({
         setFiscalPeriods(unwrapList(fpRes));
       } else if (utilityName === "Danh sách người dùng đang truy cập") {
         const [memRes, audRes] = await Promise.all([
-          apiGet("/iam/company-members/?page_size=50"),
-          apiGet("/common/audit-logs/?page_size=20"),
+          apiGet("/iam/memberships/?page_size=50"),
+          apiGet("/audit/logs/?page_size=20"),
         ]);
         setCompanyMembers(unwrapList(memRes));
         setAuditLogs(unwrapList(audRes));
@@ -1638,7 +1638,7 @@ export function MisaSystemUtilitiesModal({
               >
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>
-                    Nhân sự thuộc Doanh nghiệp đang hoạt động (`/api/v1/iam/company-members/`)
+                    Nhân sự thuộc Doanh nghiệp đang hoạt động (`/api/v1/iam/memberships/`)
                   </div>
                   <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 2 }}>
                     Hiển thị danh sách tài khoản được phân quyền truy cập vào {companyName}.

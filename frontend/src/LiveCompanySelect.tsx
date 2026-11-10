@@ -876,7 +876,7 @@ export default function LiveCompanySelect() {
                         <span>{isSelected ? "Doanh nghiệp hiện tại" : "Sẵn sàng làm việc"}</span>
                       </div>
                       <div className="company-portal-card-btn-group">
-                        {isCompanyOrSuperAdmin && (
+                        {Boolean((c as any).is_company_admin || session?.user?.is_superuser) && (
                           <button
                             type="button"
                             className="company-portal-admin-btn"

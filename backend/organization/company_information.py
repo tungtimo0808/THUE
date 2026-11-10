@@ -32,6 +32,10 @@ def snapshot(company):
 
 
 def authorize(account, company, permission_code):
+    if account and getattr(getattr(account, "auth_user", None), "is_superuser", False):
+        CompanyMembership.objects.get_or_create(
+            company=company, user=account, defaults={"membership_status": ActiveStatus.ACTIVE, "created_by": account}
+        )
     if not CompanyMembership.objects.filter(
         company=company, user=account, membership_status=ActiveStatus.ACTIVE
     ).exists():

@@ -45,8 +45,14 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onTokenChanged = (event: Event) => {
       const session = (event as CustomEvent<ApiSessionData>).detail;
-      setToken(session.token);
-      setRefreshToken(session.refresh || "");
+      if (!session) return;
+      if (session.token) setToken(session.token);
+      if (session.refresh !== undefined) setRefreshToken(session.refresh || "");
+      if (session.companyId) setCompanyId(session.companyId);
+      if (Array.isArray(session.companies) && session.companies.length > 0) {
+        setCompanies(session.companies);
+      }
+      if (session.user !== undefined) setUser(session.user);
     };
     const onSessionExpired = () => {
       setToken("");
@@ -87,12 +93,42 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
         if (tok) {
           getCompanies(tok)
             .then((fresh) => {
+              const currentRaw = localStorage.getItem("erp_api_session");
+              if (!currentRaw) return;
+              try {
+                const currentParsed = JSON.parse(currentRaw);
+                const currentTok = currentParsed.token || currentParsed.access || "";
+                if (currentTok && currentTok !== tok) return;
+              } catch {
+                return;
+              }
               if (Array.isArray(fresh) && fresh.length > 0) {
                 setCompanies(fresh);
+                let resolvedId = cId;
                 if (!cId || !fresh.some((c) => c.id === cId)) {
                   const preferred = fresh.find((c) => c.status === "ACTIVE" || !c.status) || fresh[0];
-                  setCompanyId(preferred.id);
+                  resolvedId = preferred.id;
+                  setCompanyId(resolvedId);
                 }
+                const firstAny = fresh[0] as any;
+                const nextUser = parsed.user || (firstAny?.user_email ? { email: firstAny.user_email, full_name: firstAny.user_full_name } : null);
+                if (nextUser) setUser(nextUser);
+                try {
+                  localStorage.setItem(
+                    "erp_api_session",
+                    JSON.stringify({
+                      ...parsed,
+                      token: tok,
+                      access: tok,
+                      access_token: tok,
+                      refresh: ref,
+                      companyId: resolvedId,
+                      companies: fresh,
+                      company: fresh.find((c) => c.id === resolvedId) || fresh[0],
+                      user: nextUser,
+                    })
+                  );
+                } catch {}
               }
             })
             .catch((err) => {
@@ -197,6 +233,13 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
         fetchedCompanies.find((c) => c.id === initialCompanyId) ||
         (fetchedCompanies.length > 0 ? fetchedCompanies[0] : null);
 
+      const firstAny = (activeComp || fetchedCompanies[0]) as any;
+      const resolvedUser =
+        (res as any).user ||
+        (firstAny?.user_email
+          ? { email: firstAny.user_email, full_name: firstAny.user_full_name }
+          : { email: identifier });
+
       const sessionObj: ApiSessionData = {
         token: access,
         access,
@@ -205,10 +248,10 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
         companyId: initialCompanyId,
         companies: fetchedCompanies,
         company: activeComp,
-        user: (res as any).user || null,
+        user: resolvedUser,
       };
 
-      setUser((res as any).user || null);
+      setUser(resolvedUser);
       localStorage.setItem("erp_api_session", JSON.stringify(sessionObj));
     },
     []

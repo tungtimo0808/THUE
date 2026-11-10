@@ -791,6 +791,7 @@ class SupplierDebtTrackingViewSet(viewsets.ViewSet):
     enforce_strict_permissions = True
     permission_denied_message = "Bạn không có quyền theo dõi công nợ nhà cung cấp."
     action_permissions = {
+        "list": ("AP.TRACKING.VIEW", "AP.PAYABLE.VIEW"),
         "summary": ("AP.TRACKING.VIEW", "AP.PAYABLE.VIEW"),
         "debt_detail": ("AP.TRACKING.VIEW", "AP.PAYABLE.VIEW"),
         "timeline": ("AP.TRACKING.VIEW", "AP.PAYABLE.VIEW"),
@@ -798,6 +799,9 @@ class SupplierDebtTrackingViewSet(viewsets.ViewSet):
         "export_summary": ("AP.TRACKING.EXPORT", "AP.TRACKING.VIEW", "AP.PAYABLE.VIEW"),
         "export_detail": ("AP.TRACKING.EXPORT", "AP.TRACKING.VIEW", "AP.PAYABLE.VIEW"),
     }
+
+    def list(self, request):
+        return self.summary(request)
 
     def _get_company(self, request):
         company_id = request.query_params.get("company_id")

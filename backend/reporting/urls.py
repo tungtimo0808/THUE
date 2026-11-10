@@ -1,5 +1,6 @@
 from django.urls import include, path, re_path
 from rest_framework.routers import DefaultRouter
+from general_ledger.views import BalanceViewSet
 from .tt133_views import TT133FinancialReportViewSet
 
 from .views import (
@@ -40,6 +41,7 @@ router.register("tt133-financial-statements", TT133FinancialReportViewSet, basen
 router.register("dashboard", DashboardViewSet, basename="report-dashboard")
 router.register("financial-bundles", FinancialBundleViewSet, basename="report-financial-bundles")
 router.register("financial-statements", FinancialStatementRunViewSet, basename="report-financial-statements")
+router.register("trial-balance", BalanceViewSet, basename="report-trial-balance")
 
 urlpatterns = [
     path(

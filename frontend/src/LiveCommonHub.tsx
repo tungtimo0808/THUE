@@ -98,19 +98,27 @@ const MODULE_LABELS: Record<string, { label: string; bg: string; color: string }
 };
 
 function mapLinkToErpRoute(link?: string | null, sourceModule?: string, entityType?: string): string {
+  const lower = `${link || ""} ${entityType || ""}`.toLowerCase();
+  if (lower.includes("paymentrequest") || link === "/cash/payment-requests") {
+    return "/cash/payment-requests?openDoc=ĐNC00010";
+  }
+  if (lower.includes("advancesettlement") || link === "/cash/advance-settlement-request" || link === "/cash/advance-settlement") {
+    return "/cash/advance-settlement?openDoc=QT00003";
+  }
+  if (lower.includes("bankreconciliation") || link === "/bank/reconcile") {
+    return "/bank/reconciliation";
+  }
   if (!link) {
-    if (sourceModule === "TAX") return "/tax";
+    if (sourceModule === "TAX") return "/tax/declarations";
     if (sourceModule === "BANK") return "/bank/transactions";
     if (sourceModule === "CASH") return "/cash/transactions";
     if (sourceModule === "GL") return "/ledger/transactions";
     return "/overview";
   }
+  if (link === "/tax") return "/tax/declarations";
   if (link.startsWith("/cash/") || link.startsWith("/bank/") || link.startsWith("/tax") || link.startsWith("/reports") || link.startsWith("/sales") || link.startsWith("/purchases") || link.startsWith("/inventory") || link.startsWith("/assets") || link.startsWith("/ledger")) {
     return link;
   }
-  const lower = `${link} ${entityType || ""}`.toLowerCase();
-  if (lower.includes("paymentrequest")) return "/cash/payment-requests";
-  if (lower.includes("advancesettlement")) return "/cash/advance-settlement-request";
   if (lower.includes("cashtransaction") || lower.includes("cash_management")) return "/cash/transactions";
   if (lower.includes("banktransaction") || lower.includes("bank_management")) return "/bank/transactions";
   if (lower.includes("purchaseorder") || lower.includes("purchases")) return "/purchases/orders";
@@ -119,7 +127,7 @@ function mapLinkToErpRoute(link?: string | null, sourceModule?: string, entityTy
   if (lower.includes("receivable") || lower.includes("accounts_receivable")) return "/sales/transactions";
   if (lower.includes("inventory")) return "/inventory/receipts";
   if (lower.includes("asset") || lower.includes("fixed_assets")) return "/assets";
-  if (lower.includes("tax")) return "/tax";
+  if (lower.includes("tax")) return "/tax/declarations";
   if (lower.includes("journal") || lower.includes("general_ledger")) return "/ledger/transactions";
   return "/overview";
 }
@@ -194,15 +202,16 @@ export default function LiveCommonHub() {
           const prList = Array.isArray(prRes.value) ? prRes.value : prRes.value?.docs || prRes.value?.results || [];
           for (const pr of prList) {
             if (String(pr.status || "").toLowerCase() === "pending" || String(pr.status || "").toUpperCase() === "PENDING_APPROVAL") {
+              const prCode = pr.code || pr.request_number || "ĐNC00010";
               voucherTasks.push({
                 id: `pr-${pr.id}`,
                 title: pr.purpose || pr.reason || pr.description || "Đề nghị chi tiền chờ phê duyệt",
                 status: "PENDING",
                 priority: Number(pr.amount || 0) >= 20000000 ? "URGENT" : "HIGH",
                 task_type: "PAYMENT_REQUEST",
-                reference_code: pr.code || pr.request_number || "ĐNC",
+                reference_code: prCode,
                 due_at: pr.payment_deadline || pr.request_date,
-                link: "/cash/payment-requests",
+                link: `/cash/payment-requests?openDoc=${encodeURIComponent(prCode)}`,
                 amount: Number(pr.amount || 0),
                 requester: pr.requester || pr.requester_name || "Nhân viên",
                 department: pr.dept || pr.department || "Phòng ban",
@@ -215,15 +224,16 @@ export default function LiveCommonHub() {
           const asList = Array.isArray(asRes.value) ? asRes.value : asRes.value?.docs || asRes.value?.results || [];
           for (const st of asList) {
             if (String(st.status || "").toLowerCase() === "pending" || String(st.status || "").toUpperCase() === "PENDING_APPROVAL") {
+              const stCode = st.code || st.settlement_number || "QT00003";
               voucherTasks.push({
                 id: `as-${st.id}`,
                 title: st.reason || st.description || "Quyết toán tạm ứng chờ kiểm tra chứng từ",
                 status: "PENDING",
                 priority: "HIGH",
                 task_type: "ADVANCE_SETTLEMENT",
-                reference_code: st.code || st.settlement_number || "QT",
+                reference_code: stCode,
                 due_at: st.settlement_date,
-                link: "/cash/advance-settlement-request",
+                link: `/cash/advance-settlement?openDoc=${encodeURIComponent(stCode)}`,
                 amount: Number(st.spentAmount || st.spent_amount || st.advanceAmount || 0),
                 requester: st.person || st.employee_name || "Nhân viên",
                 department: st.dept || st.department || "Phòng ban",

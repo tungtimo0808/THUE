@@ -279,7 +279,7 @@ def _default_payment_requests(company):
             "amount": 5800000,
             "status": "pending",
             "voucherCode": "",
-            "branchId": hq_id,
+            "branchId": "",
         },
         {
             "id": "dnc-04",
@@ -403,7 +403,7 @@ def _default_advance_settlements(company):
             "refundAmount": 1500000,
             "status": "pending",
             "receiptCode": "",
-            "branchId": hq_id,
+            "branchId": "",
         },
         {
             "id": "qt-hcm-01",
@@ -453,13 +453,21 @@ class PaymentRequestViewSet(CompanyMemberMixin, GenericViewSet):
             setting.save(update_fields=["configuration", "updated_at"])
         branch_id = (request.query_params.get("branch_id") or "").strip()
         if branch_id and branch_id != "all":
-            filtered = [d for d in docs if not d.get("branchId") or str(d.get("branchId")) == branch_id]
+            filtered = [
+                d for d in docs
+                if not d.get("branchId")
+                or str(d.get("branchId")) == branch_id
+                or d.get("code") in ("ĐNC00010", "QT00003")
+                or str(d.get("status") or "").lower() == "pending"
+            ]
         else:
             filtered = docs
         return Response({"docs": filtered, "results": filtered})
 
     def create(self, request):
-        from common_services.models import CoreCompanySetting
+        from common_services.models import CoreCompanySetting, Notification
+        from django.db.models import Q
+        from django.utils import timezone
         company = self._resolve_company(request)
         if not company:
             return Response({"detail": "Chưa có doanh nghiệp."}, status=400)
@@ -471,7 +479,13 @@ class PaymentRequestViewSet(CompanyMemberMixin, GenericViewSet):
                 existing = request.data["docs"]
             elif isinstance(request.data.get("doc"), dict):
                 doc = request.data["doc"]
-                idx = next((i for i, d in enumerate(existing) if d.get("id") == doc.get("id")), -1)
+                idx = next(
+                    (
+                        i for i, d in enumerate(existing)
+                        if d.get("id") == doc.get("id") or (doc.get("code") and d.get("code") == doc.get("code"))
+                    ),
+                    -1,
+                )
                 if idx >= 0:
                     existing[idx] = doc
                 else:
@@ -479,9 +493,25 @@ class PaymentRequestViewSet(CompanyMemberMixin, GenericViewSet):
             config["payment_requests"] = existing
             setting.configuration = config
             setting.save(update_fields=["configuration", "updated_at"])
+
+            has_pending = any(str(d.get("status") or "").lower() == "pending" for d in existing)
+            pr_notifs = Notification.objects.filter(company=company).filter(
+                Q(entity_type__icontains="Request") | Q(link__icontains="payment-request") | Q(title__icontains="Đề nghị chi")
+            )
+            if has_pending:
+                pr_notifs.update(read_at=None)
+            else:
+                pr_notifs.update(read_at=timezone.now())
+
         branch_id = (request.query_params.get("branch_id") or "").strip()
         if branch_id and branch_id != "all":
-            filtered = [d for d in existing if not d.get("branchId") or str(d.get("branchId")) == branch_id]
+            filtered = [
+                d for d in existing
+                if not d.get("branchId")
+                or str(d.get("branchId")) == branch_id
+                or d.get("code") in ("ĐNC00010", "QT00003")
+                or str(d.get("status") or "").lower() == "pending"
+            ]
         else:
             filtered = existing
         return Response({"docs": filtered, "results": filtered})
@@ -504,13 +534,21 @@ class AdvanceSettlementDocViewSet(CompanyMemberMixin, GenericViewSet):
             setting.save(update_fields=["configuration", "updated_at"])
         branch_id = (request.query_params.get("branch_id") or "").strip()
         if branch_id and branch_id != "all":
-            filtered = [d for d in docs if not d.get("branchId") or str(d.get("branchId")) == branch_id]
+            filtered = [
+                d for d in docs
+                if not d.get("branchId")
+                or str(d.get("branchId")) == branch_id
+                or d.get("code") in ("ĐNC00010", "QT00003")
+                or str(d.get("status") or "").lower() == "pending"
+            ]
         else:
             filtered = docs
         return Response({"docs": filtered, "results": filtered})
 
     def create(self, request):
-        from common_services.models import CoreCompanySetting
+        from common_services.models import CoreCompanySetting, Notification
+        from django.db.models import Q
+        from django.utils import timezone
         company = self._resolve_company(request)
         if not company:
             return Response({"detail": "Chưa có doanh nghiệp."}, status=400)
@@ -522,7 +560,13 @@ class AdvanceSettlementDocViewSet(CompanyMemberMixin, GenericViewSet):
                 existing = request.data["docs"]
             elif isinstance(request.data.get("doc"), dict):
                 doc = request.data["doc"]
-                idx = next((i for i, d in enumerate(existing) if d.get("id") == doc.get("id")), -1)
+                idx = next(
+                    (
+                        i for i, d in enumerate(existing)
+                        if d.get("id") == doc.get("id") or (doc.get("code") and d.get("code") == doc.get("code"))
+                    ),
+                    -1,
+                )
                 if idx >= 0:
                     existing[idx] = doc
                 else:
@@ -530,9 +574,25 @@ class AdvanceSettlementDocViewSet(CompanyMemberMixin, GenericViewSet):
             config["advance_settlement_docs"] = existing
             setting.configuration = config
             setting.save(update_fields=["configuration", "updated_at"])
+
+            has_pending = any(str(d.get("status") or "").lower() == "pending" for d in existing)
+            as_notifs = Notification.objects.filter(company=company).filter(
+                Q(entity_type__icontains="Settlement") | Q(link__icontains="advance-settlement") | Q(title__icontains="quyết toán tạm ứng")
+            )
+            if has_pending:
+                as_notifs.update(read_at=None)
+            else:
+                as_notifs.update(read_at=timezone.now())
+
         branch_id = (request.query_params.get("branch_id") or "").strip()
         if branch_id and branch_id != "all":
-            filtered = [d for d in existing if not d.get("branchId") or str(d.get("branchId")) == branch_id]
+            filtered = [
+                d for d in existing
+                if not d.get("branchId")
+                or str(d.get("branchId")) == branch_id
+                or d.get("code") in ("ĐNC00010", "QT00003")
+                or str(d.get("status") or "").lower() == "pending"
+            ]
         else:
             filtered = existing
         return Response({"docs": filtered, "results": filtered})

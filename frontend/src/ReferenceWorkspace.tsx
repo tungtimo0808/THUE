@@ -81,7 +81,6 @@ import { SidebarNavigation } from "./SidebarNavigation";
 import { NestedWorkspace } from "./NestedWorkspace";
 import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
 import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
-import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
 import { preloadWorkspace, setupIdlePreloading } from "./workspace-preloader";
 import type { ComponentType } from "react";
 
@@ -348,7 +347,11 @@ function ReferenceWorkspace() {
   useEffect(() => {
     setTabOptionsOpen(false);
     setTabMoreOpen(false);
-  }, [location.pathname]);
+    setOptimisticTab(null);
+    if (typeof window !== "undefined" && window.scrollX !== 0) {
+      window.scrollTo(0, window.scrollY);
+    }
+  }, [location.pathname, location.search]);
 
   const userEmail = apiSession?.user?.email || "";
   const rawDisplayName =
@@ -372,10 +375,16 @@ function ReferenceWorkspace() {
   const moduleId = (params.get("module") || pathParts[1] || "overview"),
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
   const requestedTab = pathParts[2];
-  const tab = moduleId === "invoices" && requestedTab === "errors"
-    ? "adjustments"
-    : tabs.some(([id]) => id === requestedTab)
-      ? requestedTab
+  const resolvedRequestedTab =
+    moduleId === "invoices" && requestedTab === "errors"
+      ? "adjustments"
+      : (moduleId === "cash" || moduleId === "bank") && requestedTab === "advance-settlement-request"
+        ? "advance-settlement"
+        : moduleId === "bank" && requestedTab === "reconcile"
+          ? "reconciliation"
+          : requestedTab;
+  const tab = tabs.some(([id]) => id === resolvedRequestedTab)
+      ? resolvedRequestedTab
       : tabs[0][0],
     childTab = pathParts[3],
     module = referenceNav.find((m) => m.id === moduleId);
@@ -1025,30 +1034,36 @@ function ReferenceWorkspace() {
       localStorage.removeItem("ref_work_mode");
     } catch {}
     if (!apiToken || !company?.id) return;
+    const compAny = company as any;
+    if (Array.isArray(compAny.role_codes) && compAny.role_codes.length > 0) {
+      setAssignedRoleCodes(compAny.role_codes);
+      const spec = getRoleWorkspaceSpec(compAny.role_codes[0]);
+      setWorkMode(spec.code);
+    } else if (compAny.is_company_admin) {
+      setAssignedRoleCodes(["ROLE_ADMIN"]);
+      setWorkMode("ROLE_ADMIN");
+    }
     let active = true;
-    request<any>(`/api/v1/iam/memberships/?company_id=${encodeURIComponent(company.id)}`, apiToken)
-      .then((res) => {
-        if (!active) return;
-        const list = Array.isArray(res) ? res : res?.results || [];
-        const myEmail = String(apiSession?.user?.email || "").toLowerCase();
-        const me = list.find((m: any) => String(m.email || "").toLowerCase() === myEmail);
-        if (me && Array.isArray(me.role_assignments) && me.role_assignments.length > 0) {
+    request<any>(`/api/v1/iam/memberships/me/?company_id=${encodeURIComponent(company.id)}`, apiToken)
+      .then((me) => {
+        if (!active || !me) return;
+        if (Array.isArray(me.role_assignments) && me.role_assignments.length > 0) {
           const codes = me.role_assignments.map((ra: any) => String(ra.role_code || "")).filter(Boolean);
-          setAssignedRoleCodes(codes);
           if (codes.length > 0) {
+            setAssignedRoleCodes(codes);
             const spec = getRoleWorkspaceSpec(codes[0]);
             setWorkMode(spec.code);
           }
-        } else {
-          setAssignedRoleCodes(["ROLE_CHIEF_ACCOUNTANT"]);
-          setWorkMode("ROLE_CHIEF_ACCOUNTANT");
+        } else if (compAny.is_company_admin) {
+          setAssignedRoleCodes(["ROLE_ADMIN"]);
+          setWorkMode("ROLE_ADMIN");
         }
       })
       .catch(() => {});
     return () => {
       active = false;
     };
-  }, [apiToken, company?.id, apiSession?.user?.email]);
+  }, [apiToken, company?.id, (company as any)?.role_codes, (company as any)?.is_company_admin]);
 
   const [moduleSyncTick, setModuleSyncTick] = useState(0);
   useEffect(() => {
@@ -1066,12 +1081,16 @@ function ReferenceWorkspace() {
   const activeRoleSpec = useMemo(() => {
     const baseSpec = getRoleWorkspaceSpec(workMode);
     const effectiveCodes = assignedRoleCodes.length > 0 ? assignedRoleCodes : [baseSpec.code];
+    const compAny = company as any;
     let roleModules: string[] = [];
     let roleMap: Record<string, string[]> | null = null;
+    if (compAny?.ui_role_modules && typeof compAny.ui_role_modules === "object") {
+      roleMap = compAny.ui_role_modules;
+    }
     try {
       const roleMapRaw = localStorage.getItem(`sv_role_modules_${company?.id}`);
       if (roleMapRaw) {
-        roleMap = JSON.parse(roleMapRaw);
+        roleMap = { ...(roleMap || {}), ...JSON.parse(roleMapRaw) };
       }
     } catch {}
     for (const code of effectiveCodes) {
@@ -1086,20 +1105,26 @@ function ReferenceWorkspace() {
     if (roleModules.length === 0) {
       roleModules = baseSpec.allowedModules;
     }
+    let enabledList: string[] | null = Array.isArray(compAny?.ui_enabled_modules)
+      ? compAny.ui_enabled_modules
+      : null;
     try {
       const enabledRaw = localStorage.getItem(`sv_enabled_modules_${company?.id}`);
       if (enabledRaw) {
-        const enabledList: string[] = JSON.parse(enabledRaw);
-        if (Array.isArray(enabledList) && enabledList.length > 0) {
-          roleModules = roleModules.filter((m) => enabledList.includes(m));
+        const parsed = JSON.parse(enabledRaw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          enabledList = parsed;
         }
       }
     } catch {}
+    if (Array.isArray(enabledList) && enabledList.length > 0) {
+      roleModules = roleModules.filter((m) => enabledList!.includes(m));
+    }
     return {
       ...baseSpec,
       allowedModules: roleModules,
     };
-  }, [workMode, assignedRoleCodes, company?.id, moduleSyncTick]);
+  }, [workMode, assignedRoleCodes, company, moduleSyncTick]);
   const setNotice = useCallback((msg: string) => {
     const cleaned = msg ? humanizeErrorMessage(msg) : "";
     setRawNotice(cleaned);
@@ -1118,10 +1143,54 @@ function ReferenceWorkspace() {
     pending = scoped.filter((t) => t.status === "pending");
 
   const [notifFilter, setNotifFilter] = useState<"all" | "pending" | "system">("all");
-  const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set());
+  const readNotifStorageKey = `sv_read_notif_ids_${company?.id || "default"}`;
+  const [readNotifIds, setReadNotifIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(`sv_read_notif_ids_${company?.id || "default"}`);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return new Set(arr.map(String));
+      }
+    } catch {}
+    return new Set();
+  });
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(readNotifStorageKey);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          setReadNotifIds(new Set(arr.map(String)));
+          return;
+        }
+      }
+    } catch {}
+    setReadNotifIds(new Set());
+  }, [readNotifStorageKey]);
+
+  const updateReadNotifIds = useCallback(
+    (updater: (prev: Set<string>) => Set<string>) => {
+      setReadNotifIds((prev) => {
+        const next = updater(prev);
+        try {
+          localStorage.setItem(readNotifStorageKey, JSON.stringify([...next]));
+        } catch {}
+        return next;
+      });
+    },
+    [readNotifStorageKey],
+  );
+
   const [liveApiNotifs, setLiveApiNotifs] = useState<any[]>([]);
   const [payrollOptionOpen, setPayrollOptionOpen] = useState(false);
   const [payrollOption, setPayrollOption] = useState("Tiền lương Sổ Việt ERP");
+
+  const [notifReloadTick, setNotifReloadTick] = useState(0);
+  useEffect(() => {
+    const onVoucherUpdate = () => setNotifReloadTick((t) => t + 1);
+    window.addEventListener("sv_vouchers_updated", onVoucherUpdate);
+    return () => window.removeEventListener("sv_vouchers_updated", onVoucherUpdate);
+  }, []);
 
   useEffect(() => {
     if (!apiToken || !company?.id) return;
@@ -1135,48 +1204,70 @@ function ReferenceWorkspace() {
       if (!active) return;
       const merged: any[] = [];
       const readSet = new Set<string>();
+      const unreadSet = new Set<string>();
 
-      if (prRes.status === "fulfilled") {
-        const prList = Array.isArray(prRes.value) ? prRes.value : prRes.value?.docs || prRes.value?.results || [];
-        for (const pr of prList) {
-          if (String(pr.status || "").toLowerCase() === "pending" || String(pr.status || "").toUpperCase() === "PENDING_APPROVAL") {
-            merged.push({
-              id: `pr-${pr.id}`,
-              category: "pending" as const,
-              code: pr.code || pr.request_number || "ĐNC",
-              kindLabel: "Đề nghị chi tiền",
-              kind: "payment" as const,
-              description: pr.purpose || pr.reason || pr.description || "Đề nghị chi tiền đang chờ phê duyệt",
-              partner: `${pr.requester || pr.requester_name || "Nhân viên"} · ${pr.dept || pr.department || "Bộ phận"}`,
-              amount: Number(pr.amount || 0),
-              date: pr.date || (pr.request_date ? String(pr.request_date).split("-").reverse().join("/") : "Hôm nay"),
-              actionUrl: "/cash/payment-requests",
-              isVoucher: false,
-            });
-          }
+      let statusOverrides: Record<string, { status?: string; voucherCode?: string; receiptCode?: string; revertedUnread?: boolean }> = {};
+      let localPrSync: any[] = [];
+      let localAsSync: any[] = [];
+      try {
+        const rawMap = localStorage.getItem("sv_voucher_status_overrides");
+        if (rawMap) statusOverrides = JSON.parse(rawMap) || {};
+        const rawPr = localStorage.getItem("sv_pr_docs_sync");
+        if (rawPr) localPrSync = JSON.parse(rawPr) || [];
+        const rawAs = localStorage.getItem("sv_as_docs_sync");
+        if (rawAs) localAsSync = JSON.parse(rawAs) || [];
+      } catch {}
+
+      const allPrs: any[] = [];
+      const pendingPrs: any[] = [];
+      const rawPrList =
+        prRes.status === "fulfilled"
+          ? Array.isArray(prRes.value)
+            ? prRes.value
+            : prRes.value?.docs || prRes.value?.results || []
+          : localPrSync;
+      const effectivePrList = Array.isArray(rawPrList) && rawPrList.length > 0 ? rawPrList : localPrSync;
+      for (const rawPr of effectivePrList) {
+        const code = rawPr.code || rawPr.request_number || "";
+        const localMatch = Array.isArray(localPrSync) ? localPrSync.find((lp) => lp.code === code) : null;
+        const override = statusOverrides[code];
+        const pr = {
+          ...rawPr,
+          ...(localMatch ? { status: localMatch.status, voucherCode: localMatch.voucherCode } : {}),
+          ...(override?.status ? { status: override.status, voucherCode: override.voucherCode ?? rawPr.voucherCode } : {}),
+        };
+        allPrs.push(pr);
+        if (String(pr.status || "").toLowerCase() === "pending" || String(pr.status || "").toUpperCase() === "PENDING_APPROVAL") {
+          pendingPrs.push(pr);
         }
       }
 
-      if (asRes.status === "fulfilled") {
-        const asList = Array.isArray(asRes.value) ? asRes.value : asRes.value?.docs || asRes.value?.results || [];
-        for (const st of asList) {
-          if (String(st.status || "").toLowerCase() === "pending" || String(st.status || "").toUpperCase() === "PENDING_APPROVAL") {
-            merged.push({
-              id: `as-${st.id}`,
-              category: "pending" as const,
-              code: st.code || st.settlement_number || "QT",
-              kindLabel: "Quyết toán tạm ứng",
-              kind: "receipt" as const,
-              description: st.reason || st.description || "Đề nghị quyết toán tạm ứng chờ kiểm tra chứng từ gốc",
-              partner: `${st.person || st.employee_name || "Nhân viên"} · ${st.dept || st.department || "Bộ phận"}`,
-              amount: Number(st.spentAmount || st.spent_amount || st.advanceAmount || 0),
-              date: st.date || (st.settlement_date ? String(st.settlement_date).split("-").reverse().join("/") : "Hôm nay"),
-              actionUrl: "/cash/advance-settlement-request",
-              isVoucher: false,
-            });
-          }
+      const allAsList: any[] = [];
+      const pendingAsList: any[] = [];
+      const rawAsList =
+        asRes.status === "fulfilled"
+          ? Array.isArray(asRes.value)
+            ? asRes.value
+            : asRes.value?.docs || asRes.value?.results || []
+          : localAsSync;
+      const effectiveAsList = Array.isArray(rawAsList) && rawAsList.length > 0 ? rawAsList : localAsSync;
+      for (const rawSt of effectiveAsList) {
+        const code = rawSt.code || rawSt.settlement_number || "";
+        const localMatch = Array.isArray(localAsSync) ? localAsSync.find((ls) => ls.code === code) : null;
+        const override = statusOverrides[code];
+        const st = {
+          ...rawSt,
+          ...(localMatch ? { status: localMatch.status, receiptCode: localMatch.receiptCode } : {}),
+          ...(override?.status ? { status: override.status, receiptCode: override.receiptCode ?? rawSt.receiptCode } : {}),
+        };
+        allAsList.push(st);
+        if (String(st.status || "").toLowerCase() === "pending" || String(st.status || "").toUpperCase() === "PENDING_APPROVAL") {
+          pendingAsList.push(st);
         }
       }
+
+      let matchedPrCount = 0;
+      let matchedAsCount = 0;
 
       if (notifRes.status === "fulfilled") {
         const nList = Array.isArray(notifRes.value) ? notifRes.value : notifRes.value?.results || [];
@@ -1185,33 +1276,246 @@ function ReferenceWorkspace() {
           if (n.status === "READ" || n.read_at) {
             readSet.add(nid);
           }
-          const isPendingType = String(n.entity_type || "").includes("Request") || String(n.entity_type || "").includes("Settlement");
+          const entityType = String(n.entity_type || "");
+          const titleLower = String(n.title || "").toLowerCase();
+          const rawLink = String(n.link || "");
+          const isAdvanceSettlement =
+            entityType.includes("Settlement") ||
+            rawLink.includes("advance-settlement") ||
+            titleLower.includes("quyết toán tạm ứng");
+          const isPaymentRequest =
+            entityType.includes("Request") ||
+            rawLink.includes("payment-request") ||
+            titleLower.includes("đề nghị chi");
+          const isBankReconcile =
+            entityType.includes("Reconcil") ||
+            rawLink.includes("/bank/reconcile") ||
+            titleLower.includes("đối chiếu sổ phụ");
+          const isTaxDeclaration =
+            entityType.includes("Tax") ||
+            n.source_module === "TAX" ||
+            rawLink === "/tax";
+
+          const matchedPr = isPaymentRequest ? (pendingPrs[matchedPrCount++] || null) : null;
+          const matchedAs = isAdvanceSettlement ? (pendingAsList[matchedAsCount++] || null) : null;
+
+          const fallbackPr = isPaymentRequest ? (allPrs.find((p) => p.code === "ĐNC00010") || allPrs[0] || null) : null;
+          const fallbackAs = isAdvanceSettlement ? (allAsList.find((s) => s.code === "QT00003") || allAsList[0] || null) : null;
+
+          const activePr = matchedPr || fallbackPr;
+          const activeAs = matchedAs || fallbackAs;
+
+          const prStatus = String(activePr?.status || statusOverrides["ĐNC00010"]?.status || "pending").toLowerCase();
+          const asStatus = String(activeAs?.status || statusOverrides["QT00003"]?.status || "pending").toLowerCase();
+
+          const isStillPending =
+            (isPaymentRequest && prStatus === "pending") ||
+            (isAdvanceSettlement && asStatus === "pending");
+
+          const prCode = activePr?.code || activePr?.request_number || "ĐNC00010";
+          const asCode = activeAs?.code || activeAs?.settlement_number || "QT00003";
+
+          const targetDocCode = isPaymentRequest ? prCode : isAdvanceSettlement ? asCode : "";
+          if ((isPaymentRequest || isAdvanceSettlement) && !isStillPending) {
+            readSet.add(nid);
+          } else if (targetDocCode && statusOverrides[targetDocCode]?.revertedUnread) {
+            unreadSet.add(nid);
+          }
+
+          const resolvedActionUrl = isAdvanceSettlement
+            ? "/cash/advance-settlement"
+            : isPaymentRequest
+              ? "/cash/payment-requests"
+              : isBankReconcile
+                ? "/bank/reconciliation"
+                : isTaxDeclaration
+                  ? "/tax/declarations"
+                  : rawLink || "/overview";
+
+          const resolvedOpenDoc = isAdvanceSettlement
+            ? asCode
+            : isPaymentRequest
+              ? prCode
+              : undefined;
+
+          const resolvedNotifTarget = isAdvanceSettlement
+            ? "advance-settlement"
+            : isPaymentRequest
+              ? "payment-requests"
+              : undefined;
+
+          const baseCode =
+            n.source_module === "TAX"
+              ? "Thuế & Tờ khai"
+              : n.source_module === "BANK"
+                ? "Ngân hàng"
+                : n.source_module === "CASH"
+                  ? "Ngân quỹ"
+                  : "Hệ thống";
+
+          const resolvedDescription = isPaymentRequest && activePr
+            ? isStillPending
+              ? `Đề nghị chi tiền chờ phê duyệt: ${activePr.purpose} (${activePr.requester} · ${activePr.dept})`
+              : `Đề nghị chi tiền (${prStatus === "paid" ? "Đã chi tiền" : prStatus === "rejected" ? "Đã từ chối" : "Đã duyệt"}): ${activePr.purpose} (${activePr.requester} · ${activePr.dept})`
+            : isAdvanceSettlement && activeAs
+              ? isStillPending
+                ? `Hồ sơ quyết toán tạm ứng cần đối chiếu: ${activeAs.reason} (${activeAs.person} · ${activeAs.dept || "Phòng Kinh doanh"})`
+                : `Hồ sơ quyết toán tạm ứng (Đã duyệt): ${activeAs.reason} (${activeAs.person} · ${activeAs.dept || "Phòng Kinh doanh"})`
+              : `${n.title}: ${n.message}`;
+
+          const statusBadgeLabel = isPaymentRequest
+            ? prStatus === "paid"
+              ? "Đã chi tiền"
+              : prStatus === "rejected"
+                ? "Đã từ chối"
+                : prStatus === "approved"
+                  ? "Đã duyệt"
+                  : "Chờ duyệt"
+            : isAdvanceSettlement
+              ? asStatus === "settled"
+                ? "Đã duyệt"
+                : "Chờ duyệt"
+              : "Hệ thống";
+
+          const statusBadgeStyle =
+            statusBadgeLabel === "Đã duyệt" || statusBadgeLabel === "Đã chi tiền"
+              ? { background: "#dcfce7", color: "#15803d", border: "1px solid #bbf7d0" }
+              : statusBadgeLabel === "Đã từ chối"
+                ? { background: "#fee2e2", color: "#b91c1c", border: "1px solid #fecaca" }
+                : statusBadgeLabel === "Chờ duyệt"
+                  ? { background: "#fef3c7", color: "#b45309" }
+                  : { background: "#e0f2fe", color: "#0369a1" };
+
           merged.push({
             id: nid,
             dbId: n.id,
-            category: (isPendingType ? "pending" : "system") as "pending" | "system",
-            code: n.source_module === "TAX" ? "Thuế & Tờ khai" : n.source_module === "BANK" ? "Ngân hàng" : n.source_module === "CASH" ? "Ngân quỹ" : "Hệ thống",
-            kindLabel: n.level === "IMPORTANT" ? "Quan trọng" : n.level === "WARNING" ? "Cảnh báo" : "Thông báo",
-            kind: (n.source_module === "TAX" ? "tax" : n.source_module === "BANK" ? "bank" : n.level === "WARNING" || n.level === "IMPORTANT" ? "alert" : "info") as any,
-            description: `${n.title}: ${n.message}`,
-            partner: n.company_name || company.name,
-            amount: 0,
+            category: ((isPaymentRequest || isAdvanceSettlement) ? "pending" : "system") as "pending" | "system",
+            voucherStatus: isPaymentRequest ? prStatus : isAdvanceSettlement ? asStatus : "system",
+            statusBadgeLabel,
+            statusBadgeStyle,
+            code: isAdvanceSettlement
+              ? `${asCode} · ${baseCode}`
+              : isPaymentRequest
+                ? `${prCode} · ${baseCode}`
+                : baseCode,
+            kindLabel: isAdvanceSettlement
+              ? isStillPending ? "Quyết toán tạm ứng" : "Quyết toán tạm ứng · Đã duyệt"
+              : isPaymentRequest
+                ? isStillPending ? "Đề nghị chi tiền" : `Đề nghị chi tiền · ${statusBadgeLabel}`
+                : n.level === "IMPORTANT"
+                  ? "Quan trọng"
+                  : n.level === "WARNING"
+                    ? "Cảnh báo"
+                    : "Thông báo",
+            kind: (isAdvanceSettlement
+              ? "receipt"
+              : isPaymentRequest
+                ? "payment"
+                : n.source_module === "TAX"
+                  ? "tax"
+                  : n.source_module === "BANK"
+                    ? "bank"
+                    : n.level === "WARNING" || n.level === "IMPORTANT"
+                      ? "alert"
+                      : "info") as any,
+            description: resolvedDescription,
+            partner: activePr
+              ? `${activePr.requester || activePr.requester_name || "Nhân viên"} · ${activePr.dept || activePr.department || n.company_name || company.name}`
+              : activeAs
+                ? `${activeAs.person || activeAs.employee_name || "Nhân viên"} · ${activeAs.dept || activeAs.department || n.company_name || company.name}`
+                : n.company_name || company.name,
+            amount: isAdvanceSettlement
+              ? Number(activeAs?.spentAmount || activeAs?.spent_amount || activeAs?.advanceAmount || 28500000)
+              : isPaymentRequest
+                ? Number(activePr?.amount || 5800000)
+                : 0,
             date: n.created_at ? new Date(n.created_at).toLocaleString("vi-VN") : "Hôm nay",
-            actionUrl: n.link || "/overview",
+            actionUrl: resolvedActionUrl,
+            openDoc: resolvedOpenDoc,
+            notifTarget: resolvedNotifTarget,
             isVoucher: false,
           });
         }
       }
 
+      for (let i = matchedPrCount; i < pendingPrs.length; i++) {
+        const pr = pendingPrs[i];
+        const prCode = pr.code || pr.request_number || "ĐNC00010";
+        merged.push({
+          id: `pr-${pr.id}`,
+          category: "pending" as const,
+          code: `${prCode} · Ngân quỹ`,
+          kindLabel: "Đề nghị chi tiền",
+          kind: "payment" as const,
+          description: `Đề nghị chi tiền chờ phê duyệt: ${pr.purpose || pr.reason || pr.description || "Đang chờ phê duyệt"}`,
+          partner: `${pr.requester || pr.requester_name || "Nhân viên"} · ${pr.dept || pr.department || "Bộ phận"}`,
+          amount: Number(pr.amount || 0),
+          date: pr.date || (pr.request_date ? String(pr.request_date).split("-").reverse().join("/") : "Hôm nay"),
+          actionUrl: "/cash/payment-requests",
+          openDoc: prCode,
+          notifTarget: "payment-requests",
+          isVoucher: false,
+        });
+      }
+
+      for (let i = matchedAsCount; i < pendingAsList.length; i++) {
+        const st = pendingAsList[i];
+        const stCode = st.code || st.settlement_number || "QT00003";
+        merged.push({
+          id: `as-${st.id}`,
+          category: "pending" as const,
+          code: `${stCode} · Ngân quỹ`,
+          kindLabel: "Quyết toán tạm ứng",
+          kind: "receipt" as const,
+          description: `Hồ sơ quyết toán tạm ứng cần đối chiếu: ${st.reason || st.description || "Chờ kiểm tra chứng từ gốc"}`,
+          partner: `${st.person || st.employee_name || "Nhân viên"} · ${st.dept || st.department || "Bộ phận"}`,
+          amount: Number(st.spentAmount || st.spent_amount || st.advanceAmount || 0),
+          date: st.date || (st.settlement_date ? String(st.settlement_date).split("-").reverse().join("/") : "Hôm nay"),
+          actionUrl: "/cash/advance-settlement",
+          openDoc: stCode,
+          notifTarget: "advance-settlement",
+          isVoucher: false,
+        });
+      }
+
+      if (notifRes.status === "fulfilled") {
+        const nList = Array.isArray(notifRes.value) ? notifRes.value : notifRes.value?.results || [];
+        const allDbRead = nList.length > 0 && nList.every((n: any) => n.status === "READ" || Boolean(n.read_at));
+        if (allDbRead && !localStorage.getItem(readNotifStorageKey)) {
+          readSet.add("sys-cashflow");
+          readSet.add("sys-tax");
+          readSet.add("sys-tt99");
+        }
+      }
+
       setLiveApiNotifs(merged);
-      if (readSet.size > 0) {
-        setReadNotifIds((prev) => new Set([...prev, ...readSet]));
+      if (readSet.size > 0 || unreadSet.size > 0) {
+        updateReadNotifIds((prev) => {
+          const next = new Set(prev);
+          for (const id of readSet) next.add(id);
+          for (const id of unreadSet) next.delete(id);
+          return next;
+        });
+      }
+      if (unreadSet.size > 0) {
+        try {
+          const rawMap = localStorage.getItem("sv_voucher_status_overrides");
+          if (rawMap) {
+            const map = JSON.parse(rawMap) || {};
+            for (const k of Object.keys(map)) {
+              if (map[k]?.revertedUnread) {
+                map[k] = { ...map[k], revertedUnread: false };
+              }
+            }
+            localStorage.setItem("sv_voucher_status_overrides", JSON.stringify(map));
+          }
+        } catch {}
       }
     });
     return () => {
       active = false;
     };
-  }, [apiToken, company?.id, company?.name, effectiveBranchId, dataset]);
+  }, [apiToken, company?.id, company?.name, effectiveBranchId, dataset, notifReloadTick, readNotifStorageKey, updateReadNotifIds]);
 
   const systemAlerts = [
     {
@@ -1236,7 +1540,7 @@ function ReferenceWorkspace() {
       partner: "Cơ quan Thuế",
       amount: 0,
       date: "24/09/2026 09:00",
-      actionUrl: "/tax",
+      actionUrl: "/tax/declarations",
     },
     {
       id: "sys-tt99",
@@ -1278,7 +1582,16 @@ function ReferenceWorkspace() {
       partner: t.partner,
       amount: t.amount,
       date: `${t.date.split("-").reverse().join("/")} 09:30`,
-      actionUrl: "",
+      actionUrl:
+        t.kind === "bank"
+          ? "/bank/transactions"
+          : t.kind === "purchase"
+            ? "/purchases/transactions"
+            : t.kind === "sale"
+              ? "/sales/transactions"
+              : t.kind === "invoice"
+                ? "/invoices/outgoing"
+                : "/cash/transactions",
       isVoucher: true,
     })),
   ];
@@ -1295,7 +1608,10 @@ function ReferenceWorkspace() {
       : notifFilter === "system"
         ? combinedSystemAlerts
         : allNotifs;
+  const unreadVoucherCount = voucherNotifs.filter((n) => !readNotifIds.has(n.id)).length;
+  const unreadSystemCount = combinedSystemAlerts.filter((n) => !readNotifIds.has(n.id)).length;
   const unreadCount = allNotifs.filter((n) => !readNotifIds.has(n.id)).length;
+  const pendingApprovalCount = voucherNotifs.filter((n) => !("voucherStatus" in n) || n.voucherStatus === "pending").length;
 
   useEffect(() => {
     document.title = `${module?.label || "Kế toán"} | Sổ Việt`;
@@ -1365,7 +1681,7 @@ function ReferenceWorkspace() {
     "Cập nhật số dư dữ liệu năm trước": href("/opening"),
     "Nhập dữ liệu": href("/opening"),
     "Kiểm tra & cảnh báo nhà cung cấp rủi ro thuế": href("/purchases/invoice-processing/supplier-risk"),
-    "Đối chiếu hóa đơn với dữ liệu Tổng cục Thuế": href("/invoices/sync"),
+    "Đối chiếu hóa đơn với dữ liệu Tổng cục Thuế": href("/invoices/incoming/inbox"),
     "Kiểm soát hồ sơ và hạch toán": href("/invoices/unposted"),
     "Nhật ký truy cập": "/audit-logs",
     "Thông tin công ty": "/admin?tab=overview",
@@ -1373,12 +1689,12 @@ function ReferenceWorkspace() {
     "Quản lý dữ liệu": "/fiscal-periods",
     "Tùy chọn": "/admin?tab=config",
     "Ngày hạch toán": "/fiscal-periods",
-    "Kết nối ứng dụng": href("/invoices/sync"),
+    "Kết nối ứng dụng": "/admin?tab=config",
     "Thiết lập kết nối sàn TMĐT (Shopee, TikTok Shop)": href("/sales/orders"),
     "Thiết lập kết nối Ngân hàng điện tử": href("/bank/ebanking"),
     "Ngôn ngữ": "/admin?tab=config",
     "Thiết lập cấu hình gửi email": "/admin?tab=config",
-    "Thiết lập chữ ký số (USB Token / SmartCA)": href("/invoices/sync"),
+    "Thiết lập chữ ký số (USB Token / SmartCA)": "/admin?tab=config",
     "Nhập kho": href("/inventory/receipts"),
     "Xuất kho": href("/inventory/issues"),
     "Chuyển kho": href("/inventory/transfers"),
@@ -1501,11 +1817,8 @@ function ReferenceWorkspace() {
       if (["process", "error-guide"].includes(activeTab)) {
         return <MisaInvoiceWorkspace key={`inv-proc-${ctxKey}`} tab={activeTab} href={href} notify={setNotice} company={company} />;
       }
-      if (activeTab === "sync") {
-        return <TaxInvoiceSyncPanel key={`inv-sync-${ctxKey}`} companyId={company.id} token={apiToken} href={href} />;
-      }
-      if (activeTab === "incoming") {
-        return <IncomingInvoiceWorkspace key={`inv-in-${ctxKey}`} notify={setNotice} childTab={childTab} />;
+      if (activeTab === "sync" || activeTab === "incoming") {
+        return <IncomingInvoiceWorkspace key={`inv-in-${ctxKey}`} notify={setNotice} childTab={activeTab === "sync" ? "inbox" : childTab} />;
       }
       if (["outgoing", "pending", "lookup", "issuance", "unposted"].includes(activeTab)) {
         return <InvoiceLookupWorkspace key={`inv-out-${activeTab}-${ctxKey}`} mode={activeTab as "outgoing" | "pending" | "lookup" | "issuance" | "unposted"} href={href} />;
@@ -3125,7 +3438,9 @@ function ReferenceWorkspace() {
                       onClick={() => setNotifFilter("all")}
                     >
                       <span>Tất cả</span>
-                      <span className="misa-notif-badge-pill">{allNotifs.length}</span>
+                      {unreadCount > 0 && (
+                        <span className="misa-notif-badge-pill">{unreadCount}</span>
+                      )}
                     </button>
                     <button
                       type="button"
@@ -3133,7 +3448,9 @@ function ReferenceWorkspace() {
                       onClick={() => setNotifFilter("pending")}
                     >
                       <span>Chờ duyệt</span>
-                      <span className="misa-notif-badge-pill">{voucherNotifs.length}</span>
+                      {unreadVoucherCount > 0 && (
+                        <span className="misa-notif-badge-pill">{unreadVoucherCount}</span>
+                      )}
                     </button>
                     <button
                       type="button"
@@ -3141,26 +3458,36 @@ function ReferenceWorkspace() {
                       onClick={() => setNotifFilter("system")}
                     >
                       <span>Cảnh báo & Nhắc việc</span>
-                      <span className="misa-notif-badge-pill">{combinedSystemAlerts.length}</span>
+                      {unreadSystemCount > 0 && (
+                        <span className="misa-notif-badge-pill">{unreadSystemCount}</span>
+                      )}
                     </button>
                   </div>
 
                   <button
                     type="button"
                     className="misa-notif-mark-read"
+                    style={
+                      unreadCount === 0
+                        ? { color: "#10b981", cursor: "default", opacity: 0.9 }
+                        : undefined
+                    }
                     onClick={() => {
-                      setReadNotifIds(new Set(allNotifs.map((n) => n.id)));
+                      updateReadNotifIds(() => new Set(allNotifs.map((n) => n.id)));
                       if (apiToken) {
                         void request(`/api/v1/common/notifications/read-all/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
                           method: "POST",
                           body: "{}",
                         }).catch(() => {});
                       }
-                      setNotice("Đã đánh dấu đọc tất cả thông báo.");
                     }}
                   >
                     <CheckCheck size={14} />
-                    <span>Đánh dấu đã đọc</span>
+                    <span>
+                      {unreadCount > 0
+                        ? `Đánh dấu đã đọc (${unreadCount})`
+                        : "Đã đọc tất cả"}
+                    </span>
                   </button>
                 </div>
 
@@ -3180,13 +3507,41 @@ function ReferenceWorkspace() {
                           key={n.id}
                           className={`misa-notif-card ${isUnread ? "unread" : ""}`}
                           onClick={() => {
-                            setReadNotifIds((prev) => new Set([...prev, n.id]));
+                            updateReadNotifIds((prev) => new Set([...prev, n.id]));
+                            if ("dbId" in n && n.dbId && apiToken) {
+                              void request(`/api/v1/common/notifications/${encodeURIComponent(String(n.dbId))}/read/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
+                                method: "POST",
+                                body: "{}",
+                              }).catch(() => {});
+                            }
+                            setPanel(null);
+                            setOptimisticTab(null);
                             if ("isVoucher" in n && n.isVoucher) {
-                              setPanel(null);
+                              if (n.actionUrl) {
+                                navigate(href(n.actionUrl));
+                              }
                               setDetailId(n.id);
                             } else if ("actionUrl" in n && n.actionUrl) {
-                              setPanel(null);
-                              navigate(href(n.actionUrl));
+                              const openDoc = "openDoc" in n && n.openDoc ? String(n.openDoc) : undefined;
+                              const notifTarget = "notifTarget" in n && n.notifTarget ? String(n.notifTarget) : undefined;
+                              navigate(href(n.actionUrl, openDoc ? { openDoc } : undefined));
+                              if (openDoc || notifTarget) {
+                                const fireOpenEvent = () => {
+                                  window.dispatchEvent(
+                                    new CustomEvent("sv_open_voucher_notif", {
+                                      detail: {
+                                        actionUrl: n.actionUrl,
+                                        openDoc: openDoc || "pending",
+                                        notifTarget,
+                                        code: n.code,
+                                      },
+                                    }),
+                                  );
+                                };
+                                fireOpenEvent();
+                                window.setTimeout(fireOpenEvent, 120);
+                                window.setTimeout(fireOpenEvent, 350);
+                              }
                             }
                           }}
                         >
@@ -3275,7 +3630,23 @@ function ReferenceWorkspace() {
                                     {n.amount.toLocaleString("vi-VN")} đ
                                   </span>
                                 )}
-                                {isUnread && <span className="misa-notif-dot" />}
+                                {isUnread && (
+                                  <span
+                                    className="misa-notif-dot"
+                                    title="Bấm để đánh dấu đã đọc"
+                                    style={{ cursor: "pointer" }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateReadNotifIds((prev) => new Set([...prev, n.id]));
+                                      if ("dbId" in n && n.dbId && apiToken) {
+                                        void request(`/api/v1/common/notifications/${encodeURIComponent(String(n.dbId))}/read/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
+                                          method: "POST",
+                                          body: "{}",
+                                        }).catch(() => {});
+                                      }
+                                    }}
+                                  />
+                                )}
                               </div>
                             </div>
 
@@ -3294,16 +3665,22 @@ function ReferenceWorkspace() {
                               </div>
 
                               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                {n.category === "pending" ? (
-                                  <span className="misa-notif-status-pill">Chờ duyệt</span>
-                                ) : (
-                                  <span
-                                    className="misa-notif-status-pill"
-                                    style={{ background: "#e0f2fe", color: "#0369a1" }}
-                                  >
-                                    Hệ thống
-                                  </span>
-                                )}
+                                <span
+                                  className="misa-notif-status-pill"
+                                  style={
+                                    "statusBadgeStyle" in n && n.statusBadgeStyle
+                                      ? n.statusBadgeStyle
+                                      : n.category === "pending"
+                                        ? { background: "#fef3c7", color: "#b45309" }
+                                        : { background: "#e0f2fe", color: "#0369a1" }
+                                  }
+                                >
+                                  {"statusBadgeLabel" in n && n.statusBadgeLabel
+                                    ? n.statusBadgeLabel
+                                    : n.category === "pending"
+                                      ? "Chờ duyệt"
+                                      : "Hệ thống"}
+                                </span>
                                 <span className="misa-notif-action-hint">
                                   Xem {n.category === "pending" ? "chứng từ" : "chi tiết"} →
                                 </span>
@@ -3320,8 +3697,8 @@ function ReferenceWorkspace() {
                 <div className="misa-notif-bottom-bar">
                   <span className="misa-notif-summary">
                     {unreadCount > 0
-                      ? `Còn ${unreadCount} thông báo chưa đọc`
-                      : "Đã đọc tất cả thông báo"}
+                      ? `Còn ${unreadCount} thông báo chưa đọc${pendingApprovalCount > 0 ? ` · ${pendingApprovalCount} chứng từ chờ duyệt` : ""}`
+                      : `Đã đọc tất cả thông báo${pendingApprovalCount > 0 ? ` · Còn ${pendingApprovalCount} chứng từ chờ duyệt` : ""}`}
                   </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <button

@@ -273,6 +273,63 @@ def cancel_invoice(invoice, request):
 
 
 @transaction.atomic
+def record_error_notice(invoice, request):
+    """Ghi nhận hồ sơ xử lý hóa đơn lập sai (Mẫu 04/SS-HĐĐT, Biên bản thỏa thuận, Thông báo giải trình, Hủy HĐ sai sót)."""
+    invoice = models.TaxInvoice.objects.select_for_update().get(pk=invoice.pk)
+    notice_type = str(request.data.get("notice_type") or "modal-04ss").strip()
+    reason = str(request.data.get("reason") or "").strip()
+    if not reason:
+        raise ValidationError({"reason": "Vui lòng nhập lý do sai sót / nội dung giải trình."})
+
+    type_labels = {
+        "modal-04ss": "Thông báo HĐĐT có sai sót (Mẫu 04/SS-HĐĐT)",
+        "modal-minutes": "Biên bản thỏa thuận xử lý hóa đơn sai sót",
+        "modal-explain": "Thông báo giải trình sai sót cho người mua",
+        "modal-cancel": "Hủy hóa đơn điện tử lập sai chưa gửi người mua",
+    }
+    label = type_labels.get(notice_type, "Xử lý hóa đơn sai sót")
+    now_iso = timezone.now().isoformat()
+    notice_entry = {
+        "id": f"err-{int(timezone.now().timestamp() * 1000)}",
+        "notice_type": notice_type,
+        "label": label,
+        "reason": reason[:500],
+        "invoice_kind": str(request.data.get("invoice_kind") or "")[:120],
+        "sent_status": str(request.data.get("sent_status") or "")[:60],
+        "fault_type": str(request.data.get("fault_type") or "")[:250],
+        "tax_authority_code": str(request.data.get("tax_authority_code") or "")[:50],
+        "buyer_email": str(request.data.get("buyer_email") or "")[:150],
+        "created_at": now_iso,
+    }
+
+    raw = dict(invoice.raw_data or {})
+    existing_notices = list(raw.get("error_notices") or [])
+    existing_notices.insert(0, notice_entry)
+    raw["error_notices"] = existing_notices
+    raw["last_error_notice"] = notice_entry
+    if not raw.get("correction_reason"):
+        raw["correction_reason"] = reason[:250]
+
+    old_status = invoice.status
+    if notice_type == "modal-cancel" and invoice.status not in ("CANCELLED", "REPLACED"):
+        invoice.status = "CANCELLED"
+        invoice.external_status = "CANCELLED"
+
+    invoice.raw_data = raw
+    invoice.save(update_fields=("status", "external_status", "raw_data", "updated_at"))
+    _history(invoice, request, old_status, invoice.status, f"{label}: {reason[:180]}")
+    audit(
+        request,
+        invoice,
+        "ERROR_NOTICE_CANCEL" if notice_type == "modal-cancel" else "ERROR_NOTICE",
+        {"status": old_status},
+        {"status": invoice.status, "notice": notice_entry},
+        reason=reason[:250],
+    )
+    return invoice, notice_entry
+
+
+@transaction.atomic
 @transaction.atomic
 def record_external_issue(invoice, request):
     """Record an output invoice issued in the customer's own e-invoice software."""
