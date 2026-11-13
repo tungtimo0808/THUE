@@ -194,7 +194,7 @@ export default function LiveJoin() {
                 {item.status === "APPROVED" && (
                   <button
                     type="button"
-                    style={{ background: "#059669", color: "#ffffff", border: "1px solid #047857", padding: "7px 12px", fontSize: 12.5 }}
+                    style={{ background: "var(--brand)", color: "#ffffff", border: "1px solid var(--brand-hover)", padding: "7px 12px", fontSize: 12.5 }}
                     onClick={async () => {
                       await refreshCompanies();
                       navigate("/select-company");

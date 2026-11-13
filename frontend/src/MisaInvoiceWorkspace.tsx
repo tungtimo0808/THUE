@@ -13,6 +13,9 @@ import {
   ArrowRight,
   Inbox,
   Search,
+  Upload,
+  ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
 import { request } from "./live-api";
 import "./misa-invoice-workspace.css";
@@ -94,6 +97,7 @@ export default function MisaInvoiceWorkspace({
   const [fault, setFault] = useState(faults[0]);
   const [action, setAction] = useState("Thay thế hóa đơn");
   const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [showLegacyFlow, setShowLegacyFlow] = useState(false);
 
   // Interactive operational modal state for Mẫu 04/SS-HĐĐT, Biên bản thỏa thuận, Thông báo giải trình
   const [activeActionModal, setActiveActionModal] = useState<
@@ -404,8 +408,8 @@ export default function MisaInvoiceWorkspace({
           >
             <div
               style={{
-                background: "#f0fdf4",
-                border: "1px solid #bbf7d0",
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
                 padding: "10px 14px",
                 borderRadius: 8,
                 fontSize: 12.5,
@@ -967,8 +971,8 @@ export default function MisaInvoiceWorkspace({
                 <legend>3. Nội dung sai sót (Khi chưa gửi người mua)</legend>
                 <div
                   style={{
-                    background: "#f0fdf4",
-                    border: "1px solid #bbf7d0",
+                    background: "#eff6ff",
+                    border: "1px solid #bfdbfe",
                     borderRadius: 6,
                     padding: "10px 12px",
                     fontSize: 12.5,
@@ -997,7 +1001,7 @@ export default function MisaInvoiceWorkspace({
               <span
                 style={{
                   background: "#ecfdf5",
-                  color: "#059669",
+                  color: "var(--brand)",
                   border: "1px solid #a7f3d0",
                   padding: "3px 10px",
                   borderRadius: 12,
@@ -1055,7 +1059,7 @@ export default function MisaInvoiceWorkspace({
                           action === value
                             ? "1px solid #00a165"
                             : "1px solid #cbd5e1",
-                        background: action === value ? "#f0fdf4" : "#ffffff",
+                        background: action === value ? "#eff6ff" : "#ffffff",
                         fontWeight: action === value ? 600 : 500,
                         cursor: "pointer",
                       }}
@@ -1185,94 +1189,467 @@ export default function MisaInvoiceWorkspace({
     );
 
   return (
-    <div className="iw-process">
+    <div className="iw-process" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {renderLegalModal()}
-      <div className="iw-rule">
-        Quản lý và phát hành hóa đơn theo:{" "}
+
+      {/* 1. SMART INGEST DROPZONE & QUICK ACTION BAR (MODERN FINTECH STYLE) */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)",
+          border: "1px solid #bfdbfe",
+          borderRadius: 14,
+          padding: "16px 20px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 14,
+          boxShadow: "0 1px 3px rgba(37, 99, 235, 0.05)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 280, flex: 1 }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: "#dbeafe",
+              color: "#2563eb",
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Upload size={22} />
+          </div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#1e3a8a" }}>
+                Trung tâm Tiếp nhận &amp; Xử lý Hóa đơn Điện tử
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: "#eff6ff",
+                  color: "#15803d",
+                  border: "1px solid #bfdbfe",
+                }}
+              >
+                Nghị định 123/2020 &amp; TT 78/2021
+              </span>
+            </div>
+            <p style={{ margin: "2px 0 0", fontSize: 12, color: "#475569" }}>
+              Tiếp nhận file XML, kiểm tra chữ ký số, đối soát trạng thái CQT và phát hiện rủi ro thuế nhà cung cấp.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <Link
+            to={href("/invoices/incoming/inbox")}
+            className="ref-button teal"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 16px",
+              fontSize: 12.5,
+              fontWeight: 600,
+              borderRadius: 8,
+              boxShadow: "0 2px 6px rgba(13, 148, 136, 0.2)",
+            }}
+          >
+            <Upload size={14} />
+            <span>Tiếp nhận XML hóa đơn</span>
+          </Link>
+          <Link
+            to={href("/tax")}
+            className="ref-button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 14px",
+              fontSize: 12.5,
+              fontWeight: 600,
+              borderRadius: 8,
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
+            }}
+          >
+            <span>Lập tờ khai 01/GTGT</span>
+            <ArrowRight size={13} />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setLegalModalOpen(true)}
+            style={{
+              cursor: "pointer",
+              background: "#ffffff",
+              color: "#1d4ed8",
+              border: "1px solid #bfdbfe",
+              borderRadius: 8,
+              padding: "7px 12px",
+              fontWeight: 600,
+              fontSize: 12,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+            title="Căn cứ pháp lý NĐ 123 và TT 78"
+          >
+            <BookOpen size={13} /> Pháp lý
+          </button>
+        </div>
+      </div>
+
+      {/* 2. BENTO OPERATION GRID (4 KHỐI CHỨC NĂNG HÓA ĐƠN CHỦ LỰC) */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: 14,
+        }}
+      >
+        {/* Card 1: Hóa đơn đầu vào */}
+        <Link
+          to={href("/invoices/incoming/inbox")}
+          className="metric card"
+          style={{
+            padding: "18px 20px",
+            background: "#ffffff",
+            borderRadius: 14,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            textDecoration: "none",
+            color: "inherit",
+            transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  background: "#eff6ff",
+                  color: "var(--brand-ink)",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <Inbox size={20} />
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: "#ecfdf5",
+                  color: "var(--brand)",
+                  border: "1px solid #a7f3d0",
+                }}
+              >
+                Mua vào (TK 133)
+              </span>
+            </div>
+            <h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
+              Hóa đơn đầu vào
+            </h3>
+            <p style={{ margin: 0, fontSize: 12.5, color: "#64748b", lineHeight: 1.4 }}>
+              Tiếp nhận file XML, kiểm tra tính hợp lệ chữ ký số, bắt lỗi NCC rủi ro và hạch toán tự động vào mua hàng.
+            </p>
+          </div>
+          <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 600, color: "var(--brand)" }}>
+            <span>Mở hộp thư hóa đơn</span>
+            <ArrowRight size={13} />
+          </div>
+        </Link>
+
+        {/* Card 2: Hóa đơn đầu ra & Phát hành */}
+        <Link
+          to={href("/invoices/outgoing")}
+          className="metric card"
+          style={{
+            padding: "18px 20px",
+            background: "#ffffff",
+            borderRadius: 14,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            textDecoration: "none",
+            color: "inherit",
+            transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  background: "#eff6ff",
+                  color: "#2563eb",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <Send size={20} />
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: "#eff6ff",
+                  color: "#1d4ed8",
+                  border: "1px solid #bfdbfe",
+                }}
+              >
+                Bán ra (TK 3331)
+              </span>
+            </div>
+            <h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
+              Hóa đơn đầu ra &amp; Phát hành
+            </h3>
+            <p style={{ margin: 0, fontSize: 12.5, color: "#64748b", lineHeight: 1.4 }}>
+              Lập hóa đơn có mã CQT, ký số Token/HSM, gửi cấp mã cơ quan thuế và tự động gửi email cho người mua.
+            </p>
+          </div>
+          <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 600, color: "var(--brand)" }}>
+            <span>Phát hành hóa đơn</span>
+            <ArrowRight size={13} />
+          </div>
+        </Link>
+
+        {/* Card 3: Xử lý sai sót & Mẫu 04/SS-HĐĐT */}
+        <Link
+          to={href("/invoices/error-guide")}
+          className="metric card"
+          style={{
+            padding: "18px 20px",
+            background: "#ffffff",
+            borderRadius: 14,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            textDecoration: "none",
+            color: "inherit",
+            transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  background: "#fffbeb",
+                  color: "#d97706",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <FileSignature size={20} />
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: "#fef3c7",
+                  color: "#b45309",
+                  border: "1px solid #fde68a",
+                }}
+              >
+                Mẫu 04/SS-HĐĐT
+              </span>
+            </div>
+            <h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
+              Xử lý sai sót &amp; Điều chỉnh
+            </h3>
+            <p style={{ margin: 0, fontSize: 12.5, color: "#64748b", lineHeight: 1.4 }}>
+              Hướng dẫn xử lý sai sót chuẩn NĐ 123 &amp; NĐ 70, lập biên bản thỏa thuận và hóa đơn điều chỉnh/thay thế.
+            </p>
+          </div>
+          <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 600, color: "var(--brand)" }}>
+            <span>Xem hướng dẫn sai sót</span>
+            <ArrowRight size={13} />
+          </div>
+        </Link>
+
+        {/* Card 4: Tra cứu & Đối soát */}
+        <Link
+          to={href("/invoices/lookup")}
+          className="metric card"
+          style={{
+            padding: "18px 20px",
+            background: "#ffffff",
+            borderRadius: 14,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            textDecoration: "none",
+            color: "inherit",
+            transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  background: "#f5f3ff",
+                  color: "#7c3aed",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <Search size={20} />
+              </div>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: "#f3e8ff",
+                  color: "#6b21a8",
+                  border: "1px solid #d8b4fe",
+                }}
+              >
+                Cổng Thuế eTax
+              </span>
+            </div>
+            <h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
+              Tra cứu &amp; Đối soát CQT
+            </h3>
+            <p style={{ margin: 0, fontSize: 12.5, color: "#64748b", lineHeight: 1.4 }}>
+              Tra cứu trạng thái hóa đơn trực tiếp với hệ thống hóa đơn điện tử của Tổng cục Thuế và sổ sách kế toán.
+            </p>
+          </div>
+          <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 600, color: "var(--brand)" }}>
+            <span>Tra cứu hóa đơn</span>
+            <ArrowRight size={13} />
+          </div>
+        </Link>
+      </div>
+
+      {/* 3. SƠ ĐỒ QUY TRÌNH HÓA ĐƠN (COLLAPSIBLE DIAGRAM) */}
+      <div style={{ marginTop: 4 }}>
         <button
           type="button"
-          onClick={() => setLegalModalOpen(true)}
+          onClick={() => setShowLegacyFlow((prev) => !prev)}
           style={{
-            cursor: "pointer",
-            background: "#eff6ff",
-            color: "#1d4ed8",
-            border: "1px solid #bfdbfe",
-            borderRadius: 6,
-            padding: "4px 10px",
-            fontWeight: 600,
-            fontSize: 12.5,
             display: "inline-flex",
             alignItems: "center",
-            gap: 5,
+            gap: 6,
+            padding: "7px 14px",
+            background: "#ffffff",
+            border: "1px solid #cbd5e1",
+            borderRadius: 8,
+            fontSize: 12.5,
+            fontWeight: 600,
+            color: "#475569",
+            cursor: "pointer",
             boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
           }}
-          title="Bấm để xem chi tiết căn cứ pháp lý NĐ 123 và TT 78"
         >
-          <BookOpen size={13} /> Nghị định 123/2020/NĐ-CP & TT 78/2021/TT-BTC
+          <ChevronDown
+            size={14}
+            style={{
+              transform: showLegacyFlow ? "rotate(180deg)" : "none",
+              transition: "transform 0.15s ease",
+            }}
+          />
+          <span>{showLegacyFlow ? "Ẩn sơ đồ chi tiết" : "Xem sơ đồ quy trình nghiệp vụ HĐĐT"}</span>
         </button>
-      </div>
-      <div className="iw-process-grid">
-        <section className="iw-business">
-          <h2>NGHIỆP VỤ HÓA ĐƠN ĐIỆN TỬ</h2>
-          <div className="iw-flow">
-            <svg viewBox={`0 0 ${FLOW_W} ${FLOW_H}`} aria-hidden="true">
-              <defs>
-                <marker
-                  id="iw-arrow"
-                  viewBox="0 0 10 10"
-                  markerWidth="12"
-                  markerHeight="12"
-                  refX="9"
-                  refY="5"
-                  orient="auto-start-reverse"
-                  markerUnits="userSpaceOnUse"
-                >
-                  <path d="M0 0 L10 5 L0 10 Z" fill="#8a929b" />
-                </marker>
-              </defs>
-              {flowConnectors.map((d, index) => (
-                <path
-                  key={d}
-                  d={d}
-                  fill="none"
-                  stroke="#a1a6ad"
-                  strokeWidth="1.5"
-                  markerEnd={flowArrowed.has(index) ? "url(#iw-arrow)" : undefined}
-                />
+
+        {showLegacyFlow && (
+          <div className="iw-process-grid" style={{ marginTop: 12 }}>
+            <section className="iw-business">
+              <h2>NGHIỆP VỤ HÓA ĐƠN ĐIỆN TỬ</h2>
+              <div className="iw-flow">
+                <svg viewBox={`0 0 ${FLOW_W} ${FLOW_H}`} aria-hidden="true">
+                  <defs>
+                    <marker
+                      id="iw-arrow"
+                      viewBox="0 0 10 10"
+                      markerWidth="12"
+                      markerHeight="12"
+                      refX="9"
+                      refY="5"
+                      orient="auto-start-reverse"
+                      markerUnits="userSpaceOnUse"
+                    >
+                      <path d="M0 0 L10 5 L0 10 Z" fill="#8a929b" />
+                    </marker>
+                  </defs>
+                  {flowConnectors.map((d, index) => (
+                    <path
+                      key={d}
+                      d={d}
+                      fill="none"
+                      stroke="#a1a6ad"
+                      strokeWidth="1.5"
+                      markerEnd={flowArrowed.has(index) ? "url(#iw-arrow)" : undefined}
+                    />
+                  ))}
+                </svg>
+                {flowNodes.map(([label, path, x, y, labelAbove]) => (
+                  <Link
+                    key={label}
+                    className={labelAbove ? "label-above" : undefined}
+                    to={href("/invoices/" + path)}
+                    style={{ left: `${(x / FLOW_W) * 100}%`, top: `${(y / FLOW_H) * 100}%` }}
+                  >
+                    <span className="iw-flow-icon">
+                      <Monitor size={35} />
+                      <FileText size={21} />
+                    </span>
+                    <span>{label}</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+            <aside className="iw-reports">
+              <h2>BÁO CÁO</h2>
+              {[
+                "Bảng kê hóa đơn đã sử dụng",
+                "Thống kê số lượng hóa đơn đã phát hành",
+                "Danh sách hóa đơn điều chỉnh/ thay thế",
+                "Danh sách Hủy hóa đơn (NĐ 123/2020/NĐ-CP)",
+              ].map((label) => (
+                <Link key={label} to={href("/invoices/reports")}>
+                  •　{label}
+                </Link>
               ))}
-            </svg>
-            {flowNodes.map(([label, path, x, y, labelAbove]) => (
-              <Link
-                key={label}
-                className={labelAbove ? "label-above" : undefined}
-                to={href("/invoices/" + path)}
-                style={{ left: `${(x / FLOW_W) * 100}%`, top: `${(y / FLOW_H) * 100}%` }}
-              >
-                <span className="iw-flow-icon">
-                  <Monitor size={35} />
-                  <FileText size={21} />
-                </span>
-                <span>{label}</span>
+              <Link className="iw-all-reports" to={href("/invoices/reports")}>
+                Tất cả báo cáo
               </Link>
-            ))}
+            </aside>
           </div>
-        </section>
-        <aside className="iw-reports">
-          <h2>BÁO CÁO</h2>
-          {[
-            "Bảng kê hóa đơn đã sử dụng",
-            "Thống kê số lượng hóa đơn đã phát hành",
-            "Danh sách hóa đơn điều chỉnh/ thay thế",
-            "Danh sách Hủy hóa đơn (NĐ 123/2020/NĐ-CP)",
-          ].map((label) => (
-            <Link key={label} to={href("/invoices/reports")}>
-              •　{label}
-            </Link>
-          ))}
-          <Link className="iw-all-reports" to={href("/invoices/reports")}>
-            Tất cả báo cáo
-          </Link>
-        </aside>
+        )}
       </div>
       <footer>
         {[

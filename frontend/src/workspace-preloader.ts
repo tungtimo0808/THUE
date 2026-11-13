@@ -45,29 +45,47 @@ export function preloadWorkspace(moduleId: string): void {
   }
 }
 
+let idlePreloadScheduled = false;
+
 /**
- * Automatically prefetch high-priority core modules in background during idle time.
- * Staggered by 300ms intervals to leave the network free for critical user actions.
+ * Automatically prefetch high-priority core modules in background ONLY AFTER
+ * initial first-load API data and React rendering have completely settled.
+ * Spaced by 1200ms inside requestIdleCallback to avoid main-thread V8 parse jank.
  */
 export function setupIdlePreloading(): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || idlePreloadScheduled) return;
+  idlePreloadScheduled = true;
 
-  const runIdle =
-    (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback ||
-    ((cb: () => void) => window.setTimeout(cb, 1200));
+  const scheduleIdle = (cb: () => void) => {
+    const ric = (window as unknown as {
+      requestIdleCallback?: (fn: () => void, opts?: { timeout: number }) => number;
+    }).requestIdleCallback;
+    if (ric) {
+      ric(cb, { timeout: 5000 });
+    } else {
+      window.setTimeout(cb, 1200);
+    }
+  };
 
-  runIdle(() => {
-    // Top frequently used accounting & reporting modules
-    const priorityModules = ["reports", "cash", "bank", "purchases", "sales", "invoices", "ledger"];
+  // Wait 4s so initial screen API calls & paint have 100% network + CPU priority
+  window.setTimeout(() => {
+    const currentSeg = (window.location.pathname.split("/")[1] || "overview").toLowerCase();
+    preloadedModules.add(currentSeg);
+    const priorityModules = ["overview", "cash", "bank", "purchases", "sales", "reports", "invoices", "ledger"].filter(
+      (m) => !preloadedModules.has(m)
+    );
     let idx = 0;
 
     function prefetchNext() {
-      if (idx < priorityModules.length) {
-        preloadWorkspace(priorityModules[idx++]);
-        window.setTimeout(prefetchNext, 350);
-      }
+      if (idx >= priorityModules.length) return;
+      scheduleIdle(() => {
+        if (idx < priorityModules.length) {
+          preloadWorkspace(priorityModules[idx++]);
+          window.setTimeout(prefetchNext, 1200);
+        }
+      });
     }
 
     prefetchNext();
-  });
+  }, 4000);
 }

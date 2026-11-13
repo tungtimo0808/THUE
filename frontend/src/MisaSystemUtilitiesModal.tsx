@@ -1783,7 +1783,7 @@ export function MisaSystemUtilitiesModal({
                         padding: "6px 12px",
                         borderRadius: 6,
                         border: "1px solid #86efac",
-                        background: "#f0fdf4",
+                        background: "#eff6ff",
                         fontSize: 12,
                         fontWeight: 700,
                         color: "#15803d",
@@ -1813,7 +1813,7 @@ export function MisaSystemUtilitiesModal({
                           padding: "12px 14px",
                           borderRadius: 8,
                           border: checked ? "1.5px solid #22c55e" : "1px solid #e2e8f0",
-                          background: checked ? "#f0fdf4" : "#f8fafc",
+                          background: checked ? "#eff6ff" : "#f8fafc",
                           display: "flex",
                           alignItems: "flex-start",
                           gap: 10,
@@ -1832,7 +1832,7 @@ export function MisaSystemUtilitiesModal({
                             width: 16,
                             height: 16,
                             marginTop: 2,
-                            accentColor: "#16a34a",
+                            accentColor: "var(--brand)",
                             cursor: mod.core ? "not-allowed" : "pointer",
                           }}
                         />

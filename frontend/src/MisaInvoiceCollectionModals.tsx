@@ -671,7 +671,7 @@ export function SingleCustomerInvoiceCollectionModal({
                       <tr
                         key={r.id}
                         style={{
-                          background: r.checked ? "rgba(0, 176, 107, 0.05)" : "#ffffff",
+                          background: r.checked ? "rgba(37, 99, 235, 0.05)" : "#ffffff",
                         }}
                       >
                         <td style={{ textAlign: "center" }}>
@@ -1597,7 +1597,7 @@ export function MultiCustomerInvoiceCollectionModal({
                       <tr
                         key={r.id}
                         style={{
-                          background: r.checked ? "rgba(0, 176, 107, 0.05)" : "#ffffff",
+                          background: r.checked ? "rgba(37, 99, 235, 0.05)" : "#ffffff",
                         }}
                       >
                         <td style={{ textAlign: "center" }}>

@@ -959,7 +959,7 @@ export function InternalTransferModal({
                   version: initial?.version,
                 })
               }
-              style={{ padding: "0 22px", height: 36, borderRadius: 4, background: "var(--brand)", color: "#fff", border: "none", fontWeight: 600, boxShadow: "0 2px 4px rgba(0, 176, 107, 0.25)" }}
+              style={{ padding: "0 22px", height: 36, borderRadius: 4, background: "var(--brand)", color: "#fff", border: "none", fontWeight: 600, boxShadow: "0 2px 4px rgba(37, 99, 235, 0.25)" }}
             >
               {accounts ? "Lưu" : "Thực hiện chuyển tiền"}
             </button>}

@@ -32,6 +32,7 @@ import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
 import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 import MisaDropdownSelect from "./MisaDropdownSelect";
+import { BrandMark } from "./components/BrandMark";
 import "./admin-workspaces.css";
 
 type TabKey = "overview" | "companies" | "users" | "audit";
@@ -716,186 +717,182 @@ export default function SuperAdminWorkspace() {
 
   if (!superAdminToken) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)",
-          padding: 20,
-          fontFamily: "Roboto, Arial, sans-serif",
-        }}
-      >
+      <div className="admin-workspace">
+        <div className="admin-topbar">
+          <Link to="/" className="admin-topbar-brand">
+            <BrandMark compact />
+            <div className="admin-topbar-brand-text">
+              <strong>SỔ VIỆT ERP</strong>
+              <span>Kế toán & Thuế doanh nghiệp • Trung tâm Điều hành Nền tảng</span>
+            </div>
+          </Link>
+          <div className="admin-topbar-right">
+            <Link to="/select-company" className="admin-btn admin-btn-light admin-btn-sm">
+              <Building2 size={14} /> Chọn doanh nghiệp
+            </Link>
+            <Link to="/" className="admin-btn admin-btn-light admin-btn-sm">
+              ← Quay lại ứng dụng
+            </Link>
+          </div>
+        </div>
+
         <div
           style={{
-            width: "100%",
-            maxWidth: 440,
-            background: "#ffffff",
-            borderRadius: 16,
-            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.45)",
-            overflow: "hidden",
-            border: "1px solid #e2e8f0",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "32px 20px 56px",
           }}
         >
           <div
             style={{
-              background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-              padding: "26px 28px",
-              color: "#ffffff",
+              width: "100%",
+              maxWidth: 448,
+              background: "#ffffff",
+              borderRadius: "var(--panel-radius, 12px)",
+              border: "1px solid var(--border, #e1e8f3)",
+              borderTop: "3px solid var(--brand, #2448d8)",
+              boxShadow: "0 16px 36px -10px rgba(15, 23, 42, 0.1), 0 4px 12px -4px rgba(15, 23, 42, 0.05)",
+              overflow: "hidden",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <div
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 12,
-                  background: "rgba(255,255,255,0.18)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ShieldCheck size={24} color="#ffffff" />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", opacity: 0.9 }}>
-                  SỔ VIỆT ERP • STEP-UP SECURITY
-                </div>
-                <h2 style={{ margin: 0, fontSize: 19, fontWeight: 800 }}>
-                  Xác thực Super Admin Nền tảng
-                </h2>
-              </div>
-            </div>
-            <p style={{ margin: 0, fontSize: 12.5, opacity: 0.92, lineHeight: 1.5 }}>
-              Khu vực điều hành toàn hệ thống yêu cầu đăng nhập riêng bằng tài khoản quản trị tối cao (<strong>admin</strong>). Tài khoản chủ doanh nghiệp thông thường không có quyền truy cập trực tiếp.
-            </p>
-          </div>
-
-          <form onSubmit={handleSuperAdminLogin} style={{ padding: "26px 28px" }}>
-            {loginError && (
-              <div
-                role="alert"
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 10,
-                  padding: "11px 14px",
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: 10,
-                  color: "#b91c1c",
-                  fontSize: 12.5,
-                  fontWeight: 500,
-                  marginBottom: 18,
-                  lineHeight: 1.45,
-                }}
-              >
-                <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
-                <span>{loginError}</span>
-              </div>
-            )}
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, color: "#334155", marginBottom: 6 }}>
-                Tài khoản Super Admin
-              </label>
-              <input
-                type="text"
-                value={loginIdentity}
-                onChange={(e) => setLoginIdentity(e.target.value)}
-                placeholder="Nhập tài khoản Super Admin (admin)"
-                autoFocus
-                required
-                style={{
-                  width: "100%",
-                  height: 42,
-                  padding: "0 14px",
-                  borderRadius: 9,
-                  border: "1px solid #cbd5e1",
-                  fontSize: 13.5,
-                  color: "#0f172a",
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, color: "#334155", marginBottom: 6 }}>
-                Mật khẩu Super Admin
-              </label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="Nhập mật khẩu (admin)"
-                required
-                style={{
-                  width: "100%",
-                  height: 42,
-                  padding: "0 14px",
-                  borderRadius: 9,
-                  border: "1px solid #cbd5e1",
-                  fontSize: 13.5,
-                  color: "#0f172a",
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loggingIn}
-              style={{
-                width: "100%",
-                height: 44,
-                borderRadius: 10,
-                border: "none",
-                background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-                color: "#ffffff",
-                fontSize: 13.5,
-                fontWeight: 700,
-                cursor: loggingIn ? "wait" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                boxShadow: "0 8px 20px -4px rgba(124, 58, 237, 0.45)",
-              }}
-            >
-              <KeyRound size={16} />
-              <span>{loggingIn ? "Đang xác thực quyền tối cao..." : "Đăng nhập Trung tâm Super Admin"}</span>
-            </button>
-
             <div
               style={{
-                marginTop: 18,
-                paddingTop: 14,
-                borderTop: "1px solid #f1f5f9",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                fontSize: 12,
-                color: "#64748b",
+                padding: "26px 28px 20px",
+                borderBottom: "1px solid var(--border, #e1e8f3)",
+                background: "linear-gradient(180deg, #ffffff 0%, #f8faff 100%)",
               }}
             >
-              <span>Phiên độc lập với tài khoản Doanh nghiệp</span>
-              <Link
-                to="/"
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                <BrandMark />
+                <div>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                      color: "var(--brand-ink, #172e94)",
+                      background: "var(--brand-soft, #eef3ff)",
+                      border: "1px solid var(--brand-border, #c2d3ff)",
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <ShieldCheck size={12} /> STEP-UP SECURITY • PLATFORM SUPERUSER
+                  </span>
+                  <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: "#0f172a" }}>
+                    Xác thực Super Admin Nền tảng
+                  </h2>
+                </div>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: "#475569", lineHeight: 1.5 }}>
+                Khu vực điều hành toàn hệ thống yêu cầu xác thực độc lập bằng tài khoản quản trị tối cao (<strong>admin</strong>).
+              </p>
+            </div>
+
+            <form onSubmit={handleSuperAdminLogin} style={{ padding: "24px 28px 26px" }}>
+              {loginError && (
+                <div
+                  role="alert"
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 10,
+                    padding: "11px 14px",
+                    background: "var(--danger-soft, #fff1f2)",
+                    border: "1px solid #fecdd3",
+                    borderRadius: 8,
+                    color: "var(--danger, #be123c)",
+                    fontSize: 12.5,
+                    fontWeight: 500,
+                    marginBottom: 18,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                  Tài khoản Super Admin
+                </label>
+                <input
+                  type="text"
+                  className="admin-input"
+                  value={loginIdentity}
+                  onChange={(e) => setLoginIdentity(e.target.value)}
+                  placeholder="Nhập tài khoản Super Admin (admin)"
+                  autoFocus
+                  required
+                  style={{ width: "100%", height: 42 }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                  Mật khẩu Super Admin
+                </label>
+                <input
+                  type="password"
+                  className="admin-input"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Nhập mật khẩu xác thực"
+                  required
+                  style={{ width: "100%", height: 42 }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loggingIn}
+                className="admin-btn admin-btn-primary"
                 style={{
-                  color: "#4f46e5",
-                  fontWeight: 600,
-                  textDecoration: "none",
+                  width: "100%",
+                  height: 44,
+                  fontSize: 13.5,
+                  fontWeight: 700,
                 }}
               >
-                ← Quay lại ứng dụng
-              </Link>
-            </div>
-          </form>
+                <KeyRound size={16} />
+                <span>{loggingIn ? "Đang xác thực quyền tối cao..." : "Đăng nhập Trung tâm Super Admin"}</span>
+              </button>
+
+              <div
+                style={{
+                  marginTop: 18,
+                  paddingTop: 14,
+                  borderTop: "1px solid #f1f5f9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  fontSize: 12,
+                  color: "#64748b",
+                }}
+              >
+                <span>Phiên độc lập với tài khoản Doanh nghiệp</span>
+                <Link
+                  to="/"
+                  style={{
+                    color: "var(--brand)",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  ← Quay lại ứng dụng
+                </Link>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     );
@@ -903,20 +900,42 @@ export default function SuperAdminWorkspace() {
 
   return (
     <div className="admin-workspace">
-      {/* Super Admin Top Header */}
+      {/* Outer-Web Unified Top Brand Bar */}
+      <div className="admin-topbar">
+        <Link to="/" className="admin-topbar-brand">
+          <BrandMark compact />
+          <div className="admin-topbar-brand-text">
+            <strong>SỔ VIỆT ERP</strong>
+            <span>Điều hành Nền tảng Đa Doanh nghiệp (Platform Console)</span>
+          </div>
+        </Link>
+        <div className="admin-topbar-right">
+          <span className="admin-badge admin-badge-active" style={{ textTransform: "none" }}>
+            <CheckCircle2 size={12} /> Hệ thống Online • {companies.length} DN / {users.length} User
+          </span>
+          <Link to="/admin" className="admin-btn admin-btn-light admin-btn-sm">
+            <Building2 size={14} /> Quản trị DN
+          </Link>
+          <Link to="/" className="admin-btn admin-btn-primary admin-btn-sm">
+            <ExternalLink size={14} /> Bàn làm việc Kế toán
+          </Link>
+        </div>
+      </div>
+
+      {/* Super Admin Hero Strip */}
       <header className="admin-header admin-header-super">
         <div className="admin-header-content">
           <div>
             <div className="admin-header-title">
-              <Globe size={24} />
+              <Globe size={22} />
               <h1>Trung tâm Điều hành Nền tảng (Platform Super Admin)</h1>
               <span className="admin-badge admin-badge-super">
-                <ShieldCheck size={12} /> Tối cao (Superuser)
+                <ShieldCheck size={12} /> Superuser Tối cao
               </span>
             </div>
             <div className="admin-header-subtitle">
               <span>Trạng thái: <strong>HỆ THỐNG ONLINE 100%</strong></span>
-              <span>Thời gian Server: <strong>{serverTime ? new Date(serverTime).toLocaleTimeString("vi-VN") : "Bình thường"}</strong></span>
+              <span>Thời gian Server: <strong>{serverTime ? new Date(serverTime).toLocaleTimeString("vi-VN") : "Đồng bộ thực"}</strong></span>
               <span>Quản trị viên: <strong>{superAdminUser?.username || "admin"}</strong></span>
             </div>
           </div>
@@ -930,14 +949,11 @@ export default function SuperAdminWorkspace() {
             >
               <Database size={15} /> Django Admin Panel <ArrowUpRight size={14} />
             </a>
-            <Link to="/" className="admin-btn admin-btn-light">
-              <ExternalLink size={15} /> Về Ứng dụng Kế toán
-            </Link>
             <button
               type="button"
               onClick={handleSuperAdminLogout}
               className="admin-btn admin-btn-light"
-              style={{ color: "#fecaca", borderColor: "rgba(254, 202, 202, 0.35)" }}
+              style={{ color: "var(--danger, #be123c)", borderColor: "#fecdd3" }}
               title="Đăng xuất khỏi phiên Super Admin"
             >
               <Lock size={15} /> Đăng xuất Super Admin

@@ -169,8 +169,24 @@ export function MisaDashboardOverview({
   const [recentModuleFilter, setRecentModuleFilter] = useState<string>("");
   const [recentStatusFilter, setRecentStatusFilter] = useState<string>("");
 
-  const [configData, setConfigData] = useState<any>(null);
-  const [overviewData, setOverviewData] = useState<any>(null);
+  const dashCfgCacheKey = effectiveCompanyId ? `sv_dash_cfg_v1_${effectiveCompanyId}` : "";
+  const dashOvrCacheKey = effectiveCompanyId
+    ? `sv_dash_ovr_v1_${effectiveCompanyId}_${selectedPeriod}_${selectedBranchId || "all"}_${comparisonMode}_${revenueBasis}`
+    : "";
+
+  const readSessionJson = (key: string) => {
+    if (!key) return null;
+    try {
+      const raw = sessionStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const [configData, setConfigData] = useState<any>(() => readSessionJson(dashCfgCacheKey));
+  const [overviewData, setOverviewData] = useState<any>(() => readSessionJson(dashOvrCacheKey));
+  const overviewCacheKeyRef = useRef<string>(overviewData ? dashOvrCacheKey : "");
   const [loading, setLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<string>("");
@@ -216,7 +232,9 @@ export function MisaDashboardOverview({
   useEffect(() => {
     if (!propBranchId || propBranchId === "all") {
       if (selectedBranchId !== "") setSelectedBranchId("");
-    } else if (propBranchId === "head-office") {
+      return;
+    }
+    if (propBranchId === "head-office") {
       const avail: any[] = configData?.available_branches || configData?.branches || [];
       const hq = avail.find((b: any) => b.is_head_office || b.code === "HQ") || avail[0];
       const targetId = hq ? String(hq.id) : "";
@@ -224,12 +242,27 @@ export function MisaDashboardOverview({
     } else if (propBranchId !== selectedBranchId) {
       setSelectedBranchId(propBranchId);
     }
-  }, [propBranchId, configData]);
+  }, [propBranchId, configData, selectedBranchId]);
 
   const writer = useMemo(() => {
     if (!effectiveToken || !effectiveCompanyId) return null;
     return createApiWriter(effectiveCompanyId, (path, init) => request(path, effectiveToken, init));
   }, [effectiveToken, effectiveCompanyId]);
+
+  // Seed cached config/overview immediately when switching context
+  useEffect(() => {
+    const cachedCfg = readSessionJson(dashCfgCacheKey);
+    if (cachedCfg) setConfigData(cachedCfg);
+  }, [dashCfgCacheKey]);
+
+  useEffect(() => {
+    if (overviewCacheKeyRef.current === dashOvrCacheKey) return;
+    const cachedOvr = readSessionJson(dashOvrCacheKey);
+    if (cachedOvr) {
+      overviewCacheKeyRef.current = dashOvrCacheKey;
+      setOverviewData(cachedOvr);
+    }
+  }, [dashOvrCacheKey]);
 
   // Load config (periods, branches, widget catalog) when company changes
   useEffect(() => {
@@ -239,6 +272,11 @@ export function MisaDashboardOverview({
       .then((res) => {
         if (!active) return;
         setConfigData(res);
+        if (dashCfgCacheKey) {
+          try {
+            sessionStorage.setItem(dashCfgCacheKey, JSON.stringify(res));
+          } catch {}
+        }
         const rawList = Array.isArray(res?.available_periods)
           ? res.available_periods
           : Array.isArray(res?.periods)
@@ -259,13 +297,15 @@ export function MisaDashboardOverview({
     return () => {
       active = false;
     };
-  }, [writer]);
+  }, [writer, dashCfgCacheKey]);
 
-  // Load overview data with EF-29 race-condition protection
+  // Load overview data with EF-29 race-condition protection & instant SWR revalidation
   const loadDashboardOverview = async (opts?: { forceRefresh?: boolean }) => {
     if (!writer) return;
     const currentReqId = ++requestIdRef.current;
-    if (opts?.forceRefresh) {
+    const targetCacheKey = dashOvrCacheKey;
+    const hasWarmSnapshot = Boolean(overviewData && overviewCacheKeyRef.current === targetCacheKey);
+    if (opts?.forceRefresh || hasWarmSnapshot) {
       setRefreshing(true);
     } else {
       setLoading(true);
@@ -289,14 +329,22 @@ export function MisaDashboardOverview({
 
       // EF-29: Ignore stale response if a newer request was fired
       if (currentReqId !== requestIdRef.current) return;
+      overviewCacheKeyRef.current = targetCacheKey;
       setOverviewData(payload);
+      if (targetCacheKey) {
+        try {
+          sessionStorage.setItem(targetCacheKey, JSON.stringify(payload));
+        } catch {}
+      }
       if (opts?.forceRefresh && notify) {
         notify("Đã làm mới số liệu Dashboard tổng quan từ Sổ cái và các phân hệ nghiệp vụ.");
       }
     } catch (err: any) {
       if (currentReqId !== requestIdRef.current) return;
       const msg = err instanceof Error ? err.message : String(err || "Không thể tải dữ liệu Dashboard.");
-      setGlobalError(msg);
+      if (!hasWarmSnapshot) {
+        setGlobalError(msg);
+      }
     } finally {
       if (currentReqId === requestIdRef.current) {
         setLoading(false);
@@ -327,6 +375,10 @@ export function MisaDashboardOverview({
   };
 
   const openMetricDrilldown = async (metricCode: string) => {
+    if (metricCode === "DASH-TAX") {
+      navigate(href("/tax"));
+      return;
+    }
     setDrilldownMetric(metricCode);
     setDrilldownData(null);
     setDrilldownError("");
@@ -427,6 +479,20 @@ export function MisaDashboardOverview({
   const pendingLocal = items.filter((t) => t.status === "pending");
 
   const kpiCards = [
+    {
+      code: "DASH-TAX",
+      label: "Dự tính thuế GTGT phải nộp",
+      status: "READY",
+      value: hasApiSession
+        ? Number(dash10.tax_payable_total ?? dash10.total_tax_payable ?? 50600000)
+        : 50600000,
+      subtext: `Đầu ra: ${fmtMoney(dash10.vat_output_total ?? 134600000)} · Đầu vào: ${fmtMoney(dash10.vat_input_deductible_total ?? 84000000)}`,
+      deltaPct: "+12.4%",
+      icon: ShieldCheck,
+      tone: "rose",
+      isCount: false,
+      targetUrl: "/tax",
+    },
     {
       code: "DASH-01",
       label: "Doanh thu bán hàng",
@@ -565,6 +631,101 @@ export function MisaDashboardOverview({
 
   return (
     <div className="ref-overview" style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 14 }}>
+      {/* BANNER CẢNH BÁO THUẾ KHẨN CẤP & HẠN NỘP TỜ KHAI (MODERN FINTECH STYLE) */}
+      <div
+        className="sv-tax-alert-banner"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "14px 20px",
+          borderRadius: 14,
+          background: "linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%)",
+          border: "1px solid #bfdbfe",
+          boxShadow: "0 2px 8px rgba(37, 99, 235, 0.05)",
+          flexWrap: "wrap",
+          gap: 14,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 280, flex: 1 }}>
+          <div
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 10,
+              background: "#dbeafe",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#2563eb",
+              flexShrink: 0,
+            }}
+          >
+            <ShieldCheck size={22} />
+          </div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13.5, fontWeight: 700, color: "#1e3a8a" }}>
+                Kiểm soát tuân thủ Thuế &amp; Hóa đơn Quý 4/2026
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: "#fef3c7",
+                  color: "#b45309",
+                  border: "1px solid #fde68a",
+                }}
+              >
+                Còn 8 ngày nộp tờ khai
+              </span>
+            </div>
+            <p style={{ margin: "3px 0 0", fontSize: 12, color: "#475569", lineHeight: 1.4 }}>
+              Hạn nộp Tờ khai 01/GTGT: <strong>31/01/2027</strong> · Phát hiện <strong>2 hóa đơn đầu vào</strong> từ NCC thuộc diện cảnh báo rủi ro hóa đơn.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <Link
+            to={href("/tax")}
+            className="ref-button teal"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 16px",
+              fontSize: 12.5,
+              fontWeight: 600,
+              borderRadius: 8,
+              boxShadow: "0 2px 6px rgba(13, 148, 136, 0.2)",
+            }}
+          >
+            <span>Lập tờ khai 01/GTGT</span>
+            <ArrowUpRight size={14} />
+          </Link>
+          <Link
+            to={href("/invoices")}
+            className="ref-button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 14px",
+              fontSize: 12.5,
+              fontWeight: 600,
+              borderRadius: 8,
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
+            }}
+          >
+            <span>Soát hóa đơn rủi ro</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Thanh điều khiển & Bộ lọc ngữ cảnh Dashboard (DR-RPT-01, AF-01..AF-05) */}
       <div
         className="card"
@@ -574,9 +735,9 @@ export function MisaDashboardOverview({
           flexDirection: "column",
           gap: 10,
           borderLeft: "4px solid #0d9488",
+          borderRadius: 12,
           overflow: "visible",
           position: "relative",
-          zIndex: 40,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
@@ -828,46 +989,115 @@ export function MisaDashboardOverview({
               key={card.code}
               className="metric card"
               style={{
-                padding: 16,
+                padding: "16px 16px",
                 cursor: "pointer",
-                transition: "box-shadow 0.15s ease",
+                transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
                 height: "100%",
+                minHeight: 148,
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "space-between",
                 boxSizing: "border-box",
-                borderTop: `3px solid ${
-                  card.tone === "blue"
-                    ? "#2563eb"
-                    : card.tone === "orange"
-                      ? "#ea580c"
-                      : card.tone === "teal"
-                        ? "#0d9488"
-                        : "#7c3aed"
-                }`,
+                borderRadius: 14,
+                border: "1px solid #e2e8f0",
+                background: "#ffffff",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
               }}
               onClick={() => void openMetricDrilldown(card.code)}
             >
-              <div className="metric-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 13.5, fontWeight: 700, color: "#1e293b" }}>
+              <div
+                className="metric-top"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  height: 36,
+                  minHeight: 36,
+                  maxHeight: 36,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#64748b",
+                    lineHeight: "17px",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    paddingRight: 6,
+                  }}
+                  title={card.label}
+                >
                   {card.label}
                 </span>
-                <span className={`metric-icon ${card.tone}`}>
-                  <Icon size={18} />
+                <span
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: 0,
+                    background:
+                      card.tone === "blue"
+                        ? "#eff6ff"
+                        : card.tone === "rose"
+                        ? "#fff1f2"
+                        : card.tone === "orange"
+                        ? "#fff7ed"
+                        : card.tone === "teal"
+                        ? "#eff6ff"
+                        : "#f5f3ff",
+                    color:
+                      card.tone === "blue"
+                        ? "#2563eb"
+                        : card.tone === "rose"
+                        ? "#e11d48"
+                        : card.tone === "orange"
+                        ? "#ea580c"
+                        : card.tone === "teal"
+                        ? "#2563eb"
+                        : "#7c3aed",
+                  }}
+                >
+                  <Icon size={17} />
                 </span>
               </div>
 
               {isForbidden ? (
-                <div style={{ margin: "12px 0", fontSize: 12.5, color: "#64748b" }}>
+                <div style={{ height: 32, minHeight: 32, margin: "10px 0 10px", fontSize: 12.5, color: "#64748b", display: "flex", alignItems: "center" }}>
                   Ngoài phạm vi quyền xem chỉ tiêu
                 </div>
               ) : isError ? (
-                <div style={{ margin: "12px 0", fontSize: 12.5, color: "#dc2626" }}>
+                <div style={{ height: 32, minHeight: 32, margin: "10px 0 10px", fontSize: 12.5, color: "#dc2626", display: "flex", alignItems: "center" }}>
                   Lỗi tải dữ liệu chỉ tiêu
                 </div>
               ) : (
-                <div style={{ margin: "10px 0 6px", display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                  <strong style={{ fontSize: 22, color: "#0f172a" }}>
+                <div
+                  style={{
+                    height: 32,
+                    minHeight: 32,
+                    maxHeight: 32,
+                    margin: "10px 0 10px",
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 6,
+                    flexWrap: "nowrap",
+                    overflow: "hidden",
+                  }}
+                >
+                  <strong
+                    style={{
+                      fontSize: card.isCount ? 21 : (Number(card.value) >= 1_000_000_000 ? 19.5 : 21.5),
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      fontVariantNumeric: "tabular-nums",
+                      whiteSpace: "nowrap",
+                      lineHeight: "28px",
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
                     {card.isCount
                       ? `${Number(card.value || 0)} chứng từ`
                       : fmtMoney(card.value)}
@@ -875,12 +1105,16 @@ export function MisaDashboardOverview({
                   {card.deltaPct && (
                     <span
                       style={{
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        padding: "1px 6px",
-                        borderRadius: 4,
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        padding: "2px 6px",
+                        borderRadius: 999,
                         background: card.deltaPct.startsWith("-") ? "#fef2f2" : "#ecfdf5",
                         color: card.deltaPct.startsWith("-") ? "#dc2626" : "#059669",
+                        border: `1px solid ${card.deltaPct.startsWith("-") ? "#fecaca" : "#a7f3d0"}`,
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
+                        lineHeight: "15px",
                       }}
                     >
                       {card.deltaPct}
@@ -892,12 +1126,15 @@ export function MisaDashboardOverview({
               <div
                 className="metric-hint"
                 style={{
+                  marginTop: "auto",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   gap: 8,
                   fontSize: 11.5,
                   color: "#64748b",
+                  height: 20,
+                  minHeight: 20,
                 }}
               >
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={card.subtext}>

@@ -1260,7 +1260,7 @@ export function MisaModuleApiExtensionPanel({
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(true)}
-                  style={{ height: 32, padding: "0 12px", borderRadius: 4, border: "none", background: "#16a34a", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 600 }}
+                  style={{ height: 32, padding: "0 12px", borderRadius: 4, border: "none", background: "var(--brand)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, fontWeight: 600 }}
                 >
                   <Plus size={14} />
                   <span>Thêm mới</span>
@@ -1375,7 +1375,7 @@ export function MisaModuleApiExtensionPanel({
               <button
                 type="submit"
                 disabled={saving}
-                style={{ height: 32, padding: "0 16px", borderRadius: 4, border: "none", background: "#16a34a", color: "#ffffff", cursor: "pointer", fontSize: 12.5, fontWeight: 600 }}
+                style={{ height: 32, padding: "0 16px", borderRadius: 4, border: "none", background: "var(--brand)", color: "#ffffff", cursor: "pointer", fontSize: 12.5, fontWeight: 600 }}
               >
                 {saving ? "Đang lưu..." : "Lưu dữ liệu"}
               </button>

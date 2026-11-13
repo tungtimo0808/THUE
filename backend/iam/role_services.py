@@ -518,6 +518,12 @@ LEGACY_ROLE_CODE_MAP = {
 # =====================================================================
 
 ROLE_PRESETS_BY_REGIME = {
+    # Preset 0: Thông tư 88/2021/TT-BTC — Hộ kinh doanh, cá nhân kinh doanh (3 Role ACTIVE)
+    "TT88": [
+        "ROLE_ADMIN",
+        "ROLE_DIRECTOR",
+        "ROLE_CHIEF_ACCOUNTANT",
+    ],
     # Preset 1: Thông tư 58/2026/TT-BTC — Doanh nghiệp siêu nhỏ (3 Role ACTIVE)
     "TT58": [
         "ROLE_ADMIN",
@@ -556,9 +562,65 @@ ROLE_PRESETS_BY_REGIME = {
     "TT99": [item["code"] for item in STANDARD_ROLE_DEFINITIONS],
 }
 
+# Bản đồ kiêm nhiệm tự động khi thu gọn mô hình từ 21 Role (TT99) xuống TT200 (14), TT133 (8), TT58/TT88 (3)
+_MICRO_CONSOLIDATION_MAP = {
+    "ROLE_GENERAL_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_TAX_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_AP_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_AR_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_PURCHASE_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_SALES_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_CASH_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_BANK_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_INVENTORY_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_ASSET_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_CCDC_ACCOUNTANT": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_TREASURER": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_STOREKEEPER": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_PURCHASER": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_SALESPERSON": "ROLE_CHIEF_ACCOUNTANT",
+    "ROLE_APPROVER": "ROLE_DIRECTOR",
+    "ROLE_AUDITOR": "ROLE_DIRECTOR",
+    "ROLE_REPORT_VIEWER": "ROLE_DIRECTOR",
+}
+
+CIRCULAR_ROLE_CONSOLIDATION_MAP = {
+    "TT88": dict(_MICRO_CONSOLIDATION_MAP),
+    "TT58": dict(_MICRO_CONSOLIDATION_MAP),
+    "TT133": {
+        "ROLE_AP_ACCOUNTANT": "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_AR_ACCOUNTANT": "ROLE_SALES_ACCOUNTANT",
+        "ROLE_PURCHASE_ACCOUNTANT": "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_CASH_ACCOUNTANT": "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_BANK_ACCOUNTANT": "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_INVENTORY_ACCOUNTANT": "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_ASSET_ACCOUNTANT": "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_CCDC_ACCOUNTANT": "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_PURCHASER": "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_SALESPERSON": "ROLE_SALES_ACCOUNTANT",
+        "ROLE_APPROVER": "ROLE_DIRECTOR",
+        "ROLE_AUDITOR": "ROLE_DIRECTOR",
+        "ROLE_REPORT_VIEWER": "ROLE_DIRECTOR",
+    },
+    "TT200": {
+        "ROLE_ASSET_ACCOUNTANT": "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_CCDC_ACCOUNTANT": "ROLE_GENERAL_ACCOUNTANT",
+        "ROLE_PURCHASER": "ROLE_PURCHASE_ACCOUNTANT",
+        "ROLE_SALESPERSON": "ROLE_SALES_ACCOUNTANT",
+        "ROLE_APPROVER": "ROLE_DIRECTOR",
+        "ROLE_AUDITOR": "ROLE_DIRECTOR",
+        "ROLE_REPORT_VIEWER": "ROLE_DIRECTOR",
+    },
+    "TT99": {},
+}
+
+_ORIGIN_TAG_RE = re.compile(r"\[ORIGIN:([A-Z0-9_]+)\]")
+
 
 def resolve_regime_preset_key(raw_regime_or_preset: str | None) -> str:
     val = str(raw_regime_or_preset or "").strip().upper()
+    if val in ("TT88", "CIRCULAR_88", "88", "HKD", "HOUSEHOLD", "PRESET_0"):
+        return "TT88"
     if val in ("TT58", "CIRCULAR_58", "58", "MICRO", "PRESET_1"):
         return "TT58"
     if val in ("TT133", "CIRCULAR_133", "133", "SME", "SMALL", "PRESET_2"):
@@ -566,6 +628,96 @@ def resolve_regime_preset_key(raw_regime_or_preset: str | None) -> str:
     if val in ("TT200", "CIRCULAR_200", "200", "MEDIUM", "PRESET_3"):
         return "TT200"
     return "TT99"
+
+
+def _reconcile_assignments_for_preset(company, preset_key: str, active_codes_for_preset: set[str], force_preset_status: bool):
+    """
+    Đồng bộ thông minh nhân sự khi doanh nghiệp chuyển đổi giữa các Thông tư (TT99 <-> TT200 <-> TT133 <-> TT58/TT88):
+    1. Khi hạ xuống Thông tư ít Role hơn: Tự động chuyển nhân sự từ các Role tạm ẩn (AVAILABLE) sang Role kiêm nhiệm ACTIVE tương ứng,
+       đồng thời lưu dấu [ORIGIN:ROLE_...] để không ai bị mất quyền (403) và nhớ được vị trí chuyên trách ban đầu.
+    2. Khi nâng lên Thông tư nhiều Role hơn: Tự động khôi phục nhân sự về đúng Role chuyên trách ban đầu (hoặc Role gần nhất trong Thông tư đích).
+    """
+    role_by_code = {r.code: r for r in Role.objects.filter(company=company)}
+    consolidation_map = CIRCULAR_ROLE_CONSOLIDATION_MAP.get(preset_key, {})
+    remapped_count = 0
+    restored_count = 0
+
+    active_assignments = list(
+        UserRoleAssignment.objects.filter(
+            company_membership__company=company,
+            status=ActiveStatus.ACTIVE,
+        ).select_related("role", "company_membership")
+    )
+
+    for assign in active_assignments:
+        current_role = assign.role
+        reason_text = assign.assign_reason or ""
+        match = _ORIGIN_TAG_RE.search(reason_text)
+        origin_code = match.group(1) if match else current_role.code
+
+        # Custom roles do doanh nghiệp tự tạo không bị ép gộp trừ khi role đó đang không ACTIVE
+        if current_role.role_type == RoleType.CUSTOM and current_role.status == RoleStatus.ACTIVE and not match:
+            continue
+
+        # Nếu không ép chuyển preset mà role hiện tại vẫn đang ACTIVE thì giữ nguyên
+        if not force_preset_status and current_role.status == RoleStatus.ACTIVE:
+            continue
+
+        if origin_code in active_codes_for_preset and origin_code in role_by_code:
+            desired_code = origin_code
+        elif current_role.code in active_codes_for_preset and not match:
+            desired_code = current_role.code
+        else:
+            desired_code = consolidation_map.get(origin_code) or consolidation_map.get(current_role.code) or "ROLE_CHIEF_ACCOUNTANT"
+            if desired_code not in active_codes_for_preset:
+                desired_code = "ROLE_CHIEF_ACCOUNTANT" if "ROLE_CHIEF_ACCOUNTANT" in active_codes_for_preset else "ROLE_ADMIN"
+
+        target_role = role_by_code.get(desired_code)
+        if not target_role or target_role.id == current_role.id:
+            # Nếu đã về đúng origin_code thì làm sạch hậu tố kiêm nhiệm tạm thời
+            if match and desired_code == origin_code:
+                clean_reason = _ORIGIN_TAG_RE.sub("", reason_text).strip(" -|•")
+                clean_reason = re.sub(r"Kiêm nhiệm tự động theo [A-Z0-9]+", "", clean_reason).strip(" -|•")
+                assign.assign_reason = clean_reason or f"Phân công vai trò {target_role.name if target_role else current_role.name}"
+                assign.save(update_fields=("assign_reason",))
+            continue
+
+        # Kiểm tra trùng (company_membership, role) đang ACTIVE trên cùng một thành viên
+        duplicate_active = UserRoleAssignment.objects.filter(
+            company_membership=assign.company_membership,
+            role=target_role,
+            status=ActiveStatus.ACTIVE,
+        ).exclude(pk=assign.pk).first()
+
+        if duplicate_active:
+            # Gộp vào bản ghi đang có, lưu lại origin nếu chưa có
+            if origin_code != target_role.code and not _ORIGIN_TAG_RE.search(duplicate_active.assign_reason or ""):
+                duplicate_active.assign_reason = f"[ORIGIN:{origin_code}] {(duplicate_active.assign_reason or '').strip()}".strip()[:500]
+                duplicate_active.save(update_fields=("assign_reason",))
+            assign.delete()
+            remapped_count += 1
+            continue
+
+        # Tránh đụng UniqueConstraint(company_membership, role, valid_from)
+        if UserRoleAssignment.objects.filter(
+            company_membership=assign.company_membership,
+            role=target_role,
+            valid_from=assign.valid_from,
+        ).exclude(pk=assign.pk).exists():
+            assign.valid_from = timezone.now()
+
+        is_restoring_to_origin = bool(match and desired_code == origin_code)
+        assign.role = target_role
+        if is_restoring_to_origin:
+            assign.assign_reason = f"Khôi phục vai trò chuyên trách {target_role.name} ({preset_key})"[:500]
+            restored_count += 1
+        else:
+            assign.assign_reason = f"[ORIGIN:{origin_code}] Kiêm nhiệm tự động theo {preset_key} ({target_role.name})"[:500]
+            remapped_count += 1
+
+        assign.save(update_fields=("role", "valid_from", "assign_reason"))
+
+    return {"remapped_count": remapped_count, "restored_count": restored_count}
 
 
 def _migrate_legacy_roles_for_company(company):
@@ -594,15 +746,22 @@ def _migrate_legacy_roles_for_company(company):
             old_role.delete()
 
 
-def seed_standard_roles_for_company(company, actor=None, preset: str | None = None, force_preset_status: bool = False):
+def seed_standard_roles_for_company(
+    company,
+    actor=None,
+    preset: str | None = None,
+    force_preset_status: bool = False,
+    return_meta: bool = False,
+):
     """
     Khởi tạo đầy đủ 21 Role chuẩn theo SRS Mục 2.5 cho doanh nghiệp,
     đồng thời tự động bật (ACTIVE) số lượng Role phù hợp với Thông tư / Quy mô doanh nghiệp
-    (TT58: 3 Role, TT133: 8 Role, TT200: 14 Role, TT99: 21 Role) và để các Role còn lại ở AVAILABLE.
+    (TT88/TT58: 3 Role, TT133: 8 Role, TT200: 14 Role, TT99: 21 Role) và để các Role còn lại ở AVAILABLE.
     """
     created_roles = []
     preset_key = resolve_regime_preset_key(preset or getattr(company, "accounting_regime", "TT99"))
     active_codes_for_preset = set(ROLE_PRESETS_BY_REGIME.get(preset_key, ROLE_PRESETS_BY_REGIME["TT99"]))
+    reconcile_stats = {"remapped_count": 0, "restored_count": 0}
 
     with transaction.atomic():
         _migrate_legacy_roles_for_company(company)
@@ -640,9 +799,7 @@ def seed_standard_roles_for_company(company, actor=None, preset: str | None = No
                 update_fields.append("is_system_admin")
 
             if not created and force_preset_status:
-                # Nếu Role đang có nhân sự ACTIVE được gán thì giữ ACTIVE để không làm mất quyền nhân sự
-                has_assigned_users = role.user_assignments.filter(status=ActiveStatus.ACTIVE).exists()
-                desired_status = RoleStatus.ACTIVE if (should_be_active or has_assigned_users) else RoleStatus.AVAILABLE
+                desired_status = RoleStatus.ACTIVE if should_be_active else RoleStatus.AVAILABLE
                 if role.status != desired_status:
                     role.status = desired_status
                     update_fields.append("status")
@@ -713,7 +870,9 @@ def seed_standard_roles_for_company(company, actor=None, preset: str | None = No
 
             if is_admin and actor:
                 actor_mem = CompanyMembership.objects.filter(company=company, user=actor).first()
-                if actor_mem:
+                if actor_mem and not UserRoleAssignment.objects.filter(
+                    company_membership=actor_mem, status=ActiveStatus.ACTIVE
+                ).exists():
                     UserRoleAssignment.objects.get_or_create(
                         company_membership=actor_mem,
                         role=role,
@@ -734,6 +893,15 @@ def seed_standard_roles_for_company(company, actor=None, preset: str | None = No
                 "permission_count": len(matched_perms),
             })
 
+        reconcile_stats = _reconcile_assignments_for_preset(
+            company=company,
+            preset_key=preset_key,
+            active_codes_for_preset=active_codes_for_preset,
+            force_preset_status=force_preset_status,
+        )
+
+    if return_meta:
+        return created_roles, reconcile_stats
     return created_roles
 
 

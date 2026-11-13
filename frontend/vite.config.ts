@@ -1,5 +1,14 @@
+import http from "node:http";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+
+const proxyTarget = process.env.VITE_API_PROXY_TARGET || "http://127.0.0.1:8080";
+const keepAliveAgent = new http.Agent({
+  keepAlive: true,
+  maxSockets: 650,
+  maxFreeSockets: 256,
+  keepAliveMsecs: 30000,
+});
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -12,7 +21,11 @@ export default defineConfig({
       usePolling: true,
     },
     proxy: {
-      "/api": process.env.VITE_API_PROXY_TARGET || "http://127.0.0.1:8080",
+      "/api": {
+        target: proxyTarget,
+        changeOrigin: false,
+        agent: keepAliveAgent,
+      },
     },
   },
   preview: {
@@ -20,10 +33,15 @@ export default defineConfig({
     port: 2601,
     allowedHosts: true,
     proxy: {
-      "/api": process.env.VITE_API_PROXY_TARGET || "http://127.0.0.1:8080",
+      "/api": {
+        target: proxyTarget,
+        changeOrigin: false,
+        agent: keepAliveAgent,
+      },
     },
   },
   build: {
+    outDir: process.env.VITE_OUT_DIR || "dist",
     chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {

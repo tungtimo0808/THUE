@@ -89,7 +89,7 @@ function statusBadgeStyle(status: string): React.CSSProperties {
   switch (status) {
     case "APPROVED":
     case "PASSED":
-      return { background: "#dcfce7", color: "#166534", border: "1px solid #86efac" };
+      return { background: "#dcfce7", color: "var(--brand-ink)", border: "1px solid #86efac" };
     case "READY_FOR_APPROVAL":
     case "GENERATED":
       return { background: "#e0f2fe", color: "#075985", border: "1px solid #7dd3fc" };
@@ -815,7 +815,7 @@ export default function MisaFinancialBundleWorkspace({
                   <button
                     type="button"
                     onClick={handleApproveBundle}
-                    style={{ height: 32, padding: "0 12px", background: "#16a34a", border: "none", borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
+                    style={{ height: 32, padding: "0 12px", background: "var(--brand)", border: "none", borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}
                   >
                     <ShieldCheck size={13} />
                     <span>Phê duyệt Bộ BCTC</span>
@@ -961,7 +961,7 @@ export default function MisaFinancialBundleWorkspace({
                               <button
                                 type="button"
                                 onClick={() => handleOpenStatementLines(comp.statement_run_id)}
-                                style={{ width: 122, height: 28, padding: "0 5px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 5, fontSize: 11.5, fontWeight: 600, color: "#166534", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
+                                style={{ width: 122, height: 28, padding: "0 5px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 5, fontSize: 11.5, fontWeight: 600, color: "var(--brand-ink)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4, whiteSpace: "nowrap", boxSizing: "border-box" }}
                               >
                                 <Eye size={12} />
                                 <span>Xem chỉ tiêu ({comp.line_count})</span>
@@ -999,9 +999,9 @@ export default function MisaFinancialBundleWorkspace({
                                     height: 28,
                                     fontSize: 11.5,
                                     fontWeight: 600,
-                                    color: "#166534",
-                                    background: "#f0fdf4",
-                                    border: "1px solid #bbf7d0",
+                                    color: "var(--brand-ink)",
+                                    background: "#eff6ff",
+                                    border: "1px solid #bfdbfe",
                                     borderRadius: 5,
                                     display: "inline-flex",
                                     alignItems: "center",
@@ -1381,14 +1381,14 @@ export default function MisaFinancialBundleWorkspace({
 
           {/* Export Handoff Confirmation */}
           {exportPayload && (
-            <div style={{ marginTop: 12, padding: "10px 14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, fontSize: 12.5, color: "#166534", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ marginTop: 12, padding: "10px 14px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, fontSize: 12.5, color: "var(--brand-ink)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <strong>Đã xuất Bộ báo cáo tài chính (Phiên bản lần {exportPayload.bundle_version || 1}):</strong> Định dạng {exportPayload.format === "XLSX" ? "Excel (.xlsx)" : "PDF (.pdf)"} — {exportPayload.export_mode === "OFFICIAL" ? "Bản chính thức đã phê duyệt" : "Bản xem trước / nháp"}
               </div>
               <button
                 type="button"
                 onClick={() => setExportPayload(null)}
-                style={{ background: "transparent", border: "none", color: "#166534", cursor: "pointer", fontWeight: 700 }}
+                style={{ background: "transparent", border: "none", color: "var(--brand-ink)", cursor: "pointer", fontWeight: 700 }}
               >
                 ✕
               </button>

@@ -1549,53 +1549,49 @@ def _collect_workflow_and_action_items(ctx: DashboardContext) -> dict[str, Any]:
     ]
 
     accounting_actions: list[dict[str, Any]] = []
+    skip_approved_types = {"SALES_ORDER", "PURCHASE_REQUEST", "PURCHASE_ORDER", "PAYMENT_REQUEST"}
 
     for mod_code, doc_type, model_cls, branch_field, num_field, amt_field, date_field in doc_models:
-        qs_pending = model_cls.objects.filter(company=ctx.company, status="PENDING_APPROVAL")
+        statuses = ("PENDING_APPROVAL",) if doc_type in skip_approved_types else ("PENDING_APPROVAL", "APPROVED")
+        qs_docs = model_cls.objects.filter(company=ctx.company, status__in=statuses)
         if branch_field:
-            qs_pending = _filter_branches(qs_pending, branch_field, ctx.effective_branch_ids)
-        for doc in qs_pending:
-            doc_key = f"{model_cls.__name__}:{doc.id}"
-            if doc_key not in company_pending_keys:
-                company_pending_keys.add(doc_key)
-                doc_num = getattr(doc, num_field, str(doc.id)[:8])
-                amt_val = getattr(doc, amt_field, None) if amt_field else None
-                sub_at = getattr(doc, "submitted_at", None) or getattr(doc, "created_at", now)
-                days_waiting = max((today - sub_at.date()).days, 0) if sub_at else 0
-                # If PaymentRequest has approver == iam_account or user has approve perm
-                approver_id = getattr(doc, "approver_id", None)
-                is_mine = bool(
-                    ctx.user.is_superuser
-                    or (ctx.iam_account and approver_id == ctx.iam_account.id)
-                    or (approver_id is None and len(my_tasks) == 0)
-                )
-                task_item = {
-                    "task_id": f"DOC-{doc.id}",
-                    "task_type": "APPROVAL",
-                    "priority": "MEDIUM" if days_waiting >= 3 else "NORMAL",
-                    "is_overdue": days_waiting > 5,
-                    "module": mod_code,
-                    "document_type": doc_type,
-                    "document_id": str(doc.id),
-                    "document_number": doc_num,
-                    "title": f"Chờ phê duyệt {doc_num}",
-                    "amount": _quantize_money(amt_val) if amt_val is not None else None,
-                    "submitted_at": sub_at.isoformat() if sub_at else None,
-                    "due_at": None,
-                    "days_waiting": days_waiting,
-                    "assigned_to_me": is_mine,
-                    "status": "PENDING_APPROVAL",
-                    "sort_tuple": (1, float("inf"), sub_at.timestamp() if sub_at else float("inf")),
-                }
-                if is_mine:
-                    my_tasks.append(task_item)
-
-        # Check APPROVED documents waiting to be POSTED (needs_accounting_action_count)
-        if doc_type not in ("SALES_ORDER", "PURCHASE_REQUEST", "PURCHASE_ORDER", "PAYMENT_REQUEST"):
-            qs_approved = model_cls.objects.filter(company=ctx.company, status="APPROVED")
-            if branch_field:
-                qs_approved = _filter_branches(qs_approved, branch_field, ctx.effective_branch_ids)
-            for doc in qs_approved:
+            qs_docs = _filter_branches(qs_docs, branch_field, ctx.effective_branch_ids)
+        for doc in qs_docs:
+            if doc.status == "PENDING_APPROVAL":
+                doc_key = f"{model_cls.__name__}:{doc.id}"
+                if doc_key not in company_pending_keys:
+                    company_pending_keys.add(doc_key)
+                    doc_num = getattr(doc, num_field, str(doc.id)[:8])
+                    amt_val = getattr(doc, amt_field, None) if amt_field else None
+                    sub_at = getattr(doc, "submitted_at", None) or getattr(doc, "created_at", now)
+                    days_waiting = max((today - sub_at.date()).days, 0) if sub_at else 0
+                    approver_id = getattr(doc, "approver_id", None)
+                    is_mine = bool(
+                        ctx.user.is_superuser
+                        or (ctx.iam_account and approver_id == ctx.iam_account.id)
+                        or (approver_id is None and len(my_tasks) == 0)
+                    )
+                    task_item = {
+                        "task_id": f"DOC-{doc.id}",
+                        "task_type": "APPROVAL",
+                        "priority": "MEDIUM" if days_waiting >= 3 else "NORMAL",
+                        "is_overdue": days_waiting > 5,
+                        "module": mod_code,
+                        "document_type": doc_type,
+                        "document_id": str(doc.id),
+                        "document_number": doc_num,
+                        "title": f"Chờ phê duyệt {doc_num}",
+                        "amount": _quantize_money(amt_val) if amt_val is not None else None,
+                        "submitted_at": sub_at.isoformat() if sub_at else None,
+                        "due_at": None,
+                        "days_waiting": days_waiting,
+                        "assigned_to_me": is_mine,
+                        "status": "PENDING_APPROVAL",
+                        "sort_tuple": (1, float("inf"), sub_at.timestamp() if sub_at else float("inf")),
+                    }
+                    if is_mine:
+                        my_tasks.append(task_item)
+            elif doc.status == "APPROVED":
                 doc_num = getattr(doc, num_field, str(doc.id)[:8])
                 amt_val = getattr(doc, amt_field, None) if amt_field else None
                 upd_at = getattr(doc, "approved_at", None) or getattr(doc, "updated_at", now)
@@ -2008,6 +2004,7 @@ def compute_dash_05_cash_flow(ctx: DashboardContext, bucket_override: str | None
 # DASH-06: Doanh thu, chi phí và lợi nhuận (Profitability P&L Summary)
 # ==============================================================================
 
+@_ctx_memoized
 def _calculate_pnl_for_range(ctx: DashboardContext, start_date: date, end_date: date) -> dict[str, Any]:
     from sales.models import CostOfGoodsSold, GoodsSale
 
@@ -2058,28 +2055,32 @@ def _calculate_pnl_for_range(ctx: DashboardContext, start_date: date, end_date: 
     )
     operational_lines = period_lines.exclude(entry_id__in=closing_entry_ids) if closing_entry_ids else period_lines
 
+    account_totals: list[tuple[str, Decimal, Decimal]] = [
+        (row["account__code"] or "", _to_decimal(row["d"]), _to_decimal(row["c"]))
+        for row in operational_lines.values("account__code").annotate(d=Sum("debit"), c=Sum("credit"))
+    ]
+
     def _net_account_prefix(*prefixes: str, mode: str = "debit_minus_credit") -> Decimal:
-        q = Q()
-        for p in prefixes:
-            q |= Q(account__code__startswith=p)
-        agg = operational_lines.filter(q).aggregate(d=Sum("debit"), c=Sum("credit"))
-        d = _to_decimal(agg["d"])
-        c = _to_decimal(agg["c"])
+        d = sum((deb for code, deb, _ in account_totals if code.startswith(prefixes)), ZERO)
+        c = sum((cred for code, _, cred in account_totals if code.startswith(prefixes)), ZERO)
         return (d - c) if mode == "debit_minus_credit" else (c - d)
 
     cogs = _net_account_prefix("632", mode="debit_minus_credit")
     # Also include POSTED CostOfGoodsSold or GoodsSale.lines.cogs_amount if not yet in GL 632
-    cogs_je_ids = set(
-        operational_lines.filter(account__code__startswith="632").values_list("entry_id", flat=True)
+    cogs_vouchers = list(
+        _filter_branches(
+            CostOfGoodsSold.objects.filter(company=ctx.company, status="POSTED", posting_date__range=(start_date, end_date)),
+            "branch_id",
+            ctx.effective_branch_ids,
+        )
     )
-    cogs_vouchers = _filter_branches(
-        CostOfGoodsSold.objects.filter(company=ctx.company, status="POSTED", posting_date__range=(start_date, end_date)),
-        "branch_id",
-        ctx.effective_branch_ids,
-    )
-    for cv in cogs_vouchers:
-        if not cv.journal_entry_id or cv.journal_entry_id not in cogs_je_ids:
-            cogs += _to_decimal(cv.total_cogs_amount)
+    if cogs_vouchers:
+        cogs_je_ids = set(
+            operational_lines.filter(account__code__startswith="632").values_list("entry_id", flat=True)
+        )
+        for cv in cogs_vouchers:
+            if not cv.journal_entry_id or cv.journal_entry_id not in cogs_je_ids:
+                cogs += _to_decimal(cv.total_cogs_amount)
 
     fin_inc = _net_account_prefix("515", mode="credit_minus_debit")
     fin_exp = _net_account_prefix("635", mode="debit_minus_credit")
@@ -2098,7 +2099,8 @@ def _calculate_pnl_for_range(ctx: DashboardContext, start_date: date, end_date: 
 
     warnings: list[dict[str, Any]] = []
     # Check if GoodsSale exists without COGS (EF-10 / TC-RPT-01-24)
-    has_inventory_goods_sale = _filter_branches(
+    has_5111 = any(code.startswith("5111") for code, _, _ in account_totals)
+    has_inventory_goods_sale = cogs == ZERO and _filter_branches(
         GoodsSale.objects.filter(
             company=ctx.company,
             status="POSTED",
@@ -2107,7 +2109,7 @@ def _calculate_pnl_for_range(ctx: DashboardContext, start_date: date, end_date: 
         "branch_id",
         ctx.effective_branch_ids,
     ).exists()
-    if (has_inventory_goods_sale or (gross_rev > ZERO and cogs == ZERO and operational_lines.filter(account__code__startswith="5111").exists())) and cogs == ZERO:
+    if (has_inventory_goods_sale or (gross_rev > ZERO and cogs == ZERO and has_5111)) and cogs == ZERO:
         warnings.append({
             "code": "COGS_NOT_RECORDED",
             "message": "Đã phát sinh doanh thu bán hàng hóa nhưng chưa ghi nhận giá vốn hàng bán (TK 632).",
@@ -3484,15 +3486,41 @@ def invalidate_dashboard_cache(company: Company, widget_codes: list[str] | None 
 
 
 def _latest_company_activity_ts(company: Company) -> datetime | None:
+    from django.db import connection
     from accounts_payable.models import Payable
     from accounts_receivable.models import Receivable
-    from approval_workflows.models import ApprovalTask
+    from approval_workflows.models import ApprovalRequest, ApprovalTask
     from bank_management.models import BankTransaction
     from cash_management.models import CashTransaction
     from inventory.models import StockBalance
     from purchases.models import GoodsPurchase
     from sales.models import GoodsSale, ServiceSale
     from tax_management.models import TaxObligation
+
+    if connection.vendor == "postgresql":
+        tables_cols = (
+            (JournalEntry._meta.db_table, "updated_at"),
+            (GoodsSale._meta.db_table, "updated_at"),
+            (ServiceSale._meta.db_table, "updated_at"),
+            (GoodsPurchase._meta.db_table, "updated_at"),
+            (CashTransaction._meta.db_table, "updated_at"),
+            (BankTransaction._meta.db_table, "updated_at"),
+            (Receivable._meta.db_table, "updated_at"),
+            (Payable._meta.db_table, "updated_at"),
+            (StockBalance._meta.db_table, "updated_at"),
+            (TaxObligation._meta.db_table, "updated_at"),
+        )
+        unions = [f'SELECT MAX("{col}") AS ts FROM "{tbl}" WHERE company_id = %s' for tbl, col in tables_cols]
+        unions.append(
+            f'SELECT MAX(t."created_at") AS ts FROM "{ApprovalTask._meta.db_table}" t '
+            f'INNER JOIN "{ApprovalRequest._meta.db_table}" r ON t.request_id = r.id WHERE r.company_id = %s'
+        )
+        sql = f"SELECT MAX(ts) FROM ({' UNION ALL '.join(unions)}) sub"
+        cid = str(company.id)
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [cid] * len(unions))
+            row = cursor.fetchone()
+            return row[0] if row else None
 
     candidates: list[datetime] = []
     for qs, field_name in (
@@ -3603,7 +3631,6 @@ def get_dashboard_config_payload(ctx: DashboardContext) -> dict[str, Any]:
 def get_dashboard_overview_payload(ctx: DashboardContext) -> dict[str, Any]:
     cache_key, period_key, scope_hash = _build_cache_key(ctx, "OVERVIEW")
     now = timezone.now()
-    latest_activity = _latest_company_activity_ts(ctx.company)
 
     if ctx.refresh_mode == "CACHE_FIRST" and not ctx.fail_widgets:
         cached = DashboardCacheEntry.objects.filter(
@@ -3613,6 +3640,7 @@ def get_dashboard_overview_payload(ctx: DashboardContext) -> dict[str, Any]:
             expires_at__gt=now,
         ).first()
         if cached:
+            latest_activity = _latest_company_activity_ts(ctx.company)
             if latest_activity is None or cached.data_as_of >= latest_activity:
                 payload = dict(cached.payload)
                 payload["cache_hit"] = True

@@ -17,7 +17,12 @@ load_dotenv(BASE_DIR / '.env')
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = os.getenv('SECRET_KEY', 'development-only-change-me')
 
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+raw_debug = os.getenv('DJANGO_DEBUG', os.getenv('DEBUG', 'True')).strip().lower()
+# Chú ý: Tránh xung đột với biến môi trường hệ thống máy chủ (như DEBUG=release trong Windows/C++/Rust)
+if raw_debug == 'release' and not os.getenv('DJANGO_DEBUG'):
+    DEBUG = True
+else:
+    DEBUG = raw_debug in ('true', '1', 'yes', 't')
 
 ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*' if DEBUG else '').split(',') if host.strip()]
 

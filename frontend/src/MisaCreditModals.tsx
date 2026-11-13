@@ -273,7 +273,7 @@ export function LoanContractModal({
                     display: "grid",
                     placeItems: "center",
                     cursor: "pointer",
-                    color: "#059669",
+                    color: "var(--brand)",
                   }}
                 >
                   <Plus size={15} />
@@ -319,7 +319,7 @@ export function LoanContractModal({
                     display: "grid",
                     placeItems: "center",
                     cursor: "pointer",
-                    color: "#059669",
+                    color: "var(--brand)",
                   }}
                 >
                   <Plus size={15} />
@@ -433,11 +433,11 @@ export function LoanContractModal({
                 padding: "8px 16px",
                 border: "none",
                 background: activeTab === tb.id ? "#ffffff" : "transparent",
-                color: activeTab === tb.id ? "#059669" : "#475569",
+                color: activeTab === tb.id ? "var(--brand)" : "#475569",
                 fontWeight: activeTab === tb.id ? 600 : 500,
                 fontSize: 13,
                 borderRadius: "4px 4px 0 0",
-                borderBottom: activeTab === tb.id ? "2px solid #059669" : "2px solid transparent",
+                borderBottom: activeTab === tb.id ? "2px solid var(--brand)" : "2px solid transparent",
                 cursor: "pointer",
               }}
             >
@@ -474,7 +474,7 @@ export function LoanContractModal({
                       fontSize: 13,
                       textAlign: "right",
                       fontWeight: 600,
-                      color: "#059669",
+                      color: "var(--brand)",
                     }}
                   />
                 </div>
@@ -714,7 +714,7 @@ export function LoanContractModal({
                       borderRadius: 4,
                       border: "1px solid #10b981",
                       background: "#ecfdf5",
-                      color: "#059669",
+                      color: "var(--brand)",
                       fontSize: 12,
                       fontWeight: 500,
                       cursor: "pointer",
@@ -1029,7 +1029,7 @@ export function LoanContractModal({
                 }}
                 onClick={() => document.getElementById("file-upload-loan")?.click()}
               >
-                <Upload size={32} style={{ color: "#059669", margin: "0 auto 8px auto" }} />
+                <Upload size={32} style={{ color: "var(--brand)", margin: "0 auto 8px auto" }} />
                 <div style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>
                   Kéo thả tài liệu khế ước cho vay hoặc <span style={{ color: "var(--brand)", textDecoration: "underline" }}>chọn tệp từ máy tính</span>
                 </div>
@@ -1063,7 +1063,7 @@ export function LoanContractModal({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ color: "#059669", fontWeight: 600 }}></span>
+                        <span style={{ color: "var(--brand)", fontWeight: 600 }}></span>
                         <span style={{ fontWeight: 500, color: "#1e293b" }}>{att.name}</span>
                         <span style={{ fontSize: 11, color: "#64748b" }}>({att.size})</span>
                       </div>
@@ -1410,7 +1410,7 @@ export function BorrowingContractModal({
                     display: "grid",
                     placeItems: "center",
                     cursor: "pointer",
-                    color: "#059669",
+                    color: "var(--brand)",
                   }}
                 >
                   <Plus size={15} />
@@ -1456,7 +1456,7 @@ export function BorrowingContractModal({
                     display: "grid",
                     placeItems: "center",
                     cursor: "pointer",
-                    color: "#059669",
+                    color: "var(--brand)",
                   }}
                 >
                   <Plus size={15} />
@@ -1570,11 +1570,11 @@ export function BorrowingContractModal({
                 padding: "8px 16px",
                 border: "none",
                 background: activeTab === tb.id ? "#ffffff" : "transparent",
-                color: activeTab === tb.id ? "#059669" : "#475569",
+                color: activeTab === tb.id ? "var(--brand)" : "#475569",
                 fontWeight: activeTab === tb.id ? 600 : 500,
                 fontSize: 13,
                 borderRadius: "4px 4px 0 0",
-                borderBottom: activeTab === tb.id ? "2px solid #059669" : "2px solid transparent",
+                borderBottom: activeTab === tb.id ? "2px solid var(--brand)" : "2px solid transparent",
                 cursor: "pointer",
               }}
             >
@@ -1607,7 +1607,7 @@ export function BorrowingContractModal({
                       fontSize: 13,
                       textAlign: "right",
                       fontWeight: 600,
-                      color: "#059669",
+                      color: "var(--brand)",
                     }}
                   />
                 </div>
@@ -1762,7 +1762,7 @@ export function BorrowingContractModal({
                       borderRadius: 4,
                       border: "1px solid #10b981",
                       background: "#ecfdf5",
-                      color: "#059669",
+                      color: "var(--brand)",
                       fontSize: 12,
                       fontWeight: 500,
                       cursor: "pointer",
@@ -2075,7 +2075,7 @@ export function BorrowingContractModal({
                 }}
                 onClick={() => document.getElementById("file-upload-borrow")?.click()}
               >
-                <Upload size={32} style={{ color: "#059669", margin: "0 auto 8px auto" }} />
+                <Upload size={32} style={{ color: "var(--brand)", margin: "0 auto 8px auto" }} />
                 <div style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>
                   Kéo thả tài liệu khế ước đi vay hoặc <span style={{ color: "var(--brand)", textDecoration: "underline" }}>chọn tệp từ máy tính</span>
                 </div>
@@ -2109,7 +2109,7 @@ export function BorrowingContractModal({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ color: "#059669", fontWeight: 600 }}></span>
+                        <span style={{ color: "var(--brand)", fontWeight: 600 }}></span>
                         <span style={{ fontWeight: 500, color: "#1e293b" }}>{att.name}</span>
                         <span style={{ fontSize: 11, color: "#64748b" }}>({att.size})</span>
                       </div>
@@ -2387,7 +2387,7 @@ export function CreditContractModal({
                 <button
                   type="button"
                   title="Thêm đối tượng"
-                  style={{ width: 32, height: 32, borderRadius: 4, border: "1px solid #d1d5db", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "#059669" }}
+                  style={{ width: 32, height: 32, borderRadius: 4, border: "1px solid #d1d5db", background: "#ffffff", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--brand)" }}
                 >
                   <Plus size={15} />
                 </button>
@@ -2870,7 +2870,7 @@ export function CreditOverviewView({
                   display: "inline-flex",
                   borderRadius: 4,
                   overflow: "hidden",
-                  boxShadow: "0 1px 3px rgba(0, 176, 107, 0.3)",
+                  boxShadow: "0 1px 3px rgba(37, 99, 235, 0.3)",
                 }}
               >
                 <button
@@ -2996,7 +2996,7 @@ export function CreditOverviewView({
                 height: 32,
                 padding: "0 18px",
                 background: "#ffffff",
-                color: "#059669",
+                color: "var(--brand)",
                 border: "1px solid #10b981",
                 borderRadius: 4,
                 fontSize: 12.5,
@@ -3065,7 +3065,7 @@ export function CreditOverviewView({
                     <td style={{ textAlign: "center", color: "#374151" }}>{r.date}</td>
                     <td style={{ textAlign: "center", color: "#374151" }}>{r.dueDate}</td>
                     <td style={{ color: "#111827", fontWeight: 500 }}>{r.partner}</td>
-                    <td style={{ textAlign: "right", fontWeight: 600, color: "#059669" }}>{formatVND(r.amount)} đ</td>
+                    <td style={{ textAlign: "right", fontWeight: 600, color: "var(--brand)" }}>{formatVND(r.amount)} đ</td>
                     <td style={{ textAlign: "right", fontWeight: 600 }}>{r.rate}%</td>
                     <td style={{ textAlign: "center" }}>
                       <span style={{ background: "#dcfce7", color: "#15803d", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>

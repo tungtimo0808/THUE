@@ -58,7 +58,7 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
         display: "inline-flex",
         alignItems: "stretch",
         borderRadius: 4,
-        boxShadow: "0 1px 2px rgba(0, 168, 98, 0.2)",
+        boxShadow: "0 1px 3px rgba(37, 99, 235, 0.3)",
       }}
     >
       <button
@@ -68,7 +68,7 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
         style={{
           height,
           padding: "0 14px",
-          background: disabled ? "#86efac" : "var(--brand)",
+          background: disabled ? "#93c5fd" : "var(--brand)",
           color: "#ffffff",
           border: "none",
           borderTopLeftRadius: 4,
@@ -79,6 +79,13 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
           display: "inline-flex",
           alignItems: "center",
           whiteSpace: "nowrap",
+          transition: "background 0.15s ease",
+        }}
+        onMouseEnter={(e) => {
+          if (!disabled) e.currentTarget.style.background = "var(--brand-hover)";
+        }}
+        onMouseLeave={(e) => {
+          if (!disabled) e.currentTarget.style.background = "var(--brand)";
         }}
       >
         <span>{primaryLabel}</span>
@@ -97,7 +104,7 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
           height,
           width: 28,
           padding: 0,
-          background: disabled ? "#86efac" : open ? "var(--brand-hover)" : "#009858",
+          background: disabled ? "#93c5fd" : open ? "var(--brand-hover)" : "var(--brand)",
           color: "#ffffff",
           border: "none",
           borderLeft: "1px solid rgba(255, 255, 255, 0.28)",
@@ -107,6 +114,13 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
+          transition: "background 0.15s ease",
+        }}
+        onMouseEnter={(e) => {
+          if (!disabled && !open) e.currentTarget.style.background = "var(--brand-hover)";
+        }}
+        onMouseLeave={(e) => {
+          if (!disabled && !open) e.currentTarget.style.background = "var(--brand)";
         }}
       >
         <ChevronDown size={14} />
@@ -145,8 +159,8 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
               padding: "7px 10px",
               border: "none",
               borderRadius: 4,
-              background: mode === "save_and_close" ? "#f0fdf4" : "transparent",
-              color: mode === "save_and_close" ? "#15803d" : "#1e293b",
+              background: mode === "save_and_close" ? "#eff6ff" : "transparent",
+              color: mode === "save_and_close" ? "#1d4ed8" : "#1e293b",
               fontSize: 12.5,
               fontWeight: mode === "save_and_close" ? 600 : 500,
               cursor: "pointer",
@@ -184,8 +198,8 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
               padding: "7px 10px",
               border: "none",
               borderRadius: 4,
-              background: mode === "save_and_add" ? "#f0fdf4" : "transparent",
-              color: mode === "save_and_add" ? "#15803d" : "#1e293b",
+              background: mode === "save_and_add" ? "#eff6ff" : "transparent",
+              color: mode === "save_and_add" ? "#1d4ed8" : "#1e293b",
               fontSize: 12.5,
               fontWeight: mode === "save_and_add" ? 600 : 500,
               cursor: "pointer",

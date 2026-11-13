@@ -713,6 +713,25 @@ TT58_ACCOUNTS: List[Dict[str, Any]] = [
 
 
 # =====================================================================
+# THÔNG TƯ 88/2021/TT-BTC (Chế độ kế toán Hộ kinh doanh, cá nhân kinh doanh)
+# Bộ tài khoản rút gọn phục vụ 7 sổ kế toán hộ kinh doanh (Tiền, Doanh thu, Chi phí, Kho, Thuế, Lương, Công nợ)
+# =====================================================================
+
+_TT88_CORE_CODES = {
+    "111", "1111", "112", "1121", "131", "138", "1388",
+    "152", "153", "154", "155", "156", "211", "2111", "214", "2141", "242",
+    "331", "333", "3331", "33311", "3335", "3338", "3339", "334", "338", "3383", "3384", "3386", "3388",
+    "411", "4111", "421", "4211", "4212",
+    "511", "5111", "5112", "5113", "515",
+    "632", "635", "642", "6421", "6422", "711", "811", "911",
+}
+
+TT88_ACCOUNTS: List[Dict[str, Any]] = [
+    dict(acc) for acc in TT133_ACCOUNTS if acc["code"] in _TT88_CORE_CODES
+]
+
+
+# =====================================================================
 # THÔNG TƯ 99/2025/TT-BTC (Chế độ kế toán Doanh nghiệp mới nhất, hiệu lực 01/01/2026)
 # Kế thừa danh mục chuẩn và bổ sung các tài khoản đặc thù mới theo Thông tư 99/2025/TT-BTC
 # =====================================================================
@@ -726,18 +745,21 @@ TT99_ACCOUNTS: List[Dict[str, Any]] = [
 
 
 def get_template_accounts(regime: str = "TT99", scope: str = "FULL") -> List[Dict[str, Any]]:
-    """Lấy danh sách tài khoản theo mẫu chế độ kế toán (TT99, TT200, TT133, TT58) và phạm vi (FULL / ESSENTIAL)."""
+    """Lấy danh sách tài khoản theo mẫu chế độ kế toán (TT99, TT200, TT133, TT58, TT88) và phạm vi (FULL / ESSENTIAL)."""
     regime_upper = (regime or "TT99").upper()
     if regime_upper not in {
         "TT99", "99", "CIRCULAR_99",
         "TT133", "CIRCULAR_133", "133",
         "TT200", "CIRCULAR_200", "200",
         "TT58", "CIRCULAR_58", "58",
+        "TT88", "CIRCULAR_88", "88", "HKD",
     }:
         raise ValueError("Chế độ kế toán không hợp lệ.")
     if (scope or "FULL").upper() not in {"FULL", "ESSENTIAL"}:
         raise ValueError("Phạm vi mẫu không hợp lệ.")
-    if regime_upper in ("TT58", "CIRCULAR_58", "58"):
+    if regime_upper in ("TT88", "CIRCULAR_88", "88", "HKD"):
+        accounts = TT88_ACCOUNTS
+    elif regime_upper in ("TT58", "CIRCULAR_58", "58"):
         accounts = TT58_ACCOUNTS
     elif regime_upper in ("TT133", "CIRCULAR_133", "133"):
         accounts = TT133_ACCOUNTS

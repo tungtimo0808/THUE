@@ -116,19 +116,51 @@ export async function refreshAccessToken(): Promise<string> {
 
 const inFlightRequests = new Map<string, Promise<any>>();
 const getResponseCache = new Map<string, { data: any; timestamp: number }>();
-const GET_CACHE_TTL_MS = 30_000;
-const REPORT_CACHE_TTL_MS = 300_000; // 5 minutes for reports & catalog
+const GET_CACHE_TTL_MS = 45_000;
+const REPORT_CACHE_TTL_MS = 300_000; // 5 minutes for reports, context & master catalogs
 const SESSION_CACHE_PREFIX = "erp_api_cache_v1:";
+const MAX_SESSION_ENTRY_CHARS = 120_000;
 
 function getCacheTtlForPath(path: string): number {
-  if (path.includes("/api/v1/reports/") || path.includes("/api/v1/organization/companies/")) {
+  if (
+    path.includes("/api/v1/reports/") ||
+    path.includes("/api/v1/organization/companies/") ||
+    path.includes("/api/v1/organization/branches/") ||
+    path.includes("/api/v1/common/companies/mine/") ||
+    path.includes("/api/v1/common/settings/") ||
+    path.includes("/api/v1/master-data/")
+  ) {
     return REPORT_CACHE_TTL_MS;
   }
   return GET_CACHE_TTL_MS;
 }
 
 function isSessionCacheablePath(path: string): boolean {
-  return path.includes("/api/v1/reports/") || path.includes("/api/v1/organization/companies/");
+  return (
+    path.includes("/api/v1/reports/") ||
+    path.includes("/api/v1/organization/companies/") ||
+    path.includes("/api/v1/organization/branches/") ||
+    path.includes("/api/v1/common/companies/mine/") ||
+    path.includes("/api/v1/common/settings/") ||
+    path.includes("/api/v1/master-data/")
+  );
+}
+
+function shouldInvalidateCacheOnMutation(path: string): boolean {
+  return !(
+    path.startsWith("/api/token/") ||
+    path.includes("/auth/login/") ||
+    path.includes("/companies/switch/") ||
+    path.includes("/scopes/switch/") ||
+    path.includes("/duplicates/") ||
+    path.includes("/preview") ||
+    path.includes("/validate") ||
+    path.includes("/query/") ||
+    path.includes("/search/") ||
+    path.includes("/lookup/") ||
+    path.includes("/reports/export/") ||
+    path.includes("/reports/drilldown/")
+  );
 }
 
 function readSessionCache(key: string, ttl: number): any | undefined {
@@ -149,7 +181,9 @@ function readSessionCache(key: string, ttl: number): any | undefined {
 
 function writeSessionCache(key: string, entry: { data: any; timestamp: number }) {
   try {
-    sessionStorage.setItem(SESSION_CACHE_PREFIX + key, JSON.stringify(entry));
+    const serialized = JSON.stringify(entry);
+    if (serialized.length > MAX_SESSION_ENTRY_CHARS) return;
+    sessionStorage.setItem(SESSION_CACHE_PREFIX + key, serialized);
   } catch {
     // If quota exceeded, clear old cache entries
     clearSessionCacheStorage();
@@ -187,7 +221,9 @@ export async function request<T>(path: string, token?: string, options?: Request
   const ttl = getCacheTtlForPath(path);
 
   if (!isGet) {
-    clearLiveApiGetCache();
+    if (shouldInvalidateCacheOnMutation(path)) {
+      clearLiveApiGetCache();
+    }
   } else if (dedupeKey) {
     const cached = getResponseCache.get(dedupeKey);
     if (cached && Date.now() - cached.timestamp < ttl) {
@@ -264,7 +300,9 @@ export async function request<T>(path: string, token?: string, options?: Request
       throw new ApiError(detail, response.status);
     }
     if (!isGet) {
-      clearLiveApiGetCache();
+      if (shouldInvalidateCacheOnMutation(path)) {
+        clearLiveApiGetCache();
+      }
       const isSilentMutation =
         path.startsWith("/api/token/") ||
         path.includes("/auth/login/") ||

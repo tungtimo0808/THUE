@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import "./theme/ThemeManager";
 import App from "./App.tsx";
 import { SavedReportsHost } from "./SavedReportsHost";
 import "./ui-consistency.css";

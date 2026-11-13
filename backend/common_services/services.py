@@ -421,21 +421,36 @@ def login(data, request):
         raise AuthenticationFailed("Không thể tạo phiên đăng nhập. Vui lòng thử lại.")
 
     # Bước 10, 11, 12: Kiểm tra các doanh nghiệp mà User đang có tư cách thành viên hoạt động
-    memberships = CompanyMembership.objects.filter(
-        user=account, membership_status=ActiveStatus.ACTIVE
-    ).select_related("company").prefetch_related("role_assignments__role")
+    memberships = list(
+        CompanyMembership.objects.filter(
+            user=account, membership_status=ActiveStatus.ACTIVE
+        ).select_related("company").prefetch_related("role_assignments__role")
+    )
+    comp_ids = [m.company_id for m in memberships]
+    settings_map = {
+        str(s.company_id): (s.configuration if isinstance(s.configuration, dict) else {})
+        for s in CoreCompanySetting.objects.filter(company_id__in=comp_ids)
+    } if comp_ids else {}
 
     companies = []
     for item in memberships:
+        active_assignments = [
+            ra for ra in item.role_assignments.all()
+            if ra.status == ActiveStatus.ACTIVE and ra.role and ra.role.status == "ACTIVE"
+        ]
         is_comp_admin = (
             item.company.created_by_user_id == account.id
             or any(
-                ra.status == ActiveStatus.ACTIVE
-                and ra.role
-                and (ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"))
-                for ra in item.role_assignments.all()
+                ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN")
+                for ra in active_assignments
             )
         )
+        role_codes = [ra.role.code for ra in active_assignments]
+        role_names = [ra.role.name for ra in active_assignments]
+        if is_comp_admin and not role_codes:
+            role_codes = ["ROLE_ADMIN"]
+            role_names = ["Quản trị doanh nghiệp"]
+        cfg = settings_map.get(str(item.company_id), {})
         companies.append({
             "id": str(item.company_id),
             "code": item.company.code,
@@ -443,23 +458,44 @@ def login(data, request):
             "status": item.company.status,
             "tax_code": item.company.tax_code,
             "address": item.company.address,
+            "phone": item.company.phone,
+            "email": item.company.email,
             "accounting_regime": item.company.accounting_regime or "TT99",
             "business_type": item.company.business_type,
             "legal_representative": item.company.legal_representative,
             "representative_title": item.company.representative_title or "Giám đốc",
             "is_company_admin": is_comp_admin,
+            "is_platform_admin": False,
+            "role_codes": role_codes,
+            "role_names": role_names,
+            "user_email": user.email or "",
+            "user_full_name": account.display_name or user.username,
+            "ui_enabled_modules": cfg.get("ui_enabled_modules"),
+            "ui_role_modules": cfg.get("ui_role_modules"),
         })
     if user.is_superuser and not companies:
-        all_comps = Company.objects.filter(status=CompanyStatus.ACTIVE).order_by("created_at")
+        all_comps = list(Company.objects.filter(status=CompanyStatus.ACTIVE).order_by("created_at"))
+        su_settings_map = {
+            str(s.company_id): (s.configuration if isinstance(s.configuration, dict) else {})
+            for s in CoreCompanySetting.objects.filter(company_id__in=[c.id for c in all_comps])
+        } if all_comps else {}
         companies = [
             {
                 "id": str(c.id), "code": c.code, "name": c.name, "status": c.status,
                 "tax_code": c.tax_code, "address": c.address,
+                "phone": c.phone, "email": c.email,
                 "accounting_regime": c.accounting_regime or "TT99",
                 "business_type": c.business_type,
                 "legal_representative": c.legal_representative,
                 "representative_title": c.representative_title or "Giám đốc",
                 "is_company_admin": True,
+                "is_platform_admin": True,
+                "role_codes": ["ROLE_ADMIN"],
+                "role_names": ["Quản trị doanh nghiệp"],
+                "user_email": user.email or "",
+                "user_full_name": account.display_name or user.username,
+                "ui_enabled_modules": su_settings_map.get(str(c.id), {}).get("ui_enabled_modules"),
+                "ui_role_modules": su_settings_map.get(str(c.id), {}).get("ui_role_modules"),
             }
             for c in all_comps
         ]
@@ -1595,12 +1631,16 @@ def global_search(company, query, account, *, group=None, date_from=None, date_t
             elif spec.get("status") == "status":
                 queryset = queryset.exclude(status__in=("CANCELLED", "INACTIVE"))
             permission_field = spec.get("permission_field")
+            default_permission = spec.get("permission")
             candidates = list(queryset.order_by("-updated_at")[:500])
             ranked = []
             for item in candidates:
-                item_permission = getattr(item, permission_field) if permission_field else spec.get("permission")
-                if item_permission and not has_effective_permission(account, company, item_permission, branch_id=resolved_branch):
-                    continue
+                if permission_field:
+                    item_permission = getattr(item, permission_field)
+                    if item_permission and not has_effective_permission(account, company, item_permission, branch_id=resolved_branch):
+                        continue
+                else:
+                    item_permission = default_permission
                 code = str(getattr(item, spec["code"], "") or "")
                 text_values = [str(getattr(item, field, "") or "") for field in spec["texts"]]
                 code_plain = _plain_text(code)
@@ -1700,9 +1740,24 @@ def _related_value(instance, path):
     return getattr(value, "id", value)
 
 
-def synchronize_work_items(company):
+import threading as _ws_threading
+import time as _ws_time
+
+_WORK_SYNC_LOCK = _ws_threading.Lock()
+_WORK_SYNC_LAST_TS = {}
+
+
+def synchronize_work_items(company, *, force=False):
     """Materialize approval responsibilities from current workflow state."""
     from django.apps import apps
+
+    if not force:
+        cid = str(company.id)
+        now_mono = _ws_time.monotonic()
+        with _WORK_SYNC_LOCK:
+            if now_mono - _WORK_SYNC_LAST_TS.get(cid, 0.0) < 10.0:
+                return
+            _WORK_SYNC_LAST_TS[cid] = now_mono
 
     memberships = CompanyMembership.objects.filter(
         company=company, membership_status=ActiveStatus.ACTIVE,

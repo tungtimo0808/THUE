@@ -14,29 +14,33 @@
   font-size: 13px;
   font-weight: 400;
   line-height: 1.6;
-  /* Brand — một màu nhận diện duy nhất (xanh dương). Định nghĩa ở đây để
-     mọi tệp CSS, kể cả tệp nạp trước ui-consistency.css, đều dùng được. */
-  --brand: #2563eb;
-  --brand-hover: #1d4ed8;
-  --brand-soft: #eff6ff;
-  --brand-border: #bfdbfe;
-  --brand-ink: #1e40af;
-  --navy: #14243b;
+  /* Brand — Lam Ngọc Hoàng Gia (Sovereign Sapphire) đồng bộ toàn hệ thống */
+  --brand: #2448d8;
+  --brand-hover: #1b38b0;
+  --brand-soft: #eef3ff;
+  --brand-subtle: #dfe8ff;
+  --brand-border: #c2d3ff;
+  --brand-ink: #172e94;
+  --brand-ring: rgba(36, 72, 216, 0.16);
+  --navy: #0c172c;
   --primary: var(--brand);
-  --canvas: #f3f5f9;
+  --canvas: #f3f6fc;
   --surface: #ffffff;
-  --ink: #172b4d;
+  --surface-subtle: #f8faff;
+  --ink: #0f172a;
+  --ink-secondary: #334155;
   --muted: #64748b;
-  --border: #e2e8f0;
+  --border: #e1e8f3;
   --teal: var(--brand);
-  /* Màu trạng thái */
-  --success: #15803d;
-  --success-soft: #ecfdf3;
+  /* Màu trạng thái ngữ nghĩa chuẩn tài chính */
+  --success: #0d7a50;
+  --success-soft: #ecfdf5;
   --warning: #b45309;
   --warning-soft: #fffbeb;
-  --danger: #b91c1c;
-  --danger-soft: #fef2f2;
+  --danger: #be123c;
+  --danger-soft: #fff1f2;
   --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px var(--brand);
+  --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
   color-scheme: light;
 }
 * {
@@ -487,7 +491,7 @@ table caption {
 .misa-table thead tr,
 .misa-modal-backdrop table thead tr,
 .misa-purchase-modal-window table thead tr {
-  background: linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%) !important;
+  background: #f8fafc !important;
   border-bottom: 2px solid var(--brand) !important;
 }
 
@@ -495,13 +499,13 @@ table caption {
 .misa-modal-backdrop table thead th,
 .misa-purchase-modal-window table thead th {
   background: transparent !important;
-  color: #065f46 !important;
-  font-weight: 600 !important;
-  font-size: 12px !important;
+  color: #1e40af !important;
+  font-weight: 700 !important;
+  font-size: 11.5px !important;
   padding: 6px 8px !important;
   height: 34px !important;
   white-space: nowrap !important;
-  border-right: 1px solid #bbf7d0 !important;
+  border-right: 1px solid #e2e8f0 !important;
   border-bottom: 2px solid var(--brand) !important;
 }
 
@@ -520,7 +524,7 @@ table caption {
 .misa-table tbody tr:hover,
 .misa-modal-backdrop table tbody tr:hover,
 .misa-purchase-modal-window table tbody tr:hover {
-  background-color: #f0fdf4 !important;
+  background-color: #eff6ff !important;
 }
 
 .misa-table tbody tr:hover td,
@@ -543,8 +547,8 @@ table caption {
 .misa-purchase-modal-window table tbody tr.misa-total-row,
 .misa-table tfoot tr,
 .misa-modal-backdrop table tfoot tr {
-  background: linear-gradient(180deg, #f0fdf4 0%, #e6f7ee 100%) !important;
-  border-top: 2px solid #86efac !important;
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
+  border-top: 2px solid #bfdbfe !important;
   font-weight: 700 !important;
 }
 
@@ -553,7 +557,7 @@ table caption {
 .misa-table tfoot td,
 .misa-modal-backdrop table tfoot td {
   background: transparent !important;
-  border-right: 1px solid #bbf7d0 !important;
+  border-right: 1px solid #bfdbfe !important;
 }
 
 /* Card hover micro-interaction */
@@ -568,7 +572,7 @@ table caption {
 /* Opaque backgrounds for sticky table columns */
 .misa-table thead th[style*="sticky"],
 .misa-table thead th.sticky-col {
-  background: #eaf6ee !important;
+  background: #f8fafc !important;
 }
 
 .misa-table tbody td[style*="sticky"],
@@ -578,7 +582,7 @@ table caption {
 
 .misa-table tbody tr:hover td[style*="sticky"],
 .misa-table tbody tr:hover td.sticky-col {
-  background-color: #f0fdf4 !important;
+  background-color: #eff6ff !important;
 }
 
 /* MISA Modal Styles */

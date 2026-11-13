@@ -133,9 +133,9 @@ const STATUS_BADGE_MAP: Record<
   },
   COMPLETED: {
     label: "Đã hoàn tất",
-    bg: "#f0fdf4",
+    bg: "#eff6ff",
     color: "#15803d",
-    border: "#bbf7d0",
+    border: "#bfdbfe",
   },
   AUTO_POPULATED: {
     label: "Tự động tổng hợp từ Sổ cái",
@@ -783,7 +783,7 @@ export default function MisaFinancialNotesReport({
                 style={{
                   height: 32,
                   padding: "0 12px",
-                  background: "#f0fdf4",
+                  background: "#eff6ff",
                   border: "1px solid #86efac",
                   borderRadius: 4,
                   fontSize: 12.5,
@@ -889,8 +889,8 @@ export default function MisaFinancialNotesReport({
           <button
             type="button"
             style={{
-              background: "#f0fdf4",
-              border: "1px solid #bbf7d0",
+              background: "#eff6ff",
+              border: "1px solid #bfdbfe",
               borderRadius: 4,
               padding: "4px 10px",
               display: "flex",
@@ -2171,13 +2171,13 @@ export default function MisaFinancialNotesReport({
                           ? "1px solid #fca5a5"
                           : r.status === "WARNING" || r.status === "PASSED_WITH_WARNING"
                           ? "1px solid #fde047"
-                          : "1px solid #bbf7d0",
+                          : "1px solid #bfdbfe",
                       background:
                         r.status === "FAILED"
                           ? "#fef2f2"
                           : r.status === "WARNING" || r.status === "PASSED_WITH_WARNING"
                           ? "#fefce8"
-                          : "#f0fdf4",
+                          : "#eff6ff",
                     }}
                   >
                     <div
@@ -2431,9 +2431,9 @@ export default function MisaFinancialNotesReport({
                         }}
                         style={{
                           padding: "3px 10px",
-                          background: "#f0fdf4",
+                          background: "#eff6ff",
                           color: "#166534",
-                          border: "1px solid #bbf7d0",
+                          border: "1px solid #bfdbfe",
                           borderRadius: 4,
                           fontSize: 12,
                           cursor: "pointer",

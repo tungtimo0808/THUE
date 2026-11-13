@@ -445,23 +445,21 @@ const moduleTabHierarchy: Record<string, ReferenceTabNode[]> = {
   ...auditedTabs,
 };
 
-// Open each module at its working list; keep process guides and charts as secondary tabs.
+// MISA AMIS standard: Open each module with 'process' (Quy trình nghiệp vụ) first when available.
 export const moduleStartTabs: Record<string, string> = {
-  cash: "transactions", bank: "transactions", purchases: "transactions", sales: "transactions",
-  inventory: "receipts", tools: "register", assets: "register", payroll: "attendance",
+  cash: "process", bank: "process", purchases: "process", sales: "process",
+  inventory: "process", tools: "process", assets: "register", payroll: "attendance",
   ledger: "transactions", cost: "continuous-simple", budget: "planning", insurance: "declarations",
 };
 
 export const referenceTabHierarchy: Record<string, ReferenceTabNode[]> = Object.fromEntries(
   Object.entries(moduleTabHierarchy).map(([moduleId, tabs]) => {
-    const start = moduleStartTabs[moduleId];
-    if (!start) return [moduleId, tabs];
-    const secondary = new Set(["process", "chart", "charts"]);
-    return [moduleId, [
-      ...tabs.filter((item) => item.id === start),
-      ...tabs.filter((item) => item.id !== start && !secondary.has(item.id)),
-      ...tabs.filter((item) => secondary.has(item.id)),
-    ]];
+    const processTab = tabs.find((t) => t.id === "process");
+    const otherTabs = tabs.filter((t) => t.id !== "process");
+    if (processTab) {
+      return [moduleId, [processTab, ...otherTabs]];
+    }
+    return [moduleId, tabs];
   }),
 );
 

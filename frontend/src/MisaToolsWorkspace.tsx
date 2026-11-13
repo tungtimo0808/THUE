@@ -38,6 +38,8 @@ import {
   Maximize2,
   Settings,
   Filter,
+  Coins,
+  TrendingUp,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
@@ -1969,7 +1971,7 @@ export default function MisaToolsWorkspace({
                         onChange={(e) => setSingleCategory(e.target.value)}
                         style={{ flex: 1, border: "none", padding: "0 6px", fontSize: 12, outline: "none" }}
                       />
-                      <button type="button" onClick={() => notify("Thêm loại CCDC mới")} style={{ width: 22, border: "none", borderLeft: "1px solid #e2e8f0", background: "#f8fafc", color: "#16a34a", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                      <button type="button" onClick={() => notify("Thêm loại CCDC mới")} style={{ width: 22, border: "none", borderLeft: "1px solid #e2e8f0", background: "#f8fafc", color: "var(--brand)", cursor: "pointer", display: "grid", placeItems: "center" }}>
                         <Plus size={12} />
                       </button>
                       <button type="button" style={{ width: 18, border: "none", borderLeft: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" }}>
@@ -3955,7 +3957,7 @@ export default function MisaToolsWorkspace({
                         alignItems: "center",
                         gap: 4,
                         padding: "1px 7px",
-                        background: "#e6f4ea",
+                        background: "#f8fafc",
                         border: "1px solid #86efac",
                         borderRadius: 4,
                         fontSize: 11.5,
@@ -4101,7 +4103,7 @@ export default function MisaToolsWorkspace({
                   <div style={{ flex: 1, overflow: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                       <thead>
-                        <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                        <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                           <th style={{ width: 40, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
                           <th style={{ width: 140, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã CCDC</th>
                           <th style={{ minWidth: 220, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên CCDC</th>
@@ -7778,7 +7780,7 @@ export default function MisaToolsWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                         border: "1px solid #34d399",
                       }}
                     >
@@ -7807,7 +7809,7 @@ export default function MisaToolsWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                         border: "1px solid #34d399",
                       }}
                     >
@@ -7837,7 +7839,7 @@ export default function MisaToolsWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                         border: "1px solid #34d399",
                       }}
                     >
@@ -7868,7 +7870,7 @@ export default function MisaToolsWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                         border: "1px solid #34d399",
                       }}
                     >
@@ -7898,7 +7900,7 @@ export default function MisaToolsWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                         border: "1px solid #34d399",
                       }}
                     >
@@ -7928,7 +7930,7 @@ export default function MisaToolsWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                         border: "1px solid #34d399",
                       }}
                     >
@@ -8010,7 +8012,7 @@ export default function MisaToolsWorkspace({
             <svg width="260" height="150" viewBox="0 0 260 150" fill="none">
               <ellipse cx="130" cy="138" rx="100" ry="10" fill="#f1f5f9" />
               <rect x="55" y="35" width="42" height="58" rx="6" fill="var(--brand)" />
-              <rect x="62" y="42" width="28" height="14" rx="2" fill="#e6f4ea" />
+              <rect x="62" y="42" width="28" height="14" rx="2" fill="#f8fafc" />
               <circle cx="67" cy="65" r="2.5" fill="#ffffff" /><circle cx="76" cy="65" r="2.5" fill="#ffffff" /><circle cx="85" cy="65" r="2.5" fill="#ffffff" />
               <circle cx="67" cy="74" r="2.5" fill="#ffffff" /><circle cx="76" cy="74" r="2.5" fill="#ffffff" /><circle cx="85" cy="74" r="2.5" fill="#ffffff" />
               <circle cx="67" cy="83" r="2.5" fill="#ffffff" /><circle cx="76" cy="83" r="2.5" fill="#ffffff" /><circle cx="85" cy="83" r="2.5" fill="#ffffff" />
@@ -8060,14 +8062,199 @@ export default function MisaToolsWorkspace({
       );
     }
 
+    const allToolsRows = uc16RegisterRows || toolsData;
+    const totalToolsCost = allToolsRows.reduce((s, r) => s + (Number(r.originalCost) || 0), 0);
+    const totalToolsAllocated = allToolsRows.reduce((s, r) => s + (Number(r.allocatedAmount) || 0), 0);
+    const totalToolsRemaining = allToolsRows.reduce((s, r) => s + (Number(r.remainingAmount) || 0), 0);
+    const totalToolsCount = allToolsRows.length;
+
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
-        <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
+        {/* 4 Modern Bento KPI Cards for CCDC */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 12,
+            margin: "12px 16px 6px 16px",
+          }}
+        >
+          {/* Card 1: Tổng nguyên giá */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#eff6ff",
+                  color: "#2563eb",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Wrench size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Tổng nguyên giá CCDC (TK 242)
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#1e293b", fontVariantNumeric: "tabular-nums" }}>
+                  {formatVND(totalToolsCost)} đ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#2563eb", background: "#dbeafe", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Nguyên giá
+            </span>
+          </div>
+
+          {/* Card 2: Đã phân bổ */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#eff6ff",
+                  color: "var(--brand)",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <TrendingUp size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Đã phân bổ lũy kế
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "var(--brand)", fontVariantNumeric: "tabular-nums" }}>
+                  {formatVND(totalToolsAllocated)} đ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "var(--brand-ink)", background: "#eff6ff", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Đã trích
+            </span>
+          </div>
+
+          {/* Card 3: Còn lại */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#fff7ed",
+                  color: "#ea580c",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Coins size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Giá trị còn lại cần phân bổ
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#ea580c", fontVariantNumeric: "tabular-nums" }}>
+                  {formatVND(totalToolsRemaining)} đ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#ea580c", background: "#ffedd5", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Còn lại
+            </span>
+          </div>
+
+          {/* Card 4: Số lượng */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#f5f3ff",
+                  color: "#7c3aed",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Building2 size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Tổng CCDC theo dõi
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#7c3aed" }}>
+                  {totalToolsCount} công cụ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#7c3aed", background: "#ede9fe", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Đang dùng
+            </span>
+          </div>
+        </div>
+
+        {/* Toolbar */}
+        <div style={{ padding: "8px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
               type="button"
               onClick={() => setShowSingleAddModal(true)}
-              style={{ height: 30, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+              style={{ height: 32, padding: "0 14px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", boxShadow: "0 1px 2px rgba(0,176,107,0.2)" }}
             >
               <Plus size={14} />
               <span>Khai báo CCDC</span>
@@ -8084,7 +8271,7 @@ export default function MisaToolsWorkspace({
                 }
                 notify("Đang xuất khẩu sổ theo dõi CCDC ra Excel...");
               }}
-              style={{ height: 30, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, color: "#334155", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+              style={{ height: 32, padding: "0 12px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 12.5, color: "#334155", display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
               <Download size={13} />
               <span>Xuất khẩu</span>
@@ -8093,7 +8280,7 @@ export default function MisaToolsWorkspace({
           <button
             type="button"
             onClick={() => setRegisterViewMode("landing")}
-            style={{ height: 28, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", color: "#64748b", fontSize: 12, cursor: "pointer" }}
+            style={{ height: 30, padding: "0 12px", border: "1px solid #cbd5e1", borderRadius: 6, background: "#ffffff", color: "#64748b", fontSize: 12, cursor: "pointer" }}
           >
             Xem hình minh họa
           </button>
@@ -8354,7 +8541,7 @@ export default function MisaToolsWorkspace({
                     color: "var(--brand)",
                     cursor: "pointer",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#e6f4ea"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f8fafc"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "#ffffff"; }}
                 >
                   Xem danh sách chứng từ
@@ -8594,7 +8781,7 @@ export default function MisaToolsWorkspace({
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#e6f4ea"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f8fafc"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "#ffffff"; }}
                 >
                   Xem danh sách chứng từ
@@ -8770,7 +8957,7 @@ export default function MisaToolsWorkspace({
                           </td>
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{v.creator}</td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
-                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
+                            <span style={{ fontSize: 11.5, background: "#f8fafc", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
                               {v.status}
                             </span>
                           </td>
@@ -9012,7 +9199,7 @@ export default function MisaToolsWorkspace({
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#e6f4ea"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f8fafc"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "#ffffff"; }}
                 >
                   Xem danh sách chứng từ
@@ -9193,7 +9380,7 @@ export default function MisaToolsWorkspace({
                           </td>
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{v.creator}</td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
-                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
+                            <span style={{ fontSize: 11.5, background: "#f8fafc", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
                               {toolTransactionStatus(v.voucherNo, v.status)}
                             </span>
                           </td>
@@ -9426,7 +9613,7 @@ export default function MisaToolsWorkspace({
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#e6f4ea"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f8fafc"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "#ffffff"; }}
                 >
                   Xem danh sách chứng từ
@@ -9634,7 +9821,7 @@ export default function MisaToolsWorkspace({
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0", color: "#334155" }}>{v.receiver}</td>
                           <td style={{ padding: "9px 10px", borderRight: "1px solid #e2e8f0" }}>{v.reason}</td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
-                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
+                            <span style={{ fontSize: 11.5, background: "#f8fafc", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
                               {toolTransactionStatus(v.voucherNo, v.status)}
                             </span>
                           </td>
@@ -9873,7 +10060,7 @@ export default function MisaToolsWorkspace({
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#e6f4ea"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f8fafc"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "#ffffff"; }}
                 >
                   Xem danh sách chứng từ
@@ -10079,7 +10266,7 @@ export default function MisaToolsWorkspace({
                             {v.totalRemainingAmount ? formatVND(v.totalRemainingAmount) : "0"}
                           </td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
-                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
+                            <span style={{ fontSize: 11.5, background: "#f8fafc", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
                               {toolTransactionStatus(v.voucherNo, v.status)}
                             </span>
                           </td>
@@ -10198,17 +10385,17 @@ export default function MisaToolsWorkspace({
                     <rect x="0" y="2" width="62" height="78" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1" />
                     
                     {/* Checkbox item 1 (Checked green) */}
-                    <rect x="8" y="16" width="9" height="9" rx="2" fill="#e6f4ea" stroke="var(--brand)" strokeWidth="1.2" />
+                    <rect x="8" y="16" width="9" height="9" rx="2" fill="#f8fafc" stroke="var(--brand)" strokeWidth="1.2" />
                     <path d="M10 20.5 L 12.5 23 L 15.5 18" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                     <rect x="22" y="18" width="32" height="4" rx="2" fill="var(--brand)" />
 
                     {/* Checkbox item 2 (Checked green) */}
-                    <rect x="8" y="32" width="9" height="9" rx="2" fill="#e6f4ea" stroke="var(--brand)" strokeWidth="1.2" />
+                    <rect x="8" y="32" width="9" height="9" rx="2" fill="#f8fafc" stroke="var(--brand)" strokeWidth="1.2" />
                     <path d="M10 36.5 L 12.5 39 L 15.5 34" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                     <rect x="22" y="34" width="28" height="4" rx="2" fill="#cbd5e1" />
 
                     {/* Checkbox item 3 (Checked green) */}
-                    <rect x="8" y="48" width="9" height="9" rx="2" fill="#e6f4ea" stroke="var(--brand)" strokeWidth="1.2" />
+                    <rect x="8" y="48" width="9" height="9" rx="2" fill="#f8fafc" stroke="var(--brand)" strokeWidth="1.2" />
                     <path d="M10 52.5 L 12.5 55 L 15.5 50" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                     <rect x="22" y="50" width="24" height="4" rx="2" fill="#cbd5e1" />
 
@@ -10235,7 +10422,7 @@ export default function MisaToolsWorkspace({
                   {/* Right: Magnifying Glass + Pen Checking Items */}
                   <g transform="translate(268, 62)">
                     <circle cx="16" cy="16" r="14" fill="#ffffff" stroke="var(--brand)" strokeWidth="3" />
-                    <circle cx="16" cy="16" r="11" fill="#e6f4ea" opacity="0.6" />
+                    <circle cx="16" cy="16" r="11" fill="#f8fafc" opacity="0.6" />
                     <line x1="26" y1="26" x2="38" y2="38" stroke="var(--brand)" strokeWidth="4" strokeLinecap="round" />
                     
                     <circle cx="16" cy="16" r="6" fill="var(--brand)" />
@@ -10301,7 +10488,7 @@ export default function MisaToolsWorkspace({
                     cursor: "pointer",
                     transition: "all 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#e6f4ea"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#f8fafc"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "#ffffff"; }}
                 >
                   Xem danh sách chứng từ
@@ -10519,7 +10706,7 @@ export default function MisaToolsWorkspace({
                             {v.diffQty ? `${v.diffQty},00` : "0,00"}
                           </td>
                           <td style={{ padding: "9px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
-                            <span style={{ fontSize: 11.5, background: "#e6f4ea", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
+                            <span style={{ fontSize: 11.5, background: "#f8fafc", color: "var(--brand)", padding: "2px 8px", borderRadius: 10, fontWeight: 500 }}>
                               {v.status}
                             </span>
                           </td>
@@ -13599,7 +13786,7 @@ export default function MisaToolsWorkspace({
                     <div style={{ flex: 1, overflow: "auto" }}>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                         <thead>
-                          <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                          <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                             <th style={{ width: 40, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
                             <th style={{ width: 160, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã CPTT</th>
                             <th style={{ minWidth: 260, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên CPTT</th>

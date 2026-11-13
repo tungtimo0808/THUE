@@ -808,6 +808,11 @@ class CatalogExportViewSet(viewsets.GenericViewSet):
             raise ValidationError({"company_id": "Unknown company."})
         if company.status != "ACTIVE":
             raise ValidationError({"company": "Doanh nghiệp đã ngừng hoạt động."})
+        if not getattr(self.request.user, "is_superuser", False):
+            from iam.models import CompanyMembership
+            account = getattr(self.request.user, "iam_account", None)
+            if not account or not CompanyMembership.objects.filter(company=company, user=account, membership_status="ACTIVE").exists():
+                raise PermissionDenied("Bạn không có quyền truy cập dữ liệu của doanh nghiệp này.")
         return company
 
     def _get_target(self, target_name: str) -> ExportTarget:
@@ -821,7 +826,11 @@ class CatalogExportViewSet(viewsets.GenericViewSet):
         Lists recent catalog export batches for the company.
         """
         company = self._company()
-        qs = models.CatalogExportBatch.objects.filter(company=company).order_by("-started_at")[:100]
+        qs = models.CatalogExportBatch.objects.filter(company=company)
+        if not request.user.is_superuser:
+            account = getattr(request.user, "iam_account", None)
+            qs = qs.filter(created_by=account)
+        qs = qs.order_by("-started_at")[:100]
         results = [
             {
                 "id": str(b.id),

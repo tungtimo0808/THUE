@@ -133,7 +133,7 @@ export default function VoucherDateField({
           border: 0,
           background: "transparent",
           cursor: "pointer",
-          color: "#059669",
+          color: "var(--brand)",
         }}
       >
         <Calendar size={15} />
@@ -233,7 +233,7 @@ export default function VoucherDateField({
                         style={{
                           ...buttonStyle,
                           borderRadius: "50%",
-                          background: selected ? "#059669" : "transparent",
+                          background: selected ? "var(--brand)" : "transparent",
                           color: selected ? "white" : "#64748b",
                         }}
                         onClick={() => choose(date)}
@@ -275,7 +275,7 @@ export default function VoucherDateField({
             )}
             <button
               type="button"
-              style={{ ...buttonStyle, width: "100%", borderTop: "1px solid #e5e7eb", color: "#059669" }}
+              style={{ ...buttonStyle, width: "100%", borderTop: "1px solid #e5e7eb", color: "var(--brand)", fontWeight: 600 }}
               onClick={() => choose(new Date())}
             >
               Hôm nay

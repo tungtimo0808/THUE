@@ -80,8 +80,10 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
   }
   const activeRegime = chart?.accounting_regime || "TT99";
   const regimeInfoText =
-    activeRegime === "TT58" || activeRegime === "CIRCULAR_58"
-      ? "Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ / Hộ kinh doanh, thay thế TT132/2018 từ 01/07/2026) · Đặc trưng: Danh mục TK rút gọn cốt lõi (111, 112, 131, 152, 156, 211, 331, 333, 334, 411, 421, 511, 632, 642, 821, 911) hoặc chế độ sổ đơn giản."
+    activeRegime === "TT88" || activeRegime === "CIRCULAR_88"
+      ? "Thông tư 88/2021/TT-BTC (Hộ kinh doanh, cá nhân kinh doanh) · Đặc trưng: Bộ tài khoản rút gọn phục vụ 7 sổ kế toán hộ kinh doanh (Tiền, Doanh thu, Chi phí, Vật tư hàng hóa, Nghĩa vụ thuế, Lương & Công nợ)."
+      : activeRegime === "TT58" || activeRegime === "CIRCULAR_58"
+      ? "Thông tư 58/2026/TT-BTC (Doanh nghiệp siêu nhỏ, thay thế TT132/2018 từ 01/07/2026) · Đặc trưng: Danh mục TK rút gọn cốt lõi (111, 112, 131, 152, 156, 211, 331, 333, 334, 411, 421, 511, 632, 642, 821, 911)."
       : activeRegime === "TT133"
       ? "Thông tư 133/2016/TT-BTC (Doanh nghiệp nhỏ và vừa — DNNVV) · Đặc trưng: TK 154 tập hợp trực tiếp (không có 621, 622, 627), TK 6421/6422 (gộp 641 vào 642), TK 2111/2112/2113, TK 1386."
       : activeRegime === "TT200"
@@ -105,7 +107,7 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
         </label>
       </div>
     </div>
-    <div data-testid="coa-regime-banner" style={{ marginBottom: 12, padding: "8px 14px", borderRadius: 6, fontSize: 12.5, fontWeight: 600, background: activeRegime === "TT133" ? "#eff6ff" : activeRegime === "TT200" ? "#fffbeb" : "#ecfdf5", color: activeRegime === "TT133" ? "#1d4ed8" : activeRegime === "TT200" ? "#b45309" : "#047857", border: activeRegime === "TT133" ? "1px solid #bfdbfe" : activeRegime === "TT200" ? "1px solid #fde68a" : "1px solid #a7f3d0" }}>
+    <div data-testid="coa-regime-banner" style={{ marginBottom: 12, padding: "8px 14px", borderRadius: 8, fontSize: 12.5, fontWeight: 600, background: "var(--brand-soft)", color: "var(--brand-ink)", border: "1px solid var(--brand-border)" }}>
       {regimeInfoText}
     </div>
     {!token || !companyId ? <p>Cần đăng nhập và chọn doanh nghiệp.</p> : <>

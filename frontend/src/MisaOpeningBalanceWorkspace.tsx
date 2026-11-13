@@ -1488,7 +1488,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         <td style={{ padding: "10px 14px", fontWeight: 600, color: "var(--brand)" }}>
                           {c.code}
                           {c.isNew && (
-                            <span style={{ marginLeft: 6, fontSize: 10, background: "#10b981", color: "#fff", padding: "2px 6px", borderRadius: 4 }}>
+                            <span style={{ marginLeft: 6, fontSize: 10, background: "var(--brand)", color: "#fff", padding: "2px 6px", borderRadius: 4 }}>
                               Mới
                             </span>
                           )}

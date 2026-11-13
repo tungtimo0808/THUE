@@ -15,6 +15,30 @@ type SidebarNavigationProps = {
   allowedModules?: string[];
 };
 
+interface NavSectionDef {
+  title: string;
+  ids: string[];
+}
+
+const NAV_SECTIONS: NavSectionDef[] = [
+  {
+    title: "Tổng quan & Điều hành",
+    ids: ["overview"],
+  },
+  {
+    title: "Thuế & Hóa đơn",
+    ids: ["invoices", "tax"],
+  },
+  {
+    title: "Nghiệp vụ chứng từ",
+    ids: ["cash", "bank", "purchases", "sales", "inventory", "cost", "tools", "assets", "payroll"],
+  },
+  {
+    title: "Báo cáo & Sổ sách",
+    ids: ["ledger", "reports", "budget", "analysis", "directory", "opening", "insurance", "connections"],
+  },
+];
+
 export function SidebarNavigation({
   moduleId,
   href,
@@ -92,206 +116,244 @@ export function SidebarNavigation({
     setOpenModule(modId);
   };
 
-  return (
-    <nav aria-label="Điều hướng chính">
-      {/* 1. Tổng quan NavLink */}
-      <div className="ref-nav-group">
+  const sectionedIds = new Set(NAV_SECTIONS.flatMap((s) => s.ids));
+  const otherModules = referenceNav.filter(
+    (m) =>
+      !sectionedIds.has(m.id) &&
+      (!allowedModules || allowedModules.length === 0 || allowedModules.includes(m.id)),
+  );
+
+  const renderModuleItem = (module: (typeof referenceNav)[number]) => {
+    const isOpen = openModule === module.id;
+    const isActive = moduleId === module.id;
+    const flyout = MISA_MODULE_FLYOUTS[module.id];
+    const hasUtilities = Boolean(flyout && flyout.utilities && flyout.utilities.length > 0);
+
+    return (
+      <div
+        className={`ref-nav-group ${isOpen ? "open" : ""}`}
+        key={module.id}
+        onMouseEnter={(e) => {
+          handleOpenModule(e.currentTarget, module.id);
+          preloadWorkspace(module.id);
+        }}
+        onMouseLeave={handleCloseModule}
+        onFocus={(e) => {
+          handleOpenModule(e.currentTarget, module.id);
+          preloadWorkspace(module.id);
+        }}
+        onBlur={closeAfterBlur}
+        onKeyDown={closeWithEscape}
+      >
         <NavLink
           className={() =>
-            `ref-nav-item ${moduleId === "overview" ? "misa-active active" : ""}`
+            `ref-nav-item ${isActive ? "misa-active active" : ""}`
           }
-          to={href("/overview")}
-          onMouseEnter={() => preloadWorkspace("overview")}
-          onFocus={() => preloadWorkspace("overview")}
+          to={href(`/${module.id}`)}
           onClick={() => {
             setOpenModule(null);
+            setFlyoutPos(null);
             onNavigate();
           }}
-          title="Tổng quan"
+          aria-haspopup={flyout ? "menu" : undefined}
+          aria-expanded={flyout ? isOpen : undefined}
+          title={module.label}
         >
           <span className="ref-nav-icon">
-            <LayoutGrid size={18} />
+            <module.icon size={18} />
           </span>
-          <span className="ref-nav-label">Tổng quan</span>
+          <span className="ref-nav-label">{module.label}</span>
+          {"badge" in module && (module as any).badge && (
+            <span className="ref-nav-badge">{(module as any).badge}</span>
+          )}
         </NavLink>
-      </div>
 
-      {/* 3. Phân hệ modules */}
-      {referenceNav
-        .filter((module) => module.id !== "overview" && (!allowedModules || allowedModules.length === 0 || allowedModules.includes(module.id)))
-        .map((module) => {
-          const isOpen = openModule === module.id;
-          const isActive = moduleId === module.id;
-          const flyout = MISA_MODULE_FLYOUTS[module.id];
-          const hasUtilities = Boolean(flyout && flyout.utilities && flyout.utilities.length > 0);
-
-          return (
-            <div
-              className={`ref-nav-group ${isOpen ? "open" : ""}`}
-              key={module.id}
-              onMouseEnter={(e) => {
-                handleOpenModule(e.currentTarget, module.id);
-                preloadWorkspace(module.id);
-              }}
-              onMouseLeave={handleCloseModule}
-              onFocus={(e) => {
-                handleOpenModule(e.currentTarget, module.id);
-                preloadWorkspace(module.id);
-              }}
-              onBlur={closeAfterBlur}
-              onKeyDown={closeWithEscape}
-            >
-              <NavLink
-                className={() =>
-                  `ref-nav-item ${isActive ? "misa-active active" : ""}`
-                }
-                to={href(`/${module.id}`)}
-                onClick={() => {
-                  setOpenModule(null);
-                  setFlyoutPos(null);
-                  onNavigate();
+        {flyout && isOpen && flyoutPos && typeof document !== "undefined"
+          ? createPortal(
+              <div
+                className={`misa-flyout-card ${!hasUtilities ? "single-column" : ""}`}
+                style={{
+                  position: "fixed",
+                  top: `${flyoutPos.top}px`,
+                  left: `${flyoutPos.left}px`,
+                  zIndex: 99999,
                 }}
-                aria-haspopup={flyout ? "menu" : undefined}
-                aria-expanded={flyout ? isOpen : undefined}
-                title={module.label}
+                onMouseEnter={() => handleMouseEnterFlyout(module.id)}
+                onMouseLeave={handleCloseModule}
+                role="menu"
+                aria-label={`Menu ${module.label}`}
               >
-                <span className="ref-nav-icon">
-                  <module.icon size={18} />
-                </span>
-                <span className="ref-nav-label">{module.label}</span>
-                {"badge" in module && (module as any).badge && (
-                  <span className="ref-nav-badge">{(module as any).badge}</span>
+                <div className="misa-flyout-column">
+                  {flyout.operationsTitle !== "" && (
+                    <h4>{flyout.operationsTitle || "Nghiệp vụ"}</h4>
+                  )}
+                  <ul>
+                    {flyout.operations.map((op, idx) => (
+                      <li key={idx}>
+                        <Link
+                          to={href(op.path || `/${module.id}`)}
+                          onMouseEnter={() => preloadWorkspace(module.id)}
+                          onFocus={() => preloadWorkspace(module.id)}
+                          onClick={() => {
+                            setOpenModule(null);
+                            setFlyoutPos(null);
+                            onNavigate();
+                          }}
+                          style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                        >
+                          <span>{op.label}</span>
+                          {op.badge && (
+                            <span
+                              style={{
+                                marginLeft: 8,
+                                backgroundColor: "#ea580c",
+                                color: "#ffffff",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: "1px 6px",
+                                borderRadius: 4,
+                                lineHeight: "14px",
+                              }}
+                            >
+                              {op.badge}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {hasUtilities && (
+                  <div className="misa-flyout-column">
+                    <h4>{flyout.utilitiesTitle || "Tiện ích"}</h4>
+                    <ul>
+                      {flyout.utilities.map((util, idx) => (
+                        <li key={idx}>
+                          {util.action === "exchange_rate" ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenModule(null);
+                                setFlyoutPos(null);
+                                onExchangeRate?.();
+                              }}
+                            >
+                              {util.label}
+                            </button>
+                          ) : util.action === "ai" ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenModule(null);
+                                setFlyoutPos(null);
+                                onOpenAI?.();
+                              }}
+                            >
+                              {util.label}
+                            </button>
+                          ) : (
+                            <Link
+                              to={href(util.path || `/${module.id}`)}
+                              onMouseEnter={() => preloadWorkspace(module.id)}
+                              onFocus={() => preloadWorkspace(module.id)}
+                              onClick={() => {
+                                setOpenModule(null);
+                                setFlyoutPos(null);
+                                onNavigate();
+                              }}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                            >
+                              <span>{util.label}</span>
+                              {util.badge && (
+                                <span
+                                  style={{
+                                    marginLeft: 8,
+                                    backgroundColor: "#ea580c",
+                                    color: "#ffffff",
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    padding: "1px 6px",
+                                    borderRadius: 4,
+                                    lineHeight: "14px",
+                                  }}
+                                >
+                                  {util.badge}
+                                </span>
+                              )}
+                            </Link>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
-              </NavLink>
+              </div>,
+              document.body,
+            )
+          : null}
+      </div>
+    );
+  };
 
-              {/* Exact MISA Popup Menu matching Screenshot 1 */}
-              {flyout && isOpen && flyoutPos && typeof document !== "undefined"
-                ? createPortal(
-                    <div
-                      className={`misa-flyout-card ${!hasUtilities ? "single-column" : ""}`}
-                      style={{
-                        position: "fixed",
-                        top: `${flyoutPos.top}px`,
-                        left: `${flyoutPos.left}px`,
-                        zIndex: 99999,
-                      }}
-                      onMouseEnter={() => handleMouseEnterFlyout(module.id)}
-                      onMouseLeave={handleCloseModule}
-                      role="menu"
-                      aria-label={`Menu ${module.label}`}
-                    >
-                      <div className="misa-flyout-column">
-                        {flyout.operationsTitle !== "" && (
-                          <h4>{flyout.operationsTitle || "Nghiệp vụ"}</h4>
-                        )}
-                        <ul>
-                          {flyout.operations.map((op, idx) => (
-                            <li key={idx}>
-                              <Link
-                                to={href(op.path || `/${module.id}`)}
-                                onMouseEnter={() => preloadWorkspace(module.id)}
-                                onFocus={() => preloadWorkspace(module.id)}
-                                onClick={() => {
-                                  setOpenModule(null);
-                                  setFlyoutPos(null);
-                                  onNavigate();
-                                }}
-                                style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                              >
-                                <span>{op.label}</span>
-                                {op.badge && (
-                                  <span
-                                    style={{
-                                      marginLeft: 8,
-                                      backgroundColor: "#ea580c",
-                                      color: "#ffffff",
-                                      fontSize: 10,
-                                      fontWeight: 700,
-                                      padding: "1px 6px",
-                                      borderRadius: 4,
-                                      lineHeight: "14px",
-                                    }}
-                                  >
-                                    {op.badge}
-                                  </span>
-                                )}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+  return (
+    <nav aria-label="Điều hướng chính">
+      {NAV_SECTIONS.map((section, sectionIdx) => {
+        const isOverviewSec = section.ids.includes("overview");
+        const allowedSecIds = section.ids.filter(
+          (id) => !allowedModules || allowedModules.length === 0 || allowedModules.includes(id)
+        );
+        if (allowedSecIds.length === 0) return null;
 
-                      {hasUtilities && (
-                        <div className="misa-flyout-column">
-                          <h4>{flyout.utilitiesTitle || "Tiện ích"}</h4>
-                          <ul>
-                            {flyout.utilities.map((util, idx) => (
-                              <li key={idx}>
-                                {util.action === "exchange_rate" ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenModule(null);
-                                      setFlyoutPos(null);
-                                      onExchangeRate?.();
-                                    }}
-                                  >
-                                    {util.label}
-                                  </button>
-                                ) : util.action === "ai" ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOpenModule(null);
-                                      setFlyoutPos(null);
-                                      onOpenAI?.();
-                                    }}
-                                  >
-                                    {util.label}
-                                  </button>
-                                ) : (
-                                  <Link
-                                    to={href(util.path || `/${module.id}`)}
-                                    onMouseEnter={() => preloadWorkspace(module.id)}
-                                    onFocus={() => preloadWorkspace(module.id)}
-                                    onClick={() => {
-                                      setOpenModule(null);
-                                      setFlyoutPos(null);
-                                      onNavigate();
-                                    }}
-                                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                                  >
-                                    <span>{util.label}</span>
-                                    {util.badge && (
-                                      <span
-                                        style={{
-                                          marginLeft: 8,
-                                          backgroundColor: "#ea580c",
-                                          color: "#ffffff",
-                                          fontSize: 10,
-                                          fontWeight: 700,
-                                          padding: "1px 6px",
-                                          borderRadius: 4,
-                                          lineHeight: "14px",
-                                        }}
-                                      >
-                                        {util.badge}
-                                      </span>
-                                    )}
-                                  </Link>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>,
-                    document.body,
-                  )
-                : null}
-            </div>
-          );
-        })}
+        return (
+          <div className="ref-nav-section" key={section.title}>
+            <div className="ref-nav-section-title">{section.title}</div>
+
+            {isOverviewSec && (
+              <div className="ref-nav-group">
+                <NavLink
+                  className={() =>
+                    `ref-nav-item ${moduleId === "overview" ? "misa-active active" : ""}`
+                  }
+                  to={href("/overview")}
+                  onMouseEnter={() => preloadWorkspace("overview")}
+                  onFocus={() => preloadWorkspace("overview")}
+                  onClick={() => {
+                    setOpenModule(null);
+                    onNavigate();
+                  }}
+                  title="Tổng quan"
+                >
+                  <span className="ref-nav-icon">
+                    <LayoutGrid size={18} />
+                  </span>
+                  <span className="ref-nav-label">Tổng quan</span>
+                </NavLink>
+              </div>
+            )}
+
+            {section.ids
+              .filter((id) => id !== "overview")
+              .map((id) => {
+                const mod = referenceNav.find((m) => m.id === id);
+                if (!mod) return null;
+                if (allowedModules && allowedModules.length > 0 && !allowedModules.includes(id)) {
+                  return null;
+                }
+                return renderModuleItem(mod);
+              })}
+
+            {sectionIdx < NAV_SECTIONS.length - 1 && <div className="ref-nav-section-divider" />}
+          </div>
+        );
+      })}
+
+      {otherModules.length > 0 && (
+        <div className="ref-nav-section">
+          <div className="ref-nav-section-title">Khác</div>
+          {otherModules.map(renderModuleItem)}
+        </div>
+      )}
     </nav>
   );
 }

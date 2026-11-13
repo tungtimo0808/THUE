@@ -48,6 +48,10 @@ import {
   ChevronRight,
   Printer,
   X,
+  Layers,
+  FileText,
+  TrendingUp,
+  CheckCircle2,
 } from "lucide-react";
 import {
   TaxPaymentModal,
@@ -244,6 +248,18 @@ export default function MisaBankWorkspace({
   const [detailExpanded, setDetailExpanded] = useState(true);
   const [bankDetailTab,setBankDetailTab]=useState("accounting");
   const [kpiCollapsed, setKpiCollapsed] = useState(false);
+  const [bankDrawerOpen, setBankDrawerOpen] = useState<boolean>(false);
+  const [bankViewMode, setBankViewMode] = useState<"drawer" | "bottom">("drawer");
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && bankDrawerOpen) {
+        setBankDrawerOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [bankDrawerOpen]);
 
   // Selected voucher for print preview
   const [selectedVoucher, setSelectedVoucher] = useState({
@@ -1645,105 +1661,190 @@ export default function MisaBankWorkspace({
           </div>
         )}
 
-        {/* 3 KPI Summary Cards (Image 4 & 5) */}
+        {/* 4 Modern Bento KPI Cards */}
         {!kpiCollapsed && (
-          <div className="misa-kpi-row" style={{ margin: "10px 14px 4px 14px" }}>
-            {/* Card 1 */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+              gap: 12,
+              margin: "12px 14px 6px 14px",
+            }}
+          >
+            {/* Card 1: Tổng thu */}
             <div
-              className="misa-kpi-card"
-              style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 12, padding: "10px 14px" }}
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 12,
+                padding: "12px 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+                minWidth: 0,
+              }}
             >
-              <div
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 8,
-                  background: "#f0fdf4",
-                  border: "1px solid #bbf7d0",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "var(--brand)",
-                  flexShrink: 0,
-                }}
-              >
-                <Coins size={22} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, color: "#334155", fontWeight: 500, marginBottom: 2 }}>
-                  Tổng thu đầu năm đến hiện tại
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: "#ecfdf5",
+                    color: "#059669",
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <TrendingUp size={20} />
                 </div>
-                <strong style={{ fontSize: 18, color: totalReceipt > 0 ? "var(--brand)" : "#111827" }}>
-                  {formatVND(totalReceipt)}
-                </strong>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    Tổng thu tiền gửi (TK 112)
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: totalReceipt > 0 ? "#059669" : "#1e293b", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                    {formatVND(totalReceipt)} đ
+                  </div>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11.5, color: "#94a3b8" }}>
-                <Clock size={12} />
-                <span>{new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"})}</span>
-              </div>
+              <span style={{ fontSize: 11, color: "#059669", background: "#ecfdf5", border: "1px solid #a7f3d0", padding: "2px 8px", borderRadius: 999, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
+                Thu tiền
+              </span>
             </div>
 
-            {/* Card 2 */}
+            {/* Card 2: Tổng chi */}
             <div
-              className="misa-kpi-card"
-              style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 12, padding: "10px 14px" }}
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 12,
+                padding: "12px 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+                minWidth: 0,
+              }}
             >
-              <div
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 8,
-                  background: "#fff7ed",
-                  border: "1px solid #fed7aa",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "#ea580c",
-                  flexShrink: 0,
-                }}
-              >
-                <Coins size={22} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, color: "#334155", fontWeight: 500, marginBottom: 2 }}>
-                  Tổng chi đầu năm đến hiện tại
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: "#fff7ed",
+                    color: "#ea580c",
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Coins size={20} />
                 </div>
-                <strong style={{ fontSize: 18, color: "#ea580c" }}>{formatVND(totalPayment)}</strong>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    Tổng chi tiền gửi (UNC)
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "#ea580c", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                    {formatVND(totalPayment)} đ
+                  </div>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11.5, color: "#94a3b8" }}>
-                <Clock size={12} />
-                <span>15:12</span>
-              </div>
+              <span style={{ fontSize: 11, color: "#c2410c", background: "#fff7ed", border: "1px solid #fed7aa", padding: "2px 8px", borderRadius: 999, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
+                Chi tiền
+              </span>
             </div>
 
-            {/* Card 3 */}
+            {/* Card 3: Số dư tiền gửi */}
             <div
-              className="misa-kpi-card highlight"
-              style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 12, padding: "10px 14px" }}
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 12,
+                padding: "12px 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+                minWidth: 0,
+              }}
             >
-              <div
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 8,
-                  background: "#f3e8ff",
-                  border: "1px solid #ddd6fe",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "#7e22ce",
-                  flexShrink: 0,
-                }}
-              >
-                <Landmark size={22} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, color: "#334155", fontWeight: 500, marginBottom: 2 }}>
-                  Số dư tiền gửi đến ngày {currentCashDate()}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: "#eff6ff",
+                    color: "#2563eb",
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Landmark size={20} />
                 </div>
-                <strong style={{ fontSize: 18, color: "var(--brand)" }}>{formatVND(currentBalance)}</strong>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    Số dư tiền gửi đến ngày {currentCashDate()}
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "#1e40af", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                    {formatVND(currentBalance)} đ
+                  </div>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11.5, color: "#94a3b8" }}>
-                <Clock size={12} />
-                <span>15:12</span>
+              <span style={{ fontSize: 11, color: "#1e40af", background: "#eff6ff", border: "1px solid #bfdbfe", padding: "2px 8px", borderRadius: 999, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
+                Khả dụng
+              </span>
+            </div>
+
+            {/* Card 4: Kết nối eBanking & Sổ phụ */}
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 12,
+                padding: "12px 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+                minWidth: 0,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: "#f5f3ff",
+                    color: "#7c3aed",
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <CreditCard size={20} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    Tài khoản NH & eBanking
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "#7c3aed", whiteSpace: "nowrap" }}>
+                    {bankProfiles.length > 0 ? `${bankProfiles.length} tài khoản` : "3 TK chính (VCB, BIDV)"}
+                  </div>
+                </div>
               </div>
+              <span style={{ fontSize: 11, color: "#059669", background: "#ecfdf5", border: "1px solid #a7f3d0", padding: "2px 8px", borderRadius: 999, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
+                Đã đồng bộ
+              </span>
             </div>
           </div>
         )}
@@ -1794,12 +1895,15 @@ export default function MisaBankWorkspace({
             position: "relative",
             zIndex: 19,
             gap: 8,
+            overflow: "visible",
+            minHeight: 46,
+            boxSizing: "border-box",
           }}
         >
           {/* Left Controls: Search, Loại phiếu, Period, Utility Icons */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", flexShrink: 1, minWidth: 0 }}>
             {/* Search Box */}
-            <div style={{ position: "relative", width: 200 }}>
+            <div style={{ position: "relative", width: 140, flexShrink: 0 }}>
               <Search
                 size={14}
                 style={{
@@ -1823,7 +1927,7 @@ export default function MisaBankWorkspace({
                   paddingRight: 8,
                   borderRadius: 6,
                   border: "1px solid #d1d5db",
-                  fontSize: 13,
+                  fontSize: 12.5,
                   outline: "none",
                   background: "#ffffff",
                 }}
@@ -1836,12 +1940,15 @@ export default function MisaBankWorkspace({
               onChange={(val) => setFilterType(val)}
               title="LOẠI PHIẾU"
               options={[
-                { value: "all", label: "Loại phiếu: Tất cả" },
-                { value: "receipt", label: "Loại phiếu: Thu tiền" },
-                { value: "payment", label: "Loại phiếu: Chi tiền (UNC)" },
-                { value: "transfer", label: "Loại phiếu: Chuyển tiền nội bộ" },
+                { value: "all", label: "Loại: Tất cả" },
+                { value: "receipt", label: "Loại: Thu tiền" },
+                { value: "payment", label: "Loại: Chi tiền (UNC)" },
+                { value: "transfer", label: "Loại: Chuyển nội bộ" },
               ]}
               ariaLabel="Lọc theo loại phiếu"
+              minWidth={120}
+              buttonStyle={{ height: 32, flexShrink: 0, fontSize: 12.5, padding: "0 8px" }}
+              style={{ flexShrink: 0 }}
             />
 
             {/* Period select: Đầu năm tới hiện tại */}
@@ -1850,7 +1957,7 @@ export default function MisaBankWorkspace({
               onChange={(val) => setFilterPeriod(val)}
               title="KỲ THỜI GIAN"
               options={[
-                { value: "ytd", label: "Kỳ: Đầu năm tới hiện tại" },
+                { value: "ytd", label: "Đầu năm tới nay" },
                 { value: "month", label: "Kỳ: Tháng này" },
                 { value: "quarter", label: "Kỳ: Quý này" },
                 { value: "year", label: "Kỳ: Năm nay" },
@@ -1867,29 +1974,12 @@ export default function MisaBankWorkspace({
                 ).map((period) => ({ value: period, label: `Kỳ: ${period}` })),
               ]}
               ariaLabel="Kỳ thu chi tiền gửi"
+              minWidth={140}
+              buttonStyle={{ height: 32, flexShrink: 0, fontSize: 12.5, padding: "0 8px" }}
+              style={{ flexShrink: 0 }}
             />
 
             {/* Icon buttons group */}
-            <button
-              type="button"
-              className="misa-tax-icon-btn"
-              title="Gợi ý & Kiểm tra nhanh"
-              onClick={() => setShowAIModal(true)}
-              style={{
-                width: 32,
-                height: 32,
-                border: "1px solid #d1d5db",
-                borderRadius: 6,
-                background: "#ffffff",
-                display: "grid",
-                placeItems: "center",
-                color: "#8b5cf6",
-                cursor: "pointer",
-              }}
-            >
-              <Sparkles size={15} />
-            </button>
-
             <button
               type="button"
               className="misa-tax-icon-btn"
@@ -1905,6 +1995,7 @@ export default function MisaBankWorkspace({
                 placeItems: "center",
                 color: "#64748b",
                 cursor: "pointer",
+                flexShrink: 0,
               }}
             >
               <RefreshCw size={15} />
@@ -1925,32 +2016,81 @@ export default function MisaBankWorkspace({
                 placeItems: "center",
                 color: "#64748b",
                 cursor: "pointer",
+                flexShrink: 0,
               }}
             >
               <SlidersHorizontal size={15} />
             </button>
 
-            <button
-              type="button"
-              className="misa-tax-icon-btn"
-              title="Xuất khẩu / Nhập khẩu"
-              onClick={async()=>{const XLSX=await import("xlsx");const workbook=XLSX.utils.book_new();XLSX.utils.book_append_sheet(workbook,XLSX.utils.aoa_to_sheet([["Ngày hạch toán","Ngày chứng từ","Số chứng từ","Diễn giải","Số tiền","Đối tượng","Số tài khoản NH","Lý do thu/chi","Loại chứng từ"],...filteredTransactions.map(transaction=>[transaction.dateHachToan,transaction.dateChungTu,transaction.code,transaction.description,transaction.amount,transaction.partner,transaction.bankAccount||"",transaction.reasonLabel||"",transaction.documentType||""])]),"Tien-gui");XLSX.writeFileXLSX(workbook,"Thu-chi-tien-gui.xlsx");}}
+            {/* View Mode Switcher: Ngăn kéo slide-over / Bảng đáy */}
+            <div
               style={{
-                width: 32,
+                display: "inline-flex",
+                alignItems: "center",
+                background: "#f1f5f9",
+                borderRadius: 8,
+                padding: "2px",
+                border: "1px solid #e2e8f0",
                 height: 32,
-                border: "1px solid #d1d5db",
-                borderRadius: 6,
-                background: "#ffffff",
-                display: "grid",
-                placeItems: "center",
-                color: "#64748b",
-                cursor: "pointer",
+                flexShrink: 0,
+                boxSizing: "border-box",
               }}
             >
-              <FileSpreadsheet size={15} />
-            </button>
+              <button
+                type="button"
+                onClick={() => setBankViewMode("drawer")}
+                title="Bật Ngăn kéo xem nhanh Slide-over"
+                style={{
+                  height: 26,
+                  padding: "0 8px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: bankViewMode === "drawer" ? "#ffffff" : "transparent",
+                  color: bankViewMode === "drawer" ? "#0284c7" : "#64748b",
+                  boxShadow: bankViewMode === "drawer" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  fontSize: 12,
+                  fontWeight: bankViewMode === "drawer" ? 600 : 500,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <Layers size={13} />
+                <span style={{ whiteSpace: "nowrap" }}>Ngăn kéo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBankViewMode("bottom")}
+                title="Bật Bảng chi tiết đáy (Split view)"
+                style={{
+                  height: 26,
+                  padding: "0 8px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: bankViewMode === "bottom" ? "#ffffff" : "transparent",
+                  color: bankViewMode === "bottom" ? "#0284c7" : "#64748b",
+                  boxShadow: bankViewMode === "bottom" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  fontSize: 12,
+                  fontWeight: bankViewMode === "bottom" ? 600 : 500,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <FileText size={13} />
+                <span style={{ whiteSpace: "nowrap" }}>Bảng đáy</span>
+              </button>
+            </div>
 
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={() => setBankExcelMenuOpen((prev) => !prev)}
@@ -1959,7 +2099,7 @@ export default function MisaBankWorkspace({
                   padding: "0 10px",
                   border: "1px solid #d1d5db",
                   borderRadius: 6,
-                  background: bankExcelMenuOpen ? "#f0fdf4" : "#ffffff",
+                  background: bankExcelMenuOpen ? "#eff6ff" : "#ffffff",
                   borderColor: bankExcelMenuOpen ? "var(--brand)" : "#d1d5db",
                   color: bankExcelMenuOpen ? "var(--brand)" : "#334155",
                   fontSize: 12.5,
@@ -1968,8 +2108,10 @@ export default function MisaBankWorkspace({
                   alignItems: "center",
                   gap: 6,
                   cursor: "pointer",
+                  whiteSpace: "nowrap",
                 }}
               >
+                <FileSpreadsheet size={14} style={{ color: "#059669" }} />
                 <span>Nhập/Xuất Excel</span>
                 <ChevronDown size={13} style={{ transform: bankExcelMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
               </button>
@@ -2035,6 +2177,7 @@ export default function MisaBankWorkspace({
                 </>
               )}
             </div>
+
 
             <button
               type="button"
@@ -2124,7 +2267,7 @@ export default function MisaBankWorkspace({
                 style={{
                   height: 32,
                   padding: "0 14px",
-                  background: "var(--brand)",
+                  background: "#2563eb",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 6,
@@ -2134,8 +2277,12 @@ export default function MisaBankWorkspace({
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(0, 176, 107, 0.3)",
+                  boxShadow: "0 2px 4px rgba(37, 99, 235, 0.25)",
+                  transition: "background 0.15s ease",
+                  whiteSpace: "nowrap",
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#1d4ed8")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "#2563eb")}
               >
                 <span>Thêm thu tiền</span>
                 <ChevronDown size={14} />
@@ -2310,7 +2457,7 @@ export default function MisaBankWorkspace({
                 style={{
                   height: 32,
                   padding: "0 14px",
-                  background: "var(--brand)",
+                  background: "#2563eb",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: 6,
@@ -2320,8 +2467,12 @@ export default function MisaBankWorkspace({
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(0, 176, 107, 0.3)",
+                  boxShadow: "0 2px 4px rgba(37, 99, 235, 0.25)",
+                  transition: "background 0.15s ease",
+                  whiteSpace: "nowrap",
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#1d4ed8")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "#2563eb")}
               >
                 <span>Thêm chi tiền</span>
                 <ChevronDown size={14} />
@@ -2547,7 +2698,7 @@ export default function MisaBankWorkspace({
           {bankDeletePending&&<div className="ce-overlay"><section className="ce-panel" role="alertdialog" aria-modal="true" aria-label="Xóa chứng từ tiền gửi"><header><h2>Xóa chứng từ tiền gửi</h2></header><div className="ce-panel-body">Xóa {checkedBankRows.length} chứng từ đã chọn khỏi danh sách frontend?</div><footer><button onClick={()=>setBankDeletePending(false)}>Hủy</button><button className="ce-primary" onClick={()=>{const ids=new Set(checkedBankRows.map(row=>row.id));setBankDeletedRows(checkedBankRows);setTransactions(previous=>previous.filter(row=>!ids.has(row.id)));setBankCheckedIds(previous=>previous.filter(id=>!ids.has(id)));setBankDeletePending(false);}}>Xóa chứng từ</button></footer></section></div>}
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1.5px solid #cbd5e1" }}>
                 <th style={{ width: 36, textAlign: "center", padding: "8px 4px" }}>
                   <input type="checkbox" aria-label="Chọn tất cả chứng từ trang hiện tại" checked={bankVisibleRows.length>0&&bankVisibleRows.every(row=>bankCheckedIds.includes(row.id))} onChange={event=>{const ids=bankVisibleRows.map(row=>row.id);setBankCheckedIds(previous=>event.target.checked?[...new Set([...previous,...ids])]:previous.filter(id=>!ids.includes(id)));}} style={{ accentColor: "var(--brand)" }} />
                 </th>
@@ -2560,10 +2711,13 @@ export default function MisaBankWorkspace({
                 return (
                   <tr
                     key={tx.id}
-                    onClick={() => setSelectedRowId(tx.id)}
+                    onClick={() => {
+                      setSelectedRowId(tx.id);
+                      setBankDrawerOpen(true);
+                    }}
                     style={{
                       borderBottom: "1px solid #f1f5f9",
-                      background: isSelected ? "rgba(0, 176, 107, 0.08)" : "#ffffff",
+                      background: isSelected ? "#eff6ff" : "#ffffff",
                       cursor: "pointer",
                     }}
                   >
@@ -2586,7 +2740,7 @@ export default function MisaBankWorkspace({
                       </span>
                     </td>,
                     <td style={{ padding: "8px 10px", color: "#1f2937" }}>{tx.description}</td>,
-                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>
+                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: tx.kind === "receipt" ? "#059669" : "#1e293b", fontVariantNumeric: "tabular-nums" }}>
                       {formatVND(tx.amount)}
                     </td>,
                     <td style={{ padding: "8px 10px", color: "#374151" }}>{tx.partner}</td>,
@@ -2805,8 +2959,8 @@ export default function MisaBankWorkspace({
           </div>
         </div>
 
-        {/* Split Detail Pane (Image 4 & 5) */}
-        {selectedTransaction && (
+        {/* Split Detail Pane (Chỉ hiển thị khi bật chế độ bảng đáy) */}
+        {bankViewMode === "bottom" && selectedTransaction && (
           <div style={{ height: detailExpanded ? 240 : 40, background: "#ffffff", display: "flex", flexDirection: "column", transition: "height 0.2s ease" }}>
             <div
               style={{
@@ -2840,7 +2994,7 @@ export default function MisaBankWorkspace({
               <div style={{ flex: 1, overflow: "auto" }}>
                 <nav className="ce-toolbar" aria-label="Chi tiết chứng từ ngân hàng" style={{padding:'0 10px'}}><button onClick={()=>setBankDetailTab('accounting')}>Hạch toán</button><button onClick={()=>setBankDetailTab('services')}>Chi tiết dịch vụ và thuế</button></nav>{bankDetailTab==='accounting'?<BankAccountingDetail key={selectedTransaction.id} rows={selectedTransaction.rows?.length?selectedTransaction.rows:[{id:selectedTransaction.id,description:selectedTransaction.description,debit:selectedTransaction.debit||(selectedTransaction.kind==='receipt'?'1121':'6427'),credit:selectedTransaction.credit||(selectedTransaction.kind==='receipt'?'131':'1121'),amount:selectedTransaction.amount,partnerName:selectedTransaction.partner}]}/>:<table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+                    <tr style={{ background: "#f8fafc", borderBottom: "1.5px solid #cbd5e1" }}>
                       <th style={{ width: 36, textAlign: "center", padding: "8px 4px" }}>#</th>
                       <th style={{ width: 100, textAlign: "left", padding: "8px 10px" }}>Mã hàng</th>
                       <th style={{ textAlign: "left", padding: "8px 10px" }}>Tên dịch vụ</th>
@@ -2876,6 +3030,331 @@ export default function MisaBankWorkspace({
               </div>
             )}
           </div>
+        )}
+
+        {/* SLIDE-OVER INSPECTOR DRAWER (FINTECH WORKSPACE STYLE) */}
+        {bankViewMode === "drawer" && bankDrawerOpen && selectedTransaction && (
+          <>
+            {/* Backdrop overlay */}
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(15, 23, 42, 0.4)",
+                backdropFilter: "blur(2px)",
+                zIndex: 99990,
+              }}
+              onClick={() => setBankDrawerOpen(false)}
+            />
+
+            {/* Drawer Container */}
+            <aside
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Chi tiết chứng từ ${selectedTransaction.code}`}
+              style={{
+                position: "fixed",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: "min(840px, 95vw)",
+                background: "#ffffff",
+                boxShadow: "-8px 0 32px rgba(15, 23, 42, 0.18)",
+                zIndex: 99995,
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }}
+            >
+              {/* Drawer Header */}
+              <div
+                style={{
+                  padding: "16px 20px",
+                  borderBottom: "1px solid #e2e8f0",
+                  background: "#f8fafc",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: "#eff6ff",
+                      color: "#2563eb",
+                      display: "grid",
+                      placeItems: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Landmark size={22} />
+                  </div>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
+                        {selectedTransaction.kind === "receipt" ? "Thu tiền gửi" : selectedTransaction.kind === "transfer" ? "Chuyển tiền nội bộ" : "Ủy nhiệm chi"}: {selectedTransaction.code}
+                      </h3>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          background: selectedTransaction.status === "posted" ? "#ecfdf5" : "#fffbeb",
+                          color: selectedTransaction.status === "posted" ? "#047857" : "#b45309",
+                          border: selectedTransaction.status === "posted" ? "1px solid #a7f3d0" : "1px solid #fde68a",
+                        }}
+                      >
+                        {selectedTransaction.status === "posted" ? "Đã ghi sổ" : "Chưa ghi sổ"}
+                      </span>
+                    </div>
+                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "#64748b" }}>
+                      Ngày hạch toán: {selectedTransaction.dateHachToan} · Ngày chứng từ: {selectedTransaction.dateChungTu}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setBankDrawerOpen(false)}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    border: "1px solid #e2e8f0",
+                    background: "#ffffff",
+                    display: "grid",
+                    placeItems: "center",
+                    color: "#64748b",
+                    cursor: "pointer",
+                  }}
+                  title="Đóng (Esc)"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Drawer Body */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
+                {/* Metric banner */}
+                <div
+                  style={{
+                    background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+                    border: `1px solid ${"#bfdbfe"}`,
+                    borderRadius: 12,
+                    padding: "16px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 20,
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                      Tổng số tiền thanh toán
+                    </span>
+                    <div
+                      style={{
+                        fontSize: 26,
+                        fontWeight: 800,
+                        color: selectedTransaction.kind === "receipt" ? "#15803d" : "#1d4ed8",
+                        marginTop: 2,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {formatVND(selectedTransaction.amount)} đ
+                    </div>
+                    <div style={{ fontSize: 12, color: "#475569", fontStyle: "italic", marginTop: 4 }}>
+                      ({convertNumberToVietnameseWords(selectedTransaction.amount)})
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      background: "#ffffff",
+                      border: "1px solid rgba(0,0,0,0.06)",
+                      textAlign: "center",
+                      minWidth: 100,
+                    }}
+                  >
+                    <span style={{ fontSize: 11, color: "#64748b", display: "block" }}>TK Ngân hàng</span>
+                    <strong style={{ fontSize: 13, color: "#0f172a" }}>
+                      {selectedTransaction.bankAccount || "1121"}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Section: General info */}
+                <div style={{ marginBottom: 20 }}>
+                  <h4 style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Thông tin chứng từ
+                  </h4>
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 10,
+                      padding: "12px 16px",
+                      display: "grid",
+                      gridTemplateColumns: "repeat(2, 1fr)",
+                      gap: "12px 16px",
+                      fontSize: 13,
+                    }}
+                  >
+                    <div>
+                      <span style={{ color: "#64748b", fontSize: 12, display: "block" }}>Đối tượng giao dịch</span>
+                      <strong style={{ color: "#0f172a" }}>{selectedTransaction.partner || "—"}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", fontSize: 12, display: "block" }}>Loại chứng từ</span>
+                      <strong style={{ color: "#0f172a" }}>
+                        {selectedTransaction.documentType || (selectedTransaction.kind === "receipt" ? "Thu tiền gửi" : "Ủy nhiệm chi")}
+                      </strong>
+                    </div>
+                    <div style={{ gridColumn: "span 2" }}>
+                      <span style={{ color: "#64748b", fontSize: 12, display: "block" }}>Diễn giải / Nội dung chi</span>
+                      <span style={{ color: "#0f172a", fontWeight: 500 }}>{selectedTransaction.description || "—"}</span>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", fontSize: 12, display: "block" }}>Lý do thu / chi</span>
+                      <span style={{ color: "#0f172a" }}>{selectedTransaction.reasonLabel || "Chi phí hoạt động"}</span>
+                    </div>
+                    <div>
+                      <span style={{ color: "#64748b", fontSize: 12, display: "block" }}>Trạng thái</span>
+                      <span style={{ color: selectedTransaction.status === "posted" ? "#16a34a" : "#ca8a04", fontWeight: 600 }}>
+                        {selectedTransaction.status === "posted" ? "● Đã ghi sổ cái" : "○ Chưa ghi sổ cái"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Accounting breakdown table */}
+                <div>
+                  <h4 style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Hạch toán định khoản (Master-Detail)
+                  </h4>
+                  <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
+                    <BankAccountingDetail
+                      key={selectedTransaction.id}
+                      rows={
+                        selectedTransaction.rows?.length
+                          ? selectedTransaction.rows
+                          : [
+                              {
+                                id: selectedTransaction.id,
+                                description: selectedTransaction.description,
+                                debit: selectedTransaction.debit || (selectedTransaction.kind === "receipt" ? "1121" : "6427"),
+                                credit: selectedTransaction.credit || (selectedTransaction.kind === "receipt" ? "131" : "1121"),
+                                amount: selectedTransaction.amount,
+                                partnerName: selectedTransaction.partner,
+                              },
+                            ]
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Drawer Action Bar */}
+              <div
+                style={{
+                  padding: "12px 20px",
+                  borderTop: "1px solid #e2e8f0",
+                  background: "#f8fafc",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setBankDrawerOpen(false)}
+                  style={{
+                    height: 36,
+                    padding: "0 16px",
+                    borderRadius: 8,
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    color: "#475569",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Đóng
+                </button>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedVoucher({
+                        code: selectedTransaction.code,
+                        date: parseReportDate(selectedTransaction.dateChungTu),
+                        person: selectedTransaction.partner,
+                        address: "Hà Nội",
+                        reason: selectedTransaction.description,
+                        debitAccount: selectedTransaction.rows?.[0]?.debit || selectedTransaction.debit || (selectedTransaction.kind === "receipt" ? "1121" : "6427"),
+                        creditAccount: selectedTransaction.rows?.[0]?.credit || selectedTransaction.credit || (selectedTransaction.kind === "receipt" ? "131" : "1121"),
+                        amount: selectedTransaction.amount,
+                        amountInWords: convertNumberToVietnameseWords(selectedTransaction.amount),
+                        notes: "Chứng từ ngân hàng",
+                        chiefAccountant: "Trương Thị B",
+                        director: "Nguyễn Văn A",
+                      });
+                      setShowVoucherModal(true);
+                    }}
+                    style={{
+                      height: 36,
+                      padding: "0 14px",
+                      borderRadius: 8,
+                      border: "1px solid #cbd5e1",
+                      background: "#ffffff",
+                      color: "#1e293b",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Printer size={14} />
+                    <span>In chứng từ</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedTransaction.kind === "transfer") {
+                        viewBankTransfer(String(selectedTransaction.id).slice(9));
+                        return;
+                      }
+                      setViewingBankVoucher(selectedTransaction);
+                    }}
+                    style={{
+                      height: 36,
+                      padding: "0 16px",
+                      borderRadius: 8,
+                      border: "none",
+                      background: "var(--brand)",
+                      color: "#ffffff",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {selectedTransaction.status === "posted" ? "Xem chi tiết" : "Sửa chứng từ"}
+                  </button>
+                </div>
+              </div>
+            </aside>
+          </>
         )}
 
         {/* MODALS */}
@@ -3048,8 +3527,8 @@ export default function MisaBankWorkspace({
                 <span
                   className="ref-document-sheet"
                   style={{
-                    background: "linear-gradient(90deg, #10b981, #059669)",
-                    border: "1px solid #34d399",
+                    background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                    border: "1px solid #60a5fa",
                   }}
                 >
                   <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐN</b>
@@ -3095,7 +3574,7 @@ export default function MisaBankWorkspace({
               >
                 {/* MISA Banknote Icon: THU */}
                 <span className="ref-business-icon receive" style={{ marginBottom: 6 }}>
-                  <span className="ref-document-sheet" style={{ background: "linear-gradient(90deg, #10b981, #059669)", border: "1px solid #34d399" }}>
+                  <span className="ref-document-sheet" style={{ background: "linear-gradient(90deg, #3b82f6, #1d4ed8)", border: "1px solid #60a5fa" }}>
                     <b style={{ color: "#ffffff", fontWeight: 800 }}>THU</b>
                     <i />
                     <i />
@@ -3198,7 +3677,7 @@ export default function MisaBankWorkspace({
               >
                 {/* MISA Banknote Icon: CHI */}
                 <span className="ref-business-icon pay" style={{ marginBottom: 6 }}>
-                  <span className="ref-document-sheet" style={{ background: "linear-gradient(90deg, #10b981, #059669)", border: "1px solid #34d399" }}>
+                  <span className="ref-document-sheet" style={{ background: "linear-gradient(90deg, #3b82f6, #1d4ed8)", border: "1px solid #60a5fa" }}>
                     <b style={{ color: "#ffffff", fontWeight: 800 }}>CHI</b>
                     <i />
                     <i />
@@ -3320,8 +3799,8 @@ export default function MisaBankWorkspace({
                 <span
                   className="ref-document-sheet"
                   style={{
-                    background: "linear-gradient(90deg, #10b981, #059669)",
-                    border: "1px solid #34d399",
+                    background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                    border: "1px solid #60a5fa",
                   }}
                 >
                   <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐC</b>
@@ -3363,8 +3842,8 @@ export default function MisaBankWorkspace({
                 <span
                   className="ref-document-sheet"
                   style={{
-                    background: "linear-gradient(90deg, #10b981, #059669)",
-                    border: "1px solid #34d399",
+                    background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                    border: "1px solid #60a5fa",
                   }}
                 >
                   <b style={{ color: "#ffffff", fontWeight: 800 }}>DB</b>
@@ -3582,7 +4061,7 @@ export default function MisaBankWorkspace({
             }}
             onClick={() => navigate(href("/directory") + "&directory=" + encodeURIComponent("Nhân viên"))}
           >
-            <Users size={20} style={{ color: "#10b981" }} />
+            <Users size={20} style={{ color: "var(--brand)" }} />
             <span>Nhân viên</span>
           </button>
 

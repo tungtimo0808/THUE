@@ -1,10 +1,284 @@
+import threading
+import time
+
+from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError as DjangoValidationError
 from django.db.models import Q
+from django.db.models.signals import post_delete, post_save
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import BasePermission, IsAuthenticated
 
-from .models import ActiveStatus, CompanyMembership, RoleStatus, UserPermissionOverride, UserRoleAssignment
+from .models import (
+    ActiveStatus,
+    CompanyMembership,
+    DataScopeBankAccount,
+    DataScopeBranch,
+    DataScopeCostCenter,
+    DataScopeDepartment,
+    DataScopeProject,
+    DataScopeSet,
+    DataScopeWarehouse,
+    Permission,
+    PermissionAction,
+    PermissionBundle,
+    PermissionBundleItem,
+    PermissionResource,
+    Role,
+    RolePermission,
+    RolePermissionBundle,
+    RoleStatus,
+    UserAccount,
+    UserPermissionOverride,
+    UserRoleAssignment,
+)
+
+_CACHE_LOCK = threading.RLock()
+_PERM_META_STATE = {"ts": 0.0, "meta": {}, "active_codes": frozenset(), "catalog_modules": frozenset()}
+_COMPANY_SETTING_CACHE = {}       # company_id_str -> (ts, configuration_dict)
+_ROLE_PERM_CODES_CACHE = {}       # role_id_str -> (ts, frozenset_of_codes)
+_SCOPE_DIM_CACHE = {}             # scope_id_str -> (ts, dims_dict)
+_USER_COMPANY_GRANT_CACHE = {}    # (user_id_str, company_id_str) -> (ts, snapshot_dict)
+_ASSIGNMENT_SYNC_TS = {}          # (user_id_str, company_id_str) -> ts
+_LAZY_SIGNALS_CONNECTED = False
+
+
+def invalidate_iam_permission_caches(*_args, **_kwargs):
+    with _CACHE_LOCK:
+        _PERM_META_STATE["ts"] = 0.0
+        _COMPANY_SETTING_CACHE.clear()
+        _ROLE_PERM_CODES_CACHE.clear()
+        _SCOPE_DIM_CACHE.clear()
+        _USER_COMPANY_GRANT_CACHE.clear()
+        _ASSIGNMENT_SYNC_TS.clear()
+
+
+def _connect_cache_invalidation_signals():
+    models_to_watch = (
+        Permission,
+        PermissionResource,
+        PermissionAction,
+        PermissionBundle,
+        PermissionBundleItem,
+        Role,
+        RolePermission,
+        RolePermissionBundle,
+        CompanyMembership,
+        UserRoleAssignment,
+        UserPermissionOverride,
+        UserAccount,
+        DataScopeSet,
+        DataScopeBranch,
+        DataScopeDepartment,
+        DataScopeWarehouse,
+        DataScopeBankAccount,
+        DataScopeProject,
+        DataScopeCostCenter,
+        get_user_model(),
+    )
+    for model_cls in models_to_watch:
+        uid_base = f"iam_perm_cache_inv_{model_cls._meta.label_lower}"
+        post_save.connect(invalidate_iam_permission_caches, sender=model_cls, dispatch_uid=f"{uid_base}_save")
+        post_delete.connect(invalidate_iam_permission_caches, sender=model_cls, dispatch_uid=f"{uid_base}_del")
+
+
+_connect_cache_invalidation_signals()
+
+
+def _ensure_lazy_signals():
+    global _LAZY_SIGNALS_CONNECTED
+    if _LAZY_SIGNALS_CONNECTED:
+        return
+    with _CACHE_LOCK:
+        if _LAZY_SIGNALS_CONNECTED:
+            return
+        from common_services.models import CoreCompanySetting, ModuleCatalog
+
+        for model_cls in (CoreCompanySetting, ModuleCatalog):
+            uid_base = f"iam_perm_cache_inv_{model_cls._meta.label_lower}"
+            post_save.connect(invalidate_iam_permission_caches, sender=model_cls, dispatch_uid=f"{uid_base}_save")
+            post_delete.connect(invalidate_iam_permission_caches, sender=model_cls, dispatch_uid=f"{uid_base}_del")
+        _LAZY_SIGNALS_CONNECTED = True
+
+
+def _get_perm_meta_bundle():
+    _ensure_lazy_signals()
+    now_mono = time.monotonic()
+    with _CACHE_LOCK:
+        if now_mono - _PERM_META_STATE["ts"] < 30.0 and _PERM_META_STATE["meta"]:
+            return _PERM_META_STATE["meta"], _PERM_META_STATE["active_codes"], _PERM_META_STATE["catalog_modules"]
+
+    from common_services.models import ModuleCatalog
+
+    rows = list(
+        Permission.objects.select_related("resource", "action").values_list(
+            "code", "id", "status", "resource__status", "resource__module_code", "action__code"
+        )
+    )
+    meta = {
+        code: (perm_id, p_status, r_status, mod_code, act_code)
+        for code, perm_id, p_status, r_status, mod_code, act_code in rows
+    }
+    active_codes = frozenset(
+        code for code, (_, p_status, r_status, _, _) in meta.items()
+        if p_status == ActiveStatus.ACTIVE and r_status == ActiveStatus.ACTIVE
+    )
+    catalog_modules = frozenset(ModuleCatalog.objects.values_list("code", flat=True))
+    with _CACHE_LOCK:
+        _PERM_META_STATE["ts"] = time.monotonic()
+        _PERM_META_STATE["meta"] = meta
+        _PERM_META_STATE["active_codes"] = active_codes
+        _PERM_META_STATE["catalog_modules"] = catalog_modules
+    return meta, active_codes, catalog_modules
+
+
+def _get_role_perm_codes(role_id, is_system_admin=False, role_code=""):
+    if is_system_admin or role_code in ("COMPANY_ADMIN", "ROLE_ADMIN"):
+        _, active_codes, _ = _get_perm_meta_bundle()
+        return active_codes
+    key = str(role_id)
+    now_mono = time.monotonic()
+    with _CACHE_LOCK:
+        entry = _ROLE_PERM_CODES_CACHE.get(key)
+        if entry and now_mono - entry[0] < 30.0:
+            return entry[1]
+
+    direct = set(
+        RolePermission.objects.filter(
+            role_id=role_id,
+            effect="ALLOW",
+            permission__status=ActiveStatus.ACTIVE,
+            permission__resource__status=ActiveStatus.ACTIVE,
+        ).values_list("permission__code", flat=True)
+    )
+    bundled = set(
+        PermissionBundleItem.objects.filter(
+            bundle__role_bundles__role_id=role_id,
+            bundle__status=ActiveStatus.ACTIVE,
+            permission__status=ActiveStatus.ACTIVE,
+            permission__resource__status=ActiveStatus.ACTIVE,
+        ).values_list("permission__code", flat=True)
+    )
+    codes = frozenset(direct | bundled)
+    with _CACHE_LOCK:
+        _ROLE_PERM_CODES_CACHE[key] = (time.monotonic(), codes)
+    return codes
+
+
+def _get_scope_dims_by_id(scope_id):
+    if not scope_id:
+        return None
+    key = str(scope_id)
+    now_mono = time.monotonic()
+    with _CACHE_LOCK:
+        entry = _SCOPE_DIM_CACHE.get(key)
+        if entry and now_mono - entry[0] < 20.0:
+            return entry[1]
+
+    scope_obj = DataScopeSet.objects.filter(pk=scope_id).only(
+        "id", "status", "allow_all_company_data", "allow_owned_records"
+    ).first()
+    if not scope_obj:
+        return None
+    if scope_obj.allow_all_company_data:
+        dims = {
+            "status": scope_obj.status,
+            "allow_all": True,
+            "allow_owned": scope_obj.allow_owned_records,
+            "branches": frozenset(),
+            "departments": frozenset(),
+            "warehouses": frozenset(),
+            "banks": frozenset(),
+            "projects": frozenset(),
+            "cost_centers": frozenset(),
+        }
+    else:
+        dims = {
+            "status": scope_obj.status,
+            "allow_all": False,
+            "allow_owned": scope_obj.allow_owned_records,
+            "branches": frozenset(str(x) for x in DataScopeBranch.objects.filter(data_scope_set_id=scope_id).values_list("branch_id", flat=True)),
+            "departments": frozenset(str(x) for x in DataScopeDepartment.objects.filter(data_scope_set_id=scope_id).values_list("department_id", flat=True)),
+            "warehouses": frozenset(str(x) for x in DataScopeWarehouse.objects.filter(data_scope_set_id=scope_id).values_list("warehouse_id", flat=True)),
+            "banks": frozenset(str(x) for x in DataScopeBankAccount.objects.filter(data_scope_set_id=scope_id).values_list("company_bank_account_id", flat=True)),
+            "projects": frozenset(str(x) for x in DataScopeProject.objects.filter(data_scope_set_id=scope_id).values_list("project_id", flat=True)),
+            "cost_centers": frozenset(str(x) for x in DataScopeCostCenter.objects.filter(data_scope_set_id=scope_id).values_list("cost_center_id", flat=True)),
+        }
+    with _CACHE_LOCK:
+        _SCOPE_DIM_CACHE[key] = (time.monotonic(), dims)
+    return dims
+
+
+def _scope_dims_allows(
+    dims, *, branch_id=None, department_id=None, warehouse_id=None,
+    bank_account_id=None, project_id=None, cost_center_id=None,
+):
+    if dims is None or dims["allow_all"]:
+        return True
+    return bool(
+        (branch_id and str(branch_id) in dims["branches"])
+        or (department_id and str(department_id) in dims["departments"])
+        or (warehouse_id and str(warehouse_id) in dims["warehouses"])
+        or (bank_account_id and str(bank_account_id) in dims["banks"])
+        or (project_id and str(project_id) in dims["projects"])
+        or (cost_center_id and str(cost_center_id) in dims["cost_centers"])
+    )
+
+
+def _get_user_company_grant_snapshot(user_account, company):
+    key = (str(user_account.id), str(company.id))
+    now_mono = time.monotonic()
+    with _CACHE_LOCK:
+        entry = _USER_COMPANY_GRANT_CACHE.get(key)
+        if entry and now_mono - entry[0] < 10.0:
+            return entry[1]
+
+    sync_assignment_statuses(user_account, company)
+    has_membership = CompanyMembership.objects.filter(
+        user_id=user_account.id,
+        company_id=company.id,
+        membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
+    ).exists()
+    is_super = bool(getattr(getattr(user_account, "auth_user", None), "is_superuser", False))
+    if not has_membership and is_super:
+        CompanyMembership.objects.get_or_create(
+            user=user_account,
+            company=company,
+            defaults={"membership_status": ActiveStatus.ACTIVE, "created_by": user_account},
+        )
+        has_membership = True
+
+    if not has_membership:
+        snap = {"has_membership": False, "is_admin": False, "assignments": ()}
+        with _CACHE_LOCK:
+            _USER_COMPANY_GRANT_CACHE[key] = (time.monotonic(), snap)
+        return snap
+
+    now = timezone.now()
+    asg_rows = list(
+        UserRoleAssignment.objects.filter(
+            company_membership__user_id=user_account.id,
+            company_membership__company_id=company.id,
+            company_membership__membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
+            role__status=RoleStatus.ACTIVE,
+            status=ActiveStatus.ACTIVE,
+            valid_from__lte=now,
+        )
+        .filter(Q(valid_to__isnull=True) | Q(valid_to__gte=now))
+        .filter(Q(data_scope_set__isnull=True) | Q(data_scope_set__status=ActiveStatus.ACTIVE))
+        .values_list("role_id", "role__is_system_admin", "role__code", "data_scope_set_id")
+    )
+    is_creator = str(getattr(company, "created_by_user_id", "") or "") == str(user_account.id)
+    has_admin_role = any(is_sys or r_code in ("COMPANY_ADMIN", "ROLE_ADMIN") for _, is_sys, r_code, _ in asg_rows)
+    is_admin = bool(is_creator or has_admin_role or (is_super and not asg_rows))
+    snap = {
+        "has_membership": True,
+        "is_admin": is_admin,
+        "assignments": tuple(asg_rows),
+    }
+    with _CACHE_LOCK:
+        _USER_COMPANY_GRANT_CACHE[key] = (time.monotonic(), snap)
+    return snap
 
 
 def company_identifiers_agree(request):
@@ -27,9 +301,22 @@ def is_platform_admin_user(user_account):
 
 
 def _setting(company):
+    if not company:
+        return {}
+    _ensure_lazy_signals()
+    cid = str(company.id)
+    now_mono = time.monotonic()
+    with _CACHE_LOCK:
+        entry = _COMPANY_SETTING_CACHE.get(cid)
+        if entry and now_mono - entry[0] < 15.0:
+            return entry[1]
     from common_services.models import CoreCompanySetting
-    setting = CoreCompanySetting.objects.filter(company=company).first()
-    return setting.configuration if setting else {}
+
+    cfg = CoreCompanySetting.objects.filter(company_id=company.id).values_list("configuration", flat=True).first()
+    res = cfg if isinstance(cfg, dict) else {}
+    with _CACHE_LOCK:
+        _COMPANY_SETTING_CACHE[cid] = (time.monotonic(), res)
+    return res
 
 
 def _module_disabled(company, module_code):
@@ -39,8 +326,8 @@ def _module_disabled(company, module_code):
     enabled_modules = configuration.get("enabled_modules")
     if enabled_modules is None or module_code in enabled_modules:
         return False
-    from common_services.models import ModuleCatalog
-    return ModuleCatalog.objects.filter(code=module_code).exists()
+    _, _, catalog_modules = _get_perm_meta_bundle()
+    return module_code in catalog_modules
 
 
 def _permission_enabled(company, permission):
@@ -52,71 +339,61 @@ def _permission_enabled(company, permission):
     return True
 
 
+def _permission_meta_enabled(company, perm_meta):
+    _, p_status, r_status, module_code, action_code = perm_meta
+    if p_status != ActiveStatus.ACTIVE or r_status != ActiveStatus.ACTIVE:
+        return False
+    if _module_disabled(company, module_code):
+        return action_code in {"VIEW", "EXPORT", "PRINT"}
+    return True
+
+
 def is_company_admin_member(user_account, company):
     if not user_account or not company:
         return False
     if not getattr(getattr(user_account, "auth_user", None), "is_active", False):
         return False
-    has_membership = CompanyMembership.objects.filter(
-        user=user_account,
-        company=company,
-        membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
-    ).exists()
-    if not has_membership:
-        if getattr(user_account.auth_user, "is_superuser", False):
-            CompanyMembership.objects.get_or_create(
-                user=user_account,
-                company=company,
-                defaults={"membership_status": ActiveStatus.ACTIVE, "created_by": user_account},
-            )
-        else:
-            return False
-    if str(getattr(company, "created_by_user_id", "") or "") == str(user_account.id):
-        return True
-    now = timezone.now()
-    assignments = UserRoleAssignment.objects.filter(
-        company_membership__user=user_account,
-        company_membership__company=company,
-        role__status=RoleStatus.ACTIVE,
-        status=ActiveStatus.ACTIVE,
-        valid_from__lte=now,
-    ).filter(
-        Q(valid_to__isnull=True) | Q(valid_to__gte=now)
-    )
-    if assignments.filter(
-        Q(role__is_system_admin=True) | Q(role__code__in=("COMPANY_ADMIN", "ROLE_ADMIN"))
-    ).exists():
-        return True
-    if getattr(user_account.auth_user, "is_superuser", False) and not assignments.exists():
-        return True
-    return False
-
+    snap = _get_user_company_grant_snapshot(user_account, company)
+    return snap["is_admin"]
 
 
 def _scope_allows(scope, *, branch_id=None, department_id=None, warehouse_id=None,
                   bank_account_id=None, project_id=None, cost_center_id=None):
     if scope is None or scope.allow_all_company_data:
         return True
-    return bool(
-        (branch_id and scope.branch_scopes.filter(branch_id=branch_id).exists()) or
-        (department_id and scope.department_scopes.filter(department_id=department_id).exists()) or
-        (warehouse_id and scope.warehouse_scopes.filter(warehouse_id=warehouse_id).exists()) or
-        (bank_account_id and scope.bank_account_scopes.filter(company_bank_account_id=bank_account_id).exists()) or
-        (project_id and scope.project_scopes.filter(project_id=project_id).exists()) or
-        (cost_center_id and scope.cost_center_scopes.filter(cost_center_id=cost_center_id).exists())
+    dims = _get_scope_dims_by_id(scope.id)
+    return _scope_dims_allows(
+        dims,
+        branch_id=branch_id,
+        department_id=department_id,
+        warehouse_id=warehouse_id,
+        bank_account_id=bank_account_id,
+        project_id=project_id,
+        cost_center_id=cost_center_id,
     )
 
 
 def sync_assignment_statuses_for_company(company, at=None):
     at = at or timezone.now()
     queryset = UserRoleAssignment.objects.filter(company_membership__company=company)
-    queryset.filter(status="SCHEDULED", valid_from__lte=at).filter(
+    c1 = queryset.filter(status="SCHEDULED", valid_from__lte=at).filter(
         Q(valid_to__isnull=True) | Q(valid_to__gte=at)
     ).update(status="ACTIVE")
-    queryset.filter(status__in=("ACTIVE", "SCHEDULED"), valid_to__lt=at).update(status="EXPIRED")
+    c2 = queryset.filter(status__in=("ACTIVE", "SCHEDULED"), valid_to__lt=at).update(status="EXPIRED")
+    if c1 or c2:
+        invalidate_iam_permission_caches()
 
 
 def sync_assignment_statuses(user_account, company, at=None):
+    is_default_now = at is None
+    if is_default_now:
+        key = (str(user_account.id), str(company.id))
+        now_mono = time.monotonic()
+        with _CACHE_LOCK:
+            last_ts = _ASSIGNMENT_SYNC_TS.get(key, 0.0)
+            if now_mono - last_ts < 15.0:
+                return
+            _ASSIGNMENT_SYNC_TS[key] = now_mono
     at = at or timezone.now()
     queryset = UserRoleAssignment.objects.filter(
         company_membership__user=user_account, company_membership__company=company,
@@ -126,10 +403,12 @@ def sync_assignment_statuses(user_account, company, at=None):
     ).exists()
     if not needs_sync:
         return
-    queryset.filter(status="SCHEDULED", valid_from__lte=at).filter(
+    c1 = queryset.filter(status="SCHEDULED", valid_from__lte=at).filter(
         Q(valid_to__isnull=True) | Q(valid_to__gte=at)
     ).update(status="ACTIVE")
-    queryset.filter(status__in=("ACTIVE", "SCHEDULED"), valid_to__lt=at).update(status="EXPIRED")
+    c2 = queryset.filter(status__in=("ACTIVE", "SCHEDULED"), valid_to__lt=at).update(status="EXPIRED")
+    if c1 or c2:
+        invalidate_iam_permission_caches()
 
 
 def effective_assignments(user_account, company, at=None, skip_sync=False):
@@ -138,13 +417,13 @@ def effective_assignments(user_account, company, at=None, skip_sync=False):
     if not skip_sync:
         sync_assignment_statuses(user_account, company, at)
     queryset = UserRoleAssignment.objects.filter(
-            company_membership__user=user_account,
-            company_membership__company=company,
-            company_membership__membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
-            role__status=RoleStatus.ACTIVE,
-            status=ActiveStatus.ACTIVE,
-            valid_from__lte=at,
-        )
+        company_membership__user=user_account,
+        company_membership__company=company,
+        company_membership__membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
+        role__status=RoleStatus.ACTIVE,
+        status=ActiveStatus.ACTIVE,
+        valid_from__lte=at,
+    )
     if not user_account.auth_user.is_active:
         return queryset.none()
     return (
@@ -152,10 +431,6 @@ def effective_assignments(user_account, company, at=None, skip_sync=False):
         .filter(Q(valid_to__isnull=True) | Q(valid_to__gte=at))
         .filter(Q(data_scope_set__isnull=True) | Q(data_scope_set__status=ActiveStatus.ACTIVE))
         .select_related("role", "data_scope_set")
-        .prefetch_related(
-            "role__role_permissions__permission__resource",
-            "role__role_bundles__bundle__permissionbundleitem_set__permission__resource",
-        )
     )
 
 
@@ -163,39 +438,18 @@ def assignment_permission_codes(assignment):
     cached = getattr(assignment, "_cached_perm_codes", None)
     if cached is not None:
         return cached
-    if getattr(assignment.role, "is_system_admin", False) or getattr(assignment.role, "code", "") in ("COMPANY_ADMIN", "ROLE_ADMIN"):
-        from .models import Permission
-        res = set(
-            Permission.objects.filter(
-                status=ActiveStatus.ACTIVE,
-                resource__status=ActiveStatus.ACTIVE,
-            ).values_list("code", flat=True)
-        )
-        assignment._cached_perm_codes = res
-        return res
-    direct = {
-        item.permission.code
-        for item in assignment.role.role_permissions.all()
-        if item.effect == "ALLOW" and item.permission.status == ActiveStatus.ACTIVE
-        and item.permission.resource.status == ActiveStatus.ACTIVE
-    }
-    bundled = {
-        item.permission.code
-        for role_bundle in assignment.role.role_bundles.all()
-        if role_bundle.bundle.status == ActiveStatus.ACTIVE
-        for item in role_bundle.bundle.permissionbundleitem_set.all()
-        if item.permission.status == ActiveStatus.ACTIVE
-        and item.permission.resource.status == ActiveStatus.ACTIVE
-    }
-    res = direct | bundled
-    assignment._cached_perm_codes = res
-    return res
+    role = assignment.role
+    codes = _get_role_perm_codes(
+        role.id,
+        is_system_admin=getattr(role, "is_system_admin", False),
+        role_code=getattr(role, "code", ""),
+    )
+    assignment._cached_perm_codes = codes
+    return codes
 
 
 def memberships_in_scope(user_account, company, permission_code):
     """Limit company members to the branches/departments of this permission's grants."""
-    from .models import CompanyMembership
-
     queryset = CompanyMembership.objects.filter(company=company)
     if is_company_admin_member(user_account, company):
         return queryset
@@ -220,17 +474,16 @@ def has_effective_permission(
     user_account, company, permission_code, *, branch_id=None, department_id=None,
     warehouse_id=None, bank_account_id=None, project_id=None, cost_center_id=None,
 ):
-    from .models import Permission
-    if not user_account or not getattr(getattr(user_account, "auth_user", None), "is_active", False):
+    if not user_account or not company or not getattr(getattr(user_account, "auth_user", None), "is_active", False):
         return False
-    permission = Permission.objects.select_related("resource", "action").filter(code=permission_code).first()
-    if is_company_admin_member(user_account, company) and (not permission or _permission_enabled(company, permission)):
+    perm_meta_map, _, _ = _get_perm_meta_bundle()
+    perm_meta = perm_meta_map.get(permission_code)
+    snap = _get_user_company_grant_snapshot(user_account, company)
+    if snap["is_admin"] and (not perm_meta or _permission_meta_enabled(company, perm_meta)):
         return True
-    if not CompanyMembership.objects.filter(
-        user=user_account, company=company, membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
-    ).exists():
+    if not snap["has_membership"]:
         return False
-    if not permission or not _permission_enabled(company, permission):
+    if not perm_meta or not _permission_meta_enabled(company, perm_meta):
         if permission_code in ("SYS.USER.LOCK", "SYS.USER.UNLOCK", "SYS.USER.TERMINATE", "SYS.MEMBERSHIP.TERMINATE"):
             return has_effective_permission(
                 user_account, company, "SYS.USER.EDIT",
@@ -239,35 +492,40 @@ def has_effective_permission(
                 project_id=project_id, cost_center_id=cost_center_id,
             )
         return False
-    now = timezone.now()
     configuration = _setting(company)
-    overrides = UserPermissionOverride.objects.none()
     if configuration.get("direct_user_permissions_enabled", False):
-        overrides = UserPermissionOverride.objects.filter(
-            company_membership__user=user_account, company_membership__company=company,
-            permission=permission, revoked_at__isnull=True, valid_from__lte=now,
-        ).filter(Q(valid_to__isnull=True) | Q(valid_to__gte=now)).filter(
-            Q(data_scope_set__isnull=True) | Q(data_scope_set__status=ActiveStatus.ACTIVE)
-        ).select_related("data_scope_set")
-        for override in overrides.filter(effect="DENY"):
-            if _scope_allows(override.data_scope_set, branch_id=branch_id,
-                             department_id=department_id, warehouse_id=warehouse_id,
-                             bank_account_id=bank_account_id, project_id=project_id,
-                             cost_center_id=cost_center_id):
+        now = timezone.now()
+        perm_id = perm_meta[0]
+        overrides = list(
+            UserPermissionOverride.objects.filter(
+                company_membership__user=user_account, company_membership__company=company,
+                permission_id=perm_id, revoked_at__isnull=True, valid_from__lte=now,
+            ).filter(Q(valid_to__isnull=True) | Q(valid_to__gte=now)).filter(
+                Q(data_scope_set__isnull=True) | Q(data_scope_set__status=ActiveStatus.ACTIVE)
+            ).values_list("effect", "data_scope_set_id")
+        )
+        for effect, scope_id in overrides:
+            if effect == "DENY" and _scope_dims_allows(
+                _get_scope_dims_by_id(scope_id),
+                branch_id=branch_id, department_id=department_id, warehouse_id=warehouse_id,
+                bank_account_id=bank_account_id, project_id=project_id, cost_center_id=cost_center_id,
+            ):
                 return False
-        for override in overrides.filter(effect="GRANT"):
-            if _scope_allows(override.data_scope_set, branch_id=branch_id,
-                             department_id=department_id, warehouse_id=warehouse_id,
-                             bank_account_id=bank_account_id, project_id=project_id,
-                             cost_center_id=cost_center_id):
+        for effect, scope_id in overrides:
+            if effect == "GRANT" and _scope_dims_allows(
+                _get_scope_dims_by_id(scope_id),
+                branch_id=branch_id, department_id=department_id, warehouse_id=warehouse_id,
+                bank_account_id=bank_account_id, project_id=project_id, cost_center_id=cost_center_id,
+            ):
                 return True
-    for assignment in effective_assignments(user_account, company):
-        if permission_code not in assignment_permission_codes(assignment):
+    for role_id, is_sys, r_code, scope_id in snap["assignments"]:
+        if permission_code not in _get_role_perm_codes(role_id, is_system_admin=is_sys, role_code=r_code):
             continue
-        if _scope_allows(assignment.data_scope_set, branch_id=branch_id,
-                         department_id=department_id, warehouse_id=warehouse_id,
-                         bank_account_id=bank_account_id, project_id=project_id,
-                         cost_center_id=cost_center_id):
+        if _scope_dims_allows(
+            _get_scope_dims_by_id(scope_id),
+            branch_id=branch_id, department_id=department_id, warehouse_id=warehouse_id,
+            bank_account_id=bank_account_id, project_id=project_id, cost_center_id=cost_center_id,
+        ):
             return True
     if permission_code in ("SYS.USER.LOCK", "SYS.USER.UNLOCK", "SYS.USER.TERMINATE", "SYS.MEMBERSHIP.TERMINATE"):
         return has_effective_permission(
@@ -299,13 +557,29 @@ def has_other_effective_system_admin(company, *, excluded_user=None, excluded_ro
     return queryset.exists()
 
 
+def _resolve_request_company_obj(request, company_id):
+    cached_company = getattr(request, "_resolved_company_obj", None)
+    if cached_company is not None and (
+        str(cached_company.id) == str(company_id)
+        or cached_company.code.lower() == str(company_id).strip().lower()
+    ):
+        return cached_company
+    from organization.models import Company
+
+    try:
+        company = Company.objects.get(pk=company_id)
+    except (Company.DoesNotExist, ValueError, TypeError, DjangoValidationError):
+        company = Company.objects.filter(code__iexact=str(company_id).strip()).first()
+    if company is not None:
+        request._resolved_company_obj = company
+    return company
+
+
 class CompanyMemberMixin:
     """Signed-in access to one company the user belongs to, named by the request."""
     permission_classes = (IsAuthenticated,)
 
     def _resolve_company(self, request):
-        from organization.models import Company
-
         data = request.data if isinstance(request.data, dict) else {}
         company_id = (
             request.query_params.get("company_id")
@@ -316,17 +590,13 @@ class CompanyMemberMixin:
         )
         if not company_id:
             raise ValidationError({"company_id": "Phải xác định doanh nghiệp làm việc (company_id)."})
-        try:
-            company = Company.objects.get(pk=company_id)
-        except (Company.DoesNotExist, ValueError, TypeError, DjangoValidationError):
-            company = Company.objects.filter(code__iexact=str(company_id).strip()).first()
-            if not company:
-                raise ValidationError({"company_id": "Doanh nghiệp không tồn tại hoặc không hợp lệ."})
-        if not request.user.is_superuser and not CompanyMembership.objects.filter(
-            user=getattr(request.user, "iam_account", None), company=company,
-            membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
-        ).exists():
-            raise PermissionDenied("Người dùng không thuộc doanh nghiệp này.")
+        company = _resolve_request_company_obj(request, company_id)
+        if not company:
+            raise ValidationError({"company_id": "Doanh nghiệp không tồn tại hoặc không hợp lệ."})
+        if not request.user.is_superuser:
+            account = getattr(request.user, "iam_account", None)
+            if not account or not _get_user_company_grant_snapshot(account, company)["has_membership"]:
+                raise PermissionDenied("Người dùng không thuộc doanh nghiệp này.")
         return company
 
     def _get_company_id(self, request):
@@ -357,16 +627,13 @@ class HasIamPermission(BasePermission):
         if not company_id or not hasattr(request.user, "iam_account"):
             return False
         request._validated_company_id = str(company_id)
-        from organization.models import Company
-
-        try:
-            company = Company.objects.get(pk=company_id)
-        except (Company.DoesNotExist, ValueError, TypeError, DjangoValidationError):
-            company = Company.objects.filter(code__iexact=str(company_id).strip()).first()
-            if not company:
-                return False
+        company = _resolve_request_company_obj(request, company_id)
+        if not company:
+            return False
         request._validated_company_id = str(company.id)
-        if is_company_admin_member(request.user.iam_account, company):
+        account = request.user.iam_account
+        snap = _get_user_company_grant_snapshot(account, company)
+        if snap["is_admin"]:
             return True
         explicit_scope = any(request.query_params.get(field) for field in (
             "branch_id", "department_id", "warehouse_id", "bank_account_id",
@@ -376,10 +643,12 @@ class HasIamPermission(BasePermission):
             and any(request.data.get(field) for field in ("warehouse", "branch", "department", "company_bank_account", "project", "cost_center"))
         )
         if getattr(view, "allow_scoped_list_permission", False) and not explicit_scope:
+            if not snap["has_membership"]:
+                return False
             if _setting(company).get("direct_user_permissions_enabled", False):
                 now = timezone.now()
                 if UserPermissionOverride.objects.filter(
-                    company_membership__user=request.user.iam_account,
+                    company_membership__user=account,
                     company_membership__company=company, permission__code=permission_code,
                     effect="DENY", revoked_at__isnull=True, valid_from__lte=now,
                 ).filter(Q(valid_to__isnull=True) | Q(valid_to__gte=now)).filter(
@@ -387,11 +656,11 @@ class HasIamPermission(BasePermission):
                 ).exists():
                     return False
             return any(
-                permission_code in assignment_permission_codes(assignment)
-                for assignment in effective_assignments(request.user.iam_account, company)
+                permission_code in _get_role_perm_codes(role_id, is_system_admin=is_sys, role_code=r_code)
+                for role_id, is_sys, r_code, _ in snap["assignments"]
             )
         has_perm = has_effective_permission(
-            request.user.iam_account,
+            account,
             company,
             permission_code,
             branch_id=request.query_params.get("branch_id") or request.data.get("branch"),
@@ -403,9 +672,9 @@ class HasIamPermission(BasePermission):
         )
         if not has_perm:
             if permission_code in ("SYS.USER.LOCK", "SYS.USER.UNLOCK"):
-                return has_effective_permission(request.user.iam_account, company, "SYS.USER.EDIT")
+                return has_effective_permission(account, company, "SYS.USER.EDIT")
             if permission_code == "SYS.USER.VIEW_SECURITY":
-                return has_effective_permission(request.user.iam_account, company, "SYS.USER.VIEW")
+                return has_effective_permission(account, company, "SYS.USER.VIEW")
         return has_perm
 
 
@@ -420,16 +689,13 @@ def get_user_allowed_branch_ids(request, company_id):
     account = getattr(request.user, "iam_account", None)
     if not account or not company_id:
         return set()
-    from organization.models import Company
-    try:
-        company = Company.objects.filter(pk=company_id).first()
-    except (ValueError, TypeError, DjangoValidationError):
-        company = Company.objects.filter(code__iexact=str(company_id).strip()).first()
+    company = _resolve_request_company_obj(request, company_id)
     if not company:
         return set()
-    if is_company_admin_member(account, company):
+    snap = _get_user_company_grant_snapshot(account, company)
+    if snap["is_admin"]:
         return None
-    assignments = list(effective_assignments(account, company))
+    assignments = snap["assignments"]
     if not assignments:
         membership = CompanyMembership.objects.filter(
             user=account, company=company, membership_status=ActiveStatus.ACTIVE
@@ -441,12 +707,14 @@ def get_user_allowed_branch_ids(request, company_id):
         if getattr(request.user, "is_staff", False):
             return None
         return set()
-    if any(a.data_scope_set_id is None or a.data_scope_set.allow_all_company_data for a in assignments):
-        return None
     branch_ids = set()
-    for a in assignments:
-        if a.data_scope_set_id:
-            branch_ids.update(str(bid) for bid in a.data_scope_set.branch_scopes.values_list("branch_id", flat=True))
+    for _, _, _, scope_id in assignments:
+        if scope_id is None:
+            return None
+        dims = _get_scope_dims_by_id(scope_id)
+        if dims is None or dims["allow_all"]:
+            return None
+        branch_ids.update(dims["branches"])
     if not branch_ids:
         membership = CompanyMembership.objects.filter(
             user=account, company=company, membership_status=ActiveStatus.ACTIVE
@@ -519,4 +787,3 @@ def filter_queryset_by_branch(queryset, request, company_id=None, *, filter_bran
             return queryset.filter(order__branch_id__in=allowed_branch_ids)
 
     return queryset
-

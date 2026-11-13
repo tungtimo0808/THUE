@@ -793,23 +793,86 @@ def seed_standard_roles_view(request):
 
     preset = request.data.get("preset") or request.query_params.get("preset")
     force_preset = bool(preset) or bool(request.data.get("force_preset"))
+    keep_modules = bool(request.data.get("keep_modules"))
 
     from iam.role_services import resolve_regime_preset_key, seed_standard_roles_for_company
     preset_key = resolve_regime_preset_key(preset or company.accounting_regime)
-    created_roles = seed_standard_roles_for_company(
-        company, actor_account, preset=preset_key, force_preset_status=force_preset
+
+    coa_summary = None
+    updated_modules = None
+    if preset:
+        if company.accounting_regime != preset_key:
+            company.accounting_regime = preset_key
+            company.save(update_fields=("accounting_regime", "updated_at"))
+
+        try:
+            from general_ledger.account_services import init_chart_of_accounts_from_template
+            coa_scope = "ESSENTIAL" if preset_key in ("TT58", "TT88") else "FULL"
+            coa_summary = init_chart_of_accounts_from_template(
+                company=company,
+                regime=preset_key,
+                scope=coa_scope,
+                user=actor_account,
+            )
+        except Exception:
+            coa_summary = None
+
+        if not keep_modules:
+            from common_services.models import CoreCompanySetting
+            if preset_key in ("TT58", "TT88"):
+                updated_modules = [
+                    "overview", "invoices", "cash", "bank", "purchases", "sales",
+                    "tax", "ledger", "reports", "directory", "opening",
+                ]
+            elif preset_key == "TT133":
+                updated_modules = [
+                    "overview", "invoices", "cash", "bank", "purchases", "sales", "inventory",
+                    "tools", "assets", "payroll", "tax", "ledger", "reports", "directory", "opening",
+                ]
+            else:
+                updated_modules = [
+                    "overview", "invoices", "cash", "bank", "purchases", "sales", "inventory",
+                    "tools", "assets", "payroll", "tax", "cost", "insurance", "ledger",
+                    "budget", "reports", "analysis", "directory", "opening", "connections",
+                ]
+            setting_obj, _ = CoreCompanySetting.objects.get_or_create(company=company)
+            cfg = dict(setting_obj.configuration or {})
+            cfg["ui_enabled_modules"] = updated_modules
+            setting_obj.configuration = cfg
+            setting_obj.save(update_fields=("configuration", "updated_at"))
+
+    created_roles, reconcile_stats = seed_standard_roles_for_company(
+        company,
+        actor_account,
+        preset=preset_key,
+        force_preset_status=force_preset,
+        return_meta=True,
     )
     active_count = sum(1 for r in created_roles if r["status"] == RoleStatus.ACTIVE)
     available_count = len(created_roles) - active_count
+    remapped_count = reconcile_stats.get("remapped_count", 0)
+    restored_count = reconcile_stats.get("restored_count", 0)
+
+    extra_notes = []
+    if remapped_count > 0:
+        extra_notes.append(f"tự động kiêm nhiệm cho {remapped_count} nhân sự")
+    if restored_count > 0:
+        extra_notes.append(f"khôi phục vị trí chuyên trách cho {restored_count} nhân sự")
+    extra_str = f" — {', '.join(extra_notes)}" if extra_notes else ""
 
     return Response({
         "message": (
-            f"Đã đồng bộ danh mục {len(created_roles)} vai trò chuẩn theo mô hình {preset_key} "
-            f"({active_count} vai trò đang kích hoạt sử dụng, {available_count} vai trò dự phòng có sẵn)."
+            f"Đã chuyển đổi chế độ {preset_key} thành công: {active_count}/{len(created_roles)} vai trò đang kích hoạt, "
+            f"{available_count} vai trò dự phòng có sẵn{extra_str}."
         ),
         "preset": preset_key,
+        "accounting_regime": company.accounting_regime,
         "active_count": active_count,
         "available_count": available_count,
+        "remapped_users_count": remapped_count,
+        "restored_users_count": restored_count,
+        "coa_summary": coa_summary,
+        "ui_enabled_modules": updated_modules,
         "roles": created_roles,
     })
 
@@ -862,6 +925,10 @@ def assign_member_role_view(request):
     is_admin_role = bool(role.is_system_admin or role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"))
 
     with transaction.atomic():
+        if role.status != RoleStatus.ACTIVE:
+            role.status = RoleStatus.ACTIVE
+            role.save(update_fields=("status", "updated_at"))
+
         target_branch = None
         if raw_branch and not all_branches:
             target_branch = Branch.objects.filter(company=company, pk=raw_branch).first()

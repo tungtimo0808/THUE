@@ -1143,7 +1143,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
                   <thead>
-                    <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+                    <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                       <th style={{ padding: "8px 10px", textAlign: "left", width: "25%", fontWeight: 600, color: "#1e293b" }}>Mã hàng</th>
                       <th style={{ padding: "8px 10px", textAlign: "left", width: "35%", fontWeight: 600, color: "#1e293b" }}>Tên hàng</th>
                       <th style={{ padding: "8px 10px", textAlign: "left", width: "20%", fontWeight: 600, color: "#1e293b" }}>Đơn vị tính</th>
@@ -2012,7 +2012,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
                     <thead>
-                      <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+                      <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                         <th style={{ padding: "8px 12px", textAlign: "left", width: 80 }}>STT</th>
                         <th style={{ padding: "8px 12px", textAlign: "left" }}>Đơn vị tính</th>
                         <th style={{ padding: "8px 12px", textAlign: "center", width: 45 }}></th>
@@ -2159,7 +2159,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
 
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
                     <thead>
-                      <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+                      <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                         <th style={{ padding: "8px 12px", textAlign: "left", width: "40%" }}>Số lượng từ</th>
                         <th style={{ padding: "8px 12px", textAlign: "left", width: "40%" }}>Số lượng đến</th>
                         <th style={{ padding: "8px 12px", textAlign: "right" }}>% chiết khấu</th>
@@ -2304,7 +2304,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                   <div style={{ overflowX: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
                       <thead>
-                        <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+                        <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                           <th style={{ padding: "8px 10px", textAlign: "left" }}>Đơn vị chuyển đổi</th>
                           <th style={{ padding: "8px 10px", textAlign: "right", width: 110 }}>Tỷ lệ chuyển đổi</th>
                           <th style={{ padding: "8px 10px", textAlign: "left", width: 110 }}>Phép tính</th>
@@ -2494,7 +2494,7 @@ export const MisaInventoryItemModal: React.FC<MisaInventoryItemModalProps> = ({
                   <div style={{ overflowX: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
                       <thead>
-                        <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+                        <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                           <th style={{ padding: "8px 10px", textAlign: "left", width: "22%" }}>Mã nguyên vật liệu</th>
                           <th style={{ padding: "8px 10px", textAlign: "left", width: "26%" }}>Tên nguyên vật liệu</th>
                           <th style={{ padding: "8px 10px", textAlign: "left", width: "14%" }}>Đơn vị tính</th>

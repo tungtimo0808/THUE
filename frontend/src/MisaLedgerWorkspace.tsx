@@ -5950,7 +5950,7 @@ export default function MisaLedgerWorkspace({
                         <span
                           className="ref-document-sheet"
                           style={{
-                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                             border: "1px solid #34d399",
                           }}
                         >
@@ -5989,7 +5989,7 @@ export default function MisaLedgerWorkspace({
                         <span
                           className="ref-document-sheet"
                           style={{
-                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                             border: "1px solid #34d399",
                           }}
                         >
@@ -6040,7 +6040,7 @@ export default function MisaLedgerWorkspace({
                         <span
                           className="ref-document-sheet"
                           style={{
-                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                             border: "1px solid #34d399",
                           }}
                         >
@@ -6079,7 +6079,7 @@ export default function MisaLedgerWorkspace({
                         <span
                           className="ref-document-sheet"
                           style={{
-                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                             border: "1px solid #34d399",
                           }}
                         >
@@ -6120,7 +6120,7 @@ export default function MisaLedgerWorkspace({
                         <span
                           className="ref-document-sheet"
                           style={{
-                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                             border: "1px solid #34d399",
                           }}
                         >
@@ -6269,7 +6269,7 @@ export default function MisaLedgerWorkspace({
                         <span
                           className="ref-document-sheet"
                           style={{
-                            background: "linear-gradient(90deg, #10b981, #059669)",
+                            background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                             border: "1px solid #34d399",
                           }}
                         >
@@ -6545,7 +6545,7 @@ export default function MisaLedgerWorkspace({
                       width: 38,
                       height: 38,
                       borderRadius: "50%",
-                      background: "#f0fdf4",
+                      background: "#eff6ff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -7381,8 +7381,8 @@ export default function MisaLedgerWorkspace({
                                         type="button"
                                         onClick={() => handleDecideAdvanceRequest(item, "approve")}
                                         style={{
-                                          background: "#f0fdf4",
-                                          border: "1px solid #bbf7d0",
+                                          background: "#eff6ff",
+                                          border: "1px solid #bfdbfe",
                                           borderRadius: 4,
                                           padding: "2px 8px",
                                           color: "#16a34a",
@@ -7747,7 +7747,7 @@ export default function MisaLedgerWorkspace({
                               borderBottom: "1px solid #f1f5f9",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background = "#f0fdf4";
+                              e.currentTarget.style.background = "#eff6ff";
                               e.currentTarget.style.color = "var(--brand)";
                             }}
                             onMouseLeave={(e) => {
@@ -7772,7 +7772,7 @@ export default function MisaLedgerWorkspace({
                                   transition: "all 0.15s ease",
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = "#f0fdf4";
+                                  e.currentTarget.style.background = "#eff6ff";
                                   e.currentTarget.style.color = "var(--brand)";
                                 }}
                                 onMouseLeave={(e) => {
@@ -7870,7 +7870,7 @@ export default function MisaLedgerWorkspace({
                         display: "flex",
                         alignItems: "center",
                         gap: 6,
-                        background: "#f0fdf4",
+                        background: "#eff6ff",
                         color: "var(--brand)",
                         border: "1px solid #86efac",
                         borderRadius: 6,
@@ -7916,7 +7916,7 @@ export default function MisaLedgerWorkspace({
                         display: "flex",
                         alignItems: "center",
                         gap: 6,
-                        background: "#f0fdf4",
+                        background: "#eff6ff",
                         color: "#15803d",
                         border: "1px solid #86efac",
                         borderRadius: 6,
@@ -7971,7 +7971,7 @@ export default function MisaLedgerWorkspace({
                         cursor: "pointer",
                         transition: "all 0.15s ease",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
                     >
                       Xem danh sách chứng từ
@@ -7982,6 +7982,179 @@ export default function MisaLedgerWorkspace({
             ) : (
               /* TABLE VIEW (when toggled via "Xem danh sách chứng từ") */
               <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: 20 }}>
+                {/* 4 Modern Bento KPI Cards for General Ledger */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  {/* Card 1: Phát sinh Nợ */}
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 10,
+                      padding: "12px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div
+                        style={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: 8,
+                          background: "#eff6ff",
+                          color: "#2563eb",
+                          display: "grid",
+                          placeItems: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <TrendingUp size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+                          Tổng phát sinh Nợ
+                        </div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", fontVariantNumeric: "tabular-nums" }}>
+                          {generalVouchers.reduce((s, v) => s + (Number(v.amount) || 0), 0).toLocaleString("vi-VN")} đ
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 10.5, color: "#2563eb", background: "#dbeafe", padding: "2px 7px", borderRadius: 999, fontWeight: 600 }}>
+                      TK Loại 1 - 9
+                    </span>
+                  </div>
+
+                  {/* Card 2: Phát sinh Có */}
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 10,
+                      padding: "12px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div
+                        style={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: 8,
+                          background: "#eff6ff",
+                          color: "var(--brand)",
+                          display: "grid",
+                          placeItems: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <BookOpen size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+                          Tổng phát sinh Có
+                        </div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)", fontVariantNumeric: "tabular-nums" }}>
+                          {generalVouchers.reduce((s, v) => s + (Number(v.amount) || 0), 0).toLocaleString("vi-VN")} đ
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 10.5, color: "var(--brand-ink)", background: "#eff6ff", padding: "2px 7px", borderRadius: 999, fontWeight: 600 }}>
+                      Cân đối Nợ = Có
+                    </span>
+                  </div>
+
+                  {/* Card 3: Trạng thái Cân đối BCTC */}
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 10,
+                      padding: "12px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div
+                        style={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: 8,
+                          background: "#ecfdf5",
+                          color: "#059669",
+                          display: "grid",
+                          placeItems: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Shield size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+                          Chênh lệch Nợ/Có
+                        </div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#059669" }}>
+                          0 đ (Khớp 100%)
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 10.5, color: "var(--brand-ink)", background: "#eff6ff", padding: "2px 7px", borderRadius: 999, fontWeight: 600 }}>
+                      TT 99/2025/TT-BTC
+                    </span>
+                  </div>
+
+                  {/* Card 4: Ghi sổ cái */}
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 10,
+                      padding: "12px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div
+                        style={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: 8,
+                          background: "#f5f3ff",
+                          color: "#7c3aed",
+                          display: "grid",
+                          placeItems: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Sparkles size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+                          Tiến độ ghi Sổ cái (GL)
+                        </div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#7c3aed" }}>
+                          {generalVouchers.filter((v) => v.posted).length} / {generalVouchers.length} chứng từ
+                        </div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 10.5, color: "#7c3aed", background: "#ede9fe", padding: "2px 7px", borderRadius: 999, fontWeight: 600 }}>
+                      Đã ghi sổ
+                    </span>
+                  </div>
+                </div>
                 {/* Toolbar */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -8053,7 +8226,7 @@ export default function MisaLedgerWorkspace({
                         padding: "8px 14px",
                         borderRadius: 6,
                         border: "1px solid #86efac",
-                        background: "#f0fdf4",
+                        background: "#eff6ff",
                         color: "#15803d",
                         fontWeight: 600,
                         fontSize: 12.5,
@@ -8161,7 +8334,7 @@ export default function MisaLedgerWorkspace({
                               borderBottom: "1px solid #f1f5f9",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background = "#f0fdf4";
+                              e.currentTarget.style.background = "#eff6ff";
                               e.currentTarget.style.color = "var(--brand)";
                             }}
                             onMouseLeave={(e) => {
@@ -8186,7 +8359,7 @@ export default function MisaLedgerWorkspace({
                                   transition: "all 0.15s ease",
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = "#f0fdf4";
+                                  e.currentTarget.style.background = "#eff6ff";
                                   e.currentTarget.style.color = "var(--brand)";
                                 }}
                                 onMouseLeave={(e) => {
@@ -8333,7 +8506,7 @@ export default function MisaLedgerWorkspace({
                                   type="button"
                                   onClick={() => { void handlePostVoucherItem(item); }}
                                   style={{
-                                    background: "#f0fdf4",
+                                    background: "#eff6ff",
                                     border: "1px solid #86efac",
                                     borderRadius: 4,
                                     padding: "2px 8px",
@@ -8842,7 +9015,7 @@ export default function MisaLedgerWorkspace({
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.borderColor = "var(--brand)";
-                      e.currentTarget.style.background = "#f0fdf4";
+                      e.currentTarget.style.background = "#eff6ff";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.borderColor = "#cbd5e1";
@@ -9277,7 +9450,7 @@ export default function MisaLedgerWorkspace({
                       transition: "all 0.15s ease",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#f0fdf4";
+                      e.currentTarget.style.background = "#eff6ff";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "#ffffff";
@@ -11381,7 +11554,7 @@ export default function MisaLedgerWorkspace({
                         padding: "5px 12px",
                         borderRadius: 5,
                         border: "none",
-                        background: "#16a34a",
+                        background: "var(--brand)",
                         color: "#ffffff",
                         fontSize: 12,
                         fontWeight: 600,
@@ -12489,7 +12662,7 @@ export default function MisaLedgerWorkspace({
 
             <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-                <div style={{ padding: 12, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6 }}>
+                <div style={{ padding: 12, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6 }}>
                   <div style={{ fontSize: 12, color: "#166534" }}>Số cuối kỳ / Kỳ này</div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "#14532d" }}>
                     {Number(statementDrilldownModal.current_amount || 0).toLocaleString("vi-VN")} đ
@@ -12594,7 +12767,7 @@ export default function MisaLedgerWorkspace({
             <div
               style={{
                 padding: "14px 20px",
-                background: "#065f46",
+                background: "var(--brand-ink)",
                 color: "#ffffff",
                 display: "flex",
                 justifyContent: "space-between",
@@ -15754,7 +15927,7 @@ export default function MisaLedgerWorkspace({
                     padding: "7px 18px",
                     borderRadius: 6,
                     border: "1px solid #0f766e",
-                    background: "#f0fdf4",
+                    background: "#eff6ff",
                     fontSize: 13,
                     fontWeight: 600,
                     color: "#0f766e",
@@ -16236,9 +16409,9 @@ export default function MisaLedgerWorkspace({
                     fontWeight: 600,
                     padding: "2px 8px",
                     borderRadius: 999,
-                    background: "#f0fdf4",
+                    background: "#eff6ff",
                     color: "#15803d",
-                    border: "1px solid #bbf7d0",
+                    border: "1px solid #bfdbfe",
                   }}
                 >
                   Chế độ tra cứu an toàn (Chỉ đọc)
@@ -18188,8 +18361,8 @@ export default function MisaLedgerWorkspace({
                   justifyContent: "space-between",
                   padding: "12px 16px",
                   borderRadius: 8,
-                  background: "#f0fdf4",
-                  border: "1px solid #bbf7d0",
+                  background: "#eff6ff",
+                  border: "1px solid #bfdbfe",
                   flexWrap: "wrap",
                   gap: 12,
                 }}
@@ -18381,7 +18554,7 @@ export default function MisaLedgerWorkspace({
                                       padding: "3px 8px",
                                       borderRadius: 4,
                                       border: "1px solid #86efac",
-                                      background: "#f0fdf4",
+                                      background: "#eff6ff",
                                       color: "#15803d",
                                       fontSize: 11.5,
                                       fontWeight: 600,
@@ -19163,8 +19336,8 @@ export default function MisaLedgerWorkspace({
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 14 }}>
                     <div
                       style={{
-                        background: "#f0fdf4",
-                        border: "1px solid #bbf7d0",
+                        background: "#eff6ff",
+                        border: "1px solid #bfdbfe",
                         borderRadius: 6,
                         padding: "10px 14px",
                       }}
@@ -19727,7 +19900,7 @@ export default function MisaLedgerWorkspace({
             <div
               style={{
                 padding: "10px 20px",
-                background: "#f0fdf4",
+                background: "#eff6ff",
                 borderBottom: "1px solid #bbf7d0",
                 display: "grid",
                 gridTemplateColumns: "repeat(4, 1fr)",
@@ -19735,25 +19908,25 @@ export default function MisaLedgerWorkspace({
                 fontSize: 12,
               }}
             >
-              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
+              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bfdbfe" }}>
                 <div style={{ color: "#64748b" }}>1. Tổng PS Nợ = Tổng PS Có</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   588.200.000 ₫ = 588.200.000 ₫ (Cân bằng)
                 </div>
               </div>
-              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
+              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bfdbfe" }}>
                 <div style={{ color: "#64748b" }}>2. Tổng Dư ĐK & Dư CK</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   ĐK: 240.000.000 ₫ | CK: 408.200.000 ₫
                 </div>
               </div>
-              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
+              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bfdbfe" }}>
                 <div style={{ color: "#64748b" }}>3. Liên tục số dư kỳ trước</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   Khớp 100% Dư CK trước = Dư ĐK này
                 </div>
               </div>
-              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bbf7d0" }}>
+              <div style={{ background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px solid #bfdbfe" }}>
                 <div style={{ color: "#64748b" }}>4. Khớp TK Cha-Con & Lưỡng tính</div>
                 <div style={{ fontWeight: 700, color: "#15803d", marginTop: 2 }}>
                   131 / 331 tách Dư Nợ - Dư Có theo đối tượng
@@ -20471,7 +20644,7 @@ export default function MisaLedgerWorkspace({
                         padding: "6px 14px",
                         borderRadius: 6,
                         border: "1px solid #0f766e",
-                        background: "#f0fdf4",
+                        background: "#eff6ff",
                         color: "#0f766e",
                         fontSize: 12,
                         fontWeight: 600,
@@ -20505,7 +20678,7 @@ export default function MisaLedgerWorkspace({
                   padding: "7px 16px",
                   borderRadius: 6,
                   border: "1px solid var(--brand)",
-                  background: "#f0fdf4",
+                  background: "#eff6ff",
                   color: "#15803d",
                   fontSize: 13,
                   fontWeight: 600,

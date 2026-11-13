@@ -208,12 +208,15 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("erp_refresh", refresh);
 
       let fetchedCompanies: Company[] = [];
-      try {
-        fetchedCompanies = await getCompanies(access);
-      } catch (err) {
-        console.warn("Failed to fetch companies right after login:", err);
-        if ((res as any).companies && Array.isArray((res as any).companies)) {
-          fetchedCompanies = (res as any).companies;
+      const inlineCompanies = (res as any).companies;
+      if (Array.isArray(inlineCompanies) && inlineCompanies.length > 0) {
+        // Fast-path: /api/token/ already returned enriched companies + roles in 1 round-trip
+        fetchedCompanies = inlineCompanies;
+      } else {
+        try {
+          fetchedCompanies = await getCompanies(access);
+        } catch (err) {
+          console.warn("Failed to fetch companies right after login:", err);
         }
       }
 

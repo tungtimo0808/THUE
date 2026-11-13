@@ -1039,9 +1039,9 @@ export function SaleVoucherModal({
                 display: "inline-block",
                 padding: "2px 10px",
                 borderRadius: 12,
-                background: "#f0fdf4",
-                border: "1px solid #10b981",
-                color: "#15803d",
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                color: "var(--brand-ink)",
                 fontSize: 12,
                 fontWeight: 500,
                 marginBottom: 4,
@@ -2876,37 +2876,37 @@ export function SaleVoucherModal({
                 <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
                   <thead>
                     {isService ? (
-                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid var(--brand)" }}>
-                        <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 4px", fontWeight: 600, color: "#065f46" }}>#</th>
-                        <th style={{ width: 110, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                      <tr style={{ background: "#f8fafc", color: "#1e40af", height: 34, borderBottom: "2px solid var(--brand)" }}>
+                        <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #e2e8f0", padding: "6px 4px", fontWeight: 600, color: "#1e40af" }}>#</th>
+                        <th style={{ width: 110, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                            <Pin size={12} style={{ color: "#059669" }} />
+                            <Pin size={12} style={{ color: "var(--brand)" }} />
                             <span>Mã hàng</span>
                           </div>
                         </th>
-                        <th style={{ minWidth: 200, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ minWidth: 200, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           Tên dịch vụ
                         </th>
                         {showAccounts && (
                           <>
-                            <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                            <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                               {collectionType === "collected_now" ? "TK tiền" : "TK công nợ"}
                             </th>
-                            <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                            <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                               TK doanh thu
                             </th>
                           </>
                         )}
-                        <th style={{ width: 60, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ width: 60, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           ĐVT
                         </th>
-                        <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           Số lượng
                         </th>
-                        <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           Đơn giá
                         </th>
-                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           Thành tiền
                         </th>
                         <th
@@ -2915,46 +2915,46 @@ export function SaleVoucherModal({
                           style={{
                             width: 90,
                             textAlign: "right",
-                            borderRight: "1px solid #bbf7d0",
+                            borderRight: "1px solid #e2e8f0",
                             padding: "6px 8px",
                             cursor: "help",
                             position: "relative",
                             fontWeight: 600,
-                            color: "#065f46",
+                            color: "#1e40af",
                           }}
                         >
                           % Thuế GTGT
                         </th>
-                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           Tiền thuế GTGT
                         </th>
                         <th style={{ width: 36, textAlign: "center", padding: "6px 4px" }}></th>
                       </tr>
                     ) : (
-                      <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid var(--brand)" }}>
-                        <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 4px", fontWeight: 600, color: "#065f46" }}>#</th>
-                        <th style={{ width: 120, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                      <tr style={{ background: "#f8fafc", color: "#1e40af", height: 34, borderBottom: "2px solid var(--brand)" }}>
+                        <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #e2e8f0", padding: "6px 4px", fontWeight: 600, color: "#1e40af" }}>#</th>
+                        <th style={{ width: 120, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                            <Pin size={12} style={{ color: "#059669" }} />
+                            <Pin size={12} style={{ color: "var(--brand)" }} />
                             <span>Mã hàng</span>
                           </div>
                         </th>
-                        <th style={{ minWidth: 200, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ minWidth: 200, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           Tên hàng
                         </th>
-                        <th style={{ width: 60, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ width: 60, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                             <span>ĐVT</span>
-                            <FileText size={11} style={{ color: "#059669" }} />
+                            <FileText size={11} style={{ color: "var(--brand)" }} />
                           </div>
                         </th>
-                        <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           Số lượng
                         </th>
 
                         {/* Type 1: Chiết khấu thương mại */}
                         {saleType === 1 && (
-                          <th style={{ width: 130, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 6px", fontWeight: 600, color: "#065f46" }}>
+                          <th style={{ width: 130, textAlign: "center", borderRight: "1px solid #e2e8f0", padding: "6px 6px", fontWeight: 600, color: "#1e40af" }}>
                             Chiết khấu thương mại
                           </th>
                         )}
@@ -2964,30 +2964,30 @@ export function SaleVoucherModal({
                           <>
                             {saleType === 1 && (
                               <>
-                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                                   {collectionType === "collected_now" ? "TK tiền" : "TK công nợ"}
                                 </th>
-                                <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                                <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                                   TK doanh thu
                                 </th>
                               </>
                             )}
                             {saleType === 2 && (
                               <>
-                                <th style={{ width: 130, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                                <th style={{ width: 130, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                                   {collectionType === "collected_now" ? "TK tiền/ chi phí" : "TK công nợ/ chi phí"}
                                 </th>
-                                <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                                <th style={{ width: 95, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                                   TK doanh thu
                                 </th>
                               </>
                             )}
                             {(saleType === 3 || saleType === 4) && (
                               <>
-                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                                   TK nợ
                                 </th>
-                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                                <th style={{ width: 85, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                                   TK có
                                 </th>
                               </>
@@ -2995,10 +2995,10 @@ export function SaleVoucherModal({
                           </>
                         )}
 
-                        <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           Đơn giá
                         </th>
-                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                        <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                           Thành tiền
                         </th>
 
@@ -3011,37 +3011,37 @@ export function SaleVoucherModal({
                               style={{
                                 width: 90,
                                 textAlign: "right",
-                                borderRight: "1px solid #bbf7d0",
+                                borderRight: "1px solid #e2e8f0",
                                 padding: "6px 8px",
                                 cursor: "help",
                                 position: "relative",
                                 fontWeight: 600,
-                                color: "#065f46",
+                                color: "#1e40af",
                               }}
                             >
                               % Thuế GTGT
                             </th>
-                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                               Tiền thuế GTGT
                             </th>
                           </>
                         )}
 
                         {(saleType === 3 || saleType === 4) && (
-                          <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                          <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                             % Thuế GTGT
                           </th>
                         )}
 
                         {saleType === 2 && (
                           <>
-                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                               Giá tính thuế XK
                             </th>
-                            <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                            <th style={{ width: 100, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                               % thuế XK
                             </th>
-                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>
+                            <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>
                               Tiền thuế XK
                             </th>
                           </>
@@ -3400,65 +3400,65 @@ export function SaleVoucherModal({
                   {/* SUMMARY ROW (MATCHING SCREENSHOTS) */}
                   {isService ? (
                     <tr className="misa-total-row" style={{ background: "linear-gradient(180deg, #f0fdf4 0%, #e6f7ee 100%)", fontWeight: 600, height: 32, borderTop: "2px solid #a7f3d0", borderBottom: "1px solid #cbd5e1" }}>
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
                       {showAccounts && (
                         <>
-                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                          <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
                         </>
                       )}
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#0f172a" }}>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0", textAlign: "right", padding: "4px 8px", color: "#0f172a" }}>
                         {totalQuantity.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#047857", fontWeight: 700 }}>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0", textAlign: "right", padding: "4px 8px", color: "#047857", fontWeight: 700 }}>
                         {totalAmount === 0 ? "0" : formatVND(totalAmount)}
                       </td>
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "var(--brand-hover)", fontWeight: 700 }}>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0", textAlign: "right", padding: "4px 8px", color: "var(--brand-hover)", fontWeight: 700 }}>
                         {totalVat === 0 ? "0" : formatVND(totalVat)}
                       </td>
                       <td></td>
                     </tr>
                   ) : (
                     <tr className="misa-total-row" style={{ background: "linear-gradient(180deg, #f0fdf4 0%, #e6f7ee 100%)", fontWeight: 600, height: 32, borderTop: "2px solid #a7f3d0", borderBottom: "1px solid #cbd5e1" }}>
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#0f172a" }}>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0", textAlign: "right", padding: "4px 8px", color: "#0f172a" }}>
                         {totalQuantity.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      {saleType === 1 && <td style={{ borderRight: "1px solid #bbf7d0" }}></td>}
+                      {saleType === 1 && <td style={{ borderRight: "1px solid #e2e8f0" }}></td>}
                       {showAccounts && (
                         <>
-                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                          <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
                         </>
                       )}
-                      <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                      <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "#047857", fontWeight: 700 }}>
+                      <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                      <td style={{ borderRight: "1px solid #e2e8f0", textAlign: "right", padding: "4px 8px", color: "#047857", fontWeight: 700 }}>
                         {totalAmount === 0 ? "0" : formatVND(totalAmount)}
                       </td>
                       {saleType === 1 && (
                         <>
-                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                          <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "var(--brand-hover)", fontWeight: 700 }}>
+                          <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ borderRight: "1px solid #e2e8f0", textAlign: "right", padding: "4px 8px", color: "var(--brand-hover)", fontWeight: 700 }}>
                             {totalVat === 0 ? "0" : formatVND(totalVat)}
                           </td>
                         </>
                       )}
                       {(saleType === 3 || saleType === 4) && (
-                        <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
+                        <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
                       )}
                       {saleType === 2 && (
                         <>
-                          <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px" }}>0</td>
-                          <td style={{ borderRight: "1px solid #bbf7d0" }}></td>
-                          <td style={{ borderRight: "1px solid #bbf7d0", textAlign: "right", padding: "4px 8px", color: "var(--brand-hover)", fontWeight: 700 }}>
+                          <td style={{ borderRight: "1px solid #e2e8f0", textAlign: "right", padding: "4px 8px" }}>0</td>
+                          <td style={{ borderRight: "1px solid #e2e8f0" }}></td>
+                          <td style={{ borderRight: "1px solid #e2e8f0", textAlign: "right", padding: "4px 8px", color: "var(--brand-hover)", fontWeight: 700 }}>
                             {totalExportTax === 0 ? "0" : formatVND(totalExportTax)}
                           </td>
                         </>
@@ -3497,17 +3497,17 @@ export function SaleVoucherModal({
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto", background: "#ffffff" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, whiteSpace: "nowrap" }}>
                   <thead>
-                    <tr style={{ background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)", color: "#065f46", height: 34, borderBottom: "2px solid var(--brand)" }}>
-                      <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #bbf7d0", padding: "6px 4px", fontWeight: 600, color: "#065f46" }}>#</th>
-                      <th style={{ width: 120, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Mã hàng</th>
-                      <th style={{ width: 220, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Tên hàng</th>
-                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Kho xuất</th>
-                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>TK giá vốn</th>
-                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>TK kho</th>
-                      <th style={{ width: 70, textAlign: "left", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>ĐVT</th>
-                      <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Số lượng</th>
-                      <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #bbf7d0", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Đơn giá vốn</th>
-                      <th style={{ width: 120, textAlign: "right", padding: "6px 8px", fontWeight: 600, color: "#065f46" }}>Tiền vốn</th>
+                    <tr style={{ background: "#f8fafc", color: "#1e40af", height: 34, borderBottom: "2px solid var(--brand)" }}>
+                      <th style={{ width: 36, textAlign: "center", borderRight: "1px solid #e2e8f0", padding: "6px 4px", fontWeight: 600, color: "#1e40af" }}>#</th>
+                      <th style={{ width: 120, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>Mã hàng</th>
+                      <th style={{ width: 220, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>Tên hàng</th>
+                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>Kho xuất</th>
+                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>TK giá vốn</th>
+                      <th style={{ width: 90, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>TK kho</th>
+                      <th style={{ width: 70, textAlign: "left", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>ĐVT</th>
+                      <th style={{ width: 85, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>Số lượng</th>
+                      <th style={{ width: 110, textAlign: "right", borderRight: "1px solid #e2e8f0", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>Đơn giá vốn</th>
+                      <th style={{ width: 120, textAlign: "right", padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>Tiền vốn</th>
                     </tr>
                   </thead>
                   <tbody>

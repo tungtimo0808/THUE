@@ -60,30 +60,25 @@ class CompanyScopedViewSet(ProtectedModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        company_id = self.request.query_params.get("company_id")
+        account = getattr(self.request.user, "iam_account", None)
+        company_id = (
+            self.request.query_params.get("company_id")
+            or self.request.query_params.get("company")
+            or getattr(getattr(account, "preference", None), "current_company_id", None)
+        )
         if company_id:
             queryset = queryset.filter(company_id=company_id)
             if not getattr(self.request.user, "is_superuser", False):
-                account = getattr(self.request.user, "iam_account", None)
-                if account and CompanyMembership.objects.filter(
-                    user=account, membership_status=ActiveStatus.ACTIVE
+                if not account or not CompanyMembership.objects.filter(
+                    company_id=company_id,
+                    user=account,
+                    membership_status=ActiveStatus.ACTIVE,
                 ).exists():
-                    if not CompanyMembership.objects.filter(
-                        company_id=company_id,
-                        user=account,
-                        membership_status=ActiveStatus.ACTIVE,
-                    ).exists():
-                        return queryset.none()
+                    return queryset.none()
             return filter_queryset_by_branch(queryset, self.request, company_id, filter_branch_model=False)
         if getattr(self.request.user, "is_superuser", False):
             return queryset
-        account = getattr(self.request.user, "iam_account", None)
-        if not account:
-            return queryset.none()
-        return queryset.filter(
-            company__memberships__user=account,
-            company__memberships__membership_status=ActiveStatus.ACTIVE,
-        ).distinct()
+        return queryset.none()
 
 
 class CompanyViewSet(ProtectedModelViewSet):
@@ -99,7 +94,8 @@ class CompanyViewSet(ProtectedModelViewSet):
 
     def get_queryset(self):
         if getattr(self.request.user, "is_superuser", False):
-            return self.queryset.all()
+            company_id = self.request.query_params.get("company_id") or self.request.query_params.get("company")
+            return self.queryset.filter(pk=company_id) if company_id else self.queryset.all()
         account = getattr(self.request.user, "iam_account", None)
         if account is None:
             return self.queryset.none()
@@ -111,6 +107,9 @@ class CompanyViewSet(ProtectedModelViewSet):
             ).distinct()
             if has_effective_permission(account, company, "SYS.COMPANY_PROFILE.VIEW")
         ]
+        company_id = self.request.query_params.get("company_id") or self.request.query_params.get("company")
+        if company_id:
+            return self.queryset.filter(pk__in=company_ids, pk=company_id)
         return self.queryset.filter(pk__in=company_ids)
 
     def list(self, request, *args, **kwargs):

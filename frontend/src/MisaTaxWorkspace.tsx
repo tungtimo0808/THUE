@@ -25,6 +25,19 @@ import {
   Download,
   Eye,
   EyeOff,
+  ShieldCheck,
+  Calendar,
+  Clock,
+  TrendingUp,
+  Sparkles,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  Layers,
+  ArrowUpRight,
+  Check,
+  HelpCircle,
 } from "lucide-react";
 import "./misa-cash.css";
 
@@ -132,6 +145,10 @@ export default function MisaTaxWorkspace({
       notify("Đã lưu đăng ký tờ khai sử dụng thành công!");
     } catch (error) { notify(`Không lưu được đăng ký tờ khai: ${errorText(error)}`); }
   };
+
+  // State: Tab 1 (Khai thuế filters)
+  const [declarationCategoryFilter, setDeclarationCategoryFilter] = useState<string>("ALL");
+  const [declarationSearchQuery, setDeclarationSearchQuery] = useState<string>("");
 
   // State: Tab 2 (Giấy nộp tiền)
   const [taxCode, setTaxCode] = useState("0108923456");
@@ -319,137 +336,803 @@ export default function MisaTaxWorkspace({
   };
 
   // =========================================================================
-  // 1. TAB: KHAI THUẾ (declarations) - Ảnh 1
+  // 1. TAB: KHAI THUẾ (declarations) - BỨT PHÁ HIỆN ĐẠI SAAS COCKPIT
   // =========================================================================
   if (tab === "declarations") {
+    // Filter declarations by category & search
+    const filteredDeclarations = declarations.filter((d) => {
+      const matchCat =
+        declarationCategoryFilter === "ALL" ||
+        (declarationCategoryFilter === "GTGT" && d.group === "Thuế giá trị gia tăng") ||
+        (declarationCategoryFilter === "TNCN" && d.group === "Thuế thu nhập cá nhân") ||
+        (declarationCategoryFilter === "TNDN" && d.group === "Thuế thu nhập doanh nghiệp") ||
+        (declarationCategoryFilter === "OTHER" && !["Thuế giá trị gia tăng", "Thuế thu nhập cá nhân", "Thuế thu nhập doanh nghiệp"].includes(d.group));
+      const matchSearch =
+        !declarationSearchQuery.trim() ||
+        d.name.toLowerCase().includes(declarationSearchQuery.toLowerCase()) ||
+        d.code.toLowerCase().includes(declarationSearchQuery.toLowerCase());
+      return matchCat && matchSearch;
+    });
+
+    const activeCount = declarations.filter((d) => d.checked).length;
+
     return (
       <div
         style={{
-          background: "#ffffff",
+          background: "#f8fafc",
           minHeight: "100%",
-          padding: "24px 32px 48px 32px",
+          padding: "20px 24px 48px 24px",
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
+          gap: 20,
         }}
       >
-        {/* Title */}
-        <h2
+        {/* HERO COMMAND COCKPIT BANNER */}
+        <div
           style={{
-            margin: "0 0 20px 0",
-            fontSize: 20,
-            fontWeight: 700,
-            color: "#1e293b",
+            background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0c4a6e 100%)",
+            borderRadius: 16,
+            padding: "24px 28px",
+            color: "#ffffff",
+            boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.25), 0 8px 10px -6px rgba(15, 23, 42, 0.2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 16,
+            position: "relative",
+            overflow: "hidden",
           }}
         >
-          Đăng ký tờ khai sử dụng
-        </h2>
+          {/* Subtle decorative glow */}
+          <div
+            style={{
+              position: "absolute",
+              right: "-50px",
+              top: "-50px",
+              width: "220px",
+              height: "220px",
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(14, 165, 233, 0.25) 0%, rgba(14, 165, 233, 0) 70%)",
+              pointerEvents: "none",
+            }}
+          />
 
-        {/* Table of declarations */}
+          <div style={{ position: "relative", zIndex: 1, maxWidth: 640 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "3px 10px",
+                  borderRadius: 20,
+                  background: "rgba(16, 185, 129, 0.15)",
+                  border: "1px solid rgba(16, 185, 129, 0.35)",
+                  color: "#34d399",
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  letterSpacing: "0.03em",
+                }}
+              >
+                <Sparkles size={12} />
+                CHUẨN TT 99/2025/TT-BTC & NĐ 123/2020
+              </span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "3px 9px",
+                  borderRadius: 20,
+                  background: "rgba(255, 255, 255, 0.1)",
+                  color: "#cbd5e1",
+                  fontSize: 11.5,
+                  fontWeight: 500,
+                }}
+              >
+                <Building2 size={12} />
+                MST: {company?.id || "0108923456"}
+              </span>
+            </div>
+
+            <h1 style={{ margin: "0 0 6px 0", fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff" }}>
+              Trung tâm Điều hành & Kê khai Thuế Điện tử
+            </h1>
+            <p style={{ margin: 0, fontSize: 13, color: "#94a3b8", lineHeight: 1.5 }}>
+              Quản trị toàn diện danh mục tờ khai, tự động tổng hợp số liệu hóa đơn, khấu trừ thuế GTGT và giám sát rủi ro nhà cung cấp.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 1 }}>
+            <button
+              type="button"
+              onClick={() => setShowVatDeductionModal(true)}
+              style={{
+                height: 38,
+                padding: "0 16px",
+                borderRadius: 8,
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "rgba(255, 255, 255, 0.08)",
+                color: "#ffffff",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                backdropFilter: "blur(6px)",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <FileText size={15} />
+              <span>Khấu trừ GTGT tự động</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={!registrationsLoaded}
+              onClick={() => void saveRegistrations()}
+              style={{
+                height: 38,
+                padding: "0 18px",
+                borderRadius: 8,
+                border: "none",
+                background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+                color: "#ffffff",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                boxShadow: "0 4px 12px rgba(2, 132, 199, 0.35)",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <CheckCircle2 size={15} />
+              <span>Lưu đăng ký ({activeCount} tờ khai)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 4 BENTO KPI WIDGETS */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 16,
+          }}
+        >
+          {/* Bento Card 1: Chỉ số tuân thủ */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 12,
+              padding: "18px 20px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#64748b" }}>Chỉ số Tuân thủ Thuế</span>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: "#ecfdf5",
+                  color: "var(--brand)",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <ShieldCheck size={18} />
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span style={{ fontSize: 28, fontWeight: 800, color: "#0f172a", fontFamily: "var(--font-mono, monospace)" }}>
+                98<span style={{ fontSize: 15, color: "#64748b", fontWeight: 500 }}>/100</span>
+              </span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 3,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  color: "var(--brand)",
+                  background: "#d1fae5",
+                  padding: "2px 7px",
+                  borderRadius: 12,
+                }}
+              >
+                Rất an toàn
+              </span>
+            </div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>
+              0 rủi ro phạt · 100% hóa đơn khớp CQT
+            </div>
+          </div>
+
+          {/* Bento Card 2: Hạn nộp gần nhất */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 12,
+              padding: "18px 20px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#64748b" }}>Hạn nộp Tờ khai gần nhất</span>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: "#fef3c7",
+                  color: "#d97706",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <Clock size={18} />
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span style={{ fontSize: 24, fontWeight: 800, color: "#d97706" }}>
+                Còn 18 ngày
+              </span>
+              <span style={{ fontSize: 12, color: "#64748b" }}>30/04/2026</span>
+            </div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>
+              Tờ khai 01/GTGT Quý 1 & 05/KK-TNCN
+            </div>
+          </div>
+
+          {/* Bento Card 3: Thuế GTGT tạm tính */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 12,
+              padding: "18px 20px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#64748b" }}>Thuế GTGT Khấu trừ còn lại</span>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: "#f0f9ff",
+                  color: "#0284c7",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <TrendingUp size={18} />
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontSize: 22, fontWeight: 800, color: "#0369a1", fontFamily: "var(--font-mono, monospace)" }}>
+                +45.200.000 đ
+              </span>
+            </div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>
+              Chuyển khấu trừ kỳ sau (Chỉ tiêu 43)
+            </div>
+          </div>
+
+          {/* Bento Card 4: Tra cứu rủi ro nhà cung cấp */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 12,
+              padding: "18px 20px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#64748b" }}>Cảnh báo Nhà Cung Cấp</span>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: "#fdf4ff",
+                  color: "#a855f7",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <Sparkles size={18} />
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontSize: 24, fontWeight: 800, color: "var(--brand)" }}>
+                0 Cảnh báo
+              </span>
+              <span style={{ fontSize: 12, color: "#64748b" }}>/ 142 NCC</span>
+            </div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>
+              Không có MST nào bỏ trốn hoặc đóng cửa
+            </div>
+          </div>
+        </div>
+
+        {/* QUICK TAX OPERATIONS BAR (1-Click Workflow) */}
         <div
           style={{
             background: "#ffffff",
-            border: "1px solid #cbd5e1",
-            borderRadius: 4,
-            overflow: "hidden",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            borderRadius: 12,
+            border: "1px solid #e2e8f0",
+            padding: "16px 20px",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 12,
           }}
         >
-          <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#e2ede6", height: 36, borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
-                <th style={{ width: 44, textAlign: "center", padding: "6px" }}>
-                  <input
-                    type="checkbox"
-                    disabled={!registrationsLoaded}
-                    checked={selectAllDec}
-                    onChange={(e) => handleToggleSelectAll(e.target.checked)}
-                    style={{ accentColor: "var(--brand)", width: 16, height: 16, cursor: "pointer" }}
-                  />
-                </th>
-                <th style={{ textAlign: "left", padding: "8px 12px", fontWeight: 700, color: "#1e293b" }}>
-                  Tờ khai
-                </th>
-                <th style={{ width: 220, textAlign: "left", padding: "8px 12px", fontWeight: 700, color: "#1e293b" }}>
-                  Kỳ kê khai
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {declarationGroups.map((groupName) => {
-                const groupItems = declarations.filter((d) => d.group === groupName);
-                if (groupItems.length === 0) return null;
-
-                return (
-                  <Fragment key={groupName}>
-                    {/* Group Header Row */}
-                    <tr style={{ background: "#ffffff", borderTop: "1px solid #cbd5e1", borderBottom: "1px solid #cbd5e1", height: 38 }}>
-                      <td colSpan={3} style={{ padding: "8px 14px", fontWeight: 700, color: "#1e293b", fontSize: 13.5 }}>
-                        {groupName}
-                      </td>
-                    </tr>
-
-                    {/* Group Items */}
-                    {groupItems.map((item) => (
-                      <tr
-                        key={item.id}
-                        onClick={() => { if (registrationsLoaded) handleToggleDeclaration(item.id); }}
-                        style={{
-                          borderBottom: "1px solid #f1f5f9",
-                          height: 38,
-                          cursor: "pointer",
-                          background: item.checked ? "#fafdfb" : "#ffffff",
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = item.checked ? "#fafdfb" : "#ffffff")}
-                      >
-                        <td style={{ textAlign: "center", padding: "6px" }} onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            disabled={!registrationsLoaded}
-                            checked={item.checked}
-                            onChange={() => handleToggleDeclaration(item.id)}
-                            style={{ accentColor: "var(--brand)", width: 16, height: 16, cursor: "pointer" }}
-                          />
-                        </td>
-                        <td style={{ padding: "8px 12px", color: "#1e293b", fontWeight: item.checked ? 500 : 400 }}>
-                          {item.name}
-                        </td>
-                        <td style={{ padding: "8px 12px", color: "#475569" }}>
-                          {item.cycle}
-                        </td>
-                      </tr>
-                    ))}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        <TaxDeclarationPanel companyId={company.id} token={apiToken} notify={notify} />
-
-        {/* Bottom Button: Hoàn thành */}
-        <div style={{ textAlign: "center", marginTop: 36 }}>
-          <button
-            type="button"
-            disabled={!registrationsLoaded}
-            onClick={() => void saveRegistrations()}
+          <div
+            onClick={() => notify("Đang nạp dữ liệu lập Tờ khai thuế GTGT 01/GTGT theo Thông tư 99/2025/TT-BTC...")}
             style={{
-              height: 36,
-              padding: "0 32px",
-              background: "var(--brand)",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 13.5,
-              fontWeight: 600,
+              padding: "12px 14px",
+              borderRadius: 10,
+              border: "1px solid #e2e8f0",
+              background: "#f8fafc",
               cursor: "pointer",
-              boxShadow: "0 2px 4px rgba(0, 168, 98, 0.2)",
+              transition: "all 0.15s ease",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "#0284c7";
+              e.currentTarget.style.background = "#f0f9ff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "#e2e8f0";
+              e.currentTarget.style.background = "#f8fafc";
             }}
           >
-            Hoàn thành
-          </button>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#e0f2fe", color: "#0284c7", display: "grid", placeItems: "center" }}>
+              <FileText size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Lập Tờ khai 01/GTGT</div>
+              <div style={{ fontSize: 11.5, color: "#64748b" }}>Tự động lấy từ hóa đơn mua/bán</div>
+            </div>
+          </div>
+
+          <div
+            onClick={() => notify("Đang nạp bảng kê tiền lương lập Tờ khai thuế TNCN 05/KK-TNCN...")}
+            style={{
+              padding: "12px 14px",
+              borderRadius: 10,
+              border: "1px solid #e2e8f0",
+              background: "#f8fafc",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "#0284c7";
+              e.currentTarget.style.background = "#f0f9ff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "#e2e8f0";
+              e.currentTarget.style.background = "#f8fafc";
+            }}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#ecfdf5", color: "var(--brand)", display: "grid", placeItems: "center" }}>
+              <Calendar size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Kê khai TNCN 05/KK</div>
+              <div style={{ fontSize: 11.5, color: "#64748b" }}>Tổng hợp từ bảng lương tháng/quý</div>
+            </div>
+          </div>
+
+          <div
+            onClick={() => notify("Tính toán số thuế TNDN tạm nộp (đảm bảo trên 80% theo quy định)...")}
+            style={{
+              padding: "12px 14px",
+              borderRadius: 10,
+              border: "1px solid #e2e8f0",
+              background: "#f8fafc",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "#0284c7";
+              e.currentTarget.style.background = "#f0f9ff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "#e2e8f0";
+              e.currentTarget.style.background = "#f8fafc";
+            }}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#faf5ff", color: "#9333ea", display: "grid", placeItems: "center" }}>
+              <TrendingUp size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Tạm tính Thuế TNDN</div>
+              <div style={{ fontSize: 11.5, color: "#64748b" }}>Ước lượng nghĩa vụ thuế 20%</div>
+            </div>
+          </div>
+
+          <div
+            onClick={() => setShowVatDeductionModal(true)}
+            style={{
+              padding: "12px 14px",
+              borderRadius: 10,
+              border: "1px solid #e2e8f0",
+              background: "#f8fafc",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "#0284c7";
+              e.currentTarget.style.background = "#f0f9ff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "#e2e8f0";
+              e.currentTarget.style.background = "#f8fafc";
+            }}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#fef3c7", color: "#d97706", display: "grid", placeItems: "center" }}>
+              <Layers size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>Khấu trừ Thuế GTGT</div>
+              <div style={{ fontSize: 11.5, color: "#64748b" }}>Tự sinh bút toán Nợ 3331/Có 1331</div>
+            </div>
+          </div>
+        </div>
+
+        {/* DECLARATION REGISTRATION SECTION */}
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: 12,
+            border: "1px solid #e2e8f0",
+            overflow: "hidden",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+          }}
+        >
+          {/* Section Toolbar */}
+          <div
+            style={{
+              padding: "14px 20px",
+              borderBottom: "1px solid #e2e8f0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 12,
+              background: "#ffffff",
+            }}
+          >
+            {/* Filter Pills */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              {[
+                { key: "ALL", label: `Tất cả (${declarations.length})` },
+                { key: "GTGT", label: "Thuế GTGT" },
+                { key: "TNCN", label: "Thuế TNCN" },
+                { key: "TNDN", label: "Thuế TNDN" },
+                { key: "OTHER", label: "Thuế khác" },
+              ].map((filter) => {
+                const isActive = declarationCategoryFilter === filter.key;
+                return (
+                  <button
+                    key={filter.key}
+                    type="button"
+                    onClick={() => setDeclarationCategoryFilter(filter.key)}
+                    style={{
+                      height: 30,
+                      padding: "0 12px",
+                      borderRadius: 20,
+                      border: isActive ? "1px solid #0284c7" : "1px solid #e2e8f0",
+                      background: isActive ? "#f0f9ff" : "#ffffff",
+                      color: isActive ? "#0284c7" : "#475569",
+                      fontSize: 12.5,
+                      fontWeight: isActive ? 700 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Search Box & Quick Toggles */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ position: "relative", width: 220 }}>
+                <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm mẫu tờ khai..."
+                  value={declarationSearchQuery}
+                  onChange={(e) => setDeclarationSearchQuery(e.target.value)}
+                  style={{
+                    width: "100%",
+                    height: 32,
+                    padding: "0 10px 0 30px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 6,
+                    fontSize: 12.5,
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleToggleSelectAll(!selectAllDec)}
+                style={{
+                  height: 32,
+                  padding: "0 12px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#475569",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {selectAllDec ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+              </button>
+            </div>
+          </div>
+
+          {/* Table of declarations */}
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f8fafc", height: 42, borderBottom: "1px solid #e2e8f0", color: "#475569" }}>
+                  <th style={{ width: 64, textAlign: "center", padding: "8px 12px" }}>
+                    Áp dụng
+                  </th>
+                  <th style={{ width: 140, textAlign: "left", padding: "8px 16px", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Mã Tờ khai
+                  </th>
+                  <th style={{ textAlign: "left", padding: "8px 16px", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Tên Tờ khai Thuế
+                  </th>
+                  <th style={{ width: 180, textAlign: "left", padding: "8px 16px", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Kỳ kê khai
+                  </th>
+                  <th style={{ width: 150, textAlign: "center", padding: "8px 16px", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {declarationGroups.map((groupName) => {
+                  const groupItems = filteredDeclarations.filter((d) => d.group === groupName);
+                  if (groupItems.length === 0) return null;
+
+                  return (
+                    <Fragment key={groupName}>
+                      {/* Group Header Row */}
+                      <tr style={{ background: "#f1f5f9", height: 36, borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0" }}>
+                        <td colSpan={5} style={{ padding: "6px 16px", fontWeight: 700, color: "#1e293b", fontSize: 12.5 }}>
+                          {groupName} ({groupItems.length})
+                        </td>
+                      </tr>
+
+                      {/* Group Items */}
+                      {groupItems.map((item) => (
+                        <tr
+                          key={item.id}
+                          style={{
+                            borderBottom: "1px solid #f1f5f9",
+                            height: 48,
+                            background: item.checked ? "#eff6ff" : "#ffffff",
+                            transition: "background-color 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!item.checked) e.currentTarget.style.background = "#f8fafc";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = item.checked ? "#eff6ff" : "#ffffff";
+                          }}
+                        >
+                          {/* Modern iOS Toggle Switch */}
+                          <td style={{ textAlign: "center", padding: "8px 12px" }}>
+                            <div
+                              onClick={() => {
+                                if (registrationsLoaded) handleToggleDeclaration(item.id);
+                              }}
+                              title={item.checked ? "Nhấp để tắt áp dụng tờ khai này" : "Nhấp để kích hoạt áp dụng tờ khai này"}
+                              style={{
+                                width: 36,
+                                height: 20,
+                                borderRadius: 10,
+                                background: item.checked ? "#10b981" : "#cbd5e1",
+                                position: "relative",
+                                cursor: "pointer",
+                                transition: "background-color 0.2s ease",
+                                margin: "0 auto",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 16,
+                                  height: 16,
+                                  borderRadius: "50%",
+                                  background: "#ffffff",
+                                  position: "absolute",
+                                  top: 2,
+                                  left: item.checked ? 18 : 2,
+                                  transition: "left 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                                }}
+                              />
+                            </div>
+                          </td>
+
+                          {/* Code Badge */}
+                          <td style={{ padding: "8px 16px" }}>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                padding: "3px 8px",
+                                borderRadius: 6,
+                                background: item.checked ? "#dcfce7" : "#f1f5f9",
+                                color: item.checked ? "#15803d" : "#475569",
+                                fontWeight: 700,
+                                fontSize: 12,
+                                fontFamily: "var(--font-mono, monospace)",
+                                border: item.checked ? "1px solid #bbf7d0" : "1px solid #e2e8f0",
+                              }}
+                            >
+                              {item.code}
+                            </span>
+                          </td>
+
+                          {/* Name */}
+                          <td style={{ padding: "8px 16px", color: "#0f172a", fontWeight: item.checked ? 600 : 400 }}>
+                            <div>{item.name}</div>
+                          </td>
+
+                          {/* Cycle Pill */}
+                          <td style={{ padding: "8px 16px" }}>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                padding: "2px 8px",
+                                borderRadius: 12,
+                                background: item.cycle.includes("tháng") ? "#eff6ff" : item.cycle.includes("năm") ? "#fef3c7" : "#f1f5f9",
+                                color: item.cycle.includes("tháng") ? "#1d4ed8" : item.cycle.includes("năm") ? "#b45309" : "#475569",
+                                fontSize: 12,
+                                fontWeight: 500,
+                              }}
+                            >
+                              <Calendar size={11} />
+                              {item.cycle}
+                            </span>
+                          </td>
+
+                          {/* Action Button */}
+                          <td style={{ textAlign: "center", padding: "8px 16px" }}>
+                            <button
+                              type="button"
+                              onClick={() => notify(`Mở biểu mẫu lập tờ khai ${item.code} cho ${item.cycle.toLowerCase()}...`)}
+                              style={{
+                                height: 28,
+                                padding: "0 10px",
+                                borderRadius: 6,
+                                border: "1px solid #cbd5e1",
+                                background: "#ffffff",
+                                color: "#0284c7",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                transition: "all 0.15s ease",
+                              }}
+                            >
+                              <span>Lập tờ khai</span>
+                              <ArrowRight size={12} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Existing Declaration Submission Panel */}
+        <TaxDeclarationPanel companyId={company.id} token={apiToken} notify={notify} />
+
+        {/* Bottom Floating Save Button Bar */}
+        <div
+          style={{
+            position: "sticky",
+            bottom: 16,
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(12px)",
+            padding: "14px 24px",
+            borderRadius: 12,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.06)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            zIndex: 10,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#475569" }}>
+            <span style={{ fontWeight: 600, color: "#0f172a" }}>Đã kích hoạt:</span>
+            <span style={{ color: "var(--brand)", fontWeight: 700 }}>{activeCount} / {declarations.length} loại tờ khai</span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button
+              type="button"
+              disabled={!registrationsLoaded}
+              onClick={() => void saveRegistrations()}
+              style={{
+                height: 36,
+                padding: "0 28px",
+                background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: 8,
+                fontSize: 13.5,
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(2, 132, 199, 0.3)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                transition: "all 0.15s ease",
+              }}
+            >
+              <Check size={16} />
+              <span>Lưu đăng ký tờ khai</span>
+            </button>
+          </div>
         </div>
 
         {renderModals()}
@@ -545,7 +1228,7 @@ export default function MisaTaxWorkspace({
                   width: "100%",
                   height: 38,
                   padding: "0 12px",
-                  border: "1px solid #10b981",
+                  border: "1px solid var(--brand)",
                   borderRadius: 4,
                   fontSize: 13,
                   outline: "none",
@@ -1291,7 +1974,7 @@ export default function MisaTaxWorkspace({
                       onMouseLeave={(e) => (e.currentTarget.style.color = "#334155")}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 11, padding: "2px 6px", background: "#ecfdf5", borderRadius: 3, fontWeight: 700, color: "#065f46" }}>{item.code}</span>
+                        <span style={{ fontSize: 11, padding: "2px 6px", background: "#eff6ff", borderRadius: 3, fontWeight: 700, color: "var(--brand-ink)" }}>{item.code}</span>
                         <span>{item.title}</span>
                       </div>
                       <div style={{ width: 18, height: 18, border: "1.5px solid #94a3b8", borderRadius: 3, display: "grid", placeItems: "center", flexShrink: 0 }}>

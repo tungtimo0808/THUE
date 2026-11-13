@@ -50,13 +50,13 @@ export default function BankAccountChoiceTable({
           }}
         />
       </div>
-      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "auto" }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden" }}>
         <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: 12.5 }}>
           <colgroup>
-            <col style={{ width: "160px" }} />
-            <col style={{ width: "260px" }} />
-            <col style={{ width: "240px" }} />
-            <col style={{ width: "170px" }} />
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "34%" }} />
+            <col style={{ width: "24%" }} />
+            <col style={{ width: "20%" }} />
           </colgroup>
           <thead>
             <tr>
@@ -153,7 +153,7 @@ export default function BankAccountChoiceTable({
           borderTop: "1px solid #e2e8f0",
           background: "#f8fafc",
           fontSize: 12,
-          color: "#059669",
+          color: "var(--brand)",
           fontWeight: 600,
           textAlign: "right",
           flexShrink: 0,

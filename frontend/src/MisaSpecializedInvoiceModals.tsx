@@ -742,7 +742,7 @@ export function SaleInvoiceAdjustmentModal({
         <div style={{ flex: 1, overflow: "auto", background: "#ffffff" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", height: 30 }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", height: 30 }}>
                 <th style={{ width: 36, textAlign: "center" }}>#</th>
                 <th style={{ width: 120, padding: "4px 8px", textAlign: "left" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
