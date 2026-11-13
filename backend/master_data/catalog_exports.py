@@ -808,6 +808,11 @@ class CatalogExportViewSet(viewsets.GenericViewSet):
             raise ValidationError({"company_id": "Unknown company."})
         if company.status != "ACTIVE":
             raise ValidationError({"company": "Doanh nghiệp đã ngừng hoạt động."})
+        if not getattr(self.request.user, "is_superuser", False):
+            from iam.models import CompanyMembership
+            account = getattr(self.request.user, "iam_account", None)
+            if not account or not CompanyMembership.objects.filter(company=company, user=account, membership_status="ACTIVE").exists():
+                raise PermissionDenied("Bạn không có quyền truy cập dữ liệu của doanh nghiệp này.")
         return company
 
     def _get_target(self, target_name: str) -> ExportTarget:
@@ -815,6 +820,35 @@ class CatalogExportViewSet(viewsets.GenericViewSet):
         if not target_config:
             raise ValidationError({"target": f"Danh mục '{target_name}' không được hỗ trợ."})
         return target_config
+
+    def list(self, request):
+        """
+        Lists recent catalog export batches for the company.
+        """
+        company = self._company()
+        qs = models.CatalogExportBatch.objects.filter(company=company)
+        if not request.user.is_superuser:
+            account = getattr(request.user, "iam_account", None)
+            qs = qs.filter(created_by=account)
+        qs = qs.order_by("-started_at")[:100]
+        results = [
+            {
+                "id": str(b.id),
+                "target": b.target,
+                "catalog_type": TARGET_CONFIGS.get(b.target).name if b.target in TARGET_CONFIGS else b.target,
+                "export_scope": b.export_scope,
+                "export_format": "XLSX",
+                "status": b.status,
+                "total_records": b.total_records,
+                "file_name": b.file_name,
+                "file_size": b.file_size,
+                "started_at": b.started_at,
+                "finished_at": b.finished_at,
+                "expires_at": b.expires_at,
+            }
+            for b in qs
+        ]
+        return Response({"count": len(results), "results": results})
 
     @action(detail=False, methods=("get",))
     def targets(self, request):

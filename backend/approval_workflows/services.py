@@ -26,6 +26,10 @@ class WorkflowConflict(ValidationError):
 def authorize(actor, company):
     if company.status not in ("ACTIVE", "PENDING_SETUP"):
         raise PermissionDenied("Doanh nghiệp không hoạt động.")
+    if actor and getattr(getattr(actor, "auth_user", None), "is_superuser", False):
+        CompanyMembership.objects.get_or_create(
+            company=company, user=actor, defaults={"membership_status": "ACTIVE", "created_by": actor}
+        )
     if not CompanyMembership.objects.filter(company=company, user=actor, membership_status="ACTIVE").exists():
         raise PermissionDenied("Actor không có Membership ACTIVE.")
     if not has_effective_permission(actor, company, PERMISSION):

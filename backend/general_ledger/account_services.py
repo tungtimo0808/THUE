@@ -231,6 +231,14 @@ def init_chart_of_accounts_from_template(
         "TT200": "TT200", "CIRCULAR_200": "TT200", "200": "TT200",
         "TT133": "TT133", "CIRCULAR_133": "TT133", "133": "TT133",
         "TT58": "TT58", "CIRCULAR_58": "TT58", "58": "TT58",
+        "TT88": "TT88", "CIRCULAR_88": "TT88", "88": "TT88", "HKD": "TT88",
+    }
+    regime_titles = {
+        "TT99": "Hệ thống tài khoản (Thông tư 99/2025/TT-BTC)",
+        "TT200": "Hệ thống tài khoản (Thông tư 200/2014/TT-BTC)",
+        "TT133": "Hệ thống tài khoản (Thông tư 133/2016/TT-BTC)",
+        "TT58": "Hệ thống tài khoản (Thông tư 58/2026/TT-BTC - DN siêu nhỏ)",
+        "TT88": "Hệ thống tài khoản (Thông tư 88/2021/TT-BTC - Hộ kinh doanh)",
     }
     raw_regime = (regime or "TT99").upper()
     if raw_regime not in regime_aliases:
@@ -245,7 +253,7 @@ def init_chart_of_accounts_from_template(
     chart = ChartOfAccounts.objects.filter(company=company, is_default=True).first()
     if not chart:
         chart_code_val = chart_code or f"COA-{regime}"
-        chart_name_val = chart_name or f"Hệ thống tài khoản ({regime})"
+        chart_name_val = chart_name or regime_titles.get(regime, f"Hệ thống tài khoản ({regime})")
         chart = ChartOfAccounts.objects.create(
             company=company,
             code=chart_code_val,
@@ -259,7 +267,8 @@ def init_chart_of_accounts_from_template(
     else:
         chart.template_version = template_version_str
         chart.accounting_regime = regime
-        chart.save(update_fields=["template_version", "accounting_regime"])
+        chart.name = chart_name or regime_titles.get(regime, f"Hệ thống tài khoản ({regime})")
+        chart.save(update_fields=["template_version", "accounting_regime", "name"])
 
     # Lấy danh sách mẫu tài khoản
     template_items = get_template_accounts(regime=regime, scope=scope)

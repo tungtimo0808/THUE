@@ -67,6 +67,64 @@ class MasterDataViewSet(
             condition |= Q(**{f"{prefix}owner": self.request.user.iam_account})
         return queryset.filter(condition)
 
+    def _scope_branch_permission_queryset(self, queryset, code, *, branch_field="branch_id", warehouse_field=None, bank_account_field=None):
+        if self.request.user.is_superuser:
+            return queryset
+        company_id = self.request.query_params.get("company_id")
+        company = Company.objects.filter(pk=company_id).first() if company_id else None
+        account = getattr(self.request.user, "iam_account", None)
+        if not company or not account or not getattr(self.request.user, "is_active", False):
+            return queryset.none()
+        from iam.models import ActiveStatus, CompanyMembership, Permission, UserPermissionOverride
+        from iam.permissions import _permission_enabled, _setting, is_company_admin_member
+
+        permission = Permission.objects.select_related("resource", "action").filter(code=code).first()
+        if is_company_admin_member(account, company) and (not permission or _permission_enabled(company, permission)):
+            return queryset
+        if not CompanyMembership.objects.filter(
+            user=account, company=company, membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
+        ).exists():
+            return queryset.none()
+        if not permission or not _permission_enabled(company, permission):
+            return queryset.none()
+        if _setting(company).get("direct_user_permissions_enabled", False) and UserPermissionOverride.objects.filter(
+            company_membership__user=account, company_membership__company=company,
+            permission=permission, revoked_at__isnull=True,
+        ).exists():
+            return queryset.filter(
+                pk__in=[
+                    row.pk for row in queryset
+                    if has_effective_permission(
+                        account, company, code,
+                        branch_id=getattr(row, branch_field, None) if "__" not in branch_field else getattr(getattr(row, branch_field.split("__")[0], None), branch_field.split("__")[1], None),
+                        warehouse_id=getattr(row, warehouse_field, None) if warehouse_field else None,
+                        bank_account_id=getattr(row, bank_account_field, None) if bank_account_field else None,
+                    )
+                ]
+            )
+        allowed_branches, allowed_warehouses, allowed_banks = set(), set(), set()
+        for assignment in effective_assignments(account, company):
+            if code not in assignment_permission_codes(assignment):
+                continue
+            scope = assignment.data_scope_set
+            if scope is None or scope.allow_all_company_data:
+                return queryset
+            allowed_branches.update(scope.branch_scopes.values_list("branch_id", flat=True))
+            if warehouse_field:
+                allowed_warehouses.update(scope.warehouse_scopes.values_list("warehouse_id", flat=True))
+            if bank_account_field:
+                allowed_banks.update(scope.bank_account_scopes.values_list("company_bank_account_id", flat=True))
+        if not allowed_branches and not allowed_warehouses and not allowed_banks:
+            return queryset.none()
+        cond = Q()
+        if allowed_branches:
+            cond |= Q(**{f"{branch_field}__in": allowed_branches})
+        if warehouse_field and allowed_warehouses:
+            cond |= Q(**{f"{warehouse_field}__in": allowed_warehouses})
+        if bank_account_field and allowed_banks:
+            cond |= Q(**{f"{bank_account_field}__in": allowed_banks})
+        return queryset.filter(cond)
+
     def get_queryset(self):
         queryset = super().get_queryset()
         company_id = self.request.query_params.get("company_id")
@@ -223,7 +281,7 @@ class ItemCategoryViewSet(mixins.DestroyModelMixin, MasterDataViewSet):
         if self.request.user.is_superuser:
             return queryset
         code = "MD.ITEM_GROUP.EDIT" if self.request.method in ("PUT", "PATCH") else "MD.ITEM_GROUP.VIEW"
-        return queryset.filter(pk__in=[category.pk for category in queryset if self._allowed(category, code)])
+        return self._scope_branch_permission_queryset(queryset, code, branch_field="branch_id")
 
     @transaction.atomic
     def update(self, request, *args, **kwargs):
@@ -636,7 +694,7 @@ class ItemViewSet(MasterDataViewSet):
         if self.request.user.is_superuser:
             return queryset
         code = "MD.ITEM.EDIT" if self.request.method in ("PUT", "PATCH") else "MD.ITEM.VIEW"
-        return queryset.filter(pk__in=[item.pk for item in queryset if self._allowed(item, code)])
+        return self._scope_branch_permission_queryset(queryset, code, branch_field="branch_id")
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -835,9 +893,8 @@ class ItemUomConversionViewSet(MasterDataViewSet):
             queryset = queryset.filter(item_id=item_id)
         if self.request.user.is_superuser:
             return queryset
-        account = self.request.user.iam_account
         code = "MD.ITEM.EDIT" if self.request.method in ("PUT", "PATCH") else "MD.ITEM.VIEW"
-        return queryset.filter(pk__in=[conversion.pk for conversion in queryset if has_effective_permission(account, conversion.item.company, code, branch_id=conversion.item.branch_id)])
+        return self._scope_branch_permission_queryset(queryset, code, branch_field="item__branch_id")
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -903,7 +960,7 @@ class WarehouseViewSet(mixins.DestroyModelMixin, MasterDataViewSet):
                 queryset = queryset.filter(**{field: value})
         if self.request.user.is_superuser:
             return queryset
-        return queryset.filter(pk__in=[row.pk for row in queryset if self._allowed(row)])
+        return self._scope_branch_permission_queryset(queryset, self._code(), branch_field="branch_id", warehouse_field="pk")
 
     def _snapshot(self, row):
         return {"code": row.code, "name": row.name, "status": row.status, "warehouse_type": row.warehouse_type, "warehouse_scope": row.warehouse_scope, "branch": str(row.branch_id) if row.branch_id else None, "project": str(row.project_id) if row.project_id else None, "is_default": row.is_default, "allow_receipt": row.allow_receipt, "allow_issue": row.allow_issue, "allow_transfer": row.allow_transfer}
@@ -1206,7 +1263,7 @@ class CompanyBankAccountViewSet(mixins.DestroyModelMixin, MasterDataViewSet):
                 queryset = queryset.filter(**{field: value})
         if self.request.user.is_superuser:
             return queryset
-        return queryset.filter(pk__in=[row.pk for row in queryset if self._allowed(row)])
+        return self._scope_branch_permission_queryset(queryset, self._code(), branch_field="branch_id", bank_account_field="pk")
 
     def _version_check(self, row):
         client_version = self.request.data.get("version") or self.request.headers.get("If-Match")

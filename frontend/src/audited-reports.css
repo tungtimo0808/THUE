@@ -87,7 +87,9 @@
 }
 .ar-reference-options > button[aria-selected="true"],
 .ar-reference-picker .ar-reference-options > button[aria-selected="true"] {
-  background: #eaf7f0;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-weight: 600;
 }
 .ar-reference-empty {
   display: flex;
@@ -106,7 +108,8 @@
   background: white;
 }
 .ar-report .pc-toolbar [role="menu"] > [role="menuitem"]:hover {
-  background: #eaf7f0;
+  background: var(--brand-soft);
+  color: var(--brand);
 }
 @media print {
   .reference-header,

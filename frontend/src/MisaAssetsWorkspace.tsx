@@ -69,6 +69,11 @@ import {
   RotateCcw,
   Eye,
   Printer,
+  Coins,
+  TrendingUp,
+  Building2,
+  Clock,
+  Layers,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
 
@@ -6253,14 +6258,14 @@ ${entries.length
                         display: "flex",
                         gap: 10,
                         alignItems: "flex-start",
-                        background: "#f0fdf4",
-                        border: "1px solid #bbf7d0",
+                        background: "#eff6ff",
+                        border: "1px solid #bfdbfe",
                         borderRadius: 6,
                         padding: "10px 14px",
                         marginTop: 8,
                       }}
                     >
-                      <Info size={17} style={{ color: "#16a34a", flexShrink: 0, marginTop: 1 }} />
+                      <Info size={17} style={{ color: "var(--brand)", flexShrink: 0, marginTop: 1 }} />
                       <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5, color: "#166534" }}>
                         Nếu nhập Giá trị KH theo luật thì khi tính KH, chương trình sẽ hạch toán phần chi phí KH tương ứng với Giá trị KH theo luật vào chi phí hợp lý, phần chi phí KH vượt quá giới hạn được hạch toán vào chi phí không hợp lý.
                       </p>
@@ -6386,7 +6391,7 @@ ${entries.length
                           { id: `alloc-${Date.now()}`, dept: "", rate: remRate, expenseAccount: fallbackExp, expenseItem: "Chi phí khấu hao TSCĐ", costCenter: "" },
                         ]);
                       }}
-                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#eff6ff", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm dòng phân bổ
                     </button>
@@ -6545,7 +6550,7 @@ ${entries.length
                            { id: `origin-${Date.now()}`, originType: "Chi phí vận chuyển, lắp đặt, chạy thử", documentNumber: "", documentDate: incVoucherDate, amount: 0, partnerCode: "", partnerName: "", sourceDocumentId: "" },
                         ])
                       }
-                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#eff6ff", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm chứng từ nguồn gốc hình thành
                     </button>
@@ -6650,7 +6655,7 @@ ${entries.length
                     <button
                       type="button"
                       onClick={() => setIncComponents([...incComponents, { id: crypto.randomUUID(), name: "", unit: "Cái", quantity: 1, value: 0 }])}
-                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#eff6ff", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm bộ phận cấu thành
                     </button>
@@ -6749,7 +6754,7 @@ ${entries.length
                     <button
                       type="button"
                       onClick={() => setIncAccessories([...incAccessories, { id: crypto.randomUUID(), name: "", unit: "Bộ", quantity: 1, value: 0 }])}
-                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#eff6ff", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       + Thêm dụng cụ, phụ tùng kèm theo
                     </button>
@@ -7036,7 +7041,7 @@ ${entries.length
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                background: isEditingAsset ? "#f0fdf4" : "#f8fafc",
+                background: isEditingAsset ? "#eff6ff" : "#f8fafc",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -7108,8 +7113,8 @@ ${entries.length
                 <div
                   style={{
                     padding: "8px 12px",
-                    background: "#f0fdf4",
-                    border: "1px solid #bbf7d0",
+                    background: "#eff6ff",
+                    border: "1px solid #bfdbfe",
                     borderRadius: 4,
                     fontSize: 12,
                     color: "#166534",
@@ -7832,7 +7837,7 @@ ${entries.length
                       <button
                         type="button"
                         onClick={() => setEditComponents([...editComponents, { name: "", unit: "Cái", quantity: 1, value: 0 }])}
-                        style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                        style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#eff6ff", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                       >
                         + Thêm bộ phận cấu thành
                       </button>
@@ -7942,7 +7947,7 @@ ${entries.length
                       <button
                         type="button"
                         onClick={() => setEditAccessories([...editAccessories, { name: "", unit: "Bộ", quantity: 1, value: 0 }])}
-                        style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#f0fdf4", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                        style={{ height: 28, padding: "0 12px", border: "1px dashed var(--brand)", borderRadius: 4, background: "#eff6ff", color: "var(--brand)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                       >
                         + Thêm dụng cụ, phụ tùng kèm theo
                       </button>
@@ -8131,7 +8136,7 @@ ${entries.length
               <div style={{ fontSize: 12, color: "#64748b" }}>
                 Nguyên giá: <strong style={{ color: "#0f172a" }}>{formatVND(detailAsset.originalCost || 0)}</strong> | Hao mòn lũy kế:{" "}
                 <strong style={{ color: "#0f172a" }}>{formatVND(detailAsset.depreciatedAmount || 0)}</strong> | Giá trị còn lại:{" "}
-                <strong style={{ color: "#16a34a" }}>{formatVND(detailAsset.remainingAmount || 0)}</strong>
+                <strong style={{ color: "var(--brand)" }}>{formatVND(detailAsset.remainingAmount || 0)}</strong>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {!isEditingAsset ? (
@@ -8760,14 +8765,14 @@ ${entries.length
                         display: "flex",
                         gap: 10,
                         alignItems: "flex-start",
-                        background: "#f0fdf4",
-                        border: "1px solid #bbf7d0",
+                        background: "#eff6ff",
+                        border: "1px solid #bfdbfe",
                         borderRadius: 6,
                         padding: "10px 14px",
                         marginTop: 8,
                       }}
                     >
-                      <Info size={17} style={{ color: "#16a34a", flexShrink: 0, marginTop: 1 }} />
+                      <Info size={17} style={{ color: "var(--brand)", flexShrink: 0, marginTop: 1 }} />
                       <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5, color: "#166534" }}>
                         Nếu nhập Giá trị KH theo luật thì khi tính KH, chương trình sẽ hạch toán phần chi phí KH tương ứng với Giá trị KH theo luật vào chi phí hợp lý, phần chi phí KH vượt quá giới hạn được hạch toán vào chi phí không hợp lý.
                       </p>
@@ -9532,7 +9537,7 @@ ${entries.length
                     padding: "0 10px",
                     border: "1px solid var(--brand)",
                     borderRadius: 4,
-                    background: "#f0fdf4",
+                    background: "#eff6ff",
                     color: "var(--brand)",
                     fontSize: 11.5,
                     fontWeight: 600,
@@ -9556,7 +9561,7 @@ ${entries.length
                   <div style={{ flex: 1, overflow: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                       <thead>
-                        <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                        <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                           <th style={{ width: 40, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
                           <th style={{ width: 130, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã tài sản</th>
                           <th style={{ minWidth: 220, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản</th>
@@ -9823,7 +9828,7 @@ ${entries.length
                 <div style={{ flex: 1, overflow: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
-                      <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                      <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                         <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>STT</th>
                         <th style={{ width: 120, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã tài sản</th>
                         <th style={{ minWidth: 220, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản</th>
@@ -10013,7 +10018,7 @@ ${entries.length
                   )}
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                     <thead>
-                      <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
+                      <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
                         <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>STT</th>
                         <th style={{ minWidth: 280, padding: "8px 10px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Diễn giải định khoản</th>
                         <th style={{ width: 100, padding: "8px 10px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK Nợ</th>
@@ -10207,7 +10212,7 @@ ${entries.length
                     gap: 6,
                   }}
                 >
-                  <FileSpreadsheet size={14} style={{ color: "#16a34a" }} />
+                  <FileSpreadsheet size={14} style={{ color: "var(--brand)" }} />
                   <span>Xuất khẩu bảng phân bổ ra Excel</span>
                 </button>
 
@@ -11261,7 +11266,7 @@ ${entries.length
                 <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                   {apiConnected && revalTab === "accounting" && !revalReadOnly && (
                     <button type="button" onClick={proposeRevalEntries}
-                      style={{ height: 26, padding: "0 10px", border: "1px solid var(--brand)", borderRadius: 4, background: "#f0fdf4", fontSize: 12, fontWeight: 600, color: "#047857", cursor: "pointer" }}>
+                      style={{ height: 26, padding: "0 10px", border: "1px solid var(--brand-border)", borderRadius: 4, background: "#eff6ff", fontSize: 12, fontWeight: 600, color: "var(--brand-ink)", cursor: "pointer" }}>
                       Đề xuất định khoản
                     </button>
                   )}
@@ -12061,9 +12066,9 @@ ${entries.length
                                 background: isSelected
                                   ? "var(--brand)"
                                   : isHovered
-                                  ? "#d1fae5"
+                                  ? "#eff6ff"
                                   : "#ffffff",
-                                color: isSelected ? "#ffffff" : isHovered ? "#065f46" : "#1e293b",
+                                color: isSelected ? "#ffffff" : isHovered ? "var(--brand-ink)" : "#1e293b",
                                 fontWeight: isSelected ? 600 : 400,
                                 transition: "background-color 0.1s ease",
                               }}
@@ -13051,7 +13056,7 @@ ${entries.length
                         setStocktakeIsDirty(true);
                         notify("Đã xác nhận tồn tại cho toàn bộ tài sản trên bảng kiểm kê.");
                       }}
-                      style={{ height: 26, padding: "0 10px", border: "1px solid #16a34a", borderRadius: 4, background: "#f0fdf4", color: "#15803d", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{ height: 26, padding: "0 10px", border: "1px solid var(--brand-border)", borderRadius: 4, background: "#eff6ff", color: "var(--brand-ink)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                     >
                       Xác nhận tồn tại tất cả
                     </button>
@@ -14236,7 +14241,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                     onClick={apiConnected ? () => exportApiReport("data") : handleExportCurrentReportExcel}
                     style={{ height: 32, padding: "0 16px", border: "1px solid #cbd5e1", borderRadius: 4, background: "#ffffff", fontSize: 12.5, color: "#334155", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                   >
-                    <FileSpreadsheet size={14} style={{ color: "#16a34a" }} />
+                    <FileSpreadsheet size={14} style={{ color: "var(--brand)" }} />
                     <span>{apiConnected ? (isEn ? "Export Excel (data)" : "Xuất Excel dạng dữ liệu") : (isEn ? "Export Excel" : "Xuất Excel")}</span>
                   </button>
                   <button type="button" onClick={() => setPreviewReportName(null)} style={{ height: 32, padding: "0 20px", background: "var(--brand)", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, color: "#ffffff", cursor: "pointer" }}>
@@ -14754,9 +14759,193 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
       );
     }
 
+    const totalAssetsCost = (filteredAssets || []).reduce((s, a) => s + (Number(a.originalCost) || 0), 0);
+    const totalAssetsDepreciated = (filteredAssets || []).reduce((s, a) => s + (Number(a.depreciatedAmount) || 0), 0);
+    const totalAssetsRemaining = (filteredAssets || []).reduce((s, a) => s + (Number(a.remainingAmount) || 0), 0);
+    const totalAssetsCount = (filteredAssets || []).length;
+
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
-        <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, background: "#f8fafc" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
+        {/* 4 Modern Bento KPI Cards for Fixed Assets */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 12,
+            margin: "12px 16px 6px 16px",
+          }}
+        >
+          {/* Card 1: Tổng nguyên giá */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#eff6ff",
+                  color: "#2563eb",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Building2 size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Tổng nguyên giá TSCĐ (TK 211)
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#1e293b", fontVariantNumeric: "tabular-nums" }}>
+                  {formatVND(totalAssetsCost)} đ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#2563eb", background: "#dbeafe", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Nguyên giá
+            </span>
+          </div>
+
+          {/* Card 2: Hao mòn lũy kế */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#eff6ff",
+                  color: "var(--brand)",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Clock size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Hao mòn lũy kế (TK 214)
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "var(--brand)", fontVariantNumeric: "tabular-nums" }}>
+                  {formatVND(totalAssetsDepreciated)} đ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#16a34a", background: "#dcfce7", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Đã khấu hao
+            </span>
+          </div>
+
+          {/* Card 3: Giá trị còn lại */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#fff7ed",
+                  color: "#ea580c",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Coins size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Giá trị còn lại TSCĐ
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#ea580c", fontVariantNumeric: "tabular-nums" }}>
+                  {formatVND(totalAssetsRemaining)} đ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#ea580c", background: "#ffedd5", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Còn lại
+            </span>
+          </div>
+
+          {/* Card 4: Tổng số TSCĐ */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#f5f3ff",
+                  color: "#7c3aed",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Layers size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Tổng TSCĐ theo dõi
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#7c3aed" }}>
+                  {totalAssetsCount} tài sản
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#7c3aed", background: "#ede9fe", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Đang quản lý
+            </span>
+          </div>
+        </div>
+
+        {/* Toolbar */}
+        <div style={{ padding: "8px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, background: "#ffffff" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
             <button
               type="button"
@@ -14876,21 +15065,21 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
         <div style={{ flex: 1, overflow: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
-                <th style={{ width: 36, padding: "8px 6px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>#</th>
-                <th style={{ width: 110, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Mã TSCĐ</th>
-                <th style={{ minWidth: 260, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Tên tài sản cố định</th>
-                <th style={{ width: 160, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Loại tài sản</th>
-                <th style={{ width: 170, padding: "8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>Đơn vị sử dụng</th>
-                <th style={{ width: 110, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Ngày ghi tăng</th>
-                <th style={{ width: 140, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Nguyên giá</th>
-                <th style={{ width: 140, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Hao mòn lũy kế</th>
-                <th style={{ width: 140, padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>Giá trị còn lại</th>
-                <th style={{ width: 90, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Tỷ lệ KH</th>
-                {registerShowsCostAccount && <th style={{ width: 80, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>TK NG</th>}
-                <th style={{ width: 125, padding: "8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>Trạng thái TS</th>
-                <th style={{ width: 165, padding: "8px", textAlign: "center" }}>Đối chiếu kế toán</th>
-                <th style={{ width: 70, padding: "8px", textAlign: "center" }}>Chức năng</th>
+              <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600, height: 40 }}>
+                <th style={{ width: 36, padding: "0 6px", textAlign: "center", borderRight: "1px solid #cbd5e1", height: 40 }}>#</th>
+                <th style={{ width: 110, padding: "0 8px", textAlign: "left", borderRight: "1px solid #cbd5e1", height: 40 }}>Mã TSCĐ</th>
+                <th style={{ minWidth: 260, padding: "0 8px", textAlign: "left", borderRight: "1px solid #cbd5e1", height: 40 }}>Tên tài sản cố định</th>
+                <th style={{ width: 160, padding: "0 8px", textAlign: "left", borderRight: "1px solid #cbd5e1", height: 40 }}>Loại tài sản</th>
+                <th style={{ width: 170, padding: "0 8px", textAlign: "left", borderRight: "1px solid #cbd5e1", height: 40 }}>Đơn vị sử dụng</th>
+                <th style={{ width: 110, padding: "0 8px", textAlign: "center", borderRight: "1px solid #cbd5e1", height: 40 }}>Ngày ghi tăng</th>
+                <th style={{ width: 140, padding: "0 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", height: 40 }}>Nguyên giá</th>
+                <th style={{ width: 140, padding: "0 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", height: 40 }}>Hao mòn lũy kế</th>
+                <th style={{ width: 140, padding: "0 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", height: 40 }}>Giá trị còn lại</th>
+                <th style={{ width: 90, padding: "0 8px", textAlign: "center", borderRight: "1px solid #cbd5e1", height: 40 }}>Tỷ lệ KH</th>
+                {registerShowsCostAccount && <th style={{ width: 80, padding: "0 8px", textAlign: "center", borderRight: "1px solid #cbd5e1", height: 40 }}>TK NG</th>}
+                <th style={{ width: 125, padding: "0 8px", textAlign: "center", borderRight: "1px solid #cbd5e1", height: 40 }}>Trạng thái TS</th>
+                <th style={{ width: 165, padding: "0 8px", textAlign: "center", height: 40 }}>Đối chiếu kế toán</th>
+                <th style={{ width: 70, padding: "0 8px", textAlign: "center", height: 40 }}>Chức năng</th>
               </tr>
             </thead>
             <tbody>
@@ -14906,36 +15095,36 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   const reconStatus = (row as any).reconciliationStatus || "Đã đối chiếu";
                   const globalIdx = (safeRegisterPage - 1) * registerPageSize + idx + 1;
                   return (
-                  <tr key={row.code} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                    <td style={{ textAlign: "center", padding: "8px 4px", borderRight: "1px solid #e2e8f0", color: "#64748b" }}>{globalIdx}</td>
+                  <tr key={row.code} style={{ borderBottom: "1px solid #e2e8f0", height: 42, maxHeight: 42, boxSizing: "border-box" }}>
+                    <td style={{ textAlign: "center", padding: "0 4px", borderRight: "1px solid #e2e8f0", color: "#64748b", height: 42 }}>{globalIdx}</td>
                     <td
                       onClick={() => openAssetDetailModal(row)}
                       title="Nhấn để xem chi tiết / cập nhật thông tin TSCĐ"
-                      style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline" }}
+                      style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", fontWeight: 600, color: "var(--brand)", cursor: "pointer", textDecoration: "underline", height: 42 }}
                     >
                       {row.code}
                     </td>
                     <td
                       onClick={() => openAssetDetailModal(row)}
                       title="Nhấn để xem chi tiết / cập nhật thông tin TSCĐ"
-                      style={{ padding: "8px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b", cursor: "pointer" }}
+                      style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", fontWeight: 500, color: "#1e293b", cursor: "pointer", height: 42 }}
                     >
                       {row.name}
                     </td>
-                    <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.category}</td>
-                    <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", color: "#475569" }}>{row.dept}</td>
-                    <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#64748b" }}>{row.startDate}</td>
-                    <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600 }}>{formatVND(row.originalCost)}</td>
-                    <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b" }}>{formatVND(row.depreciatedAmount)}</td>
-                    <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#16a34a" }}>{formatVND(row.remainingAmount)}</td>
-                    <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>{(row as any).rateDisplay || `${row.rateYear}%`}</td>
-                    {registerShowsCostAccount && <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "var(--brand)", fontWeight: 600 }}>{row.costAccount}</td>}
-                    <td style={{ padding: "8px", borderRight: "1px solid #e2e8f0", textAlign: "center" }}>
+                    <td style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", color: "#475569", height: 42 }}>{row.category}</td>
+                    <td style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", color: "#475569", height: 42 }}>{row.dept}</td>
+                    <td style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "#64748b", height: 42 }}>{row.startDate}</td>
+                    <td style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, height: 42 }}>{formatVND(row.originalCost)}</td>
+                    <td style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", color: "#64748b", height: 42 }}>{formatVND(row.depreciatedAmount)}</td>
+                    <td style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", textAlign: "right", fontWeight: 600, color: "#16a34a", height: 42 }}>{formatVND(row.remainingAmount)}</td>
+                    <td style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", height: 42 }}>{(row as any).rateDisplay || `${row.rateYear}%`}</td>
+                    {registerShowsCostAccount && <td style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", color: "var(--brand)", fontWeight: 600, height: 42 }}>{row.costAccount}</td>}
+                    <td style={{ padding: "0 8px", borderRight: "1px solid #e2e8f0", textAlign: "center", height: 42 }}>
                       <span style={{ padding: "2px 8px", borderRadius: 10, background: assetStatus === "Đang sử dụng" ? "#dcfce7" : "#f1f5f9", color: assetStatus === "Đang sử dụng" ? "#166534" : "#475569", fontSize: 11.5, fontWeight: 500 }}>
                         {assetStatus}
                       </span>
                     </td>
-                    <td style={{ padding: "8px", textAlign: "center" }}>
+                    <td style={{ padding: "0 8px", textAlign: "center", height: 42 }}>
                       <span
                         style={{
                           padding: "2px 8px",
@@ -14949,7 +15138,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                         {reconStatus}
                       </span>
                     </td>
-                    <td style={{ padding: "8px", textAlign: "center", position: "relative" }}>
+                    <td style={{ padding: "0 8px", textAlign: "center", position: "relative", height: 42 }}>
                       <button type="button" aria-label={`Chức năng tài sản ${row.code}`} aria-expanded={registerActionCode === row.code} onClick={() => setRegisterActionCode(registerActionCode === row.code ? null : row.code)} style={{ border: "1px solid #cbd5e1", borderRadius: 4, background: "#fff", padding: "3px 8px", cursor: "pointer" }}>▾</button>
                       {registerActionCode === row.code && (
                         <div style={{ position: "absolute", right: 8, top: 34, zIndex: 10, background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, boxShadow: "0 4px 12px #0002", minWidth: 80 }}>
@@ -15005,7 +15194,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
           <div style={{ display: "flex", gap: 20 }}>
             <span>Tổng nguyên giá: <strong style={{ color: "var(--brand)" }}>{formatVND(totalOriginalCost)}</strong></span>
             <span>Tổng hao mòn: <strong>{formatVND(totalDepreciated)}</strong></span>
-            <span>Tổng còn lại: <strong style={{ color: "#16a34a" }}>{formatVND(totalRemaining)}</strong></span>
+            <span>Tổng còn lại: <strong style={{ color: "var(--brand)" }}>{formatVND(totalRemaining)}</strong></span>
           </div>
         </div>
 

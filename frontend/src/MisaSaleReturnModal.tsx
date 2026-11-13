@@ -2521,11 +2521,11 @@ export function SaleReturnModal({
               style={{
                 height: 24,
                 padding: "0 10px",
-                background: "#f0fdf4",
-                border: "1px solid #86efac",
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
                 borderRadius: 4,
                 fontSize: 11.5,
-                color: "#15803d",
+                color: "var(--brand-ink)",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 5,
@@ -2533,7 +2533,7 @@ export function SaleReturnModal({
                 fontWeight: 500,
               }}
             >
-              <Bot size={13} style={{ color: "#16a34a" }} />
+              <Bot size={13} style={{ color: "var(--brand)" }} />
               <span>Gợi ý hồ sơ</span>
             </button>
 
@@ -2607,10 +2607,10 @@ export function SaleReturnModal({
                 {tableTab === "items" && (
                   <tr
                     style={{
-                      background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)",
+                      background: "#f8fafc",
                       borderBottom: "2px solid var(--brand)",
                       height: 34,
-                      color: "#065f46",
+                      color: "#1e40af",
                       fontWeight: 600,
                     }}
                   >
@@ -2788,10 +2788,10 @@ export function SaleReturnModal({
                 {tableTab === "cost" && (
                   <tr
                     style={{
-                      background: "linear-gradient(180deg, #eaf6ee 0%, #dcf0e5 100%)",
+                      background: "#f8fafc",
                       borderBottom: "2px solid var(--brand)",
                       height: 34,
-                      color: "#065f46",
+                      color: "#1e40af",
                       fontWeight: 600,
                     }}
                   >
@@ -2837,12 +2837,12 @@ export function SaleReturnModal({
                 {/* Summary / Total row directly under header */}
                 <tr
                   style={{
-                    background: "linear-gradient(180deg, #f0fdf4 0%, #e6f7ee 100%)",
-                    borderTop: "2px solid #a7f3d0",
+                    background: "linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)",
+                    borderTop: "2px solid var(--brand-border)",
                     borderBottom: "1px solid #cbd5e1",
                     fontWeight: 600,
                     height: 32,
-                    color: "#065f46",
+                    color: "#1e40af",
                   }}
                 >
                   <td style={{ textAlign: "center", borderRight: "1px solid #cbd5e1" }}></td>

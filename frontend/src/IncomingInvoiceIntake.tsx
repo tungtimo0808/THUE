@@ -504,14 +504,14 @@ export default function IncomingInvoiceIntake({
                   alignItems: "center",
                   gap: 6,
                   padding: "7px 14px",
-                  background: "#059669",
+                  background: "var(--brand)",
                   border: "none",
                   borderRadius: 6,
                   color: "#ffffff",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  boxShadow: "0 1px 2px rgba(5,150,105,0.25)",
+                  boxShadow: "0 1px 2px rgba(37,99,235,0.25)",
                 }}
               >
                 <FilePlus size={14} /> Lập chứng từ mua hàng

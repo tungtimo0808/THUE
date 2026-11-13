@@ -39,9 +39,15 @@ class GoodsPurchaseViewSet(ModelViewSet):
         if supplier_id := self.request.query_params.get("supplier_id"):
             queryset = queryset.filter(supplier_id=supplier_id)
         if not self.request.user.is_superuser:
-            queryset = queryset.filter(branch_id__in=[branch_id for branch_id in queryset.values_list("branch_id", flat=True).distinct()
-                if has_effective_permission(self.request.user.iam_account, Company.objects.get(pk=company_id),
-                    self.action_permissions.get(self.action, self.iam_permissions.get(self.request.method)), branch_id=branch_id)])
+            company_obj = getattr(self.request, "_resolved_company_obj", None) or Company.objects.get(pk=company_id)
+            perm_code = self.action_permissions.get(self.action, self.iam_permissions.get(self.request.method))
+            distinct_branches = list(queryset.order_by().values_list("branch_id", flat=True).distinct())
+            queryset = queryset.filter(
+                branch_id__in=[
+                    b_id for b_id in distinct_branches
+                    if has_effective_permission(self.request.user.iam_account, company_obj, perm_code, branch_id=b_id)
+                ]
+            )
         return queryset
 
     def perform_create(self, serializer):

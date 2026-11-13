@@ -3,6 +3,7 @@ services:
     image: postgres:16-alpine
     container_name: thue_erp_postgres
     restart: unless-stopped
+    command: ["postgres", "-c", "max_connections=250", "-c", "shared_buffers=256MB"]
     environment:
       POSTGRES_DB: ${DB_NAME:-thue_erp}
       POSTGRES_USER: ${DB_USER:-thue_erp}
@@ -29,7 +30,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DEBUG: ${DEBUG:-True}
+      DEBUG: ${DJANGO_DEBUG:-True}
       SECRET_KEY: ${SECRET_KEY:-django-insecure-thue-erp-super-secret-key-2026}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
       CORS_ALLOW_ALL_ORIGINS: ${CORS_ALLOW_ALL_ORIGINS:-True}
@@ -69,13 +70,13 @@ services:
       && python manage.py collectstatic --noinput
       && python manage.py sync_company_setup
       && if [ \"$${SEED_DEMO_DATA}\" = \"True\" ]; then python manage.py seed_exercise_data; fi
-      && gunicorn config.wsgi:application --bind 0.0.0.0:8080 --workers $${GUNICORN_WORKERS:-4} --threads $${GUNICORN_THREADS:-4} --timeout $${GUNICORN_TIMEOUT:-60}"
+      && gunicorn config.wsgi:application --preload --bind 0.0.0.0:8080 --workers $${GUNICORN_WORKERS:-8} --threads $${GUNICORN_THREADS:-8} --timeout $${GUNICORN_TIMEOUT:-60}"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/docs/', timeout=4)"]
       interval: 5s
       timeout: 3s
-      retries: 20
-      start_period: 15s
+      retries: 30
+      start_period: 30s
     networks:
       - thue_erp_net
 
@@ -90,7 +91,7 @@ services:
       backend:
         condition: service_healthy
     environment:
-      DEBUG: ${DEBUG:-True}
+      DEBUG: ${DJANGO_DEBUG:-True}
       SECRET_KEY: ${SECRET_KEY:-django-insecure-thue-erp-super-secret-key-2026}
       DB_ENGINE: "postgres"
       DB_NAME: ${DB_NAME:-thue_erp}
@@ -124,13 +125,14 @@ services:
         condition: service_healthy
     environment:
       VITE_API_PROXY_TARGET: "http://backend:8080"
+      VITE_OUT_DIR: "/tmp/dist"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     ports:
       - "${FRONTEND_PORT:-2601}:2601"
     command: >
-      sh -c "npm run build && npm run preview -- --host 0.0.0.0 --port 2601"
+      sh -c "npm install && npm run build && npm run preview -- --host 0.0.0.0 --port 2601"
     networks:
       - thue_erp_net
 

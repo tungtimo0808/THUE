@@ -814,7 +814,7 @@ export default function LiveCompanySelect() {
                       {isSelected && <span className="company-current-label">Doanh nghiệp đang chọn</span>}
                     </div>
                     <div className="company-list-buttons">
-                      {isCompanyOrSuperAdmin && (
+                      {Boolean((c as any).is_company_admin || session?.user?.is_superuser) && (
                         <button type="button" className="company-portal-admin-btn"
                           disabled={entering} onClick={() => handleSelectAndGoAdmin(c.id)}
                           aria-label={`Quản trị ${c.name}`}>

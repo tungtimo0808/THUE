@@ -54,7 +54,7 @@ class InvoiceViewSet(CompanyViewSet):
     action_permissions = {
         "record_external_issue": "TAX.INVOICE.ISSUE",
         "validate_invoice": "TAX.INVOICE.VALIDATE", "issue": "TAX.INVOICE.ISSUE",
-        "cancel": "TAX.INVOICE.CANCEL", "history": "TAX.INVOICE.VIEW",
+        "cancel": "TAX.INVOICE.CANCEL", "error_notice": "TAX.INVOICE.EDIT", "history": "TAX.INVOICE.VIEW",
         "receive_input_xml": "TAX.INVOICE.CREATE", "source_xml": "TAX.INVOICE.VIEW",
         "link_candidates": "TAX.LINK.VIEW", "purchase_links": "TAX.LINK.VIEW",
         "link_purchase": "TAX.LINK.CREATE", "unlink_purchase": "TAX.LINK.DELETE",
@@ -66,9 +66,14 @@ class InvoiceViewSet(CompanyViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        for field in ("direction", "status", "invoice_type", "party_id", "branch_id"):
+        for field in ("direction", "status", "invoice_type", "party_id"):
             if value := self.request.query_params.get(field):
                 queryset = queryset.filter(**{field: value})
+        if branch_id := self.request.query_params.get("branch_id"):
+            if branch_id != "all":
+                branch_qs = queryset.filter(branch_id=branch_id)
+                if branch_qs.exists():
+                    queryset = branch_qs
         if date_from := self.request.query_params.get("date_from"):
             queryset = queryset.filter(invoice_date__gte=date_from)
         if date_to := self.request.query_params.get("date_to"):
@@ -143,6 +148,14 @@ class InvoiceViewSet(CompanyViewSet):
     @action(detail=True, methods=("post",))
     def cancel(self, request, pk=None):
         return Response(serializers.IntegrationSerializer(services.cancel_invoice(self.get_object(), request)).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=("post",), url_path="error-notice")
+    def error_notice(self, request, pk=None):
+        invoice, notice = services.record_error_notice(self.get_object(), request)
+        return Response(
+            {"invoice": self.get_serializer(invoice).data, "notice": notice},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=("get",))
     def history(self, request, pk=None):

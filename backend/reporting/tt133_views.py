@@ -21,15 +21,20 @@ class TT133FinancialReportViewSet(ViewSet):
     }
 
     def _scope(self, request):
+        from django.utils import timezone
         try:
             company_id = UUID(request.query_params.get("company_id", ""))
         except (ValueError, TypeError):
             raise ValidationError({"company_id": "Doanh nghiệp không hợp lệ."})
         company = get_object_or_404(Company, pk=company_id)
-        try:
-            year = int(request.query_params.get("year", ""))
-        except (ValueError, TypeError):
-            raise ValidationError({"year": "Năm báo cáo không hợp lệ."})
+        raw_year = request.query_params.get("year")
+        if raw_year in (None, ""):
+            year = timezone.now().year
+        else:
+            try:
+                year = int(raw_year)
+            except (ValueError, TypeError):
+                raise ValidationError({"year": "Năm báo cáo không hợp lệ."})
         if not 1900 <= year <= 2100:
             raise ValidationError({"year": "Năm báo cáo phải từ 1900 đến 2100."})
         return company, year

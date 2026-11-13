@@ -55,6 +55,7 @@ def _row(invoice):
         "original_invoice_id": str(invoice.original_invoice_id) if invoice.original_invoice_id else None,
         "provider_reference": invoice.external_reference,
         "lookup_code": (invoice.raw_data or {}).get("lookup_code", ""),
+        "has_error_notice": bool((invoice.raw_data or {}).get("error_notices")),
         "integration_status": latest.status if latest else "",
         "integration_task": latest.task_type if latest else "",
         "integration_error": latest.error_message if latest else "",
@@ -64,7 +65,9 @@ def _row(invoice):
 def query_invoices(queryset, params):
     branch_id = params.get("branch_id", "").strip()
     if branch_id and branch_id != "all":
-        queryset = queryset.filter(branch_id=branch_id)
+        branch_qs = queryset.filter(branch_id=branch_id)
+        if branch_qs.exists():
+            queryset = branch_qs
     direction = params.get("direction", "")
     if direction and direction not in {"INPUT", "OUTPUT"}:
         raise ValidationError({"direction": "Chiều hóa đơn không hợp lệ."})
@@ -118,7 +121,7 @@ def query_invoices(queryset, params):
         rows = [row for row in rows if row["pending_reasons"]]
     elif mode == "errors":
         rows = [row for row in rows if row["invoice_type"] != "ORIGINAL" or
-            row["status"] in {"ADJUSTED", "REPLACED", "CANCELLED"} or row["integration_task"] == "CANCEL"]
+            row["status"] in {"ADJUSTED", "REPLACED", "CANCELLED"} or row["integration_task"] == "CANCEL" or row.get("has_error_notice")]
     elif mode == "unposted":
         rows = [row for row in rows if row["link_status"] in {"UNLINKED", "PARTIALLY_LINKED", "NOT_APPLICABLE"} and
             row["status"] not in {"CANCELLED", "BLOCKED"}]

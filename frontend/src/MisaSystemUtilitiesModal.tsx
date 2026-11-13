@@ -276,8 +276,8 @@ export function MisaSystemUtilitiesModal({
         setFiscalPeriods(unwrapList(fpRes));
       } else if (utilityName === "Danh sách người dùng đang truy cập") {
         const [memRes, audRes] = await Promise.all([
-          apiGet("/iam/company-members/?page_size=50"),
-          apiGet("/common/audit-logs/?page_size=20"),
+          apiGet("/iam/memberships/?page_size=50"),
+          apiGet("/audit/logs/?page_size=20"),
         ]);
         setCompanyMembers(unwrapList(memRes));
         setAuditLogs(unwrapList(audRes));
@@ -1638,7 +1638,7 @@ export function MisaSystemUtilitiesModal({
               >
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>
-                    Nhân sự thuộc Doanh nghiệp đang hoạt động (`/api/v1/iam/company-members/`)
+                    Nhân sự thuộc Doanh nghiệp đang hoạt động (`/api/v1/iam/memberships/`)
                   </div>
                   <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 2 }}>
                     Hiển thị danh sách tài khoản được phân quyền truy cập vào {companyName}.
@@ -1783,7 +1783,7 @@ export function MisaSystemUtilitiesModal({
                         padding: "6px 12px",
                         borderRadius: 6,
                         border: "1px solid #86efac",
-                        background: "#f0fdf4",
+                        background: "#eff6ff",
                         fontSize: 12,
                         fontWeight: 700,
                         color: "#15803d",
@@ -1813,7 +1813,7 @@ export function MisaSystemUtilitiesModal({
                           padding: "12px 14px",
                           borderRadius: 8,
                           border: checked ? "1.5px solid #22c55e" : "1px solid #e2e8f0",
-                          background: checked ? "#f0fdf4" : "#f8fafc",
+                          background: checked ? "#eff6ff" : "#f8fafc",
                           display: "flex",
                           alignItems: "flex-start",
                           gap: 10,
@@ -1832,7 +1832,7 @@ export function MisaSystemUtilitiesModal({
                             width: 16,
                             height: 16,
                             marginTop: 2,
-                            accentColor: "#16a34a",
+                            accentColor: "var(--brand)",
                             cursor: mod.core ? "not-allowed" : "pointer",
                           }}
                         />

@@ -68,6 +68,10 @@ class OrganizationAssignmentViewSet(GenericViewSet):
         except (Company.DoesNotExist, ValueError, TypeError):
             raise ValidationError({"company": "Doanh nghiệp không hợp lệ."})
         actor = getattr(self.request.user, "iam_account", None)
+        if actor and getattr(self.request.user, "is_superuser", False):
+            CompanyMembership.objects.get_or_create(
+                company=company, user=actor, defaults={"membership_status": "ACTIVE", "created_by": actor}
+            )
         if actor is None or not CompanyMembership.objects.filter(company=company, user=actor, membership_status="ACTIVE").exists():
             raise PermissionDenied("Không có Membership hợp lệ tại doanh nghiệp.")
         if not _has_management_grant(actor, company):

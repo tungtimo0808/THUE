@@ -1,9 +1,9 @@
-/* Shared visual language taken from the overview workspace. */
+/* Shared visual language — Sovereign Sapphire & Architectural Slate */
 :root {
-  --sidebar-surface: #14243b;
+  --sidebar-surface: #0c172c;
   --app-font: Roboto, Arial, sans-serif;
-  --control-radius: 6px;
-  --panel-radius: 10px;
+  --control-radius: 8px;
+  --panel-radius: 12px;
 }
 
 body,
@@ -16,32 +16,28 @@ dialog {
 }
 
 .reference-app .ref-sidebar {
-  background: var(--sidebar-surface);
+  background: linear-gradient(180deg, var(--sidebar-surface) 0%, color-mix(in srgb, var(--sidebar-surface) 84%, #1e3a8a) 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .reference-app .ref-nav-item.misa-active,
 .reference-app .ref-nav-item.active {
-  background: linear-gradient(135deg, var(--brand), var(--brand-hover)) !important;
-  box-shadow: 0 3px 10px rgb(47 120 168 / 22%) !important;
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(15, 23, 42, 0.28) !important;
 }
 
 .reference-app .ref-quick button {
-  background: var(--brand);
-  box-shadow: 0 2px 6px rgb(47 120 168 / 20%);
+  background: linear-gradient(180deg, var(--brand) 0%, var(--brand-hover) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 2px 6px rgba(36, 72, 216, 0.22);
 }
 
 .reference-app .ref-quick button:hover {
   background: var(--brand-hover);
 }
 
-.admin-workspace .admin-header,
-.admin-workspace .admin-header-super {
-  background: linear-gradient(135deg, var(--brand), var(--brand-hover));
-}
-
 .misa-btn-primary {
   gap: 6px;
-  box-shadow: 0 2px 6px rgb(47 120 168 / 18%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 6px rgba(36, 72, 216, 0.2);
 }
 
 .reference-app .ref-shortcuts button:hover {
@@ -77,9 +73,9 @@ dialog {
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--brand), var(--brand-hover));
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%);
   color: #fff;
-  box-shadow: 0 4px 10px -2px rgb(2 132 199 / 25%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 4px 12px -2px rgba(36, 72, 216, 0.28);
 }
 
 .sv-brand-mark-compact {
@@ -371,4 +367,178 @@ dialog {
   .modal.misa-notif-modal .misa-notif-center-link {
     flex: 1;
   }
+}
+
+/* ==========================================================================
+   ENTERPRISE DATA TABLE CONSISTENT ROW HEIGHT DESIGN SYSTEM
+   Quy chuẩn chiều cao hàng đồng nhất 100% cho mọi bảng dữ liệu (Kế toán & Thuế)
+   ========================================================================== */
+
+/* 1. Header Rows (th): Chiều cao chuẩn 40px */
+.reference-app table thead tr,
+.misa-table thead tr,
+.misa-tax-table thead tr,
+.misa-purchase-table thead tr,
+.misa-voucher-table thead tr,
+.ref-table thead tr,
+.ref-data-table thead tr {
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  box-sizing: border-box !important;
+}
+
+.reference-app table thead th,
+.ref-table thead th,
+.ref-data-table thead th {
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 12px !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: #475569 !important;
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* Chuẩn tông màu thanh lịch cho các bảng kế toán và chứng từ */
+.misa-table thead th,
+.misa-tax-table thead th,
+.misa-purchase-table thead th,
+.misa-voucher-table thead th {
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 10px !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: #334155 !important;
+  background: #f8fafc !important;
+  border-bottom: 1.5px solid #cbd5e1 !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+.misa-table thead th:last-child,
+.misa-tax-table thead th:last-child,
+.misa-purchase-table thead th:last-child,
+.misa-voucher-table thead th:last-child {
+  border-right: none !important;
+}
+
+.misa-table tbody tr:hover td,
+.misa-tax-table tbody tr:hover td,
+.misa-purchase-table tbody tr:hover td,
+.misa-voucher-table tbody tr:hover td {
+  background-color: #eff6ff !important;
+}
+
+/* 2. Body Rows (td): Chiều cao chuẩn xác 42px cho MỌI HÀNG */
+.reference-app table tbody tr,
+.misa-table tbody tr,
+.misa-tax-table tbody tr,
+.misa-purchase-table tbody tr,
+.misa-voucher-table tbody tr,
+.ref-table tbody tr,
+.ref-data-table tbody tr {
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  box-sizing: border-box !important;
+}
+
+.reference-app table tbody td,
+.misa-table tbody td,
+.misa-tax-table tbody td,
+.misa-purchase-table tbody td,
+.misa-voucher-table tbody td,
+.ref-table tbody td,
+.ref-data-table tbody td {
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  padding: 0 12px !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 13px !important;
+  color: #1e293b !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+/* 3. Các thành phần bên trong ô (Checkbox, Buttons, Badges, Icons): Không làm phình chiều cao hàng */
+.reference-app table tbody td input[type="checkbox"],
+.misa-table tbody td input[type="checkbox"],
+.misa-tax-table tbody td input[type="checkbox"] {
+  margin: 0 !important;
+  vertical-align: middle !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.reference-app table tbody td button,
+.misa-table tbody td button,
+.misa-tax-table tbody td button {
+  max-height: 28px !important;
+  box-sizing: border-box !important;
+}
+
+/* 4. Định dạng số tiền tệ: tabular-nums căn phải thẳng hàng & KHÔNG BỊ CẮT CHỮ SỐ */
+.reference-app table td.numeric,
+.reference-app table th.numeric,
+.reference-app table td[style*="text-align: right"],
+.reference-app table th[style*="text-align: right"],
+.misa-table td.numeric,
+.misa-table th.numeric,
+.misa-tax-table td.numeric,
+.misa-tax-table th.numeric,
+.misa-voucher-table td.numeric,
+.misa-voucher-table th.numeric,
+td[data-numeric="true"],
+th[data-numeric="true"] {
+  font-variant-numeric: tabular-nums lining-nums !important;
+  font-feature-settings: "tnum" 1, "lnum" 1 !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* ==========================================================================
+   UI-UX PRO MAX: MODAL DIALOGS NO HORIZONTAL SCROLLBAR & COMFORTABLE PADDING
+   ========================================================================== */
+.misa-tax-modal-window,
+.misa-modal-window,
+.misa-modal-card {
+  width: min(1120px, 95vw) !important;
+  max-width: 1180px !important;
+  box-sizing: border-box !important;
+}
+
+.misa-tax-modal-body,
+.misa-modal-body {
+  overflow-x: hidden !important;
+  scrollbar-gutter: stable !important;
+}
+
+/* Smooth Transitions for interactive elements (UI/UX Pro Max rule 8-150ms) */
+button, a {
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease !important;
 }

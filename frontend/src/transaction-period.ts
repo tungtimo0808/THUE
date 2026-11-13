@@ -135,6 +135,12 @@ export function matchesTransactionPeriod(
     );
   }
   if (period === "ytd") {
+    if (today) {
+      return (
+        year === today.getFullYear() &&
+        date <= new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      );
+    }
     const headerRange = resolveActivePeriodRange(activeYear);
     if (headerRange.month !== null) {
       return year === headerRange.year && month === headerRange.month;
@@ -142,7 +148,10 @@ export function matchesTransactionPeriod(
     if (headerRange.quarter !== null) {
       return year === headerRange.year && Math.floor((month - 1) / 3) + 1 === headerRange.quarter;
     }
-    return year === activeYear;
+    return (
+      year === activeYear &&
+      date <= new Date(refToday.getFullYear(), refToday.getMonth(), refToday.getDate())
+    );
   }
   if (period === "year")
     return year === activeYear;

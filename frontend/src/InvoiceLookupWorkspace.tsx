@@ -121,18 +121,18 @@ export default function InvoiceLookupWorkspace({ mode, href }: { mode: Mode; hre
     </header>
 
     {mode === "unposted" && (
-      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", padding: "14px 18px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "var(--brand-ink)", padding: "14px 18px", borderRadius: 8, marginBottom: 16, fontSize: 13.5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 280 }}>
-          <CheckCircle2 size={20} color="#16a34a" style={{ flexShrink: 0 }} />
+          <CheckCircle2 size={20} color="var(--brand)" style={{ flexShrink: 0 }} />
           <div>
-            <strong style={{ color: "#14532d" }}>Bảng kê hóa đơn chưa hạch toán:</strong>{" "}
+            <strong style={{ color: "var(--brand-ink)" }}>Bảng kê hóa đơn chưa hạch toán:</strong>{" "}
             <span>Danh sách hóa đơn đầu vào đã tiếp nhận hợp lệ nhưng chưa được liên kết với chứng từ mua hàng / hạch toán sổ sách kế toán.</span>
           </div>
         </div>
         <Link
           to={href("/invoices/incoming/unprocessed")}
           style={{
-            background: "#16a34a",
+            background: "var(--brand)",
             color: "#ffffff",
             padding: "7px 16px",
             borderRadius: 6,

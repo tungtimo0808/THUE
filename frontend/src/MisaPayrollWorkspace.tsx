@@ -28,6 +28,7 @@ import {
   ArrowLeft,
   ChevronUp,
   Coins,
+  TrendingUp,
 } from "lucide-react";
 import { SalaryPaymentModal, InsurancePaymentModal } from "./MisaBankModals";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
@@ -798,7 +799,7 @@ export default function MisaPayrollWorkspace({
                 </button>
               </div>
               <div style={{ padding: "16px 20px" }}>
-                <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", padding: "10px 14px", borderRadius: 6, marginBottom: 14, fontSize: 13, color: "#065f46" }}>
+                <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", padding: "10px 14px", borderRadius: 6, marginBottom: 14, fontSize: 13, color: "var(--brand-ink)" }}>
                   <strong>Mức giảm trừ đang cấu hình cho doanh nghiệp:</strong>
                   <ul style={{ margin: "6px 0 0 18px", padding: 0 }}>
                     <li>Giảm trừ cho bản thân người nộp thuế: <strong>{formatVND(apiNumber(payrollSettings?.personal_deduction))} đ/tháng</strong></li>
@@ -3276,7 +3277,7 @@ export default function MisaPayrollWorkspace({
                 width: 32,
                 height: 32,
                 borderRadius: "50%",
-                background: "#e6f4ea",
+                background: "#f8fafc",
                 display: "grid",
                 placeItems: "center",
                 color: "var(--brand)",
@@ -3309,7 +3310,7 @@ export default function MisaPayrollWorkspace({
                 width: 32,
                 height: 32,
                 borderRadius: "50%",
-                background: "#e6f4ea",
+                background: "#f8fafc",
                 display: "grid",
                 placeItems: "center",
                 color: "var(--brand)",
@@ -3342,7 +3343,7 @@ export default function MisaPayrollWorkspace({
                 width: 32,
                 height: 32,
                 borderRadius: "50%",
-                background: "#e6f4ea",
+                background: "#f8fafc",
                 display: "grid",
                 placeItems: "center",
                 color: "var(--brand)",
@@ -3522,7 +3523,7 @@ export default function MisaPayrollWorkspace({
                   padding: "0 22px",
                   background: "#ffffff",
                   color: "var(--brand)",
-                  border: "1px solid #10b981",
+                  border: "1px solid var(--brand-border)",
                   borderRadius: 4,
                   fontSize: 13,
                   fontWeight: 500,
@@ -3534,12 +3535,12 @@ export default function MisaPayrollWorkspace({
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f0fdf4";
-                  e.currentTarget.style.borderColor = "#059669";
+                  e.currentTarget.style.background = "#eff6ff";
+                  e.currentTarget.style.borderColor = "var(--brand)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "#ffffff";
-                  e.currentTarget.style.borderColor = "#10b981";
+                  e.currentTarget.style.borderColor = "var(--brand-border)";
                 }}
               >
                 Xem danh sách chứng từ
@@ -3836,7 +3837,7 @@ export default function MisaPayrollWorkspace({
                   padding: "0 22px",
                   background: "#ffffff",
                   color: "var(--brand)",
-                  border: "1px solid #10b981",
+                  border: "1px solid var(--brand-border)",
                   borderRadius: 4,
                   fontSize: 13,
                   fontWeight: 500,
@@ -3848,12 +3849,12 @@ export default function MisaPayrollWorkspace({
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f0fdf4";
-                  e.currentTarget.style.borderColor = "#059669";
+                  e.currentTarget.style.background = "#eff6ff";
+                  e.currentTarget.style.borderColor = "var(--brand)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "#ffffff";
-                  e.currentTarget.style.borderColor = "#10b981";
+                  e.currentTarget.style.borderColor = "var(--brand-border)";
                 }}
               >
                 Xem danh sách chứng từ
@@ -4163,7 +4164,7 @@ export default function MisaPayrollWorkspace({
                   padding: "0 22px",
                   background: "#ffffff",
                   color: "var(--brand)",
-                  border: "1px solid #10b981",
+                  border: "1px solid var(--brand-border)",
                   borderRadius: 4,
                   fontSize: 13,
                   fontWeight: 500,
@@ -4175,12 +4176,12 @@ export default function MisaPayrollWorkspace({
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f0fdf4";
-                  e.currentTarget.style.borderColor = "#059669";
+                  e.currentTarget.style.background = "#eff6ff";
+                  e.currentTarget.style.borderColor = "var(--brand)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "#ffffff";
-                  e.currentTarget.style.borderColor = "#10b981";
+                  e.currentTarget.style.borderColor = "var(--brand-border)";
                 }}
               >
                 Xem danh sách chứng từ
@@ -4249,23 +4250,181 @@ export default function MisaPayrollWorkspace({
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div style={{ padding: "16px 20px 0 20px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14 }}>
-          <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Tổng quỹ lương tháng 09/2026</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", marginTop: 4 }}>880.000.000 đ</div>
+        {/* 4 Modern Bento KPI Cards */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 12,
+            padding: "12px 20px 4px 20px",
+          }}
+        >
+          {/* Card 1: Tổng quỹ lương */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#eff6ff",
+                  color: "#2563eb",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <TrendingUp size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Tổng quỹ lương (TK 334)
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#1e293b", fontVariantNumeric: "tabular-nums" }}>
+                  880.000.000 đ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#2563eb", background: "#dbeafe", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Quỹ lương
+            </span>
           </div>
-          <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Trích nộp BHXH, BHYT, BHTN</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#ea580c", marginTop: 4 }}>92.400.000 đ</div>
+
+          {/* Card 2: Trích nộp BHXH */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#fff7ed",
+                  color: "#ea580c",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <ShieldCheck size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  BHXH, BHYT, BHTN
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#ea580c", fontVariantNumeric: "tabular-nums" }}>
+                  92.400.000 đ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#ea580c", background: "#ffedd5", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Bảo hiểm
+            </span>
           </div>
-          <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Thuế TNCN khấu trừ</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#d97706", marginTop: 4 }}>38.350.000 đ</div>
+
+          {/* Card 3: Thuế TNCN */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#fffbeb",
+                  color: "#d97706",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Calculator size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Thuế TNCN khấu trừ (TK 3335)
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#d97706", fontVariantNumeric: "tabular-nums" }}>
+                  38.350.000 đ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#d97706", background: "#fef3c7", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Thuế TNCN
+            </span>
           </div>
-          <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Thực lĩnh chuyển trả CBNV</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)", marginTop: 4 }}>749.250.000 đ</div>
+
+          {/* Card 4: Thực lĩnh */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: "#f0fdf4",
+                  color: "var(--brand)",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Coins size={22} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, color: "#64748b", fontWeight: 500, marginBottom: 2 }}>
+                  Thực lĩnh trả CBNV
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "var(--brand)", fontVariantNumeric: "tabular-nums" }}>
+                  749.250.000 đ
+                </div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, color: "#16a34a", background: "#dcfce7", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+              Thực trả
+            </span>
           </div>
         </div>
 
@@ -4463,7 +4622,7 @@ export default function MisaPayrollWorkspace({
                   padding: "0 22px",
                   background: "#ffffff",
                   color: "var(--brand)",
-                  border: "1px solid #10b981",
+                  border: "1px solid var(--brand-border)",
                   borderRadius: 4,
                   fontSize: 13,
                   fontWeight: 500,
@@ -4475,12 +4634,12 @@ export default function MisaPayrollWorkspace({
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f0fdf4";
-                  e.currentTarget.style.borderColor = "#059669";
+                  e.currentTarget.style.background = "#eff6ff";
+                  e.currentTarget.style.borderColor = "var(--brand)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "#ffffff";
-                  e.currentTarget.style.borderColor = "#10b981";
+                  e.currentTarget.style.borderColor = "var(--brand-border)";
                 }}
               >
                 Xem danh sách chứng từ

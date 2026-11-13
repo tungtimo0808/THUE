@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
@@ -336,6 +337,20 @@ class CompanyMembershipViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             )
         except IntegrityError as exc:
             raise MembershipVersionConflict("Hồ sơ nhân viên vừa được liên kết với User khác.") from exc
+        return Response(self.get_serializer(membership).data)
+
+    @action(detail=False, methods=("get",), url_path="me", permission_classes=(IsAuthenticated,))
+    def me(self, request):
+        company_id = request.query_params.get("company_id") or request.headers.get("X-Company-ID")
+        account = getattr(request.user, "iam_account", None)
+        if not company_id or not account:
+            return Response(None)
+        membership = (
+            self.queryset.filter(company_id=company_id, user=account, membership_status="ACTIVE")
+            .first()
+        )
+        if not membership:
+            return Response(None)
         return Response(self.get_serializer(membership).data)
 
     @action(detail=True, methods=("get",))
@@ -906,8 +921,26 @@ class EffectivePermissionViewSet(GenericViewSet):
 
     def list(self, request):
         company = Company.objects.filter(pk=request.query_params.get("company_id"), status="ACTIVE").first()
-        membership = CompanyMembership.objects.filter(
-            pk=request.query_params.get("membership_id"), company=company).select_related("user").first()
+        membership_id = request.query_params.get("membership_id") or request.query_params.get("membership")
+        if membership_id:
+            membership = CompanyMembership.objects.filter(
+                pk=membership_id, company=company
+            ).select_related("user").first()
+        else:
+            account = getattr(request.user, "iam_account", None)
+            membership = (
+                CompanyMembership.objects.filter(
+                    company=company, user=account, membership_status="ACTIVE"
+                ).select_related("user").first()
+                if account and company
+                else None
+            ) or (
+                CompanyMembership.objects.filter(
+                    company=company, membership_status="ACTIVE"
+                ).select_related("user").first()
+                if company
+                else None
+            )
         if not company or not membership:
             raise ValidationError("Membership khong hop le.")
         codes = Permission.objects.filter(status="ACTIVE", resource__status="ACTIVE").values_list("code", flat=True)

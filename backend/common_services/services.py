@@ -421,21 +421,36 @@ def login(data, request):
         raise AuthenticationFailed("Không thể tạo phiên đăng nhập. Vui lòng thử lại.")
 
     # Bước 10, 11, 12: Kiểm tra các doanh nghiệp mà User đang có tư cách thành viên hoạt động
-    memberships = CompanyMembership.objects.filter(
-        user=account, membership_status=ActiveStatus.ACTIVE
-    ).select_related("company").prefetch_related("role_assignments__role")
+    memberships = list(
+        CompanyMembership.objects.filter(
+            user=account, membership_status=ActiveStatus.ACTIVE
+        ).select_related("company").prefetch_related("role_assignments__role")
+    )
+    comp_ids = [m.company_id for m in memberships]
+    settings_map = {
+        str(s.company_id): (s.configuration if isinstance(s.configuration, dict) else {})
+        for s in CoreCompanySetting.objects.filter(company_id__in=comp_ids)
+    } if comp_ids else {}
 
     companies = []
     for item in memberships:
+        active_assignments = [
+            ra for ra in item.role_assignments.all()
+            if ra.status == ActiveStatus.ACTIVE and ra.role and ra.role.status == "ACTIVE"
+        ]
         is_comp_admin = (
             item.company.created_by_user_id == account.id
             or any(
-                ra.status == ActiveStatus.ACTIVE
-                and ra.role
-                and (ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"))
-                for ra in item.role_assignments.all()
+                ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN")
+                for ra in active_assignments
             )
         )
+        role_codes = [ra.role.code for ra in active_assignments]
+        role_names = [ra.role.name for ra in active_assignments]
+        if is_comp_admin and not role_codes:
+            role_codes = ["ROLE_ADMIN"]
+            role_names = ["Quản trị doanh nghiệp"]
+        cfg = settings_map.get(str(item.company_id), {})
         companies.append({
             "id": str(item.company_id),
             "code": item.company.code,
@@ -443,23 +458,44 @@ def login(data, request):
             "status": item.company.status,
             "tax_code": item.company.tax_code,
             "address": item.company.address,
+            "phone": item.company.phone,
+            "email": item.company.email,
             "accounting_regime": item.company.accounting_regime or "TT99",
             "business_type": item.company.business_type,
             "legal_representative": item.company.legal_representative,
             "representative_title": item.company.representative_title or "Giám đốc",
             "is_company_admin": is_comp_admin,
+            "is_platform_admin": False,
+            "role_codes": role_codes,
+            "role_names": role_names,
+            "user_email": user.email or "",
+            "user_full_name": account.display_name or user.username,
+            "ui_enabled_modules": cfg.get("ui_enabled_modules"),
+            "ui_role_modules": cfg.get("ui_role_modules"),
         })
     if user.is_superuser and not companies:
-        all_comps = Company.objects.filter(status=CompanyStatus.ACTIVE).order_by("created_at")
+        all_comps = list(Company.objects.filter(status=CompanyStatus.ACTIVE).order_by("created_at"))
+        su_settings_map = {
+            str(s.company_id): (s.configuration if isinstance(s.configuration, dict) else {})
+            for s in CoreCompanySetting.objects.filter(company_id__in=[c.id for c in all_comps])
+        } if all_comps else {}
         companies = [
             {
                 "id": str(c.id), "code": c.code, "name": c.name, "status": c.status,
                 "tax_code": c.tax_code, "address": c.address,
+                "phone": c.phone, "email": c.email,
                 "accounting_regime": c.accounting_regime or "TT99",
                 "business_type": c.business_type,
                 "legal_representative": c.legal_representative,
                 "representative_title": c.representative_title or "Giám đốc",
                 "is_company_admin": True,
+                "is_platform_admin": True,
+                "role_codes": ["ROLE_ADMIN"],
+                "role_names": ["Quản trị doanh nghiệp"],
+                "user_email": user.email or "",
+                "user_full_name": account.display_name or user.username,
+                "ui_enabled_modules": su_settings_map.get(str(c.id), {}).get("ui_enabled_modules"),
+                "ui_role_modules": su_settings_map.get(str(c.id), {}).get("ui_role_modules"),
             }
             for c in all_comps
         ]
@@ -968,15 +1004,19 @@ def require_membership(account, company):
 
 
 def available_scopes(account):
+    from iam.permissions import is_company_admin_member
     result = []
     memberships = CompanyMembership.objects.filter(
         user=account, membership_status=ActiveStatus.ACTIVE, company__status__in=WORKABLE_COMPANY_STATUSES
     ).select_related("company")
     for membership in memberships:
         assignments = list(effective_assignments(account, membership.company))
-        all_branches = any(
-            assignment.data_scope_set is None or assignment.data_scope_set.allow_all_company_data
-            for assignment in assignments
+        all_branches = (
+            is_company_admin_member(account, membership.company)
+            or any(
+                assignment.data_scope_set is None or assignment.data_scope_set.allow_all_company_data
+                for assignment in assignments
+            )
         )
         if all_branches:
             branches = Branch.objects.filter(company=membership.company, status="ACTIVE")
@@ -1334,9 +1374,28 @@ def decide_join_request(item, decision, reason, request, *, options=None, auto_a
                     raise ValidationError({"organization_unit": "Đơn vị không còn hiệu lực."})
 
             selected = options.get("role_assignments")
+            actor_assignments = list(effective_assignments(actor, company)) if not auto_approve else []
+            actor_permissions = set().union(*(assignment_permission_codes(a) for a in actor_assignments))
+            actor_is_admin = (
+                bool(actor and company.created_by_user_id == actor.id)
+                or any(a.role.is_system_admin for a in actor_assignments)
+            )
+            if selected is None and options.get("role_code"):
+                explicit_role = Role.objects.filter(
+                    company=company, code=options["role_code"].strip(), status=RoleStatus.ACTIVE
+                ).first()
+                if explicit_role:
+                    selected = [{"role": str(explicit_role.pk)}]
             if selected is None and not options.get("membership_only"):
                 default_code = CoreCompanySetting.objects.get_or_create(company=company)[0].configuration.get("default_member_role", "MEMBER")
-                default_role = Role.objects.filter(company=company, code=default_code, status=RoleStatus.ACTIVE).first()
+                default_role = None
+                if actor_is_admin and default_code == "MEMBER":
+                    default_role = (
+                        Role.objects.filter(company=company, code="ROLE_GENERAL_ACCOUNTANT", status=RoleStatus.ACTIVE).first()
+                        or Role.objects.filter(company=company, code="ROLE_VIEWER", status=RoleStatus.ACTIVE).first()
+                    )
+                if default_role is None:
+                    default_role = Role.objects.filter(company=company, code=default_code, status=RoleStatus.ACTIVE).first()
                 if default_role is None and default_code == "MEMBER":
                     default_role, _ = Role.objects.get_or_create(
                         company=company, code="MEMBER",
@@ -1352,14 +1411,11 @@ def decide_join_request(item, decision, reason, request, *, options=None, auto_a
                 raise ValidationError("Không thể vừa chọn Role vừa chỉ tạo Membership.")
             if not selected and not (auto_approve or CoreCompanySetting.objects.get_or_create(company=company)[0].configuration.get("allow_membership_without_role")):
                 raise ValidationError("Doanh nghiệp chưa cho phép Membership không có Role.")
-            if options.get("role_assignments") is not None and not auto_approve and not has_effective_permission(actor, company, "COM.JOIN_REQUEST.ASSIGN_ROLE"):
+            if options.get("role_assignments") is not None and not auto_approve and not actor_is_admin and not has_effective_permission(actor, company, "COM.JOIN_REQUEST.ASSIGN_ROLE"):
                 raise PermissionDenied("Không có quyền gán Role.")
 
             grants = []
             seen = set()
-            actor_assignments = list(effective_assignments(actor, company)) if not auto_approve else []
-            actor_permissions = set().union(*(assignment_permission_codes(a) for a in actor_assignments))
-            actor_is_admin = any(a.role.is_system_admin for a in actor_assignments)
             for entry in selected:
                 if not isinstance(entry, dict) or not entry.get("role"):
                     raise ValidationError({"role_assignments": "Mỗi mục cần có Role."})
@@ -1367,11 +1423,12 @@ def decide_join_request(item, decision, reason, request, *, options=None, auto_a
                 if role is None or role.pk in seen:
                     raise ValidationError({"role_assignments": "Role không hợp lệ hoặc bị trùng."})
                 seen.add(role.pk)
+                role_permissions = set()
                 if not auto_approve:
                     role_permissions = set(RolePermission.objects.filter(role=role, effect="ALLOW", permission__status=ActiveStatus.ACTIVE).values_list("permission__code", flat=True))
                     for bundle in role.role_bundles.filter(bundle__status=ActiveStatus.ACTIVE):
                         role_permissions.update(bundle.bundle.permissionbundleitem_set.filter(permission__status=ActiveStatus.ACTIVE).values_list("permission__code", flat=True))
-                    if (role.is_system_admin and not actor_is_admin) or not role_permissions <= actor_permissions:
+                    if not actor_is_admin and (role.is_system_admin or not role_permissions <= actor_permissions):
                         raise PermissionDenied("Role vượt quá phạm vi được phép gán.")
                 scope = None
                 if entry.get("data_scope_set"):
@@ -1501,8 +1558,9 @@ def _plain_text(value):
 def _search_scope(account, company, branch_id=None):
     require_membership(account, company)
     preference, _ = UserPreference.objects.get_or_create(user=account)
-    if preference.current_company_id and preference.current_company_id != company.id:
-        raise PermissionDenied("Doanh nghiệp không thuộc phạm vi làm việc hiện tại.")
+    if preference.current_company_id != company.id:
+        preference.current_company = company
+        preference.save(update_fields=("current_company", "updated_at"))
     branch_id = branch_id or preference.current_branch_id
     options = next((item for item in available_scopes(account) if item["company"]["id"] == str(company.id)), None)
     if not options:
@@ -1573,12 +1631,16 @@ def global_search(company, query, account, *, group=None, date_from=None, date_t
             elif spec.get("status") == "status":
                 queryset = queryset.exclude(status__in=("CANCELLED", "INACTIVE"))
             permission_field = spec.get("permission_field")
+            default_permission = spec.get("permission")
             candidates = list(queryset.order_by("-updated_at")[:500])
             ranked = []
             for item in candidates:
-                item_permission = getattr(item, permission_field) if permission_field else spec.get("permission")
-                if item_permission and not has_effective_permission(account, company, item_permission, branch_id=resolved_branch):
-                    continue
+                if permission_field:
+                    item_permission = getattr(item, permission_field)
+                    if item_permission and not has_effective_permission(account, company, item_permission, branch_id=resolved_branch):
+                        continue
+                else:
+                    item_permission = default_permission
                 code = str(getattr(item, spec["code"], "") or "")
                 text_values = [str(getattr(item, field, "") or "") for field in spec["texts"]]
                 code_plain = _plain_text(code)
@@ -1678,9 +1740,24 @@ def _related_value(instance, path):
     return getattr(value, "id", value)
 
 
-def synchronize_work_items(company):
+import threading as _ws_threading
+import time as _ws_time
+
+_WORK_SYNC_LOCK = _ws_threading.Lock()
+_WORK_SYNC_LAST_TS = {}
+
+
+def synchronize_work_items(company, *, force=False):
     """Materialize approval responsibilities from current workflow state."""
     from django.apps import apps
+
+    if not force:
+        cid = str(company.id)
+        now_mono = _ws_time.monotonic()
+        with _WORK_SYNC_LOCK:
+            if now_mono - _WORK_SYNC_LAST_TS.get(cid, 0.0) < 10.0:
+                return
+            _WORK_SYNC_LAST_TS[cid] = now_mono
 
     memberships = CompanyMembership.objects.filter(
         company=company, membership_status=ActiveStatus.ACTIVE,

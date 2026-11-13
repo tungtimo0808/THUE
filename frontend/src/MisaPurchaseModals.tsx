@@ -955,11 +955,11 @@ export function PurchaseOrderModal({
                     {new Intl.NumberFormat("vi-VN", { minimumFractionDigits: 2 }).format(totalReceivedQty)}
                   </td>
                   <td></td>
-                  <td style={{ textAlign: "right", padding: "6px 8px", color: "#059669" }}>
+                  <td style={{ textAlign: "right", padding: "6px 8px", color: "var(--brand)" }}>
                     {formatVND(totalSubtotal)}
                   </td>
                   <td></td>
-                  <td style={{ textAlign: "right", padding: "6px 8px", color: "#059669" }}>
+                  <td style={{ textAlign: "right", padding: "6px 8px", color: "var(--brand)" }}>
                     {formatVND(totalVAT)}
                   </td>
                   <td></td>
@@ -1058,7 +1058,7 @@ export function PurchaseOrderModal({
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#0f172a", fontWeight: 800, borderTop: "1px solid #e2e8f0", paddingTop: 8 }}>
                 <span>Tổng tiền thanh toán</span>
-                <span style={{ color: "#059669" }}>{formatVND(totalGrand)}</span>
+                <span style={{ color: "var(--brand)" }}>{formatVND(totalGrand)}</span>
               </div>
             </div>
           </div>
@@ -2509,7 +2509,7 @@ export function PurchaseContractModal({
                     <span style={{ color: "var(--brand)", fontWeight: 600 }}>Chọn tệp</span> đính kèm
                   </span>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#059669" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--brand)" }}>
                   Tổng thanh toán: {formatVND(grandTotal)}
                 </div>
               </div>
@@ -2990,7 +2990,7 @@ export function PurchaseVoucherModal({
                   color: "#0f172a",
                   cursor: "pointer",
                   minWidth: 240,
-                  boxShadow: "0 1px 3px rgba(0, 176, 107, 0.15)",
+                  boxShadow: "0 1px 3px rgba(37, 99, 235, 0.15)",
                 }}
               >
                 <span>{purchaseType}</span>
@@ -3035,7 +3035,7 @@ export function PurchaseVoucherModal({
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
-                              e.currentTarget.style.background = "#f0fdf4";
+                              e.currentTarget.style.background = "#eff6ff";
                               e.currentTarget.style.color = "var(--brand)";
                             }
                           }}
@@ -3307,7 +3307,7 @@ export function PurchaseVoucherModal({
                                 fontSize: 12.5,
                                 borderBottom: "1px solid #f1f5f9",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                             >
                               <strong style={{ color: "var(--brand)" }}>{s.code}</strong> - {s.name}
@@ -3543,7 +3543,7 @@ export function PurchaseVoucherModal({
                                 fontSize: 12.5,
                                 borderBottom: "1px solid #f1f5f9",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                             >
                               <strong style={{ color: "var(--brand)" }}>{s.code}</strong> - {s.name}
@@ -3760,7 +3760,7 @@ export function PurchaseVoucherModal({
                                 fontSize: 12.5,
                                 borderBottom: "1px solid #f1f5f9",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                             >
                               <strong style={{ color: "var(--brand)" }}>{s.code}</strong> - {s.name}
@@ -4809,35 +4809,91 @@ export function PurchaseVoucherModal({
         {/* Debt Lookup Modal */}
         {showDebtLookup && (
           <div className="misa-modal-backdrop" style={{ zIndex: 12000 }}>
-            <div style={{ width: 460, background: "#ffffff", borderRadius: 8, padding: "18px 22px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Tra cứu công nợ nhà cung cấp</h3>
-                <button type="button" onClick={() => setShowDebtLookup(false)} style={{ border: "none", background: "transparent", cursor: "pointer" }}><X size={16} /></button>
+            <div
+              style={{
+                width: "min(680px, 92vw)",
+                maxWidth: 720,
+                background: "#ffffff",
+                borderRadius: 12,
+                padding: "24px 28px",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, borderBottom: "1px solid #e2e8f0", paddingBottom: 12 }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0f172a" }}>Tra cứu công nợ nhà cung cấp</h3>
+                  <small style={{ color: "#64748b", fontSize: 13, marginTop: 4, display: "block" }}>
+                    Thông tin công nợ tức thời theo kỳ hạch toán hiện tại
+                  </small>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDebtLookup(false)}
+                  style={{
+                    border: "none",
+                    background: "#f1f5f9",
+                    color: "#475569",
+                    width: 32,
+                    height: 32,
+                    borderRadius: 6,
+                    display: "grid",
+                    placeItems: "center",
+                    cursor: "pointer",
+                  }}
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>
-                <div><strong>Mã NCC:</strong> <span style={{ color: "var(--brand)" }}>{supplierCode}</span></div>
-                <div><strong>Tên NCC:</strong> {supplierName}</div>
-                <div style={{ marginTop: 10, padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                    <span>Số dư nợ đầu kỳ:</span>
-                    <strong>0 đ</strong>
+
+              <div style={{ fontSize: 13.5, color: "#334155", lineHeight: 1.6 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16, background: "#f8fafc", padding: "14px 18px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                  <div>
+                    <span style={{ color: "#64748b", fontSize: 12.5 }}>Mã nhà cung cấp</span>
+                    <div style={{ fontWeight: 700, color: "var(--brand)", fontSize: 15, marginTop: 2 }}>{supplierCode || "—"}</div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                    <span>Số phát sinh nợ trong kỳ:</span>
-                    <strong>0 đ</strong>
+                  <div>
+                    <span style={{ color: "#64748b", fontSize: 12.5 }}>Tên nhà cung cấp</span>
+                    <div style={{ fontWeight: 600, color: "#0f172a", fontSize: 14, marginTop: 2 }}>{supplierName || "—"}</div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                    <span>Số đã thanh toán trong kỳ:</span>
-                    <strong>0 đ</strong>
+                </div>
+
+                <div style={{ padding: "16px 20px", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
+                    <span style={{ color: "#475569" }}>Số dư nợ đầu kỳ:</span>
+                    <strong style={{ color: "#0f172a" }}>0 đ</strong>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #cbd5e1", paddingTop: 8, color: "var(--brand)", fontWeight: 700 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
+                    <span style={{ color: "#475569" }}>Số phát sinh nợ trong kỳ:</span>
+                    <strong style={{ color: "#0f172a" }}>0 đ</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
+                    <span style={{ color: "#475569" }}>Số đã thanh toán trong kỳ:</span>
+                    <strong style={{ color: "var(--brand)" }}>0 đ</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 12, marginTop: 4, color: "#dc2626", fontWeight: 700, fontSize: 15 }}>
                     <span>Số dư nợ hiện tại:</span>
                     <strong>0 đ</strong>
                   </div>
                 </div>
               </div>
-              <div style={{ textAlign: "right", marginTop: 16 }}>
-                <button type="button" onClick={() => setShowDebtLookup(false)} style={{ padding: "7px 20px", background: "var(--brand)", color: "#fff", border: "none", borderRadius: 4, fontWeight: 600, cursor: "pointer" }}>Đóng</button>
+
+              <div style={{ textAlign: "right", marginTop: 22, borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowDebtLookup(false)}
+                  style={{
+                    padding: "8px 24px",
+                    background: "#ffffff",
+                    color: "#334155",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 6,
+                    fontWeight: 600,
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  Đóng
+                </button>
               </div>
             </div>
           </div>
@@ -5316,7 +5372,7 @@ export function PurchaseReturnModal({
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#0f172a", fontWeight: 700, borderTop: "1px solid #e2e8f0", paddingTop: 6 }}>
                 <span>Tổng tiền thanh toán</span>
-                <span style={{ color: "#059669" }}>{formatVND(grandTotal)}</span>
+                <span style={{ color: "var(--brand)" }}>{formatVND(grandTotal)}</span>
               </div>
             </div>
           </div>
@@ -5886,7 +5942,7 @@ export function PurchaseDiscountModal({
                                 cursor: "pointer",
                                 fontSize: 12,
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
                             >
                               <div style={{ fontWeight: 600, color: "var(--brand)" }}>{s.code} - {s.name}</div>
@@ -6220,7 +6276,7 @@ export function PurchaseDiscountModal({
                                 cursor: "pointer",
                                 fontSize: 12,
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "#f0fdf4")}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = "#eff6ff")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
                             >
                               <div style={{ fontWeight: 600, color: "var(--brand)" }}>{s.code} - {s.name}</div>
@@ -6831,7 +6887,7 @@ export function PurchaseDiscountModal({
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#0f172a", fontWeight: 700, borderTop: "1px solid #e2e8f0", paddingTop: 8 }}>
                 <span>Tổng tiền thanh toán</span>
-                <span style={{ color: "#059669" }}>{formatVND(grandTotal)}</span>
+                <span style={{ color: "var(--brand)" }}>{formatVND(grandTotal)}</span>
               </div>
             </div>
           </div>
@@ -7011,7 +7067,7 @@ export function ReconciliationPeriodModal({
               style={{
                 border: "1.5px solid var(--brand)",
                 borderRadius: 6,
-                background: "#f0fdf4",
+                background: "#eff6ff",
                 padding: "36px 16px",
                 textAlign: "center",
                 marginBottom: 16,
@@ -8682,7 +8738,7 @@ export function ReceiveInvoiceSelectModal({
           </div>
         )}
 
-        {/* Table Section (Header #e6f4ea matching Image 1) */}
+        {/* Table Section (Header #f8fafc matching Image 1) */}
         <div style={{ flex: 1, overflow: "auto", borderTop: "1px solid #e2e8f0" }}>
           <table
             className="misa-table"
@@ -8694,7 +8750,7 @@ export function ReceiveInvoiceSelectModal({
             }}
           >
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th
                   style={{
                     width: 40,
@@ -8794,7 +8850,7 @@ export function ReceiveInvoiceSelectModal({
                       onClick={() => handleToggleRow(v.id)}
                       style={{
                         borderBottom: "1px solid #f1f5f9",
-                        background: isChecked ? "rgba(0, 176, 107, 0.08)" : "#ffffff",
+                        background: isChecked ? "rgba(37, 99, 235, 0.08)" : "#ffffff",
                         cursor: "pointer",
                         transition: "background 0.12s ease",
                       }}
@@ -9374,7 +9430,7 @@ export function PurchaseServiceModal({
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
-                              e.currentTarget.style.background = "#f0fdf4";
+                              e.currentTarget.style.background = "#eff6ff";
                               e.currentTarget.style.color = "var(--brand)";
                             }
                           }}
@@ -9470,7 +9526,7 @@ export function PurchaseServiceModal({
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
-                              e.currentTarget.style.background = "#f0fdf4";
+                              e.currentTarget.style.background = "#eff6ff";
                               e.currentTarget.style.color = "var(--brand)";
                             }
                           }}
@@ -10620,7 +10676,7 @@ export function PurchaseMultiInvoiceModal({
                   color: "#0f172a",
                   cursor: "pointer",
                   minWidth: 240,
-                  boxShadow: "0 1px 3px rgba(0, 176, 107, 0.15)",
+                  boxShadow: "0 1px 3px rgba(37, 99, 235, 0.15)",
                 }}
               >
                 <span>{purchaseKind}</span>
@@ -10664,7 +10720,7 @@ export function PurchaseMultiInvoiceModal({
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
-                              e.currentTarget.style.background = "#f0fdf4";
+                              e.currentTarget.style.background = "#eff6ff";
                               e.currentTarget.style.color = "var(--brand)";
                             }
                           }}
@@ -10832,7 +10888,7 @@ export function PurchaseMultiInvoiceModal({
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
-                              e.currentTarget.style.background = "#f0fdf4";
+                              e.currentTarget.style.background = "#eff6ff";
                               e.currentTarget.style.color = "var(--brand)";
                             }
                           }}

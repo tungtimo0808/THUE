@@ -161,7 +161,7 @@ export default function LiveJoinAdmin() {
             </div>
             {item.status === "PENDING" && (
               <div className="account-actions">
-                <button type="button" style={{ background: "#059669", color: "#fff", border: "1px solid #047857" }} onClick={() => choose(item, "APPROVED")}>Chấp thuận</button>
+                <button type="button" style={{ background: "var(--brand)", color: "#fff", border: "1px solid var(--brand-hover)" }} onClick={() => choose(item, "APPROVED")}>Chấp thuận</button>
                 <button type="button" style={{ background: "#fff", color: "#b91c1c", border: "1px solid #fca5a5" }} onClick={() => choose(item, "REJECTED")}>Từ chối</button>
               </div>
             )}

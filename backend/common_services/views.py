@@ -371,8 +371,12 @@ class MyCompaniesView(APIView):
 
     @extend_schema(responses=CompanySummarySerializer(many=True))
     def get(self, request):
-        if request.user.is_superuser and request.user.username.lower() == "admin":
+        if request.user.is_superuser:
             companies = Company.objects.all().order_by("name")
+            settings_map = {
+                str(s.company_id): (s.configuration if isinstance(s.configuration, dict) else {})
+                for s in CoreCompanySetting.objects.filter(company__in=companies)
+            }
             return Response([
                 {
                     "id": str(x.id),
@@ -381,44 +385,76 @@ class MyCompaniesView(APIView):
                     "status": x.status,
                     "tax_code": x.tax_code,
                     "address": x.address,
+                    "phone": x.phone,
+                    "email": x.email,
                     "accounting_regime": x.accounting_regime or "TT99",
                     "business_type": x.business_type,
                     "legal_representative": x.legal_representative,
                     "representative_title": x.representative_title or "Giám đốc",
                     "is_company_admin": True,
+                    "is_platform_admin": True,
+                    "role_codes": ["ROLE_ADMIN"],
+                    "role_names": ["Quản trị doanh nghiệp"],
+                    "user_email": request.user.email or "",
+                    "user_full_name": request.user.get_full_name() or request.user.username,
+                    "ui_enabled_modules": settings_map.get(str(x.id), {}).get("ui_enabled_modules"),
+                    "ui_role_modules": settings_map.get(str(x.id), {}).get("ui_role_modules"),
                 }
                 for x in companies
             ])
         account = services.iam_user(request)
-        memberships = (
+        memberships = list(
             CompanyMembership.objects.filter(user=account, membership_status=ActiveStatus.ACTIVE)
             .select_related("company")
             .prefetch_related("role_assignments__role")
         )
-        return Response([
-            {
+        company_ids = [m.company_id for m in memberships]
+        settings_map = {
+            str(s.company_id): (s.configuration if isinstance(s.configuration, dict) else {})
+            for s in CoreCompanySetting.objects.filter(company_id__in=company_ids)
+        }
+        result = []
+        for x in memberships:
+            active_assignments = [
+                ra for ra in x.role_assignments.all()
+                if ra.status == ActiveStatus.ACTIVE and ra.role and ra.role.status == "ACTIVE"
+            ]
+            is_comp_admin = (
+                x.company.created_by_user_id == account.id
+                or any(
+                    ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN")
+                    for ra in active_assignments
+                )
+            )
+            role_codes = [ra.role.code for ra in active_assignments]
+            role_names = [ra.role.name for ra in active_assignments]
+            if is_comp_admin and not role_codes:
+                role_codes = ["ROLE_ADMIN"]
+                role_names = ["Quản trị doanh nghiệp"]
+            cfg = settings_map.get(str(x.company_id), {})
+            result.append({
                 "id": str(x.company_id),
                 "code": x.company.code,
                 "name": x.company.name,
                 "status": x.company.status,
                 "tax_code": x.company.tax_code,
                 "address": x.company.address,
+                "phone": x.company.phone,
+                "email": x.company.email,
                 "accounting_regime": x.company.accounting_regime or "TT99",
                 "business_type": x.company.business_type,
                 "legal_representative": x.company.legal_representative,
                 "representative_title": x.company.representative_title or "Giám đốc",
-                "is_company_admin": (
-                    x.company.created_by_user_id == account.id
-                    or any(
-                        ra.status == ActiveStatus.ACTIVE
-                        and ra.role
-                        and (ra.role.is_system_admin or ra.role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"))
-                        for ra in x.role_assignments.all()
-                    )
-                ),
-            }
-            for x in memberships
-        ])
+                "is_company_admin": is_comp_admin,
+                "is_platform_admin": False,
+                "role_codes": role_codes,
+                "role_names": role_names,
+                "user_email": account.auth_user.email or "",
+                "user_full_name": account.display_name or account.auth_user.username,
+                "ui_enabled_modules": cfg.get("ui_enabled_modules"),
+                "ui_role_modules": cfg.get("ui_role_modules"),
+            })
+        return Response(result)
 
 
 class SwitchCompanyView(APIView):

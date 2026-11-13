@@ -71,15 +71,17 @@ def _ensure_dedicated_superadmin():
         pref.email_verified_at = timezone.now()
         pref.save(update_fields=("email_verified_at", "updated_at"))
 
-    # Ensure ONLY username='admin' is superuser; all other accounts (including tungtimo0808@gmail.com) are regular users/company owners
-    User.objects.exclude(username__iexact="admin").update(is_superuser=False, is_staff=False)
+    # Ensure tungtimo0808@gmail.com / timodapoettt stays a regular company owner account
+    User.objects.filter(
+        Q(email__iexact="tungtimo0808@gmail.com") | Q(username__iexact="timodapoettt")
+    ).update(is_superuser=False, is_staff=False)
 
     return super_user, acc
 
 
 def require_superuser(request):
     if not (request.user and request.user.is_authenticated and request.user.is_superuser):
-        raise PermissionDenied("Chỉ Super Admin (tài khoản admin) mới có quyền truy cập chức năng này.")
+        raise PermissionDenied("Chỉ Super Admin mới có quyền truy cập chức năng này.")
     if getattr(request.user, "email", "").lower() == "tungtimo0808@gmail.com" or getattr(request.user, "username", "").lower() == "timodapoettt":
         request.user.is_superuser = False
         request.user.is_staff = False
@@ -111,31 +113,44 @@ class PlatformLoginView(APIView):
 
         super_user, super_acc = _ensure_dedicated_superadmin()
 
+        target_user = super_user
+        target_acc = super_acc
         if raw_user.lower() != "admin":
-            raise PermissionDenied("Tài khoản hoặc mật khẩu Super Admin không chính xác (sử dụng tài khoản 'admin').")
+            candidate = User.objects.filter(
+                Q(username__iexact=raw_user) | Q(email__iexact=raw_user),
+                is_superuser=True,
+                is_active=True,
+            ).first()
+            if not candidate:
+                raise PermissionDenied("Tài khoản hoặc mật khẩu Super Admin không chính xác (sử dụng tài khoản 'admin').")
+            target_user = candidate
+            target_acc, _ = UserAccount.objects.get_or_create(
+                auth_user=target_user,
+                defaults={"display_name": target_user.get_full_name() or target_user.username, "status": ActiveStatus.ACTIVE},
+            )
 
-        if not super_user.check_password(raw_pass):
+        if not target_user.check_password(raw_pass):
             # If password was not yet initialized to 'admin', verify if raw_pass == 'admin'
-            if raw_pass == "admin":
-                super_user.set_password("admin")
-                super_user.save(update_fields=("password",))
+            if target_user.username.lower() == "admin" and raw_pass == "admin":
+                target_user.set_password("admin")
+                target_user.save(update_fields=("password",))
             else:
                 raise PermissionDenied("Tài khoản hoặc mật khẩu Super Admin không chính xác.")
 
         from common_services import services as common_srv
-        refresh, session = common_srv.issue_session(super_user, request)
-        super_user.last_login = timezone.now()
-        super_user.save(update_fields=("last_login",))
+        refresh, session = common_srv.issue_session(target_user, request)
+        target_user.last_login = timezone.now()
+        target_user.save(update_fields=("last_login",))
 
         return Response({
             "access": str(refresh.access_token),
             "refresh": str(refresh),
             "session": str(session.id),
             "user": {
-                "id": str(super_acc.id),
-                "username": super_user.username,
-                "email": super_user.email,
-                "display_name": super_acc.display_name or "Super Admin Hệ Thống",
+                "id": str(target_acc.id),
+                "username": target_user.username,
+                "email": target_user.email,
+                "display_name": target_acc.display_name or "Super Admin Hệ Thống",
                 "is_superuser": True,
             },
         })
@@ -415,7 +430,14 @@ class PlatformCompanyViewSet(ViewSet):
                 before={"status": before}, after={"status": new_status}, request=request,
             )
 
-        return Response({"id": str(company.id), "status": company.status, "message": f"Đã chuyển trạng thái doanh nghiệp thành {new_status}"})
+        status_labels = {
+            "ACTIVE": "Đang hoạt động",
+            "SUSPENDED": "Tạm khóa",
+            "PENDING_SETUP": "Chờ thiết lập",
+            "INACTIVE": "Ngừng hoạt động",
+        }
+        status_vn = status_labels.get(new_status, new_status)
+        return Response({"id": str(company.id), "status": company.status, "message": f"Đã chuyển trạng thái doanh nghiệp sang '{status_vn}'."})
 
     @action(detail=True, methods=("post",), url_path="assign-company-admin")
     def assign_company_admin(self, request, pk=None):
@@ -737,10 +759,13 @@ def seed_standard_roles_view(request):
     company = get_object_or_404(Company, pk=company_id)
     actor_account = getattr(request.user, "iam_account", None)
     if not request.user.is_superuser:
-        if not actor_account or not CompanyMembership.objects.filter(
-            company=company, user=actor_account, membership_status=ActiveStatus.ACTIVE
-        ).exists():
-            raise PermissionDenied("Bạn không có quyền khởi tạo vai trò cho doanh nghiệp này.")
+        from iam.permissions import has_effective_permission, is_company_admin_member
+        if not actor_account or not (
+            is_company_admin_member(actor_account, company)
+            or has_effective_permission(actor_account, company, "SYS.ROLE.CREATE")
+            or has_effective_permission(actor_account, company, "SYS.ROLE.EDIT")
+        ):
+            raise PermissionDenied("Chỉ Quản trị viên doanh nghiệp mới có quyền khởi tạo hoặc cấu hình vai trò.")
 
     # Hỗ trợ bật/tắt nhanh từng Role chuẩn (AVAILABLE <-> ACTIVE)
     toggle_role_id = request.data.get("toggle_role_id")
@@ -768,23 +793,86 @@ def seed_standard_roles_view(request):
 
     preset = request.data.get("preset") or request.query_params.get("preset")
     force_preset = bool(preset) or bool(request.data.get("force_preset"))
+    keep_modules = bool(request.data.get("keep_modules"))
 
     from iam.role_services import resolve_regime_preset_key, seed_standard_roles_for_company
     preset_key = resolve_regime_preset_key(preset or company.accounting_regime)
-    created_roles = seed_standard_roles_for_company(
-        company, actor_account, preset=preset_key, force_preset_status=force_preset
+
+    coa_summary = None
+    updated_modules = None
+    if preset:
+        if company.accounting_regime != preset_key:
+            company.accounting_regime = preset_key
+            company.save(update_fields=("accounting_regime", "updated_at"))
+
+        try:
+            from general_ledger.account_services import init_chart_of_accounts_from_template
+            coa_scope = "ESSENTIAL" if preset_key in ("TT58", "TT88") else "FULL"
+            coa_summary = init_chart_of_accounts_from_template(
+                company=company,
+                regime=preset_key,
+                scope=coa_scope,
+                user=actor_account,
+            )
+        except Exception:
+            coa_summary = None
+
+        if not keep_modules:
+            from common_services.models import CoreCompanySetting
+            if preset_key in ("TT58", "TT88"):
+                updated_modules = [
+                    "overview", "invoices", "cash", "bank", "purchases", "sales",
+                    "tax", "ledger", "reports", "directory", "opening",
+                ]
+            elif preset_key == "TT133":
+                updated_modules = [
+                    "overview", "invoices", "cash", "bank", "purchases", "sales", "inventory",
+                    "tools", "assets", "payroll", "tax", "ledger", "reports", "directory", "opening",
+                ]
+            else:
+                updated_modules = [
+                    "overview", "invoices", "cash", "bank", "purchases", "sales", "inventory",
+                    "tools", "assets", "payroll", "tax", "cost", "insurance", "ledger",
+                    "budget", "reports", "analysis", "directory", "opening", "connections",
+                ]
+            setting_obj, _ = CoreCompanySetting.objects.get_or_create(company=company)
+            cfg = dict(setting_obj.configuration or {})
+            cfg["ui_enabled_modules"] = updated_modules
+            setting_obj.configuration = cfg
+            setting_obj.save(update_fields=("configuration", "updated_at"))
+
+    created_roles, reconcile_stats = seed_standard_roles_for_company(
+        company,
+        actor_account,
+        preset=preset_key,
+        force_preset_status=force_preset,
+        return_meta=True,
     )
     active_count = sum(1 for r in created_roles if r["status"] == RoleStatus.ACTIVE)
     available_count = len(created_roles) - active_count
+    remapped_count = reconcile_stats.get("remapped_count", 0)
+    restored_count = reconcile_stats.get("restored_count", 0)
+
+    extra_notes = []
+    if remapped_count > 0:
+        extra_notes.append(f"tự động kiêm nhiệm cho {remapped_count} nhân sự")
+    if restored_count > 0:
+        extra_notes.append(f"khôi phục vị trí chuyên trách cho {restored_count} nhân sự")
+    extra_str = f" — {', '.join(extra_notes)}" if extra_notes else ""
 
     return Response({
         "message": (
-            f"Đã đồng bộ danh mục {len(created_roles)} vai trò chuẩn theo mô hình {preset_key} "
-            f"({active_count} vai trò đang kích hoạt sử dụng, {available_count} vai trò dự phòng có sẵn)."
+            f"Đã chuyển đổi chế độ {preset_key} thành công: {active_count}/{len(created_roles)} vai trò đang kích hoạt, "
+            f"{available_count} vai trò dự phòng có sẵn{extra_str}."
         ),
         "preset": preset_key,
+        "accounting_regime": company.accounting_regime,
         "active_count": active_count,
         "available_count": available_count,
+        "remapped_users_count": remapped_count,
+        "restored_users_count": restored_count,
+        "coa_summary": coa_summary,
+        "ui_enabled_modules": updated_modules,
         "roles": created_roles,
     })
 
@@ -837,6 +925,10 @@ def assign_member_role_view(request):
     is_admin_role = bool(role.is_system_admin or role.code in ("COMPANY_ADMIN", "ROLE_ADMIN", "ADMIN"))
 
     with transaction.atomic():
+        if role.status != RoleStatus.ACTIVE:
+            role.status = RoleStatus.ACTIVE
+            role.save(update_fields=("status", "updated_at"))
+
         target_branch = None
         if raw_branch and not all_branches:
             target_branch = Branch.objects.filter(company=company, pk=raw_branch).first()
@@ -917,13 +1009,13 @@ def create_staff_member_view(request):
     if not request.user.is_superuser:
         if not actor:
             raise PermissionDenied("Tài khoản chưa liên kết IAM.")
-        is_admin = CompanyMembership.objects.filter(
-            company=company,
-            user=actor,
-            membership_status=ActiveStatus.ACTIVE,
-        ).exists()
+        from iam.permissions import has_effective_permission, is_company_admin_member
+        is_admin = (
+            is_company_admin_member(actor, company)
+            or has_effective_permission(actor, company, "SYS.USER.CREATE")
+        )
         if not is_admin:
-            raise PermissionDenied("Bạn không có quyền thêm nhân sự trong doanh nghiệp này.")
+            raise PermissionDenied("Chỉ Quản trị viên doanh nghiệp mới có quyền thêm nhân sự trong doanh nghiệp này.")
 
     emp_code = (data.get("employee_code") or data.get("code") or "").strip().upper()
     full_name = (data.get("full_name") or "").strip()

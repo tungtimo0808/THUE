@@ -46,6 +46,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   ShieldCheck,
+  Palette,
   X,
 } from "lucide-react";
 import {
@@ -57,13 +58,12 @@ import {
   type Transaction,
 } from "./data";
 import { DocumentDetail, DocumentForm, Modal } from "./components";
-import { MisaSystemUtilitiesModal } from "./MisaSystemUtilitiesModal";
-import MisaBranchManagementModal, { BranchData } from "./MisaBranchManagementModal";
-import MisaDatasetManagementModal, {
+import type { BranchData } from "./MisaBranchManagementModal";
+import {
   type AccountingDatasetItem,
   loadStoredDatasets,
   saveStoredDatasets,
-} from "./MisaDatasetManagementModal";
+} from "./dataset-storage";
 import {
   referenceNav,
   referenceTabHierarchy,
@@ -74,19 +74,11 @@ import {
   ReferenceTransactions,
 } from "./ReferencePages";
 import {
-  DirectoryWorkspace,
-  IncomingInvoiceWorkspace,
-} from "./DetailedWorkspaces";
-import {
   SmartSearchResults,
   TabSettingsModal,
   getRoleWorkspaceSpec,
 } from "./GlobalShellPanels";
 import { SidebarNavigation } from "./SidebarNavigation";
-import { NestedWorkspace } from "./NestedWorkspace";
-import { AuditedProcessWorkspace } from "./AuditedProcessWorkspace";
-import MisaDirectoryWorkspace from './MisaDirectoryWorkspace';
-import TaxInvoiceSyncPanel from './TaxInvoiceSyncPanel';
 import { preloadWorkspace, setupIdlePreloading } from "./workspace-preloader";
 import type { ComponentType } from "react";
 
@@ -103,6 +95,29 @@ function lazyWithRetry<T extends ComponentType<any>>(factory: () => Promise<{ de
     })
   );
 }
+
+const NestedWorkspace = lazyWithRetry(() =>
+  import("./NestedWorkspace").then((m) => ({ default: m.NestedWorkspace }))
+);
+
+const ThemeCustomizerModal = lazyWithRetry(() =>
+  import("./components/ThemeCustomizerModal").then((m) => ({ default: m.ThemeCustomizerModal }))
+);
+const MisaSystemUtilitiesModal = lazyWithRetry(() =>
+  import("./MisaSystemUtilitiesModal").then((m) => ({ default: m.MisaSystemUtilitiesModal }))
+);
+const MisaBranchManagementModal = lazyWithRetry(() => import("./MisaBranchManagementModal"));
+const MisaDatasetManagementModal = lazyWithRetry(() => import("./MisaDatasetManagementModal"));
+const DirectoryWorkspace = lazyWithRetry(() =>
+  import("./DetailedWorkspaces").then((m) => ({ default: m.DirectoryWorkspace }))
+);
+const IncomingInvoiceWorkspace = lazyWithRetry(() =>
+  import("./DetailedWorkspaces").then((m) => ({ default: m.IncomingInvoiceWorkspace }))
+);
+const AuditedProcessWorkspace = lazyWithRetry(() =>
+  import("./AuditedProcessWorkspace").then((m) => ({ default: m.AuditedProcessWorkspace }))
+);
+const MisaDirectoryWorkspace = lazyWithRetry(() => import("./MisaDirectoryWorkspace"));
 
 const CompanyAdminWorkspace = lazyWithRetry(() => import("./CompanyAdminWorkspace"));
 const SuperAdminWorkspace = lazyWithRetry(() => import("./SuperAdminWorkspace"));
@@ -191,49 +206,64 @@ const KeepAliveModuleSlot = memo(
 );
 import ErrorBoundary from "./ErrorBoundary";
 import { ApiSessionProvider, useApiSession } from "./ApiSession";
-import LiveAccount from "./LiveAccount";
-import LiveJoin from "./LiveJoin";
 import LiveLogin from "./LiveLogin";
-import LiveCompanySelect from "./LiveCompanySelect";
-import LivePasswordReset from "./LivePasswordReset";
-import LiveProfile from "./LiveProfile";
-import LiveScope from "./LiveScope";
-import LiveSession from "./LiveSession";
-import LiveCommonHub from "./LiveCommonHub";
-import LiveCompanyBootstrap from "./LiveCompanyBootstrap";
-import LiveCompanyProfile from "./LiveCompanyProfile";
-import LiveOrgStructure from "./LiveOrgStructure";
-import LiveJoinAdmin from "./LiveJoinAdmin";
-import LiveCompanyUsers from "./LiveCompanyUsers";
-import LiveRoles from "./LiveRoles";
-import LivePermissions from "./LivePermissions";
-import LiveDataScopes from "./LiveDataScopes";
-import LiveOrgAssignments from "./LiveOrgAssignments";
-import LiveWorkflows from "./LiveWorkflows";
-import LiveApprovalTasks from "./LiveApprovalTasks";
-import LiveModules from "./LiveModules";
-import LiveNumberingRules from "./LiveNumberingRules";
-import LiveFiscalPeriods from "./LiveFiscalPeriods";
-import LiveAccountingPolicies from "./LiveAccountingPolicies";
-import LiveAuditLogs from "./LiveAuditLogs";
-import LiveUserAccess from "./LiveUserAccess";
-import LiveCustomerDetails from "./LiveCustomerDetails";
-import LiveVendors from "./LiveVendors";
-import LiveEmployees from "./LiveEmployees";
-import LiveItems from "./LiveItems";
-import LiveVendorDetails from "./LiveVendorDetails";
-import LiveItemCategories from "./LiveItemCategories";
-import LiveUoms from "./LiveUoms";
-import LiveWarehouses from "./LiveWarehouses";
-import LiveCompanyBankAccounts from "./LiveCompanyBankAccounts";
-import LiveAccounts from "./AccountCatalogWorkspace";
-import LiveCatalogExtensions from "./LiveCatalogExtensions";
-import { MisaModuleApiExtensionPanel, MODULE_EXTENDED_APIS } from "./MisaModuleApiExtensionDrawer";
 import { request } from "./live-api";
 import "./App.css";
 import "./reference.css";
 import "./detailed-workspaces.css";
 import "./misa-cash.css";
+
+const LiveAccount = lazyWithRetry(() => import("./LiveAccount"));
+const LiveJoin = lazyWithRetry(() => import("./LiveJoin"));
+const LiveCompanySelect = lazyWithRetry(() => import("./LiveCompanySelect"));
+const LivePasswordReset = lazyWithRetry(() => import("./LivePasswordReset"));
+const LiveProfile = lazyWithRetry(() => import("./LiveProfile"));
+const LiveScope = lazyWithRetry(() => import("./LiveScope"));
+const LiveSession = lazyWithRetry(() => import("./LiveSession"));
+const LiveCommonHub = lazyWithRetry(() => import("./LiveCommonHub"));
+const LiveCompanyBootstrap = lazyWithRetry(() => import("./LiveCompanyBootstrap"));
+const LiveCompanyProfile = lazyWithRetry(() => import("./LiveCompanyProfile"));
+const LiveOrgStructure = lazyWithRetry(() => import("./LiveOrgStructure"));
+const LiveJoinAdmin = lazyWithRetry(() => import("./LiveJoinAdmin"));
+const LiveCompanyUsers = lazyWithRetry(() => import("./LiveCompanyUsers"));
+const LiveRoles = lazyWithRetry(() => import("./LiveRoles"));
+const LivePermissions = lazyWithRetry(() => import("./LivePermissions"));
+const LiveDataScopes = lazyWithRetry(() => import("./LiveDataScopes"));
+const LiveOrgAssignments = lazyWithRetry(() => import("./LiveOrgAssignments"));
+const LiveWorkflows = lazyWithRetry(() => import("./LiveWorkflows"));
+const LiveApprovalTasks = lazyWithRetry(() => import("./LiveApprovalTasks"));
+const LiveModules = lazyWithRetry(() => import("./LiveModules"));
+const LiveNumberingRules = lazyWithRetry(() => import("./LiveNumberingRules"));
+const LiveFiscalPeriods = lazyWithRetry(() => import("./LiveFiscalPeriods"));
+const LiveAccountingPolicies = lazyWithRetry(() => import("./LiveAccountingPolicies"));
+const LiveAuditLogs = lazyWithRetry(() => import("./LiveAuditLogs"));
+const LiveUserAccess = lazyWithRetry(() => import("./LiveUserAccess"));
+const LiveCustomerDetails = lazyWithRetry(() => import("./LiveCustomerDetails"));
+const LiveVendors = lazyWithRetry(() => import("./LiveVendors"));
+const LiveEmployees = lazyWithRetry(() => import("./LiveEmployees"));
+const LiveItems = lazyWithRetry(() => import("./LiveItems"));
+const LiveVendorDetails = lazyWithRetry(() => import("./LiveVendorDetails"));
+const LiveItemCategories = lazyWithRetry(() => import("./LiveItemCategories"));
+const LiveUoms = lazyWithRetry(() => import("./LiveUoms"));
+const LiveWarehouses = lazyWithRetry(() => import("./LiveWarehouses"));
+const LiveCompanyBankAccounts = lazyWithRetry(() => import("./LiveCompanyBankAccounts"));
+const LiveAccounts = lazyWithRetry(() => import("./AccountCatalogWorkspace"));
+const LiveCatalogExtensions = lazyWithRetry(() => import("./LiveCatalogExtensions"));
+const MisaModuleApiExtensionPanel = lazyWithRetry(() =>
+  import("./MisaModuleApiExtensionDrawer").then((m) => ({ default: m.MisaModuleApiExtensionPanel }))
+);
+const EXTENDED_API_MODULES = new Set([
+  "purchases",
+  "sales",
+  "cash",
+  "bank",
+  "inventory",
+  "assets",
+  "ledger",
+  "tax",
+  "reports",
+  "directory",
+]);
 
 export type ReferenceHref = (
   path: string,
@@ -353,7 +383,11 @@ function ReferenceWorkspace() {
   useEffect(() => {
     setTabOptionsOpen(false);
     setTabMoreOpen(false);
-  }, [location.pathname]);
+    setOptimisticTab(null);
+    if (typeof window !== "undefined" && window.scrollX !== 0) {
+      window.scrollTo(0, window.scrollY);
+    }
+  }, [location.pathname, location.search]);
 
   const userEmail = apiSession?.user?.email || "";
   const rawDisplayName =
@@ -377,10 +411,16 @@ function ReferenceWorkspace() {
   const moduleId = (params.get("module") || pathParts[1] || "overview"),
     tabs = referenceTabs[moduleId] || [["transactions", "Danh sách"]];
   const requestedTab = pathParts[2];
-  const tab = moduleId === "invoices" && requestedTab === "errors"
-    ? "adjustments"
-    : tabs.some(([id]) => id === requestedTab)
-      ? requestedTab
+  const resolvedRequestedTab =
+    moduleId === "invoices" && requestedTab === "errors"
+      ? "adjustments"
+      : (moduleId === "cash" || moduleId === "bank") && requestedTab === "advance-settlement-request"
+        ? "advance-settlement"
+        : moduleId === "bank" && requestedTab === "reconcile"
+          ? "reconciliation"
+          : requestedTab;
+  const tab = tabs.some(([id]) => id === resolvedRequestedTab)
+      ? resolvedRequestedTab
       : tabs[0][0],
     childTab = pathParts[3],
     module = referenceNav.find((m) => m.id === moduleId);
@@ -1023,37 +1063,45 @@ function ReferenceWorkspace() {
     [settingsSearch, setSettingsSearch] = useState(""),
     [query, setQuery] = useState(""),
     [workMode, setWorkMode] = useState("ROLE_CHIEF_ACCOUNTANT"),
-    [assignedRoleCodes, setAssignedRoleCodes] = useState<string[]>([]);
+    [assignedRoleCodes, setAssignedRoleCodes] = useState<string[]>([]),
+    [showThemeCustomizer, setShowThemeCustomizer] = useState(false);
 
   useEffect(() => {
     try {
       localStorage.removeItem("ref_work_mode");
     } catch {}
     if (!apiToken || !company?.id) return;
+    const compAny = company as any;
+    if (Array.isArray(compAny.role_codes) && compAny.role_codes.length > 0) {
+      setAssignedRoleCodes(compAny.role_codes);
+      const spec = getRoleWorkspaceSpec(compAny.role_codes[0]);
+      setWorkMode(spec.code);
+      return;
+    } else if (compAny.is_company_admin) {
+      setAssignedRoleCodes(["ROLE_ADMIN"]);
+      setWorkMode("ROLE_ADMIN");
+    }
     let active = true;
-    request<any>(`/api/v1/iam/memberships/?company_id=${encodeURIComponent(company.id)}`, apiToken)
-      .then((res) => {
-        if (!active) return;
-        const list = Array.isArray(res) ? res : res?.results || [];
-        const myEmail = String(apiSession?.user?.email || "").toLowerCase();
-        const me = list.find((m: any) => String(m.email || "").toLowerCase() === myEmail);
-        if (me && Array.isArray(me.role_assignments) && me.role_assignments.length > 0) {
+    request<any>(`/api/v1/iam/memberships/me/?company_id=${encodeURIComponent(company.id)}`, apiToken)
+      .then((me) => {
+        if (!active || !me) return;
+        if (Array.isArray(me.role_assignments) && me.role_assignments.length > 0) {
           const codes = me.role_assignments.map((ra: any) => String(ra.role_code || "")).filter(Boolean);
-          setAssignedRoleCodes(codes);
           if (codes.length > 0) {
+            setAssignedRoleCodes(codes);
             const spec = getRoleWorkspaceSpec(codes[0]);
             setWorkMode(spec.code);
           }
-        } else {
-          setAssignedRoleCodes(["ROLE_CHIEF_ACCOUNTANT"]);
-          setWorkMode("ROLE_CHIEF_ACCOUNTANT");
+        } else if (compAny.is_company_admin) {
+          setAssignedRoleCodes(["ROLE_ADMIN"]);
+          setWorkMode("ROLE_ADMIN");
         }
       })
       .catch(() => {});
     return () => {
       active = false;
     };
-  }, [apiToken, company?.id, apiSession?.user?.email]);
+  }, [apiToken, company?.id, (company as any)?.role_codes, (company as any)?.is_company_admin]);
 
   const [moduleSyncTick, setModuleSyncTick] = useState(0);
   useEffect(() => {
@@ -1071,12 +1119,16 @@ function ReferenceWorkspace() {
   const activeRoleSpec = useMemo(() => {
     const baseSpec = getRoleWorkspaceSpec(workMode);
     const effectiveCodes = assignedRoleCodes.length > 0 ? assignedRoleCodes : [baseSpec.code];
+    const compAny = company as any;
     let roleModules: string[] = [];
     let roleMap: Record<string, string[]> | null = null;
+    if (compAny?.ui_role_modules && typeof compAny.ui_role_modules === "object") {
+      roleMap = compAny.ui_role_modules;
+    }
     try {
       const roleMapRaw = localStorage.getItem(`sv_role_modules_${company?.id}`);
       if (roleMapRaw) {
-        roleMap = JSON.parse(roleMapRaw);
+        roleMap = { ...(roleMap || {}), ...JSON.parse(roleMapRaw) };
       }
     } catch {}
     for (const code of effectiveCodes) {
@@ -1091,20 +1143,26 @@ function ReferenceWorkspace() {
     if (roleModules.length === 0) {
       roleModules = baseSpec.allowedModules;
     }
+    let enabledList: string[] | null = Array.isArray(compAny?.ui_enabled_modules)
+      ? compAny.ui_enabled_modules
+      : null;
     try {
       const enabledRaw = localStorage.getItem(`sv_enabled_modules_${company?.id}`);
       if (enabledRaw) {
-        const enabledList: string[] = JSON.parse(enabledRaw);
-        if (Array.isArray(enabledList) && enabledList.length > 0) {
-          roleModules = roleModules.filter((m) => enabledList.includes(m));
+        const parsed = JSON.parse(enabledRaw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          enabledList = parsed;
         }
       }
     } catch {}
+    if (Array.isArray(enabledList) && enabledList.length > 0) {
+      roleModules = roleModules.filter((m) => enabledList!.includes(m));
+    }
     return {
       ...baseSpec,
       allowedModules: roleModules,
     };
-  }, [workMode, assignedRoleCodes, company?.id, moduleSyncTick]);
+  }, [workMode, assignedRoleCodes, company, moduleSyncTick]);
   const setNotice = useCallback((msg: string) => {
     const cleaned = msg ? humanizeErrorMessage(msg) : "";
     setRawNotice(cleaned);
@@ -1143,6 +1201,12 @@ function ReferenceWorkspace() {
       return next;
     });
   };
+  useEffect(() => {
+    const onVoucherUpdate = () => setNotifReload((value) => value + 1);
+    window.addEventListener("sv_vouchers_updated", onVoucherUpdate);
+    return () => window.removeEventListener("sv_vouchers_updated", onVoucherUpdate);
+  }, []);
+
   const [payrollOptionOpen, setPayrollOptionOpen] = useState(false);
   const [payrollOption, setPayrollOption] = useState("Tiền lương Sổ Việt ERP");
 
@@ -1150,97 +1214,111 @@ function ReferenceWorkspace() {
     if (!apiToken || !company?.id) return;
     let active = true;
     const branchParam = effectiveBranchId && effectiveBranchId !== "all" ? `&branch_id=${encodeURIComponent(effectiveBranchId)}` : "";
-    setNotifLoading(true);
-    setNotifError("");
-    Promise.allSettled([
-      request<any>(`/api/v1/common/notifications/?company_id=${encodeURIComponent(company.id)}`, apiToken),
-      request<any>(`/api/v1/cash/payment-requests/?company_id=${encodeURIComponent(company.id)}${branchParam}`, apiToken),
-      request<any>(`/api/v1/cash/advance-settlement-docs/?company_id=${encodeURIComponent(company.id)}${branchParam}`, apiToken),
-    ]).then(([notifRes, prRes, asRes]) => {
+    const runFetch = () => {
       if (!active) return;
-      const merged: NotificationItem[] = [];
-      const readSet = new Set<string>();
+      setNotifLoading(true);
+      setNotifError("");
+      Promise.allSettled([
+        request<any>(`/api/v1/common/notifications/?company_id=${encodeURIComponent(company.id)}`, apiToken),
+        request<any>(`/api/v1/cash/payment-requests/?company_id=${encodeURIComponent(company.id)}${branchParam}`, apiToken),
+        request<any>(`/api/v1/cash/advance-settlement-docs/?company_id=${encodeURIComponent(company.id)}${branchParam}`, apiToken),
+      ]).then(([notifRes, prRes, asRes]) => {
+        if (!active) return;
+        const merged: NotificationItem[] = [];
+        const readSet = new Set<string>();
 
-      if (prRes.status === "fulfilled") {
-        const prList = Array.isArray(prRes.value) ? prRes.value : prRes.value?.docs || prRes.value?.results || [];
-        for (const pr of prList) {
-          if (String(pr.status || "").toLowerCase() === "pending" || String(pr.status || "").toUpperCase() === "PENDING_APPROVAL") {
+        if (prRes.status === "fulfilled") {
+          const prList = Array.isArray(prRes.value) ? prRes.value : prRes.value?.docs || prRes.value?.results || [];
+          for (const pr of prList) {
+            if (String(pr.status || "").toLowerCase() === "pending" || String(pr.status || "").toUpperCase() === "PENDING_APPROVAL") {
+              merged.push({
+                id: `pr-${pr.id}`,
+                category: "pending" as const,
+                code: pr.code || pr.request_number || "ĐNC",
+                kindLabel: "Đề nghị chi tiền",
+                kind: "payment" as const,
+                description: pr.purpose || pr.reason || pr.description || "Đề nghị chi tiền đang chờ phê duyệt",
+                partner: `${pr.requester || pr.requester_name || "Nhân viên"} · ${pr.dept || pr.department || "Bộ phận"}`,
+                amount: Number(pr.amount || 0),
+                date: pr.date || (pr.request_date ? String(pr.request_date).split("-").reverse().join("/") : "Hôm nay"),
+                actionUrl: `/cash/payment-requests?openDoc=${encodeURIComponent(pr.id || pr.code || pr.request_number)}`,
+                isVoucher: false,
+              });
+            }
+          }
+        }
+
+        if (asRes.status === "fulfilled") {
+          const asList = Array.isArray(asRes.value) ? asRes.value : asRes.value?.docs || asRes.value?.results || [];
+          for (const st of asList) {
+            if (String(st.status || "").toLowerCase() === "pending" || String(st.status || "").toUpperCase() === "PENDING_APPROVAL") {
+              merged.push({
+                id: `as-${st.id}`,
+                category: "pending" as const,
+                code: st.code || st.settlement_number || "QT",
+                kindLabel: "Quyết toán tạm ứng",
+                kind: "receipt" as const,
+                description: st.reason || st.description || "Đề nghị quyết toán tạm ứng chờ kiểm tra chứng từ gốc",
+                partner: `${st.person || st.employee_name || "Nhân viên"} · ${st.dept || st.department || "Bộ phận"}`,
+                amount: Number(st.spentAmount || st.spent_amount || st.advanceAmount || 0),
+                date: st.date || (st.settlement_date ? String(st.settlement_date).split("-").reverse().join("/") : "Hôm nay"),
+                actionUrl: `/cash/advance-settlement?openDoc=${encodeURIComponent(st.id || st.code || st.settlement_number)}`,
+                isVoucher: false,
+              });
+            }
+          }
+        }
+
+        if (notifRes.status === "fulfilled") {
+          const nList = Array.isArray(notifRes.value) ? notifRes.value : notifRes.value?.results || [];
+          for (const n of nList) {
+            const nid = `db-${n.id}`;
+            if (n.status === "READ" || n.read_at) {
+              readSet.add(nid);
+            }
+            const isPendingType = String(n.entity_type || "").includes("Request") || String(n.entity_type || "").includes("Settlement");
             merged.push({
-              id: `pr-${pr.id}`,
-              category: "pending" as const,
-              code: pr.code || pr.request_number || "ĐNC",
-              kindLabel: "Đề nghị chi tiền",
-              kind: "payment" as const,
-              description: pr.purpose || pr.reason || pr.description || "Đề nghị chi tiền đang chờ phê duyệt",
-              partner: `${pr.requester || pr.requester_name || "Nhân viên"} · ${pr.dept || pr.department || "Bộ phận"}`,
-              amount: Number(pr.amount || 0),
-              date: pr.date || (pr.request_date ? String(pr.request_date).split("-").reverse().join("/") : "Hôm nay"),
-              actionUrl: "/cash/payment-requests",
+              id: nid,
+              dbId: n.id,
+              category: (isPendingType ? "pending" : "system") as "pending" | "system",
+              code: n.title || (n.source_module === "TAX" ? "Thuế & Tờ khai" : n.source_module === "BANK" ? "Ngân hàng" : n.source_module === "CASH" ? "Ngân quỹ" : "Hệ thống"),
+              kindLabel: n.level === "IMPORTANT" ? "Quan trọng" : n.level === "WARNING" ? "Cảnh báo" : "Thông báo",
+              kind: (n.source_module === "TAX" ? "tax" : n.source_module === "BANK" ? "bank" : n.level === "WARNING" || n.level === "IMPORTANT" ? "alert" : "info") as any,
+              description: n.message || "",
+              partner: n.company_name || company.name,
+              amount: 0,
+              date: n.created_at ? new Date(n.created_at).toLocaleString("vi-VN") : "Hôm nay",
+              actionUrl: n.link || "/common?tab=notifications",
               isVoucher: false,
             });
           }
         }
-      }
 
-      if (asRes.status === "fulfilled") {
-        const asList = Array.isArray(asRes.value) ? asRes.value : asRes.value?.docs || asRes.value?.results || [];
-        for (const st of asList) {
-          if (String(st.status || "").toLowerCase() === "pending" || String(st.status || "").toUpperCase() === "PENDING_APPROVAL") {
-            merged.push({
-              id: `as-${st.id}`,
-              category: "pending" as const,
-              code: st.code || st.settlement_number || "QT",
-              kindLabel: "Quyết toán tạm ứng",
-              kind: "receipt" as const,
-              description: st.reason || st.description || "Đề nghị quyết toán tạm ứng chờ kiểm tra chứng từ gốc",
-              partner: `${st.person || st.employee_name || "Nhân viên"} · ${st.dept || st.department || "Bộ phận"}`,
-              amount: Number(st.spentAmount || st.spent_amount || st.advanceAmount || 0),
-              date: st.date || (st.settlement_date ? String(st.settlement_date).split("-").reverse().join("/") : "Hôm nay"),
-              actionUrl: "/cash/advance-settlement",
-              isVoucher: false,
-            });
-          }
+        setLiveApiNotifs(merged);
+        setNotifLoading(false);
+        if ([notifRes, prRes, asRes].some((result) => result.status === "rejected")) {
+          setNotifError("Chưa tải được đầy đủ thông báo. Vui lòng thử lại.");
         }
-      }
-
-      if (notifRes.status === "fulfilled") {
-        const nList = Array.isArray(notifRes.value) ? notifRes.value : notifRes.value?.results || [];
-        for (const n of nList) {
-          const nid = `db-${n.id}`;
-          if (n.status === "READ" || n.read_at) {
-            readSet.add(nid);
-          }
-          const isPendingType = String(n.entity_type || "").includes("Request") || String(n.entity_type || "").includes("Settlement");
-          merged.push({
-            id: nid,
-            dbId: n.id,
-            category: (isPendingType ? "pending" : "system") as "pending" | "system",
-            code: n.title || (n.source_module === "TAX" ? "Thuế & Tờ khai" : n.source_module === "BANK" ? "Ngân hàng" : n.source_module === "CASH" ? "Ngân quỹ" : "Hệ thống"),
-            kindLabel: n.level === "IMPORTANT" ? "Quan trọng" : n.level === "WARNING" ? "Cảnh báo" : "Thông báo",
-            kind: (n.source_module === "TAX" ? "tax" : n.source_module === "BANK" ? "bank" : n.level === "WARNING" || n.level === "IMPORTANT" ? "alert" : "info") as any,
-            description: n.message || "",
-            partner: n.company_name || company.name,
-            amount: 0,
-            date: n.created_at ? new Date(n.created_at).toLocaleString("vi-VN") : "Hôm nay",
-            actionUrl: n.link || "/common?tab=notifications",
-            isVoucher: false,
+        if (notifRes.status === "fulfilled") {
+          setReadNotifIds((prev) => {
+            const next = new Set(prev);
+            // A server-side unread/reset must override the browser's saved read state.
+            for (const item of merged) if (item.dbId) next.delete(item.id);
+            for (const id of readSet) next.add(id);
+            try { localStorage.setItem(notifReadKey, JSON.stringify([...next].slice(-1000))); } catch {}
+            return next;
           });
         }
-      }
+      });
+    };
 
-      setLiveApiNotifs(merged);
-      setNotifLoading(false);
-      if ([notifRes, prRes, asRes].some((result) => result.status === "rejected")) {
-        setNotifError("Chưa tải được đầy đủ thông báo. Vui lòng thử lại.");
-      }
-      if (readSet.size > 0) {
-        setReadNotifIds((prev) => new Set([...prev, ...readSet]));
-      }
-    });
+    const delayMs = notifReload > 0 || panel === "notifications" ? 0 : 1200;
+    const timer = window.setTimeout(runFetch, delayMs);
     return () => {
       active = false;
+      window.clearTimeout(timer);
     };
-  }, [apiToken, company?.id, company?.name, effectiveBranchId, dataset, notifReload]);
+  }, [apiToken, company?.id, company?.name, effectiveBranchId, dataset, notifReload, notifReadKey]);
 
   const allNotifs = liveApiNotifs;
   const unreadCount = allNotifs.filter((item) => !readNotifIds.has(item.id)).length;
@@ -1347,7 +1425,7 @@ function ReferenceWorkspace() {
     "Cập nhật số dư dữ liệu năm trước": href("/opening"),
     "Nhập dữ liệu": href("/opening"),
     "Kiểm tra & cảnh báo nhà cung cấp rủi ro thuế": href("/purchases/invoice-processing/supplier-risk"),
-    "Đối chiếu hóa đơn với dữ liệu Tổng cục Thuế": href("/invoices/sync"),
+    "Đối chiếu hóa đơn với dữ liệu Tổng cục Thuế": href("/invoices/incoming/inbox"),
     "Kiểm soát hồ sơ và hạch toán": href("/invoices/unposted"),
     "Nhật ký truy cập": "/audit-logs",
     "Thông tin công ty": "/admin?tab=overview",
@@ -1355,12 +1433,12 @@ function ReferenceWorkspace() {
     "Quản lý dữ liệu": "/fiscal-periods",
     "Tùy chọn": "/admin?tab=config",
     "Ngày hạch toán": "/fiscal-periods",
-    "Kết nối ứng dụng": href("/invoices/sync"),
+    "Kết nối ứng dụng": "/admin?tab=config",
     "Thiết lập kết nối sàn TMĐT (Shopee, TikTok Shop)": href("/sales/orders"),
     "Thiết lập kết nối Ngân hàng điện tử": href("/bank/ebanking"),
     "Ngôn ngữ": "/admin?tab=config",
     "Thiết lập cấu hình gửi email": "/admin?tab=config",
-    "Thiết lập chữ ký số (USB Token / SmartCA)": href("/invoices/sync"),
+    "Thiết lập chữ ký số (USB Token / SmartCA)": "/admin?tab=config",
     "Nhập kho": href("/inventory/receipts"),
     "Xuất kho": href("/inventory/issues"),
     "Chuyển kho": href("/inventory/transfers"),
@@ -1443,11 +1521,11 @@ function ReferenceWorkspace() {
       );
     }
 
-    if (activeTab === "extended-apis" && targetModuleId in MODULE_EXTENDED_APIS) {
+    if (activeTab === "extended-apis" && EXTENDED_API_MODULES.has(targetModuleId)) {
       return (
         <div style={{ padding: 16 }}>
           <MisaModuleApiExtensionPanel
-            moduleKey={targetModuleId as keyof typeof MODULE_EXTENDED_APIS}
+            moduleKey={targetModuleId as any}
             companyId={company.id}
             notify={setNotice}
           />
@@ -1483,11 +1561,8 @@ function ReferenceWorkspace() {
       if (["process", "error-guide"].includes(activeTab)) {
         return <MisaInvoiceWorkspace key={`inv-proc-${ctxKey}`} tab={activeTab} href={href} notify={setNotice} company={company} />;
       }
-      if (activeTab === "sync") {
-        return <TaxInvoiceSyncPanel key={`inv-sync-${ctxKey}`} companyId={company.id} token={apiToken} href={href} />;
-      }
-      if (activeTab === "incoming") {
-        return <IncomingInvoiceWorkspace key={`inv-in-${ctxKey}`} notify={setNotice} childTab={childTab} />;
+      if (activeTab === "sync" || activeTab === "incoming") {
+        return <IncomingInvoiceWorkspace key={`inv-in-${ctxKey}`} notify={setNotice} childTab={activeTab === "sync" ? "inbox" : childTab} />;
       }
       if (["outgoing", "pending", "lookup", "issuance", "unposted"].includes(activeTab)) {
         return <InvoiceLookupWorkspace key={`inv-out-${activeTab}-${ctxKey}`} mode={activeTab as "outgoing" | "pending" | "lookup" | "issuance" | "unposted"} href={href} />;
@@ -2311,6 +2386,15 @@ function ReferenceWorkspace() {
             <Download size={18} />
           </button>
           <button
+            className={`ref-icon ${showThemeCustomizer ? "active" : ""}`}
+            aria-label="Tùy chỉnh giao diện (Theme Editor)"
+            title="Tùy chỉnh giao diện & Bảng màu (tweakcn & UI/UX Pro Max)"
+            onClick={() => setShowThemeCustomizer(true)}
+            style={{ position: "relative" }}
+          >
+            <Palette size={18} />
+          </button>
+          <button
             className="ref-icon"
             aria-label="Các tiện ích và thiết lập"
             title="Thiết lập hệ thống"
@@ -2993,6 +3077,14 @@ function ReferenceWorkspace() {
           onClose={() => setPanel(null)}
         />
       )}
+      {showThemeCustomizer && (
+        <Suspense fallback={null}>
+          <ThemeCustomizerModal
+            isOpen={showThemeCustomizer}
+            onClose={() => setShowThemeCustomizer(false)}
+          />
+        </Suspense>
+      )}
       {panel && !["settings", "tabs"].includes(panel) && (
         <Modal
           title={
@@ -3116,15 +3208,17 @@ function ReferenceWorkspace() {
         </Modal>
       )}
       {info && (
-        <MisaSystemUtilitiesModal
-          utilityName={info}
-          companyId={company.id}
-          companyName={company.name}
-          token={apiToken}
-          onClose={() => setInfo("")}
-          onNavigate={(url) => navigate(url)}
-          notify={setNotice}
-        />
+        <Suspense fallback={null}>
+          <MisaSystemUtilitiesModal
+            utilityName={info}
+            companyId={company.id}
+            companyName={company.name}
+            token={apiToken}
+            onClose={() => setInfo("")}
+            onNavigate={(url) => navigate(url)}
+            notify={setNotice}
+          />
+        </Suspense>
       )}
       {contextTransition && (
         <div
@@ -3166,41 +3260,49 @@ function ReferenceWorkspace() {
           </div>
         </div>
       )}
-      <MisaBranchManagementModal
-        isOpen={isBranchModalOpen}
-        onClose={() => setIsBranchModalOpen(false)}
-        companyId={company.id}
-        companyName={company.name}
-        companyTaxCode={(company as any).tax_code || ""}
-        token={apiToken}
-        activeBranchId={effectiveBranchId}
-        onSelectBranch={(bId, bName) => {
-          setIsBranchModalOpen(false);
-          applyBranchSwitch(bId, bName);
-        }}
-        onBranchesUpdated={fetchBranches}
-      />
-      <MisaDatasetManagementModal
-        isOpen={isDatasetModalOpen}
-        onClose={() => {
-          setIsDatasetModalOpen(false);
-          setDatasetModalCreateMode(false);
-        }}
-        companyId={company.id}
-        companyName={company.name}
-        companyTaxCode={(company as any).tax_code || ""}
-        defaultRegime={activeCompanyRegime}
-        token={apiToken}
-        activeDatasetId={dataset}
-        datasets={companyDatasets}
-        onDatasetsUpdated={(nextList) => setCompanyDatasets(nextList)}
-        onSelectDataset={(selectedItem) => {
-          setIsDatasetModalOpen(false);
-          setDatasetModalCreateMode(false);
-          applyDatasetSwitch(selectedItem);
-        }}
-        initialCreateMode={datasetModalCreateMode}
-      />
+      {isBranchModalOpen && (
+        <Suspense fallback={null}>
+          <MisaBranchManagementModal
+            isOpen={isBranchModalOpen}
+            onClose={() => setIsBranchModalOpen(false)}
+            companyId={company.id}
+            companyName={company.name}
+            companyTaxCode={(company as any).tax_code || ""}
+            token={apiToken}
+            activeBranchId={effectiveBranchId}
+            onSelectBranch={(bId, bName) => {
+              setIsBranchModalOpen(false);
+              applyBranchSwitch(bId, bName);
+            }}
+            onBranchesUpdated={fetchBranches}
+          />
+        </Suspense>
+      )}
+      {isDatasetModalOpen && (
+        <Suspense fallback={null}>
+          <MisaDatasetManagementModal
+            isOpen={isDatasetModalOpen}
+            onClose={() => {
+              setIsDatasetModalOpen(false);
+              setDatasetModalCreateMode(false);
+            }}
+            companyId={company.id}
+            companyName={company.name}
+            companyTaxCode={(company as any).tax_code || ""}
+            defaultRegime={activeCompanyRegime}
+            token={apiToken}
+            activeDatasetId={dataset}
+            datasets={companyDatasets}
+            onDatasetsUpdated={(nextList) => setCompanyDatasets(nextList)}
+            onSelectDataset={(selectedItem) => {
+              setIsDatasetModalOpen(false);
+              setDatasetModalCreateMode(false);
+              applyDatasetSwitch(selectedItem);
+            }}
+            initialCreateMode={datasetModalCreateMode}
+          />
+        </Suspense>
+      )}
       {createKind && (
         <DocumentForm
           kind={createKind}
@@ -3303,7 +3405,9 @@ export default function App() {
     <BrowserRouter>
       <ApiSessionProvider>
         <ErrorBoundary>
-          <AppRoute />
+          <Suspense fallback={<WorkspaceLoader />}>
+            <AppRoute />
+          </Suspense>
           <GlobalFeedbackPopupHost />
         </ErrorBoundary>
       </ApiSessionProvider>

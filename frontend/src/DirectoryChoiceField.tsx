@@ -168,7 +168,7 @@ export default function DirectoryChoiceField({
                 border: 0,
                 background: "transparent",
                 padding: "8px 12px",
-                color: "#059669",
+                color: "var(--brand)",
                 cursor: "pointer",
               }}
               onClick={onManage}

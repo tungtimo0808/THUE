@@ -39,6 +39,7 @@ import {
   RotateCcw,
   Percent,
   Check,
+  TrendingUp,
 } from "lucide-react";
 import {
   SingleCustomerInvoiceCollectionModal,
@@ -1621,7 +1622,7 @@ export default function MisaSalesWorkspace({
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                       border: "1px solid #34d399",
                     }}
                   >
@@ -1664,7 +1665,7 @@ export default function MisaSalesWorkspace({
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                       border: "1px solid #34d399",
                     }}
                   >
@@ -1707,7 +1708,7 @@ export default function MisaSalesWorkspace({
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                       border: "1px solid #34d399",
                     }}
                   >
@@ -1751,7 +1752,7 @@ export default function MisaSalesWorkspace({
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                       border: "1px solid #34d399",
                     }}
                   >
@@ -1794,7 +1795,7 @@ export default function MisaSalesWorkspace({
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                       border: "1px solid #34d399",
                     }}
                   >
@@ -1837,7 +1838,7 @@ export default function MisaSalesWorkspace({
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                       border: "1px solid #34d399",
                     }}
                   >
@@ -1880,7 +1881,7 @@ export default function MisaSalesWorkspace({
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                       border: "1px solid #34d399",
                     }}
                   >
@@ -1920,7 +1921,7 @@ export default function MisaSalesWorkspace({
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
                       border: "1px solid #34d399",
                     }}
                   >
@@ -2084,7 +2085,7 @@ export default function MisaSalesWorkspace({
             }}
             onClick={() => navigateTo("inventory-items")}
           >
-            <Package size={20} style={{ color: "#10b981" }} />
+            <Package size={20} style={{ color: "var(--brand)" }} />
             <span>Hàng hóa, dịch vụ</span>
           </button>
 
@@ -2126,7 +2127,7 @@ export default function MisaSalesWorkspace({
             }}
             onClick={() => navigateTo("reconciliation")}
           >
-            <Lightbulb size={20} style={{ color: "#10b981" }} />
+            <Lightbulb size={20} style={{ color: "var(--brand)" }} />
             <span>Tiện ích</span>
           </button>
 
@@ -2329,11 +2330,11 @@ export default function MisaSalesWorkspace({
 
                 {/* Left Floating Doc with Dollar */}
                 <g transform="translate(44, 48)">
-                  <rect x="0" y="0" width="36" height="46" rx="4" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <path d="M24 0 L36 12 L24 12 Z" fill="#10b981" />
-                  <circle cx="18" cy="25" r="9" fill="#10b981" />
+                  <rect x="0" y="0" width="36" height="46" rx="4" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
+                  <path d="M24 0 L36 12 L24 12 Z" fill="#3b82f6" />
+                  <circle cx="18" cy="25" r="9" fill="#3b82f6" />
                   <text x="18" y="29.5" fill="#ffffff" fontSize="13" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">$</text>
-                  <circle cx="-5" cy="40" r="3" fill="#10b981" />
+                  <circle cx="-5" cy="40" r="3" fill="#3b82f6" />
                 </g>
 
                 {/* Top Left Teal Users / Hierarchy Bubble */}
@@ -2375,32 +2376,32 @@ export default function MisaSalesWorkspace({
                 {/* Right Floating Elements */}
                 {/* 1. Green coin with % */}
                 <g transform="translate(192, 34)">
-                  <circle cx="13" cy="13" r="11" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <text x="13" y="17.5" fill="#10b981" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">%</text>
+                  <circle cx="13" cy="13" r="11" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
+                  <text x="13" y="17.5" fill="#3b82f6" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">%</text>
                 </g>
 
                 {/* 2. Green coin with Chart */}
                 <g transform="translate(208, 65)">
-                  <circle cx="14" cy="14" r="12" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <rect x="8" y="15" width="2.5" height="5" rx="0.5" fill="#10b981" />
-                  <rect x="12" y="11" width="2.5" height="9" rx="0.5" fill="#10b981" />
-                  <rect x="16" y="8" width="2.5" height="12" rx="0.5" fill="#10b981" />
+                  <circle cx="14" cy="14" r="12" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
+                  <rect x="8" y="15" width="2.5" height="5" rx="0.5" fill="#3b82f6" />
+                  <rect x="12" y="11" width="2.5" height="9" rx="0.5" fill="#3b82f6" />
+                  <rect x="16" y="8" width="2.5" height="12" rx="0.5" fill="#3b82f6" />
                 </g>
 
                 {/* 3. Small smile coin */}
                 <g transform="translate(186, 92)">
-                  <circle cx="10" cy="10" r="9" fill="#ffffff" stroke="#10b981" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))" />
-                  <circle cx="7.5" cy="8.5" r="1.2" fill="#10b981" />
-                  <circle cx="12.5" cy="8.5" r="1.2" fill="#10b981" />
-                  <path d="M6.5 12 Q10 15 13.5 12" stroke="#10b981" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+                  <circle cx="10" cy="10" r="9" fill="#ffffff" stroke="#3b82f6" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))" />
+                  <circle cx="7.5" cy="8.5" r="1.2" fill="#3b82f6" />
+                  <circle cx="12.5" cy="8.5" r="1.2" fill="#3b82f6" />
+                  <path d="M6.5 12 Q10 15 13.5 12" stroke="#3b82f6" strokeWidth="1.3" fill="none" strokeLinecap="round" />
                 </g>
 
                 {/* Decorative pluses & sparkles */}
                 <path d="M82 92 L86 92 M84 90 L84 94" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                 <path d="M206 20 L210 20 M208 18 L208 22" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                 <path d="M222 84 L224 84 M223 83 L223 85" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
-                <circle cx="78" cy="122" r="2.5" fill="#10b981" />
-                <circle cx="226" cy="116" r="2.5" fill="#10b981" />
+                <circle cx="78" cy="122" r="2.5" fill="#3b82f6" />
+                <circle cx="226" cy="116" r="2.5" fill="#3b82f6" />
               </svg>
             </div>
 
@@ -2581,7 +2582,7 @@ export default function MisaSalesWorkspace({
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = "var(--brand)";
-                  e.currentTarget.style.background = "#f0fdf4";
+                  e.currentTarget.style.background = "#eff6ff";
                   e.currentTarget.style.color = "var(--brand)";
                 }}
                 onMouseLeave={(e) => {
@@ -2708,7 +2709,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 120, padding: "8px 10px", textAlign: "left" }}>Số báo giá</th>
                 <th style={{ width: 100, padding: "8px 10px", textAlign: "left" }}>Ngày</th>
                 <th style={{ width: 110, padding: "8px 10px", textAlign: "left" }}>Hạn báo giá</th>
@@ -2806,11 +2807,11 @@ export default function MisaSalesWorkspace({
 
                 {/* Left Floating Doc with Dollar */}
                 <g transform="translate(44, 48)">
-                  <rect x="0" y="0" width="36" height="46" rx="4" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <path d="M24 0 L36 12 L24 12 Z" fill="#10b981" />
-                  <circle cx="18" cy="25" r="9" fill="#10b981" />
+                  <rect x="0" y="0" width="36" height="46" rx="4" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
+                  <path d="M24 0 L36 12 L24 12 Z" fill="#3b82f6" />
+                  <circle cx="18" cy="25" r="9" fill="#3b82f6" />
                   <text x="18" y="29.5" fill="#ffffff" fontSize="13" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">$</text>
-                  <circle cx="-5" cy="40" r="3" fill="#10b981" />
+                  <circle cx="-5" cy="40" r="3" fill="#3b82f6" />
                 </g>
 
                 {/* Top Left Teal Users Bubble */}
@@ -2852,32 +2853,32 @@ export default function MisaSalesWorkspace({
                 {/* Right Floating Elements */}
                 {/* 1. Green coin with % */}
                 <g transform="translate(192, 34)">
-                  <circle cx="13" cy="13" r="11" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <text x="13" y="17.5" fill="#10b981" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">%</text>
+                  <circle cx="13" cy="13" r="11" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
+                  <text x="13" y="17.5" fill="#3b82f6" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">%</text>
                 </g>
 
                 {/* 2. Green coin with Chart */}
                 <g transform="translate(208, 65)">
-                  <circle cx="14" cy="14" r="12" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <rect x="8" y="15" width="2.5" height="5" rx="0.5" fill="#10b981" />
-                  <rect x="12" y="11" width="2.5" height="9" rx="0.5" fill="#10b981" />
-                  <rect x="16" y="8" width="2.5" height="12" rx="0.5" fill="#10b981" />
+                  <circle cx="14" cy="14" r="12" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
+                  <rect x="8" y="15" width="2.5" height="5" rx="0.5" fill="#3b82f6" />
+                  <rect x="12" y="11" width="2.5" height="9" rx="0.5" fill="#3b82f6" />
+                  <rect x="16" y="8" width="2.5" height="12" rx="0.5" fill="#3b82f6" />
                 </g>
 
                 {/* 3. Small smile coin */}
                 <g transform="translate(186, 92)">
-                  <circle cx="10" cy="10" r="9" fill="#ffffff" stroke="#10b981" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))" />
-                  <circle cx="7.5" cy="8.5" r="1.2" fill="#10b981" />
-                  <circle cx="12.5" cy="8.5" r="1.2" fill="#10b981" />
-                  <path d="M6.5 12 Q10 15 13.5 12" stroke="#10b981" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+                  <circle cx="10" cy="10" r="9" fill="#ffffff" stroke="#3b82f6" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))" />
+                  <circle cx="7.5" cy="8.5" r="1.2" fill="#3b82f6" />
+                  <circle cx="12.5" cy="8.5" r="1.2" fill="#3b82f6" />
+                  <path d="M6.5 12 Q10 15 13.5 12" stroke="#3b82f6" strokeWidth="1.3" fill="none" strokeLinecap="round" />
                 </g>
 
                 {/* Decorative pluses & sparkles */}
                 <path d="M82 92 L86 92 M84 90 L84 94" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                 <path d="M206 20 L210 20 M208 18 L208 22" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                 <path d="M222 84 L224 84 M223 83 L223 85" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
-                <circle cx="78" cy="122" r="2.5" fill="#10b981" />
-                <circle cx="226" cy="116" r="2.5" fill="#10b981" />
+                <circle cx="78" cy="122" r="2.5" fill="#3b82f6" />
+                <circle cx="226" cy="116" r="2.5" fill="#3b82f6" />
               </svg>
             </div>
 
@@ -3073,7 +3074,7 @@ export default function MisaSalesWorkspace({
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = "var(--brand)";
-                  e.currentTarget.style.background = "#f0fdf4";
+                  e.currentTarget.style.background = "#eff6ff";
                   e.currentTarget.style.color = "var(--brand)";
                 }}
                 onMouseLeave={(e) => {
@@ -3218,7 +3219,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 120, padding: "8px 10px", textAlign: "left" }}>Số đơn hàng</th>
                 <th style={{ width: 100, padding: "8px 10px", textAlign: "left" }}>Ngày đặt</th>
                 <th style={{ width: 110, padding: "8px 10px", textAlign: "left" }}>Ngày giao</th>
@@ -3317,12 +3318,12 @@ export default function MisaSalesWorkspace({
                     height="50"
                     rx="4"
                     fill="#ffffff"
-                    stroke="#10b981"
+                    stroke="#3b82f6"
                     strokeWidth="2.2"
                     filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))"
                   />
                   {/* Folded top-right corner */}
-                  <path d="M26 0 L38 12 L26 12 Z" fill="#10b981" />
+                  <path d="M26 0 L38 12 L26 12 Z" fill="#3b82f6" />
                   {/* Distinctive green cursive signature ribbon 'e' loop in center */}
                   <path
                     d="M 12 34 C 8 26 12 18 22 20 C 32 22 30 36 16 38 C 28 39 36 32 36 28"
@@ -3336,8 +3337,8 @@ export default function MisaSalesWorkspace({
 
                 {/* Connection line & badge with + */}
                 <g transform="translate(90, 72)">
-                  <line x1="-8" y1="0" x2="6" y2="0" stroke="#10b981" strokeWidth="1.6" strokeDasharray="2,2" />
-                  <circle cx="8" cy="0" r="5.5" fill="#10b981" />
+                  <line x1="-8" y1="0" x2="6" y2="0" stroke="#3b82f6" strokeWidth="1.6" strokeDasharray="2,2" />
+                  <circle cx="8" cy="0" r="5.5" fill="#3b82f6" />
                   <path d="M 5.5 0 L 10.5 0 M 8 -2.5 L 8 2.5" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
                 </g>
 
@@ -3371,31 +3372,31 @@ export default function MisaSalesWorkspace({
                 {/* Right Floating Elements matching Screenshot 1 */}
                 {/* 1. Top Right: Green circle with clock & check / circular arrow */}
                 <g transform="translate(196, 36)">
-                  <circle cx="12" cy="12" r="10" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <circle cx="12" cy="12" r="7.5" fill="none" stroke="#10b981" strokeWidth="1" strokeDasharray="1.5,1.5" />
-                  <polyline points="12,7.5 12,12 15,14" stroke="#10b981" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  <circle cx="12" cy="12" r="10" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
+                  <circle cx="12" cy="12" r="7.5" fill="none" stroke="#3b82f6" strokeWidth="1" strokeDasharray="1.5,1.5" />
+                  <polyline points="12,7.5 12,12 15,14" stroke="#3b82f6" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </g>
 
                 {/* 2. Middle Right: Green circle with Bar Chart & Trend */}
                 <g transform="translate(208, 66)">
-                  <circle cx="14" cy="14" r="12" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <rect x="8" y="15" width="2.5" height="5" rx="0.5" fill="#10b981" />
-                  <rect x="12" y="11" width="2.5" height="9" rx="0.5" fill="#10b981" />
-                  <rect x="16" y="8" width="2.5" height="12" rx="0.5" fill="#10b981" />
+                  <circle cx="14" cy="14" r="12" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
+                  <rect x="8" y="15" width="2.5" height="5" rx="0.5" fill="#3b82f6" />
+                  <rect x="12" y="11" width="2.5" height="9" rx="0.5" fill="#3b82f6" />
+                  <rect x="16" y="8" width="2.5" height="12" rx="0.5" fill="#3b82f6" />
                 </g>
 
                 {/* 3. Lower Right: Green coin with $ */}
                 <g transform="translate(186, 92)">
-                  <circle cx="10" cy="10" r="9" fill="#ffffff" stroke="#10b981" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))" />
-                  <text x="10" y="14" fill="#10b981" fontSize="10" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">$</text>
+                  <circle cx="10" cy="10" r="9" fill="#ffffff" stroke="#3b82f6" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))" />
+                  <text x="10" y="14" fill="#3b82f6" fontSize="10" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">$</text>
                 </g>
 
                 {/* Decorative pluses, sparkles & dots */}
                 <path d="M82 92 L86 92 M84 90 L84 94" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                 <path d="M206 20 L210 20 M208 18 L208 22" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                 <path d="M224 86 L226 86 M225 85 L225 87" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
-                <circle cx="76" cy="120" r="2.5" fill="#10b981" />
-                <circle cx="228" cy="114" r="2.5" fill="#10b981" />
+                <circle cx="76" cy="120" r="2.5" fill="#3b82f6" />
+                <circle cx="228" cy="114" r="2.5" fill="#3b82f6" />
                 <circle cx="190" cy="62" r="1.8" fill="#a7f3d0" />
               </svg>
             </div>
@@ -3563,7 +3564,7 @@ export default function MisaSalesWorkspace({
                   height: 36,
                   padding: "0 22px",
                   background: "#ffffff",
-                  border: "1px solid #10b981",
+                  border: "1px solid var(--brand-border)",
                   borderRadius: 4,
                   color: "var(--brand)",
                   fontSize: 13,
@@ -3576,12 +3577,12 @@ export default function MisaSalesWorkspace({
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f0fdf4";
-                  e.currentTarget.style.borderColor = "#059669";
+                  e.currentTarget.style.background = "#eff6ff";
+                  e.currentTarget.style.borderColor = "var(--brand)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "#ffffff";
-                  e.currentTarget.style.borderColor = "#10b981";
+                  e.currentTarget.style.borderColor = "var(--brand-border)";
                 }}
               >
                 <span>Xem danh sách chứng từ</span>
@@ -3711,7 +3712,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 120, padding: "8px 10px", textAlign: "left" }}>Số hợp đồng</th>
                 <th style={{ width: 100, padding: "8px 10px", textAlign: "left" }}>Ngày ký</th>
                 <th style={{ width: 180, padding: "8px 10px", textAlign: "left" }}>Thuộc dự án</th>
@@ -3861,11 +3862,11 @@ export default function MisaSalesWorkspace({
                   <polygon points="56,16 60,21 62,15" fill="var(--brand)" />
 
                   {/* Floating green dollar coin */}
-                  <circle cx="2" cy="12" r="9.5" fill="#10b981" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" />
+                  <circle cx="2" cy="12" r="9.5" fill="#3b82f6" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" />
                   <text x="2" y="16.5" fill="#ffffff" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">$</text>
 
                   {/* Small connecting dashed line */}
-                  <path d="M 2 21 C 2 34 8 40 10 42" stroke="#10b981" strokeWidth="1.6" strokeDasharray="2,2" fill="none" />
+                  <path d="M 2 21 C 2 34 8 40 10 42" stroke="#3b82f6" strokeWidth="1.6" strokeDasharray="2,2" fill="none" />
                 </g>
 
                 {/* Center Woman Character */}
@@ -3898,31 +3899,31 @@ export default function MisaSalesWorkspace({
                 {/* Right Floating Elements matching Image 5 */}
                 {/* 1. Top Right: Green circle with clock & circular arrow */}
                 <g transform="translate(196, 36)">
-                  <circle cx="12" cy="12" r="10" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <circle cx="12" cy="12" r="7.5" fill="none" stroke="#10b981" strokeWidth="1" strokeDasharray="1.5,1.5" />
-                  <polyline points="12,7.5 12,12 15,14" stroke="#10b981" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  <circle cx="12" cy="12" r="10" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
+                  <circle cx="12" cy="12" r="7.5" fill="none" stroke="#3b82f6" strokeWidth="1" strokeDasharray="1.5,1.5" />
+                  <polyline points="12,7.5 12,12 15,14" stroke="#3b82f6" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </g>
 
                 {/* 2. Middle Right: Green circle with Bar Chart & Trend */}
                 <g transform="translate(208, 66)">
-                  <circle cx="14" cy="14" r="12" fill="#ffffff" stroke="#10b981" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
-                  <rect x="8" y="15" width="2.5" height="5" rx="0.5" fill="#10b981" />
-                  <rect x="12" y="11" width="2.5" height="9" rx="0.5" fill="#10b981" />
-                  <rect x="16" y="8" width="2.5" height="12" rx="0.5" fill="#10b981" />
+                  <circle cx="14" cy="14" r="12" fill="#ffffff" stroke="#3b82f6" strokeWidth="2.2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.06))" />
+                  <rect x="8" y="15" width="2.5" height="5" rx="0.5" fill="#3b82f6" />
+                  <rect x="12" y="11" width="2.5" height="9" rx="0.5" fill="#3b82f6" />
+                  <rect x="16" y="8" width="2.5" height="12" rx="0.5" fill="#3b82f6" />
                 </g>
 
                 {/* 3. Lower Right: Green coin with % */}
                 <g transform="translate(186, 92)">
-                  <circle cx="10" cy="10" r="9" fill="#ffffff" stroke="#10b981" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))" />
-                  <text x="10" y="14" fill="#10b981" fontSize="10" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">%</text>
+                  <circle cx="10" cy="10" r="9" fill="#ffffff" stroke="#3b82f6" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))" />
+                  <text x="10" y="14" fill="#3b82f6" fontSize="10" fontWeight="bold" textAnchor="middle" fontFamily="Roboto, Arial, sans-serif">%</text>
                 </g>
 
                 {/* Decorative pluses, sparkles & dots */}
                 <path d="M82 92 L86 92 M84 90 L84 94" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                 <path d="M206 20 L210 20 M208 18 L208 22" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
                 <path d="M224 86 L226 86 M225 85 L225 87" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
-                <circle cx="76" cy="120" r="2.5" fill="#10b981" />
-                <circle cx="228" cy="114" r="2.5" fill="#10b981" />
+                <circle cx="76" cy="120" r="2.5" fill="#3b82f6" />
+                <circle cx="228" cy="114" r="2.5" fill="#3b82f6" />
                 <circle cx="190" cy="62" r="1.8" fill="#a7f3d0" />
               </svg>
             </div>
@@ -4228,7 +4229,7 @@ export default function MisaSalesWorkspace({
                   height: 36,
                   padding: "0 22px",
                   background: "#ffffff",
-                  border: "1px solid #10b981",
+                  border: "1px solid var(--brand-border)",
                   borderRadius: 4,
                   color: "var(--brand)",
                   fontSize: 13,
@@ -4241,12 +4242,12 @@ export default function MisaSalesWorkspace({
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f0fdf4";
-                  e.currentTarget.style.borderColor = "#059669";
+                  e.currentTarget.style.background = "#eff6ff";
+                  e.currentTarget.style.borderColor = "var(--brand)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "#ffffff";
-                  e.currentTarget.style.borderColor = "#10b981";
+                  e.currentTarget.style.borderColor = "var(--brand-border)";
                 }}
               >
                 <span>Xem danh sách chứng từ</span>
@@ -4259,70 +4260,330 @@ export default function MisaSalesWorkspace({
       );
     }
 
-    // LIST VIEW MODE
+    // LIST VIEW MODE - BỨT PHÁ SAAS VỚI BENTO KPI & CHIỀU CAO HÀNG ĐỒNG BỘ 42PX
+    const effectiveSalesVouchers = salesVouchers.length > 0 ? salesVouchers : [
+      {
+        id: "bh-01",
+        code: "BH00001",
+        saleType: 1,
+        date: "29/12/2026",
+        customer: "Công ty Cổ phần Xây lắp Dầu khí Đông Đô",
+        amount: 64000000,
+        totalPayment: 70400000,
+        status: "Chưa thanh toán",
+        description: "Bán cáp ngầm trung thế 24kV Cu/XLPE/PVC",
+      },
+      {
+        id: "bh-02",
+        code: "BH00002",
+        saleType: 1,
+        date: "26/12/2026",
+        customer: "Công ty TNHH Cơ điện & Tự động hóa Thiên An",
+        amount: 112500000,
+        totalPayment: 123750000,
+        status: "Đã thanh toán",
+        description: "Cung cấp tủ phân phối hạ thế tổng MSB",
+      },
+      {
+        id: "bh-03",
+        code: "BH00003",
+        saleType: 2,
+        date: "22/12/2026",
+        customer: "Sumitomo Electric Interconnect Vietnam",
+        amount: 285000000,
+        totalPayment: 285000000,
+        status: "Đã thanh toán",
+        description: "Xuất khẩu lô linh kiện cảm biến công nghiệp",
+      },
+      {
+        id: "bh-04",
+        code: "BH00004",
+        saleType: 1,
+        date: "18/12/2026",
+        customer: "Tập đoàn Xây dựng Delta - Chi nhánh Hà Nội",
+        amount: 95400000,
+        totalPayment: 104940000,
+        status: "Chưa thanh toán",
+        description: "Bán vật tư phụ trợ thi công cơ điện M&E",
+      },
+      {
+        id: "bh-05",
+        code: "BH00005",
+        saleType: 1,
+        date: "15/12/2026",
+        customer: "Công ty TNHH Phát triển Công nghệ Tân Tiến",
+        amount: 48600000,
+        totalPayment: 53460000,
+        status: "Đã thanh toán",
+        description: "Cung cấp thiết bị đóng cắt tự động MCCB",
+      },
+    ];
+
+    const filteredSalesVouchers = effectiveSalesVouchers.filter(
+      (v) =>
+        !searchQuery ||
+        v.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        v.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (v.description && v.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    const totalSalesVal = filteredSalesVouchers.reduce((s, v) => s + (v.totalPayment || v.amount || 0), 0);
+    const uncollectedVal = filteredSalesVouchers
+      .filter((v) => v.status === "Chưa thanh toán")
+      .reduce((s, v) => s + (v.totalPayment || v.amount || 0), 0);
+    const collectedVal = totalSalesVal - uncollectedVal;
+    const estTaxOutputVal = Math.round(totalSalesVal * 0.1);
+
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
-        {/* Top Action & Search Bar */}
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc", gap: 12, padding: "12px 16px 24px 16px", boxSizing: "border-box" }}>
+        {/* 1. BENTO KPI STRIP (4 THẺ THỐNG KÊ BÁN HÀNG) */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+            gap: 12,
+            flexShrink: 0,
+          }}
+        >
+          {/* Card 1: Doanh thu bán hàng */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 10,
+              padding: "14px 18px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Doanh thu Bán hàng (Kỳ này)</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", fontFamily: "var(--font-mono, monospace)" }}>
+                {formatVND(totalSalesVal)} đ
+              </div>
+            </div>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#ecfdf5", color: "var(--brand)", display: "grid", placeItems: "center" }}>
+              <TrendingUp size={18} />
+            </div>
+          </div>
+
+          {/* Card 2: Phải thu khách hàng TK 131 */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 10,
+              padding: "14px 18px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Phải thu Khách hàng (TK 131)</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#ea580c", fontFamily: "var(--font-mono, monospace)" }}>
+                {formatVND(uncollectedVal)} đ
+              </div>
+            </div>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#fff7ed", color: "#ea580c", display: "grid", placeItems: "center" }}>
+              <CreditCard size={18} />
+            </div>
+          </div>
+
+          {/* Card 3: Thuế GTGT đầu ra TK 3331 */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 10,
+              padding: "14px 18px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Thuế GTGT Bán ra (TK 3331)</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#0284c7", fontFamily: "var(--font-mono, monospace)" }}>
+                {formatVND(estTaxOutputVal)} đ
+              </div>
+            </div>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#f0f9ff", color: "#0284c7", display: "grid", placeItems: "center" }}>
+              <FileText size={18} />
+            </div>
+          </div>
+
+          {/* Card 4: Đã thu tiền khách hàng */}
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 10,
+              padding: "14px 18px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Đã thu tiền khách hàng</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#7c3aed", fontFamily: "var(--font-mono, monospace)" }}>
+                {formatVND(collectedVal)} đ
+              </div>
+            </div>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#faf5ff", color: "#7c3aed", display: "grid", placeItems: "center" }}>
+              <Coins size={18} />
+            </div>
+          </div>
+        </div>
+
+        {/* 2. UNIFIED TOOLBAR BÁN HÀNG */}
         <div
           style={{
             padding: "10px 16px",
-            borderBottom: "1px solid #e2e8f0",
+            background: "#ffffff",
+            borderRadius: 10,
+            border: "1px solid #e2e8f0",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            background: "#ffffff",
+            flexWrap: "wrap",
+            gap: 10,
+            flexShrink: 0,
+            position: "relative",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Left Controls: Search Box & Refresh */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ position: "relative", width: 260 }}>
+              <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+              <input
+                type="text"
+                placeholder="Tìm số chứng từ, khách hàng, diễn giải..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: 32,
+                  padding: "0 10px 0 32px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 6,
+                  fontSize: 12.5,
+                  outline: "none",
+                  boxSizing: "border-box",
+                  background: "#ffffff",
+                }}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => notify("Đã làm mới danh sách chứng từ bán hàng")}
+              title="Làm mới"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 6,
+                border: "1px solid #cbd5e1",
+                background: "#ffffff",
+                display: "grid",
+                placeItems: "center",
+                color: "#64748b",
+                cursor: "pointer",
+              }}
+            >
+              <RefreshCw size={14} />
+            </button>
+          </div>
+
+          {/* Right Controls: Action Buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
+            {/* AI Nhập nhanh */}
+            <button
+              type="button"
+              onClick={() => setShowAIModal(true)}
+              style={{
+                height: 32,
+                padding: "0 12px",
+                background: "linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #d946ef 100%)",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: 6,
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                boxShadow: "0 2px 4px rgba(139, 92, 246, 0.25)",
+              }}
+            >
+              <Sparkles size={13} />
+              <span>AI Nhập nhanh</span>
+            </button>
+
+            {/* Split Button: Thêm chứng từ */}
             <div style={{ position: "relative", display: "inline-flex" }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedVoucher(null);
-                  setIsServiceSale(false);
-                  setActiveSaleType(1);
-                  setShowVoucherModal(true);
-                }}
+              <div
                 style={{
-                  height: 32,
-                  padding: "0 14px",
-                  background: "var(--brand)",
-                  color: "#ffffff",
-                  border: "none",
-                  borderTopLeftRadius: 4,
-                  borderBottomLeftRadius: 4,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
                   display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
+                  alignItems: "stretch",
+                  borderRadius: 6,
+                  overflow: "hidden",
+                  boxShadow: "0 1px 3px rgba(2, 132, 199, 0.2)",
                 }}
               >
-                <Plus size={15} />
-                <span>Thêm</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedVoucher(null);
+                    setIsServiceSale(false);
+                    setActiveSaleType(1);
+                    setShowVoucherModal(true);
+                  }}
+                  style={{
+                    height: 32,
+                    padding: "0 14px",
+                    background: "var(--brand)",
+                    color: "#ffffff",
+                    border: "none",
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    borderRight: "1px solid rgba(255, 255, 255, 0.25)",
+                  }}
+                >
+                  <Plus size={14} />
+                  <span>Thêm</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setShowVoucherDropdown(!showVoucherDropdown)}
-                style={{
-                  height: 32,
-                  padding: "0 6px",
-                  background: "var(--brand)",
-                  color: "#ffffff",
-                  border: "none",
-                  borderLeft: "1px solid rgba(255,255,255,0.3)",
-                  borderTopRightRadius: 4,
-                  borderBottomRightRadius: 4,
-                  cursor: "pointer",
-                  display: "grid",
-                  placeItems: "center",
-                }}
-              >
-                <ChevronDown size={14} />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setShowVoucherDropdown(!showVoucherDropdown)}
+                  style={{
+                    height: 32,
+                    padding: "0 8px",
+                    background: "var(--brand)",
+                    color: "#ffffff",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  <ChevronDown size={14} />
+                </button>
+              </div>
 
+              {/* Dropdown 5 options */}
               {showVoucherDropdown && (
                 <>
                   <div
@@ -4332,12 +4593,11 @@ export default function MisaSalesWorkspace({
                   <div
                     style={{
                       position: "absolute",
-                      top: "100%",
+                      top: "calc(100% + 4px)",
                       left: 0,
-                      marginTop: 4,
                       background: "#ffffff",
                       border: "1px solid #cbd5e1",
-                      borderRadius: 6,
+                      borderRadius: 8,
                       boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
                       zIndex: 60,
                       minWidth: 260,
@@ -4422,88 +4682,40 @@ export default function MisaSalesWorkspace({
               )}
             </div>
 
+            {/* Thu tiền theo hóa đơn */}
             <button
               type="button"
               onClick={() => setShowCollectionModal(true)}
               style={{
                 height: 32,
-                padding: "0 14px",
+                padding: "0 12px",
                 background: "#ffffff",
                 color: "var(--brand)",
                 border: "1px solid var(--brand)",
-                borderRadius: 4,
-                fontSize: 13,
+                borderRadius: 6,
+                fontSize: 12.5,
                 fontWeight: 600,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 6,
+                gap: 5,
               }}
             >
-              <CreditCard size={15} />
-              <span>Thu tiền theo hóa đơn</span>
+              <CreditCard size={14} />
+              <span>Thu tiền theo HĐ</span>
             </button>
 
+            {/* Nhập từ Excel */}
             <button
               type="button"
               onClick={() => notify("Chọn tệp Excel để nhập khẩu")}
               style={{
                 height: 32,
-                padding: "0 14px",
+                padding: "0 12px",
                 background: "#ffffff",
                 color: "#1e293b",
                 border: "1px solid #cbd5e1",
-                borderRadius: 4,
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: "pointer",
-              }}
-            >
-              Nhập từ Excel
-            </button>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", border: "1px solid #cbd5e1", borderRadius: 4, padding: "0 10px", height: 30, width: 240, background: "#ffffff" }}>
-              <Search size={14} style={{ color: "#94a3b8", marginRight: 6 }} />
-              <input
-                type="text"
-                placeholder="Tìm kiếm chứng từ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ border: "none", outline: "none", fontSize: 12.5, width: "100%" }}
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => notify("Đã làm mới danh sách chứng từ bán hàng")}
-              title="Làm mới"
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 4,
-                border: "1px solid #cbd5e1",
-                background: "#ffffff",
-                display: "grid",
-                placeItems: "center",
-                cursor: "pointer",
-                color: "#64748b",
-              }}
-            >
-              <RefreshCw size={14} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSalesViewMode("landing")}
-              style={{
-                height: 30,
-                padding: "0 12px",
-                background: "#f1f5f9",
-                color: "#475569",
-                border: "1px solid #cbd5e1",
-                borderRadius: 4,
+                borderRadius: 6,
                 fontSize: 12.5,
                 fontWeight: 500,
                 cursor: "pointer",
@@ -4512,90 +4724,194 @@ export default function MisaSalesWorkspace({
                 gap: 5,
               }}
             >
-              <span>← Giới thiệu</span>
+              <FileSpreadsheet size={14} style={{ color: "var(--brand)" }} />
+              <span>Nhập Excel</span>
+            </button>
+
+            {/* Chuyển viewmode */}
+            <button
+              type="button"
+              onClick={() => setSalesViewMode("landing")}
+              title="Chuyển sang chế độ Sơ đồ luồng nghiệp vụ Bán hàng"
+              style={{
+                height: 32,
+                padding: "0 10px",
+                background: "#f1f5f9",
+                color: "#475569",
+                border: "1px solid #cbd5e1",
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: "pointer",
+              }}
+            >
+              <span>Sơ đồ luồng</span>
             </button>
           </div>
         </div>
 
-        {/* Sales Transactions Table */}
-        <div style={{ flex: 1, overflow: "auto" }}>
-          <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+        {/* 3. ENTERPRISE DATA TABLE BÁN HÀNG - CHIỀU CAO HÀNG ĐỒNG BỘ 42PX */}
+        <div
+          style={{
+            flex: 1,
+            overflow: "auto",
+            background: "#ffffff",
+            borderRadius: 10,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+          }}
+        >
+          <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
-                <th style={{ width: 120, padding: "8px 10px", textAlign: "left" }}>Số chứng từ</th>
-                <th style={{ width: 100, padding: "8px 10px", textAlign: "left" }}>Ngày</th>
-                <th style={{ width: 160, padding: "8px 10px", textAlign: "left" }}>Loại chứng từ</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Khách hàng</th>
-                <th style={{ width: 140, padding: "8px 10px", textAlign: "right" }}>Tổng tiền</th>
-                <th style={{ width: 130, padding: "8px 10px", textAlign: "center" }}>Trạng thái TT</th>
-                <th style={{ width: 120, padding: "8px 10px", textAlign: "center" }}>Hóa đơn</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Diễn giải</th>
+              <tr style={{ background: "#f8fafc", height: 40, maxHeight: 40, borderBottom: "1px solid #e2e8f0", boxSizing: "border-box" }}>
+                <th style={{ width: 120, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                  Số chứng từ
+                </th>
+                <th style={{ width: 100, height: 40, padding: "0 12px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                  Ngày
+                </th>
+                <th style={{ width: 180, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                  Loại chứng từ
+                </th>
+                <th style={{ width: 260, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                  Khách hàng
+                </th>
+                <th style={{ width: 140, height: 40, padding: "0 12px", textAlign: "right", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                  Tổng tiền
+                </th>
+                <th style={{ width: 140, height: 40, padding: "0 12px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                  Trạng thái TT
+                </th>
+                <th style={{ width: 120, height: 40, padding: "0 12px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                  Hóa đơn
+                </th>
+                <th style={{ minWidth: 260, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                  Diễn giải
+                </th>
               </tr>
             </thead>
             <tbody>
-              {salesVouchers
-                .filter(
-                  (v) =>
-                    !searchQuery ||
-                    v.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    v.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (v.description && v.description.toLowerCase().includes(searchQuery.toLowerCase()))
-                )
-                .map((v) => (
-                  <tr
-                    key={v.id}
-                    onClick={() => {
-                      setSelectedVoucher(v);
-                      setActiveSaleType(v.saleType || 1);
-                      setShowVoucherModal(true);
-                    }}
-                    style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }}
-                    title="Bấm để xem và sửa chi tiết chứng từ bán hàng"
-                  >
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{v.code}</td>
-                    <td style={{ padding: "8px 10px" }}>{v.date}</td>
-                    <td style={{ padding: "8px 10px", color: "#475569" }}>
-                      {v.saleType === 2
-                        ? "Bán hàng xuất khẩu"
-                        : v.saleType === 3
-                        ? "Đại lý bán đúng giá"
-                        : v.saleType === 4
-                        ? "Ủy thác xuất khẩu"
-                        : "Bán hàng trong nước"}
-                    </td>
-                    <td style={{ padding: "8px 10px", fontWeight: 500 }}>{v.customer}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{formatVND(v.totalPayment || v.amount)} đ</td>
-                    <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span
-                        style={{
-                          background: v.status === "Đã thanh toán" ? "#dcfce7" : "#ffedd5",
-                          color: v.status === "Đã thanh toán" ? "#15803d" : "#c2410c",
-                          padding: "2px 8px",
-                          borderRadius: 10,
-                          fontSize: 11.5,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {apiStatus((v as any).apiPath || "/api/v1/sales/goods-sales/", (v as any).apiKey || "vouchers", v.id, v.status)}
-                      </span>
-                    </td>
-                    <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                      <span style={{ color: "#059669", fontWeight: 500 }}>Đã xuất HĐ</span>
-                    </td>
-                    <td style={{ padding: "8px 10px", color: "#64748b" }}>{v.description}</td>
-                  </tr>
-                ))}
+              {filteredSalesVouchers.map((v) => (
+                <tr
+                  key={v.id}
+                  onClick={() => {
+                    setSelectedVoucher(v);
+                    setActiveSaleType(v.saleType || 1);
+                    setShowVoucherModal(true);
+                  }}
+                  style={{
+                    height: 42,
+                    minHeight: 42,
+                    maxHeight: 42,
+                    borderBottom: "1px solid #f1f5f9",
+                    cursor: "pointer",
+                    boxSizing: "border-box",
+                    transition: "background-color 0.12s ease",
+                  }}
+                  title="Bấm để xem và sửa chi tiết chứng từ bán hàng"
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
+                >
+                  {/* Số chứng từ */}
+                  <td style={{ height: 42, padding: "0 12px", verticalAlign: "middle", boxSizing: "border-box", whiteSpace: "nowrap" }}>
+                    <span style={{ fontWeight: 700, color: "var(--brand)", textDecoration: "underline", textUnderlineOffset: "2px" }}>
+                      {v.code}
+                    </span>
+                  </td>
+
+                  {/* Ngày */}
+                  <td style={{ height: 42, padding: "0 12px", textAlign: "center", verticalAlign: "middle", boxSizing: "border-box", color: "#475569", whiteSpace: "nowrap" }}>
+                    {v.date}
+                  </td>
+
+                  {/* Loại chứng từ */}
+                  <td style={{ height: 42, padding: "0 12px", verticalAlign: "middle", boxSizing: "border-box", color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 180 }}>
+                    {v.saleType === 2
+                      ? "Bán hàng xuất khẩu"
+                      : v.saleType === 3
+                      ? "Đại lý bán đúng giá"
+                      : v.saleType === 4
+                      ? "Ủy thác xuất khẩu"
+                      : "Bán hàng trong nước"}
+                  </td>
+
+                  {/* Khách hàng */}
+                  <td style={{ height: 42, padding: "0 12px", verticalAlign: "middle", boxSizing: "border-box", fontWeight: 600, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>
+                    {v.customer}
+                  </td>
+
+                  {/* Tổng tiền */}
+                  <td style={{ height: 42, padding: "0 12px", textAlign: "right", verticalAlign: "middle", boxSizing: "border-box", fontWeight: 700, color: "var(--brand)", fontFamily: "var(--font-mono, monospace)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                    {formatVND(v.totalPayment || v.amount)} đ
+                  </td>
+
+                  {/* Trạng thái TT */}
+                  <td style={{ height: 42, padding: "0 12px", textAlign: "center", verticalAlign: "middle", boxSizing: "border-box", whiteSpace: "nowrap" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "2px 9px",
+                        borderRadius: 12,
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        background: v.status === "Đã thanh toán" ? "#dcfce7" : "#ffedd5",
+                        color: v.status === "Đã thanh toán" ? "#15803d" : "#c2410c",
+                      }}
+                    >
+                      {v.status || "Chưa thanh toán"}
+                    </span>
+                  </td>
+
+                  {/* Hóa đơn */}
+                  <td style={{ height: 42, padding: "0 12px", textAlign: "center", verticalAlign: "middle", boxSizing: "border-box", whiteSpace: "nowrap" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        background: "#eff6ff",
+                        color: "var(--brand)",
+                        border: "1px solid #bbf7d0",
+                      }}
+                    >
+                      Đã xuất HĐ
+                    </span>
+                  </td>
+
+                  {/* Diễn giải */}
+                  <td style={{ height: 42, padding: "0 12px", verticalAlign: "middle", boxSizing: "border-box", color: "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 280 }}>
+                    {v.description}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
-        {/* List Footer Summary */}
-        <div style={{ padding: "8px 16px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12.5, color: "#64748b" }}>
+        {/* 4. FOOTER STATUS BAR */}
+        <div
+          style={{
+            padding: "8px 16px",
+            background: "#ffffff",
+            borderRadius: 8,
+            border: "1px solid #e2e8f0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: 12.5,
+            color: "#64748b",
+            flexShrink: 0,
+          }}
+        >
           <div>
-            Tổng số: <strong>{salesVouchers.length}</strong> chứng từ
+            Hiển thị <b style={{ color: "#0f172a" }}>{filteredSalesVouchers.length}</b> chứng từ bán hàng
           </div>
-          <div>
-            Tổng tiền bán hàng: <strong style={{ color: "var(--brand)" }}>{formatVND(salesVouchers.reduce((s, v) => s + (v.totalPayment || v.amount), 0))} đ</strong>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <span>
+              Tổng tiền bán hàng: <b style={{ color: "var(--brand)", fontFamily: "var(--font-mono, monospace)" }}>{formatVND(totalSalesVal)} đ</b>
+            </span>
           </div>
         </div>
 
@@ -4646,7 +4962,7 @@ export default function MisaSalesWorkspace({
               <rect x="145" y="104" width="36" height="22" rx="3" fill="#cbd5e1" />
               <path d="M140 126 H186" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
               {/* Floating coins */}
-              <circle cx="185" cy="55" r="7" fill="#10b981" />
+              <circle cx="185" cy="55" r="7" fill="#3b82f6" />
               <circle cx="205" cy="72" r="9" fill="#059669" />
               <text x="205" y="76" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold">$</text>
             </svg>
@@ -4849,7 +5165,7 @@ export default function MisaSalesWorkspace({
               transition: "all 0.15s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#f0fdf4";
+              e.currentTarget.style.background = "#eff6ff";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "#ffffff";
@@ -5083,7 +5399,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 40, textAlign: "center" }}><input type="checkbox" /></th>
                 <th style={{ width: 110, padding: "8px 10px" }}>Số hóa đơn</th>
                 <th style={{ width: 90, padding: "8px 10px", textAlign: "center" }}>Ký hiệu</th>
@@ -5139,7 +5455,7 @@ export default function MisaSalesWorkspace({
                     <td style={{ padding: "8px 10px", color: "#475569", fontSize: 12 }}>{inv.type}</td>
                     <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(inv.amount)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "right", color: "#475569" }}>{formatVND(inv.vat)} đ</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#059669" }}>{formatVND(inv.total)} đ</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(inv.total)} đ</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
                       <span
                         style={{
@@ -5251,7 +5567,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 40, textAlign: "center" }}><input type="checkbox" /></th>
                 <th style={{ width: 110, padding: "8px 10px" }}>Số chứng từ</th>
                 <th style={{ width: 100, padding: "8px 10px", textAlign: "center" }}>Ngày hạch toán</th>
@@ -5381,7 +5697,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 40, textAlign: "center" }}><input type="checkbox" /></th>
                 <th style={{ width: 110, padding: "8px 10px" }}>Số chứng từ</th>
                 <th style={{ width: 100, padding: "8px 10px", textAlign: "center" }}>Ngày hạch toán</th>
@@ -5484,7 +5800,7 @@ export default function MisaSalesWorkspace({
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = "var(--brand)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 176, 107, 0.1)";
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(37, 99, 235, 0.1)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = "#e2e8f0";
@@ -5536,7 +5852,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 110, padding: "8px 10px" }}>Mã KH</th>
                 <th style={{ minWidth: 200, padding: "8px 10px" }}>Tên khách hàng</th>
                 <th style={{ width: 120, padding: "8px 10px" }}>Mã số thuế</th>
@@ -5554,7 +5870,7 @@ export default function MisaSalesWorkspace({
                   <td style={{ padding: "8px 10px", fontWeight: 500 }}>{c.name}</td>
                   <td style={{ padding: "8px 10px", color: "#64748b" }}>{c.taxCode}</td>
                   <td style={{ padding: "8px 10px", textAlign: "right" }}>0 đ</td>
-                  <td style={{ padding: "8px 10px", textAlign: "right", color: "#059669" }}>{formatVND(c.debt || 0)} đ</td>
+                  <td style={{ padding: "8px 10px", textAlign: "right", color: "var(--brand)" }}>{formatVND(c.debt || 0)} đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", color: "var(--brand)" }}>0 đ</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: (c.debt || 0) > 0 ? "#ea580c" : "#059669" }}>
                     {formatVND(c.debt || 0)} đ
@@ -5591,7 +5907,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 110, padding: "8px 10px" }}>Kỳ đối chiếu</th>
                 <th style={{ minWidth: 200, padding: "8px 10px" }}>Khách hàng</th>
                 <th style={{ width: 100, padding: "8px 10px", textAlign: "center" }}>Tài khoản</th>
@@ -5873,7 +6189,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 40, padding: "8px 10px", textAlign: "center" }}>
                   <input
                     type="checkbox"
@@ -6047,7 +6363,7 @@ export default function MisaSalesWorkspace({
         <div style={{ flex: 1, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: "#e6f4ea", borderBottom: "1px solid #cbd5e1" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
                 <th style={{ width: 110, padding: "8px 10px" }}>Mã khách hàng</th>
                 <th style={{ minWidth: 200, padding: "8px 10px" }}>Tên khách hàng</th>
                 <th style={{ width: 120, padding: "8px 10px" }}>Mã số thuế</th>

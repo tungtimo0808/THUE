@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   MapPin,
   UserRound,
@@ -40,6 +40,7 @@ import { request } from "./live-api";
 import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
 import MisaDropdownSelect, { DropdownOption } from "./MisaDropdownSelect";
+import { BrandMark } from "./components/BrandMark";
 import "./admin-workspaces.css";
 
 type TabKey = "overview" | "personnel" | "roles" | "config";
@@ -157,6 +158,7 @@ interface MemberItem {
   role_assignments: MemberRoleAssignment[];
   effective_permissions?: string[];
   access_status?: string;
+  membership_status?: string;
   joined_at?: string;
 }
 
@@ -291,6 +293,19 @@ const ROLE_GROUP_MAP: Record<
 
 const REGIME_ROLE_PRESETS = [
   {
+    key: "TT88",
+    label: "TT88/2021 — Hộ Kinh doanh",
+    title: "TT88/2021 — Hộ Kinh doanh",
+    subtitle: "3 Vai trò tinh gọn (Chủ hộ & Kế toán)",
+    badge: "3 Vai trò",
+    activeCount: 3,
+    count: 3,
+    color: "#334155",
+    badgeColor: "#334155",
+    badgeBg: "#f1f5f9",
+    desc: "Chế độ sổ sách Hộ kinh doanh (TT88): 3 vai trò cốt lõi (Quản trị, Chủ hộ/Giám đốc, Kế toán phụ trách), tự động gộp kiêm nhiệm.",
+  },
+  {
     key: "TT58",
     label: "TT58/2026 — DN Siêu nhỏ",
     title: "TT58/2026 — DN Siêu nhỏ",
@@ -298,10 +313,10 @@ const REGIME_ROLE_PRESETS = [
     badge: "3 Vai trò",
     activeCount: 3,
     count: 3,
-    color: "#047857",
-    badgeColor: "#047857",
-    badgeBg: "#ecfdf5",
-    desc: "Phù hợp doanh nghiệp siêu nhỏ / hộ kinh doanh: Quản trị DN, Giám đốc và Kế toán phụ trách chung.",
+    color: "#0369a1",
+    badgeColor: "#0369a1",
+    badgeBg: "#f0f9ff",
+    desc: "Phù hợp doanh nghiệp siêu nhỏ (thay thế TT132): Quản trị DN, Giám đốc và Kế toán phụ trách chung.",
   },
   {
     key: "TT133",
@@ -313,7 +328,7 @@ const REGIME_ROLE_PRESETS = [
     count: 8,
     color: "var(--brand)",
     badgeColor: "var(--brand)",
-    badgeBg: "#f0f9ff",
+    badgeBg: "var(--brand-soft)",
     desc: "Phù hợp doanh nghiệp nhỏ và vừa: tách Kế toán trưởng, KT Tổng hợp, KT Thuế, KT Bán hàng, Thủ quỹ, Thủ kho.",
   },
   {
@@ -324,9 +339,9 @@ const REGIME_ROLE_PRESETS = [
     badge: "14 Vai trò",
     activeCount: 14,
     count: 14,
-    color: "#7c3aed",
-    badgeColor: "#7c3aed",
-    badgeBg: "#f5f3ff",
+    color: "#4338ca",
+    badgeColor: "#4338ca",
+    badgeBg: "#eef2ff",
     desc: "Phù hợp doanh nghiệp có phòng kế toán tách biệt Công nợ Phải thu, Phải trả, Tiền mặt, Ngân hàng, Kho.",
   },
   {
@@ -946,9 +961,21 @@ const formatRoleScopeSummary = (role: RoleItem): string => {
 };
 
 export default function CompanyAdminWorkspace() {
-  const { token, companyId, companies, selectCompany, restoring } = useApiSession();
+  const { token, companyId, companies, selectCompany, refreshCompanies, restoring } = useApiSession();
+  const [searchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState<TabKey>("personnel");
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    const t = searchParams.get("tab");
+    if (t === "overview" || t === "personnel" || t === "roles" || t === "config") return t;
+    return "personnel";
+  });
+
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t === "overview" || t === "personnel" || t === "roles" || t === "config") {
+      setActiveTab(t);
+    }
+  }, [searchParams]);
   const [_loading, setLoading] = useState<boolean>(false);
   const [alertMsg, setRawAlertMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const setAlertMsg = (val: { type: "success" | "error"; text: string } | null) => {
@@ -1108,8 +1135,24 @@ export default function CompanyAdminWorkspace() {
           tax_code: activeComp.tax_code || "",
           status: activeComp.status || "ACTIVE",
           legal_representative: activeComp.legal_representative || "",
+          representative_title: (activeComp as any).representative_title || "",
+          address: activeComp.address || "",
           accounting_regime: activeComp.accounting_regime || "TT99",
         });
+        const compAny = activeComp as any;
+        if (Array.isArray(compAny.ui_enabled_modules) && compAny.ui_enabled_modules.length > 0) {
+          setEnabledErpModules(compAny.ui_enabled_modules);
+          try {
+            localStorage.setItem(`sv_enabled_modules_${effectiveCompanyId}`, JSON.stringify(compAny.ui_enabled_modules));
+          } catch {}
+        }
+        if (compAny.ui_role_modules && typeof compAny.ui_role_modules === "object") {
+          try {
+            const key = `sv_role_modules_${effectiveCompanyId}`;
+            const existing = JSON.parse(localStorage.getItem(key) || "{}");
+            localStorage.setItem(key, JSON.stringify({ ...compAny.ui_role_modules, ...existing }));
+          } catch {}
+        }
       }
 
       // Load essential personnel & org data
@@ -1238,6 +1281,20 @@ export default function CompanyAdminWorkspace() {
             : { company_id: companyId }
         ),
       });
+      if (res?.accounting_regime) {
+        setCompanyInfo((prev) => (prev ? { ...prev, accounting_regime: res.accounting_regime } : prev));
+      }
+      if (Array.isArray(res?.ui_enabled_modules) && res.ui_enabled_modules.length > 0) {
+        setEnabledErpModules(res.ui_enabled_modules);
+        try {
+          localStorage.setItem(`sv_enabled_modules_${companyId}`, JSON.stringify(res.ui_enabled_modules));
+          window.dispatchEvent(new Event("sv_modules_updated"));
+        } catch {}
+      }
+      try {
+        await refreshCompanies();
+        window.dispatchEvent(new Event("erp_context_changed"));
+      } catch {}
       setAlertMsg({ type: "success", text: res.message || "Đã đồng bộ danh mục 21 vai trò chuẩn theo quy mô doanh nghiệp!" });
       await loadWorkspaceData();
     } catch (err: any) {
@@ -1330,6 +1387,10 @@ export default function CompanyAdminWorkspace() {
         existing[selectedRole.code] = Array.from(derivedModules);
         localStorage.setItem(key, JSON.stringify(existing));
         window.dispatchEvent(new Event("sv_rbac_updated"));
+        void request(`/api/v1/common/settings/?company_id=${encodeURIComponent(companyId)}`, token, {
+          method: "PATCH",
+          body: JSON.stringify({ configuration: { ui_role_modules: existing } }),
+        }).catch(() => {});
       } catch {}
 
       setAlertMsg({
@@ -1402,6 +1463,16 @@ export default function CompanyAdminWorkspace() {
     } catch {}
   }, [companyId]);
 
+  const persistEnabledModulesToBackend = (mods: string[]) => {
+    const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || "";
+    const effectiveToken = token || localStorage.getItem("erp_token") || "";
+    if (!effectiveCompanyId || !effectiveToken) return;
+    void request(`/api/v1/common/settings/?company_id=${encodeURIComponent(effectiveCompanyId)}`, effectiveToken, {
+      method: "PATCH",
+      body: JSON.stringify({ configuration: { ui_enabled_modules: mods } }),
+    }).catch(() => {});
+  };
+
   const toggleErpModule = (modId: string, isCore?: boolean) => {
     if (isCore) {
       setAlertMsg({ type: "success", text: "Phân hệ cốt lõi (Tổng quan, Tiền mặt, Ngân hàng, Tổng hợp, Báo cáo) luôn được duy trì bật để đảm bảo tính toàn vẹn sổ sách." });
@@ -1413,6 +1484,7 @@ export default function CompanyAdminWorkspace() {
         const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || "";
         localStorage.setItem(`sv_enabled_modules_${effectiveCompanyId}`, JSON.stringify(next));
         window.dispatchEvent(new Event("sv_modules_updated"));
+        persistEnabledModulesToBackend(next);
       } catch {}
       return next;
     });
@@ -1442,6 +1514,7 @@ export default function CompanyAdminWorkspace() {
       const effectiveCompanyId = companyId || localStorage.getItem("erp_company_id") || "";
       localStorage.setItem(`sv_enabled_modules_${effectiveCompanyId}`, JSON.stringify(next));
       window.dispatchEvent(new Event("sv_modules_updated"));
+      persistEnabledModulesToBackend(next);
     } catch {}
     setAlertMsg({
       type: "success",
@@ -1689,6 +1762,8 @@ export default function CompanyAdminWorkspace() {
       if (decidingJoinReq.decision === "APPROVED") {
         if (decidingJoinReq.roleId) {
           payload.role_assignments = [{ role: decidingJoinReq.roleId }];
+        } else {
+          payload.role_code = "ROLE_GENERAL_ACCOUNTANT";
         }
         payload.reactivate_membership = decidingJoinReq.reactivate;
       }
@@ -1769,6 +1844,25 @@ export default function CompanyAdminWorkspace() {
 
   return (
     <div className="admin-workspace">
+      {/* Outer-Web Unified Top Brand Bar */}
+      <div className="admin-topbar">
+        <Link to="/" className="admin-topbar-brand">
+          <BrandMark compact />
+          <div className="admin-topbar-brand-text">
+            <strong>SỔ VIỆT ERP</strong>
+            <span>Kế toán & Thuế doanh nghiệp • Quản trị Nội bộ Doanh nghiệp</span>
+          </div>
+        </Link>
+        <div className="admin-topbar-right">
+          <Link to="/select-company" className="admin-btn admin-btn-light admin-btn-sm">
+            <RefreshCw size={14} /> Đổi công ty
+          </Link>
+          <Link to="/" className="admin-btn admin-btn-primary admin-btn-sm">
+            <ExternalLink size={14} /> Bàn làm việc Kế toán
+          </Link>
+        </div>
+      </div>
+
       {/* Top Header */}
       <header className="admin-header">
         <div className="admin-header-content">
@@ -1875,7 +1969,16 @@ export default function CompanyAdminWorkspace() {
                 </div>
               )}
               <span className="admin-badge admin-badge-active">
-                <CheckCircle2 size={12} /> {companyInfo?.status === "ACTIVE" || !companyInfo?.status ? "Hoạt động" : companyInfo?.status}
+                <CheckCircle2 size={12} />{" "}
+                {companyInfo?.status === "ACTIVE" || !companyInfo?.status
+                  ? "Hoạt động"
+                  : companyInfo?.status === "PENDING_SETUP"
+                  ? "Chờ thiết lập"
+                  : companyInfo?.status === "SUSPENDED"
+                  ? "Tạm khóa"
+                  : companyInfo?.status === "INACTIVE"
+                  ? "Ngừng hoạt động"
+                  : companyInfo?.status}
               </span>
             </div>
             <div className="admin-header-subtitle">
@@ -1977,7 +2080,7 @@ export default function CompanyAdminWorkspace() {
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Mã doanh nghiệp / MST</td>
                         <td>
-                          <strong>{companyInfo?.code || "TUNG_TIMO"}</strong> · MST: <strong>{companyInfo?.tax_code || "Chưa đăng ký"}</strong>
+                          <strong>{companyInfo?.code || "—"}</strong> · MST: <strong>{companyInfo?.tax_code || "Chưa đăng ký"}</strong>
                         </td>
                       </tr>
                       <tr>
@@ -1990,7 +2093,7 @@ export default function CompanyAdminWorkspace() {
                       </tr>
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)" }}>Địa chỉ trụ sở</td>
-                        <td>{companyInfo?.address || "198 Trần Quang Khải, P. Hoàn Kiếm, Hà Nội"}</td>
+                        <td>{companyInfo?.address || "Chưa cập nhật địa chỉ trụ sở"}</td>
                       </tr>
                       <tr>
                         <td style={{ width: 200, minWidth: 200, whiteSpace: "nowrap", color: "var(--admin-text-muted)", borderBottom: "none" }}>Trạng thái vận hành</td>
@@ -2362,7 +2465,13 @@ export default function CompanyAdminWorkspace() {
                               </div>
                             </td>
                             <td>
-                              <span className="admin-badge admin-badge-active">Hoạt động</span>
+                              {m.membership_status === "LOCKED" || (m as any).is_locked ? (
+                                <span className="admin-badge admin-badge-suspended">Tạm khóa</span>
+                              ) : m.membership_status === "INACTIVE" || m.membership_status === "TERMINATED" ? (
+                                <span className="admin-badge admin-badge-suspended">Ngừng hoạt động</span>
+                              ) : (
+                                <span className="admin-badge admin-badge-active">Hoạt động</span>
+                              )}
                             </td>
                             <td style={{ textAlign: "center", width: 220, minWidth: 220, whiteSpace: "nowrap" }}>
                               <div style={{ display: "inline-flex", gap: "0.45rem", alignItems: "center", justifyContent: "center", flexWrap: "nowrap" }}>
@@ -2507,7 +2616,18 @@ export default function CompanyAdminWorkspace() {
                                     : "admin-badge-suspended"
                                 }`}
                               >
-                                {req.status_display || (req.status === "PENDING" ? "Chờ xử lý" : req.status === "APPROVED" ? "Đã duyệt" : req.status)}
+                                {req.status_display ||
+                                  (req.status === "PENDING"
+                                    ? "Chờ xử lý"
+                                    : req.status === "APPROVED"
+                                    ? "Đã duyệt"
+                                    : req.status === "REJECTED"
+                                    ? "Từ chối"
+                                    : req.status === "EXPIRED"
+                                    ? "Hết hạn"
+                                    : req.status === "CANCELLED"
+                                    ? "Đã hủy"
+                                    : req.status)}
                               </span>
                             </div>
                             <div style={{ fontSize: "12.8px", color: "#475569", marginTop: 3 }}>
@@ -2533,7 +2653,7 @@ export default function CompanyAdminWorkspace() {
                               <button
                                 type="button"
                                 className="admin-btn admin-btn-primary admin-btn-sm"
-                                style={{ background: "#059669", borderColor: "#047857" }}
+                                style={{ background: "var(--brand)", borderColor: "var(--brand-hover)" }}
                                 onClick={() => openDecideJoinModal(req, "APPROVED")}
                               >
                                 <Check size={14} /> Chấp thuận
@@ -2564,10 +2684,10 @@ export default function CompanyAdminWorkspace() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.75rem" }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: "18.4px", fontWeight: 700 }}>
-                  Ma trận 21 Vai trò Chuẩn & Phân bổ theo 4 Thông tư Chế độ Kế toán
+                  Ma trận 21 Vai trò Chuẩn & Phân bổ theo 5 Thông tư Chế độ Kế toán
                 </h2>
                 <p style={{ margin: "0.25rem 0 0 0", fontSize: "13.2px", color: "var(--admin-text-muted)" }}>
-                  Hệ thống cung cấp đủ <strong>21 vai trò chuẩn</strong> nhưng chỉ bật số lượng Role phù hợp với quy mô doanh nghiệp (tránh rối cho DN siêu nhỏ TT58). Bạn có thể chuyển đổi Preset hoặc Bật/Tắt từng Role bất kỳ lúc nào.
+                  Hệ thống cung cấp đủ <strong>21 vai trò chuẩn</strong> và tự động điều phối kiêm nhiệm / khôi phục vị trí chuyên trách khi doanh nghiệp chuyển đổi giữa các Thông tư (TT88, TT58, TT133, TT200, TT99).
                 </p>
               </div>
               <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
@@ -2580,11 +2700,11 @@ export default function CompanyAdminWorkspace() {
               </div>
             </div>
 
-            {/* 4-REGIME ROLE PRESET SELECTOR CARDS */}
+            {/* 5-REGIME ROLE PRESET SELECTOR CARDS */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(235px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
                 gap: "0.85rem",
                 marginBottom: "1.25rem",
               }}
@@ -2592,24 +2712,26 @@ export default function CompanyAdminWorkspace() {
               {REGIME_ROLE_PRESETS.map((preset) => {
                 const companyRegime = (companyInfo?.accounting_regime || "").toUpperCase();
                 const isCompanyRegime =
+                  (preset.key === "TT88" && companyRegime.includes("88")) ||
                   (preset.key === "TT58" && companyRegime.includes("58")) ||
                   (preset.key === "TT133" && companyRegime.includes("133")) ||
                   (preset.key === "TT200" && companyRegime.includes("200")) ||
                   (preset.key === "TT99" && (companyRegime.includes("99") || !companyRegime));
                 const isCurrentCountMatch = activeRoles.length === preset.activeCount;
+                const isActivePreset = isCompanyRegime && isCurrentCountMatch;
                 return (
                   <div
                     key={preset.key}
                     style={{
-                      background: isCurrentCountMatch ? "linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)" : "#ffffff",
-                      border: isCurrentCountMatch ? `2px solid ${preset.color}` : "1px solid #e2e8f0",
+                      background: isActivePreset ? "linear-gradient(135deg, var(--brand-soft) 0%, #ffffff 100%)" : "#ffffff",
+                      border: isActivePreset ? `2px solid ${preset.color}` : "1px solid var(--border)",
                       borderRadius: "10px",
                       padding: "0.9rem 1rem",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
                       gap: "0.55rem",
-                      boxShadow: isCurrentCountMatch ? "0 4px 12px rgba(37, 99, 235, 0.08)" : "0 1px 2px rgba(15, 23, 42, 0.03)",
+                      boxShadow: isActivePreset ? "0 4px 12px rgba(36, 72, 216, 0.1)" : "0 1px 2px rgba(15, 23, 42, 0.03)",
                     }}
                   >
                     <div>
@@ -2620,21 +2742,21 @@ export default function CompanyAdminWorkspace() {
                             fontWeight: 700,
                             padding: "2px 8px",
                             borderRadius: 999,
-                            background: `${preset.color}15`,
+                            background: preset.badgeBg,
                             color: preset.color,
                           }}
                         >
                           {preset.badge}
                         </span>
                         {isCompanyRegime && (
-                          <span style={{ fontSize: "11.2px", fontWeight: 700, color: "#059669", background: "#ecfdf5", padding: "2px 6px", borderRadius: 4 }}>
+                          <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--brand-ink)", background: "var(--brand-soft)", border: "1px solid var(--brand-border)", padding: "1px 6px", borderRadius: 4 }}>
                             Thông tư hiện tại
                           </span>
                         )}
                       </div>
-                      <div style={{ fontWeight: 700, fontSize: "14.7px", color: "#0f172a" }}>{preset.label}</div>
-                      <div style={{ fontSize: "12.5px", fontWeight: 600, color: preset.color, marginTop: 2 }}>{preset.subtitle}</div>
-                      <p style={{ fontSize: "12.2px", color: "#64748b", margin: "0.35rem 0 0", lineHeight: 1.4 }}>{preset.desc}</p>
+                      <div style={{ fontWeight: 700, fontSize: "14.5px", color: "#0f172a" }}>{preset.label}</div>
+                      <div style={{ fontSize: "12.2px", fontWeight: 600, color: preset.color, marginTop: 2 }}>{preset.subtitle}</div>
+                      <p style={{ fontSize: "12px", color: "#64748b", margin: "0.35rem 0 0", lineHeight: 1.4 }}>{preset.desc}</p>
                     </div>
                     <button
                       type="button"
@@ -2642,14 +2764,14 @@ export default function CompanyAdminWorkspace() {
                       style={{
                         width: "100%",
                         justifyContent: "center",
-                        background: isCurrentCountMatch ? preset.color : "#f8fafc",
-                        color: isCurrentCountMatch ? "#ffffff" : "#1e293b",
-                        border: isCurrentCountMatch ? `1px solid ${preset.color}` : "1px solid #cbd5e1",
+                        background: isActivePreset ? preset.color : "#f8fafc",
+                        color: isActivePreset ? "#ffffff" : "#1e293b",
+                        border: isActivePreset ? `1px solid ${preset.color}` : "1px solid #cbd5e1",
                         fontWeight: 600,
                       }}
                       onClick={() => handleSeedStandardRoles(preset.key)}
                     >
-                      {isCurrentCountMatch ? `✓ Đang áp dụng (${preset.activeCount} Role)` : `Áp dụng bộ ${preset.activeCount} Role (${preset.key})`}
+                      {isActivePreset ? `✓ Đang áp dụng (${preset.activeCount} Role)` : `Áp dụng bộ ${preset.activeCount} Role (${preset.key})`}
                     </button>
                   </div>
                 );
@@ -2696,7 +2818,7 @@ export default function CompanyAdminWorkspace() {
                         fontWeight: 600,
                         borderRadius: 6,
                         cursor: "pointer",
-                        border: roleStatusFilter === "ACTIVE" ? "1px solid #059669" : "1px solid #cbd5e1",
+                        border: roleStatusFilter === "ACTIVE" ? "1px solid var(--brand)" : "1px solid #cbd5e1",
                         background: roleStatusFilter === "ACTIVE" ? "#ecfdf5" : "#ffffff",
                         color: roleStatusFilter === "ACTIVE" ? "#047857" : "#475569",
                       }}
@@ -2998,9 +3120,9 @@ export default function CompanyAdminWorkspace() {
                                     fontWeight: 600,
                                     padding: "3px 8px",
                                     borderRadius: 6,
-                                    border: isModuleAllSelected ? "1px solid #fca5a5" : "1px solid #bbf7d0",
-                                    background: isModuleAllSelected ? "#fef2f2" : "#f0fdf4",
-                                    color: isModuleAllSelected ? "#b91c1c" : "#15803d",
+                                    border: isModuleAllSelected ? "1px solid #fecdd3" : "1px solid var(--brand-border)",
+                                    background: isModuleAllSelected ? "#fff1f2" : "var(--brand-soft)",
+                                    color: isModuleAllSelected ? "#be123c" : "var(--brand)",
                                     cursor: "pointer",
                                   }}
                                 >
@@ -3194,7 +3316,7 @@ export default function CompanyAdminWorkspace() {
                     </li>
                     <li style={{ padding: "0.5rem 0", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between" }}>
                       <span>Kiểm soát cân đối:</span>
-                      <span className="admin-badge admin-badge-active">Chuẩn TT99/2025/TT-BTC</span>
+                      <span className="admin-badge admin-badge-blue">Chuẩn {formatAccountingRegime(companyInfo?.accounting_regime || "TT99").split(" (")[0]}</span>
                     </li>
                     <li style={{ padding: "0.5rem 0", display: "flex", justifyContent: "space-between" }}>
                       <span>Thao tác trực tiếp:</span>
@@ -3409,7 +3531,21 @@ export default function CompanyAdminWorkspace() {
                           justifyContent: "space-between",
                         }}
                       >
-                        <span>{rule.voucher_type}</span>
+                        <span>
+                          {{
+                            CASH_RECEIPT: "Phiếu thu tiền mặt",
+                            CASH_PAYMENT: "Phiếu chi tiền mặt",
+                            BANK_RECEIPT: "Báo có ngân hàng",
+                            BANK_PAYMENT: "Ủy nhiệm chi ngân hàng",
+                            SALES_INVOICE: "Hóa đơn bán hàng",
+                            PURCHASE_INVOICE: "Hóa đơn mua hàng",
+                            INVENTORY_IN: "Phiếu nhập kho",
+                            INVENTORY_OUT: "Phiếu xuất kho",
+                            INVENTORY_TRANSFER: "Phiếu chuyển kho",
+                            GENERAL_VOUCHER: "Chứng từ nghiệp vụ khác",
+                            JOURNAL: "Bút toán sổ cái",
+                          }[String(rule.voucher_type || "").toUpperCase()] || rule.voucher_type}
+                        </span>
                         <code>
                           {rule.prefix || "CT"}-{String(1).padStart(rule.padding_length || 5, "0")}
                         </code>
@@ -3845,7 +3981,7 @@ export default function CompanyAdminWorkspace() {
         });
 
         const getModuleIcon = (mod: string) => {
-          if (mod.includes("tiền mặt")) return <Wallet size={16} color="#16a34a" />;
+          if (mod.includes("tiền mặt")) return <Wallet size={16} color="var(--brand)" />;
           if (mod.includes("ngân hàng")) return <Landmark size={16} color="var(--brand)" />;
           if (mod.includes("Bán hàng")) return <ShoppingBag size={16} color="#2563eb" />;
           if (mod.includes("Mua hàng")) return <ShoppingCart size={16} color="#d97706" />;
@@ -4447,7 +4583,7 @@ export default function CompanyAdminWorkspace() {
                   className="admin-btn admin-btn-primary"
                   style={
                     decidingJoinReq.decision === "APPROVED"
-                      ? { background: "#059669", borderColor: "#047857" }
+                      ? { background: "var(--brand)", borderColor: "var(--brand-hover)" }
                       : { background: "#dc2626", borderColor: "#b91c1c" }
                   }
                   disabled={joinDecideSaving}

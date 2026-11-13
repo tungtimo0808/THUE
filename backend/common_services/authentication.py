@@ -1,21 +1,43 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.settings import api_settings
 
-from .models import UserLoginSession, UserSessionState
+from .models import UserLoginSession
 
 
 class RevocableJWTAuthentication(JWTAuthentication):
     def get_user(self, validated_token):
-        user = super().get_user(validated_token)
-        state = UserSessionState.objects.filter(user=user).first()
+        try:
+            user_id = validated_token[api_settings.USER_ID_CLAIM]
+        except KeyError as exc:
+            raise InvalidToken("Token contained no recognizable user identification") from exc
+
+        try:
+            user = self.user_model.objects.select_related(
+                "iam_account", "common_session_state"
+            ).get(**{api_settings.USER_ID_FIELD: user_id})
+        except self.user_model.DoesNotExist as exc:
+            raise AuthenticationFailed("User not found", code="user_not_found") from exc
+
+        if not api_settings.USER_AUTHENTICATION_RULE(user):
+            raise AuthenticationFailed("User is inactive", code="user_inactive")
+
+        try:
+            state = user.common_session_state
+        except ObjectDoesNotExist:
+            state = None
         issued_at = int(validated_token.get("iat", 0))
         if state and issued_at < state.valid_after_epoch:
             raise AuthenticationFailed("Phiên đăng nhập đã kết thúc.", code="session_revoked")
         session_id = validated_token.get("sid")
         if session_id:
-            session = UserLoginSession.objects.filter(pk=session_id, user=user).first()
+            session = UserLoginSession.objects.filter(
+                pk=session_id, user_id=user.pk
+            ).only("id", "revoked_at", "expires_at").first()
             if not session or session.revoked_at or session.expires_at <= timezone.now():
                 raise AuthenticationFailed("Phiên đăng nhập đã kết thúc.", code="session_revoked")
         return user
