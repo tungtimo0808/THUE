@@ -33,13 +33,16 @@
 .md-list > header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   padding-bottom: 20px;
 }
 .md-home h1,
 .md-list h1 {
-  font-size: 24px;
+  font-size: 22px;
   margin: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .md-home > header > label {
   margin-left: auto;

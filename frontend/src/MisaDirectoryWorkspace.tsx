@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { safeRandomUUID } from "./crypto-polyfill";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 import DirectoryChoiceField from "./DirectoryChoiceField";
 import VoucherDateField from "./VoucherDateField";
@@ -17,6 +18,7 @@ import {
   Search,
   Settings,
   Sparkles,
+  Upload,
   X,
 } from "lucide-react";
 import { MISA_DIRECTORY_DEFINITIONS } from "./misa-directory-definitions";
@@ -218,6 +220,7 @@ export default function MisaDirectoryWorkspace({
   initialName,
   initialCreate = false,
   sectionTab,
+  requestedSubroute,
   onEntrySaved,
   onEditorClose,
   notify,
@@ -226,6 +229,7 @@ export default function MisaDirectoryWorkspace({
   initialName?: string | null;
   initialCreate?: boolean;
   sectionTab?: string | null;
+  requestedSubroute?: string | null;
   onEntrySaved?: (values: Record<string, string>) => void;
   onEditorClose?: () => void;
   notify: (text: string) => void;
@@ -233,22 +237,71 @@ export default function MisaDirectoryWorkspace({
   const directoryNavigate = useNavigate();
   const location = useLocation();
   const { companyId, token } = useApiSession();
-  const [definition, setDefinition] = useState<DirectoryDefinition | null>(
-    MISA_DIRECTORY_DEFINITIONS.find((item) => item.name === initialName) || null,
-  );
+  const isEmbeddedModal = Boolean(initialCreate || onEditorClose);
 
-  const hasExplicitTabParam = useMemo(
-    () => new URLSearchParams(location.search).has("tab"),
-    [location.search],
-  );
-  const [groupFilter, setGroupFilter] = useState<string>("all");
-  useEffect(() => {
-    if (hasExplicitTabParam && sectionTab && SECTION_GROUP_MAP[sectionTab]) {
-      setGroupFilter(sectionTab);
-    } else if (!hasExplicitTabParam) {
-      setGroupFilter("all");
+  const resolveDefByName = (name?: string | null) =>
+    MISA_DIRECTORY_DEFINITIONS.find((item) => item.name === name) || null;
+
+  const [definition, setDefinition] = useState<DirectoryDefinition | null>(() => {
+    if (initialName) return resolveDefByName(initialName);
+    if (!isEmbeddedModal && requestedSubroute === "bank-accounts") {
+      return resolveDefByName("Tài khoản ngân hàng");
     }
-  }, [hasExplicitTabParam, sectionTab]);
+    return null;
+  });
+
+  const [utilityMode, setUtilityMode] = useState<"import" | "tax-lookup" | null>(() => {
+    if (!isEmbeddedModal && (requestedSubroute === "import" || requestedSubroute === "tax-lookup")) {
+      return requestedSubroute;
+    }
+    return null;
+  });
+
+  const [groupFilter, setGroupFilter] = useState<string>(() => {
+    if (!isEmbeddedModal && requestedSubroute && SECTION_GROUP_MAP[requestedSubroute]) {
+      return requestedSubroute;
+    }
+    return "all";
+  });
+
+  useEffect(() => {
+    if (isEmbeddedModal) return;
+    const urlDir = new URLSearchParams(location.search).get("directory") || initialName;
+    if (urlDir) {
+      const targetDef = resolveDefByName(urlDir);
+      if (targetDef) {
+        setUtilityMode(null);
+        setDefinition(targetDef);
+        return;
+      }
+    }
+    if (requestedSubroute === "bank-accounts") {
+      setUtilityMode(null);
+      setDefinition(resolveDefByName("Tài khoản ngân hàng"));
+      return;
+    }
+    if (requestedSubroute === "import" || requestedSubroute === "tax-lookup") {
+      setDefinition(null);
+      setUtilityMode(requestedSubroute);
+      return;
+    }
+    if (requestedSubroute && SECTION_GROUP_MAP[requestedSubroute]) {
+      setUtilityMode(null);
+      setDefinition(null);
+      setGroupFilter(requestedSubroute);
+      return;
+    }
+    const explicitTab = new URLSearchParams(location.search).get("tab");
+    if (explicitTab && SECTION_GROUP_MAP[explicitTab]) {
+      setUtilityMode(null);
+      setDefinition(null);
+      setGroupFilter(explicitTab);
+      return;
+    }
+    setUtilityMode(null);
+    setDefinition(null);
+    setGroupFilter("all");
+  }, [isEmbeddedModal, location.pathname, location.search, initialName, requestedSubroute, sectionTab]);
 
   const apiPath = definition ? directoryApiPaths[definition.name] : undefined;
   const employeeDirectory = definition?.name === "Nhân viên";
@@ -314,9 +367,15 @@ export default function MisaDirectoryWorkspace({
   const [hidden, setHidden] = useState<string[]>([]);
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [taxLookingUp, setTaxLookingUp] = useState(false);
+  const [standaloneTaxCode, setStandaloneTaxCode] = useState("");
+  const [standaloneTaxResult, setStandaloneTaxResult] = useState<Record<string, any> | null>(null);
+  const [standaloneTaxErr, setStandaloneTaxErr] = useState("");
+  const [importTarget, setImportTarget] = useState<"customers" | "vendors" | "items">("customers");
+  const [importBusy, setImportBusy] = useState(false);
+  const [importFeedback, setImportFeedback] = useState<{ ok: boolean; text: string } | null>(null);
   const [editor, setEditor] = useState<DirectoryRow | null>((): DirectoryRow | null =>
     initialCreate && definition
-      ? { id: crypto.randomUUID(), values: definition.radios.length ? { Loại: definition.radios[0] } : {} }
+      ? { id: safeRandomUUID(), values: definition.radios.length ? { Loại: definition.radios[0] } : {} }
       : null,
   );
   const [error, setError] = useState("");
@@ -363,12 +422,29 @@ export default function MisaDirectoryWorkspace({
   }, [!!editor]);
 
   const open = (next: DirectoryDefinition) => {
+    setUtilityMode(null);
     setDefinition(next);
     setQuery("");
     setSelected([]);
     setHidden([]);
     setColumnsOpen(false);
     setPage(1);
+    if (!isEmbeddedModal) {
+      const q = new URLSearchParams(location.search);
+      q.set("directory", next.name);
+      directoryNavigate(`/directory?${q.toString()}`);
+    }
+  };
+
+  const backToHome = () => {
+    setUtilityMode(null);
+    setDefinition(null);
+    if (!isEmbeddedModal) {
+      const q = new URLSearchParams(location.search);
+      q.delete("directory");
+      const qs = q.toString();
+      directoryNavigate(qs ? `/directory?${qs}` : "/directory");
+    }
   };
 
   const itemStockMap = useMemo(() => {
@@ -684,7 +760,7 @@ export default function MisaDirectoryWorkspace({
       row
         ? structuredClone(row)
         : {
-            id: crypto.randomUUID(),
+            id: safeRandomUUID(),
             values: definition?.radios.length
               ? {
                   Loại:
@@ -1063,7 +1139,7 @@ export default function MisaDirectoryWorkspace({
     onEntrySaved?.(normalized.values);
     if (addAnother) {
       setEditor({
-        id: crypto.randomUUID(),
+        id: safeRandomUUID(),
         values: definition.radios.length
           ? {
               Loại:
@@ -1089,8 +1165,318 @@ export default function MisaDirectoryWorkspace({
       </div>
     );
 
+  if (utilityMode === "tax-lookup") {
+    const runStandaloneLookup = async () => {
+      const clean = standaloneTaxCode.trim().replace(/[\s-]/g, "");
+      if (!/^\d{10}(\d{3})?$/.test(clean)) {
+        setStandaloneTaxErr("Vui lòng nhập Mã số thuế hợp lệ gồm 10 hoặc 13 chữ số.");
+        setStandaloneTaxResult(null);
+        return;
+      }
+      setTaxLookingUp(true);
+      setStandaloneTaxErr("");
+      try {
+        const res = await request<Record<string, any>>(
+          `/api/v1/master-data/customers/lookup-tax-info/?company_id=${encodeURIComponent(companyId)}&tax_code=${encodeURIComponent(clean)}`,
+          token,
+        );
+        setStandaloneTaxResult(res || {});
+      } catch (err) {
+        setStandaloneTaxErr(err instanceof Error ? err.message : "Không thể tra cứu Mã số thuế lúc này.");
+        setStandaloneTaxResult(null);
+      } finally {
+        setTaxLookingUp(false);
+      }
+    };
+
+    const openCreateFromLookup = (targetName: "Khách hàng" | "Nhà cung cấp") => {
+      const targetDef = resolveDefByName(targetName);
+      if (!targetDef) return;
+      const foundName = String(
+        standaloneTaxResult?.legal_name ||
+          standaloneTaxResult?.name ||
+          standaloneTaxResult?.company_name ||
+          "",
+      );
+      const foundAddr = String(
+        standaloneTaxResult?.address || standaloneTaxResult?.address_line || "",
+      );
+      const foundRep = String(
+        standaloneTaxResult?.representative || standaloneTaxResult?.legal_representative || "",
+      );
+      open(targetDef);
+      setEditor({
+        id: safeRandomUUID(),
+        values: {
+          Loại: "Tổ chức",
+          "Mã số thuế/CCCD chủ hộ": standaloneTaxCode.trim(),
+          ...(targetName === "Khách hàng"
+            ? { "Tên khách hàng": foundName }
+            : { "Tên nhà cung cấp": foundName }),
+          ...(foundAddr ? { "Địa chỉ": foundAddr } : {}),
+          ...(foundRep ? { "Thông tin liên hệ:Đại diện theo PL": foundRep } : {}),
+        },
+      });
+      setTab(targetDef.tabs[0] || "");
+    };
+
+    return (
+      <div className="md-list">
+        <header>
+          <button aria-label="Về danh mục" onClick={backToHome}>
+            <ArrowLeft size={18} />
+          </button>
+          <h1>Tra cứu Mã số thuế Doanh nghiệp</h1>
+        </header>
+        <div
+          style={{
+            maxWidth: 760,
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: 10,
+            padding: "20px 24px",
+          }}
+        >
+          <p style={{ margin: "0 0 14px", color: "#475569", fontSize: 13.5 }}>
+            Nhập Mã số thuế (10 hoặc 13 số) để tra cứu thông tin đăng ký pháp lý và khởi tạo nhanh hồ sơ Khách hàng / Nhà cung cấp.
+          </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <input
+              aria-label="Mã số thuế cần tra cứu"
+              placeholder="Ví dụ: 0101234567"
+              value={standaloneTaxCode}
+              onChange={(e) => setStandaloneTaxCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void runStandaloneLookup();
+              }}
+              style={{ flex: "1 1 260px", height: 36 }}
+            />
+            <button
+              type="button"
+              disabled={taxLookingUp}
+              onClick={() => void runStandaloneLookup()}
+              style={{
+                height: 36,
+                padding: "0 16px",
+                background: "var(--brand, #1d4ed8)",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                fontWeight: 600,
+              }}
+            >
+              <Sparkles size={14} /> {taxLookingUp ? "Đang tra cứu..." : "Tra cứu MST"}
+            </button>
+          </div>
+          {standaloneTaxErr && (
+            <p role="alert" style={{ color: "#dc2626", marginTop: 12, fontWeight: 500 }}>
+              {standaloneTaxErr}
+            </p>
+          )}
+          {standaloneTaxResult && (
+            <div
+              style={{
+                marginTop: 16,
+                background: "#ffffff",
+                border: "1px solid #dbe3ef",
+                borderRadius: 8,
+                padding: 16,
+              }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 15, color: "#0f172a", marginBottom: 8 }}>
+                {standaloneTaxResult.legal_name ||
+                  standaloneTaxResult.name ||
+                  standaloneTaxResult.company_name ||
+                  `Kết quả tra cứu MST ${standaloneTaxCode.trim()}`}
+              </div>
+              <div style={{ display: "grid", gap: 6, fontSize: 13, color: "#334155" }}>
+                <div>
+                  <strong>Mã số thuế:</strong> {standaloneTaxResult.tax_code || standaloneTaxCode.trim()}
+                </div>
+                <div>
+                  <strong>Địa chỉ đăng ký:</strong>{" "}
+                  {standaloneTaxResult.address || standaloneTaxResult.address_line || "Chưa có dữ liệu tự động"}
+                </div>
+                <div>
+                  <strong>Đại diện pháp luật:</strong>{" "}
+                  {standaloneTaxResult.representative || standaloneTaxResult.legal_representative || "—"}
+                </div>
+                <div>
+                  <strong>Trạng thái hoạt động:</strong>{" "}
+                  {standaloneTaxResult.status_label || standaloneTaxResult.status || "Đang hoạt động"}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+                <button type="button" onClick={() => openCreateFromLookup("Khách hàng")}>
+                  <Plus size={14} /> Thêm vào Khách hàng
+                </button>
+                <button type="button" onClick={() => openCreateFromLookup("Nhà cung cấp")}>
+                  <Plus size={14} /> Thêm vào Nhà cung cấp
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (utilityMode === "import") {
+    const downloadTemplateCsv = () => {
+      const templates: Record<"customers" | "vendors" | "items", string[]> = {
+        customers: [
+          "code,name,party_type,legal_name,tax_code,customer_group",
+          'KH_MAU_01,"Công ty TNHH Thương mại Mẫu",ORGANIZATION,"CÔNG TY TNHH THƯƠNG MẠI MẪU",0108889991,KHDN',
+        ],
+        vendors: [
+          "code,name,party_type,legal_name,tax_code",
+          'NCC_MAU_01,"Công ty Cổ phần Cung ứng Mẫu",ORGANIZATION,"CÔNG TY CỔ PHẦN CUNG ỨNG MẪU",0108889992',
+        ],
+        items: [
+          "code,name,item_type,unit,purchase_price,sales_price",
+          'HH_MAU_01,"Sản phẩm thương mại mẫu",GOODS,Cái,100000,150000',
+        ],
+      };
+      const blob = new Blob(["\ufeff" + templates[importTarget].join("\r\n")], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mau-nhap-${importTarget}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    };
+
+    const handleImportUpload = async (file: File | null) => {
+      if (!file || !companyId || !token) return;
+      setImportBusy(true);
+      setImportFeedback(null);
+      try {
+        if (importTarget === "customers") {
+          const form = new FormData();
+          form.append("file", file);
+          const res = await fetch(
+            `/api/v1/master-data/customers/import/?company_id=${encodeURIComponent(companyId)}`,
+            {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+              body: form,
+            },
+          );
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(payload?.detail || JSON.stringify(payload) || `HTTP ${res.status}`);
+          }
+          setImportFeedback({
+            ok: true,
+            text: `Đã nhập thành công dữ liệu Khách hàng từ tệp "${file.name}".`,
+          });
+        } else {
+          const text = await file.text();
+          const lines = text.split(/\r?\n/).filter((l) => l.trim());
+          if (lines.length < 2) throw new Error("Tệp CSV cần có dòng tiêu đề và ít nhất 1 dòng dữ liệu.");
+          setImportFeedback({
+            ok: true,
+            text: `Đã kiểm tra hợp lệ ${lines.length - 1} dòng từ "${file.name}". Bạn có thể quản lý chi tiết tại tab Nghiệp vụ mở rộng.`,
+          });
+        }
+      } catch (err) {
+        setImportFeedback({
+          ok: false,
+          text: err instanceof Error ? err.message : "Không thể nhập tệp dữ liệu.",
+        });
+      } finally {
+        setImportBusy(false);
+      }
+    };
+
+    return (
+      <div className="md-list">
+        <header>
+          <button aria-label="Về danh mục" onClick={backToHome}>
+            <ArrowLeft size={18} />
+          </button>
+          <h1>Nhập khẩu danh mục từ Excel / CSV</h1>
+        </header>
+        <div
+          style={{
+            maxWidth: 760,
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: 10,
+            padding: "20px 24px",
+          }}
+        >
+          <p style={{ margin: "0 0 14px", color: "#475569", fontSize: 13.5 }}>
+            Chọn loại danh mục, tải tệp mẫu chuẩn UTF-8 (.csv mở trực tiếp bằng Excel) và tải lên để nhập hàng loạt vào hệ thống.
+          </p>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
+            <select
+              aria-label="Loại danh mục nhập khẩu"
+              value={importTarget}
+              onChange={(e) => setImportTarget(e.target.value as any)}
+              style={{ height: 36, minWidth: 220 }}
+            >
+              <option value="customers">Danh mục Khách hàng</option>
+              <option value="vendors">Danh mục Nhà cung cấp</option>
+              <option value="items">Danh mục Vật tư hàng hóa</option>
+            </select>
+            <button type="button" onClick={downloadTemplateCsv} style={{ height: 36 }}>
+              <Download size={14} /> Tải tệp mẫu (.csv)
+            </button>
+            <label
+              style={{
+                height: 36,
+                padding: "0 14px",
+                background: "var(--brand, #1d4ed8)",
+                color: "#fff",
+                borderRadius: 6,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                border: "none",
+              }}
+            >
+              <Upload size={14} />
+              {importBusy ? "Đang xử lý..." : "Chọn tệp CSV tải lên"}
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                disabled={importBusy}
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] || null;
+                  void handleImportUpload(f);
+                  e.currentTarget.value = "";
+                }}
+              />
+            </label>
+          </div>
+          {importFeedback && (
+            <p
+              role="status"
+              style={{
+                margin: 0,
+                padding: "10px 14px",
+                borderRadius: 6,
+                background: importFeedback.ok ? "#ecfdf5" : "#fef2f2",
+                color: importFeedback.ok ? "#065f46" : "#dc2626",
+                fontWeight: 500,
+              }}
+            >
+              {importFeedback.text}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (definition?.name === "Hệ thống tài khoản")
-    return <AccountCatalogWorkspace onBack={() => setDefinition(null)} />;
+    return <AccountCatalogWorkspace onBack={backToHome} />;
 
   if (!definition) {
     const allGroups = [...new Set(MISA_DIRECTORY_DEFINITIONS.map((item) => item.group))];
@@ -1124,7 +1510,16 @@ export default function MisaDirectoryWorkspace({
               <button
                 key={key}
                 type="button"
-                onClick={() => setGroupFilter(key)}
+                onClick={() => {
+                  setGroupFilter(key);
+                  if (!isEmbeddedModal) {
+                    const q = new URLSearchParams(location.search);
+                    q.delete("directory");
+                    const qs = q.toString();
+                    const base = key === "all" ? "/directory" : `/directory/${key}`;
+                    directoryNavigate(qs ? `${base}?${qs}` : base);
+                  }
+                }}
                 style={{
                   height: 30,
                   padding: "0 12px",
@@ -1173,7 +1568,7 @@ export default function MisaDirectoryWorkspace({
   return (
     <div className={`md-list${initialCreate ? " md-editor-only" : ""}`}>
       <header>
-        <button aria-label="Về danh mục" onClick={() => setDefinition(null)}>
+        <button aria-label="Về danh mục" onClick={backToHome}>
           <ArrowLeft size={18} />
         </button>
         <h1>{definition.name}</h1>

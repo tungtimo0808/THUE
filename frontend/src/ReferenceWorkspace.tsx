@@ -1189,7 +1189,8 @@ function ReferenceWorkspace() {
       }
     } catch {}
     if (Array.isArray(enabledList) && enabledList.length > 0) {
-      roleModules = roleModules.filter((m) => enabledList!.includes(m));
+      const coreAlways = new Set(["overview", "directory", "reports"]);
+      roleModules = roleModules.filter((m) => enabledList!.includes(m) || coreAlways.has(m));
     }
     return {
       ...baseSpec,
@@ -1638,11 +1639,13 @@ function ReferenceWorkspace() {
     }
 
     if (targetModuleId === "directory") {
+      const dirSubroute = moduleId === "directory" ? (requestedTab || null) : null;
       return (
         <MisaDirectoryWorkspace
-          key={`${params.get("directory") || "menu"}-${ctxKey}`}
+          key={`dir-${ctxKey}`}
           initialName={params.get("directory")}
           sectionTab={activeTab}
+          requestedSubroute={dirSubroute}
           notify={setNotice}
           legacy={<DirectoryWorkspace notify={setNotice} />}
         />
@@ -3032,7 +3035,7 @@ function ReferenceWorkspace() {
               branchId={effectiveBranchId}
               dataset={dataset}
               childTab={isCurrent ? childTab : null}
-              directoryParam={isCurrent ? params.get("directory") : null}
+              directoryParam={isCurrent ? `${params.get("directory") || ""}::${requestedTab || ""}` : null}
               payrollOption={payrollOption}
               renderContent={() => renderWorkspaceContentForModule(mId, activeTabForSlot)}
             />
