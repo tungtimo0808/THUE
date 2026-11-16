@@ -1422,9 +1422,11 @@ class OpeningBalanceViewSet(GenericViewSet):
         account = getattr(request.user, "iam_account", None)
         required = self._required_permission(request)
         # UC-GL-15 EF-02/EF-03/EF-21 & BR-GL-OB-03/04: an explicit right per operation, admins included
-        if not account or not has_effective_permission(account, comp, "OPENING_BALANCE_VIEW"):
+        if not account or not has_effective_permission(
+            account, comp, "OPENING_BALANCE_VIEW", allow_superuser_bypass=False
+        ):
             raise PermissionDenied("Bạn không có quyền truy cập Nhập số dư ban đầu.")
-        if not has_effective_permission(account, comp, required):
+        if not has_effective_permission(account, comp, required, allow_superuser_bypass=False):
             raise PermissionDenied("Bạn không có quyền thực hiện thao tác này.")
         return comp
 

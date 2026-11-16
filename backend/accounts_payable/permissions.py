@@ -37,12 +37,20 @@ class AccountsPayablePermission(BasePermission):
         )
         branch_id = None if (not raw_branch or str(raw_branch).lower() in ("all", "head-office")) else raw_branch
         codes = list(code) if isinstance(code, (list, tuple, set)) else [code]
-        if any(has_effective_permission(request.user.iam_account, company, c, branch_id=branch_id) for c in codes):
+        allow_super = not strict
+        if any(
+            has_effective_permission(
+                request.user.iam_account, company, c, branch_id=branch_id, allow_superuser_bypass=allow_super
+            )
+            for c in codes
+        ):
             return True
         if not branch_id and request.method in ("GET", "HEAD", "OPTIONS"):
             allowed = get_user_allowed_branch_ids(request, company.id)
             if allowed and any(
-                has_effective_permission(request.user.iam_account, company, c, branch_id=bid)
+                has_effective_permission(
+                    request.user.iam_account, company, c, branch_id=bid, allow_superuser_bypass=allow_super
+                )
                 for c in codes
                 for bid in allowed
             ):

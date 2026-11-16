@@ -68,7 +68,7 @@ class CompanyScopedViewSet(ProtectedModelViewSet):
         )
         if company_id:
             queryset = queryset.filter(company_id=company_id)
-            if not getattr(self.request.user, "is_superuser", False):
+            if not (getattr(self.request.user, "is_superuser", False) or getattr(self.request.user, "is_staff", False)):
                 if not account or not CompanyMembership.objects.filter(
                     company_id=company_id,
                     user=account,

@@ -225,8 +225,8 @@ def _scope_dims_allows(
     )
 
 
-def _get_user_company_grant_snapshot(user_account, company):
-    key = (str(user_account.id), str(company.id))
+def _get_user_company_grant_snapshot(user_account, company, *, allow_superuser_bypass=True):
+    key = (str(user_account.id), str(company.id), bool(allow_superuser_bypass))
     now_mono = time.monotonic()
     with _CACHE_LOCK:
         entry = _USER_COMPANY_GRANT_CACHE.get(key)
@@ -240,7 +240,7 @@ def _get_user_company_grant_snapshot(user_account, company):
         membership_status__in=(ActiveStatus.ACTIVE, "SCHEDULED_LOCK", "END_SCHEDULED"),
     ).exists()
     is_super = bool(getattr(getattr(user_account, "auth_user", None), "is_superuser", False))
-    if not has_membership and is_super:
+    if not has_membership and is_super and allow_superuser_bypass:
         CompanyMembership.objects.get_or_create(
             user=user_account,
             company=company,
@@ -270,7 +270,11 @@ def _get_user_company_grant_snapshot(user_account, company):
     )
     is_creator = str(getattr(company, "created_by_user_id", "") or "") == str(user_account.id)
     has_admin_role = any(is_sys or r_code in ("COMPANY_ADMIN", "ROLE_ADMIN") for _, is_sys, r_code, _ in asg_rows)
-    is_admin = bool(is_creator or has_admin_role or (is_super and not asg_rows))
+    is_admin = bool(
+        is_creator
+        or has_admin_role
+        or (allow_superuser_bypass and is_super and not asg_rows)
+    )
     snap = {
         "has_membership": True,
         "is_admin": is_admin,
@@ -473,12 +477,15 @@ def memberships_in_scope(user_account, company, permission_code):
 def has_effective_permission(
     user_account, company, permission_code, *, branch_id=None, department_id=None,
     warehouse_id=None, bank_account_id=None, project_id=None, cost_center_id=None,
+    allow_superuser_bypass=True,
 ):
     if not user_account or not company or not getattr(getattr(user_account, "auth_user", None), "is_active", False):
         return False
     perm_meta_map, _, _ = _get_perm_meta_bundle()
     perm_meta = perm_meta_map.get(permission_code)
-    snap = _get_user_company_grant_snapshot(user_account, company)
+    snap = _get_user_company_grant_snapshot(
+        user_account, company, allow_superuser_bypass=allow_superuser_bypass
+    )
     if snap["is_admin"] and (not perm_meta or _permission_meta_enabled(company, perm_meta)):
         return True
     if not snap["has_membership"]:
@@ -490,6 +497,7 @@ def has_effective_permission(
                 branch_id=branch_id, department_id=department_id,
                 warehouse_id=warehouse_id, bank_account_id=bank_account_id,
                 project_id=project_id, cost_center_id=cost_center_id,
+                allow_superuser_bypass=allow_superuser_bypass,
             )
         return False
     configuration = _setting(company)
