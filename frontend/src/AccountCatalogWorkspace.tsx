@@ -149,10 +149,10 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
                 <td style={{ padding: "7px 12px", color: "#475569", fontSize: 11.5 }}>{Object.entries(item.dimension_requirements || {}).filter(([, level]) => level !== "NOT_USED").map(([key, level]) => `${dimensions.find(pair => pair[0] === key)?.[1] || key}`).join(", ") || "—"}</td>
                 <td style={{ padding: "7px 12px", textAlign: "center", color: item.status === "ACTIVE" ? "#059669" : "#94a3b8", fontWeight: 600 }}>{item.status === "ACTIVE" ? "Đang sử dụng" : "Ngừng SD"}</td>
                 <td style={{ padding: "7px 8px", textAlign: "center" }}>
-                  <div style={{ display: "inline-flex", gap: 4 }}>
-                    <button type="button" onClick={() => open("edit", item)} style={{ padding: "2px 7px", fontSize: 11.5, borderRadius: 4, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}>Sửa</button>
-                    <button type="button" onClick={() => open("create", item, true)} style={{ padding: "2px 7px", fontSize: 11.5, borderRadius: 4, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}>Nhân bản</button>
-                    <button type="button" onClick={() => open("transfer", item)} style={{ padding: "2px 7px", fontSize: 11.5, borderRadius: 4, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}>Chuyển TK</button>
+                  <div style={{ display: "inline-grid", gridTemplateColumns: "46px 68px 74px", gap: 4, alignItems: "center" }}>
+                    <button type="button" onClick={() => open("edit", item)} style={{ width: "100%", height: 26, padding: 0, fontSize: 11.5, borderRadius: 4, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>Sửa</button>
+                    <button type="button" onClick={() => open("create", item, true)} style={{ width: "100%", height: 26, padding: 0, fontSize: 11.5, borderRadius: 4, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>Nhân bản</button>
+                    <button type="button" onClick={() => open("transfer", item)} style={{ width: "100%", height: 26, padding: 0, fontSize: 11.5, borderRadius: 4, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>Chuyển TK</button>
                   </div>
                 </td>
               </tr>

@@ -2,7 +2,7 @@ import { exportVisibleTable } from "./table-actions";
 import MisaPaymentTermsWorkspace from "./MisaPaymentTermsWorkspace";
 import {useNavigate,useSearchParams} from "react-router-dom";
 import MisaReportCenterWorkspace from "./MisaReportCenterWorkspace";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
 import { apiDate, apiNumber, apiUnitName, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
@@ -140,7 +140,7 @@ export default function MisaPurchaseWorkspace({
   const [showUnOffsetModal, setShowUnOffsetModal] = useState(false);
   const [showMultiUnOffsetModal, setShowMultiUnOffsetModal] = useState(false);
   const [showDebtClearingModal, setShowDebtClearingModal] = useState(false);
-  const [suppliers, setSuppliers] = useState([
+  const [suppliers, setSuppliers] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "ncc-01",
       code: "NCC00001",
@@ -174,7 +174,7 @@ export default function MisaPurchaseWorkspace({
   const [selectedNature, setSelectedNature] = useState<string>("Hàng hóa");
   const [editingItem, setEditingItem] = useState<InventoryItemData | null>(null);
   const [receiveInvoiceViewMode, setReceiveInvoiceViewMode] = useState<"empty_guide" | "list">("list");
-  const [receivedInvoices, setReceivedInvoices] = useState([
+  const [receivedInvoices, setReceivedInvoices] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "inv-01",
       receivedDate: "29/09/2026",
@@ -251,7 +251,7 @@ export default function MisaPurchaseWorkspace({
   const [selectedRowId, setSelectedRowId] = useState<string | null>("po-01");
 
   // Sample data: Đơn mua hàng (Image 2)
-  const [orders, setOrders] = useState([
+  const [orders, setOrders] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "po-01",
       code: "ĐMH00001",
@@ -275,7 +275,7 @@ export default function MisaPurchaseWorkspace({
   ]);
 
   // Sample data: Hợp đồng mua (Image 3)
-  const [contracts, setContracts] = useState([
+  const [contracts, setContracts] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "hd-01",
       code: "HĐM00001",
@@ -297,7 +297,7 @@ export default function MisaPurchaseWorkspace({
   ]);
 
   // Sample data: Chứng từ mua hàng (Image 4)
-  const [vouchers, setVouchers] = useState([
+  const [vouchers, setVouchers] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "nk-01",
       code: "NK00001",
@@ -321,7 +321,7 @@ export default function MisaPurchaseWorkspace({
   ]);
 
   // Sample data: Trả lại hàng mua (Image 5)
-  const [returns, setReturns] = useState([
+  const [returns, setReturns] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "xk-01",
       code: "XK00001",
@@ -334,7 +334,7 @@ export default function MisaPurchaseWorkspace({
   ]);
 
   // Sample data: Giảm giá hàng mua (Screenshot 1)
-  const [discounts, setDiscounts] = useState([
+  const [discounts, setDiscounts] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "mgg-01",
       code: "MGG00001",
@@ -347,7 +347,7 @@ export default function MisaPurchaseWorkspace({
   ]);
 
   // Sample data: Hàng hóa, dịch vụ (Screenshot 2)
-  const [inventoryItems, setInventoryItems] = useState<InventoryItemData[]>([
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemData[]>(() => apiConnected ? [] : [
     {
       id: "cpmh",
       name: "Chi phí mua hàng",
@@ -440,7 +440,7 @@ export default function MisaPurchaseWorkspace({
   };
 
   // Sample data: Đối chiếu công nợ (Screenshot 3)
-  const [reconciliations, setReconciliations] = useState([
+  const [reconciliations, setReconciliations] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "dc-01",
       period: "Tháng 09/2026",
@@ -453,7 +453,7 @@ export default function MisaPurchaseWorkspace({
     },
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!apiConnected) return;
     const parties = apiRows.suppliers;
     const supplierName = (row: any) => row.supplier_name || row.seller_name ||
@@ -2616,7 +2616,7 @@ export default function MisaPurchaseWorkspace({
       },
     ];
 
-    const effectiveVouchers = vouchers.length > 0 ? vouchers : fallbackVouchers;
+    const effectiveVouchers = apiConnected || vouchers.length > 0 ? vouchers : fallbackVouchers;
     const filteredVouchers = effectiveVouchers.filter((v) => {
       if (!searchQuery.trim()) return true;
       const kw = searchQuery.toLowerCase();
@@ -2657,13 +2657,13 @@ export default function MisaPurchaseWorkspace({
               justifyContent: "space-between",
             }}
           >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Tổng mua hàng (Kỳ này)</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", fontFamily: "var(--font-mono, monospace)" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Tổng mua hàng (Kỳ này)</div>
+              <div style={{ fontSize: "clamp(16px, 1.3vw, 19px)", fontWeight: 800, color: "#0f172a", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 {formatVND(totalPurchaseVal)} đ
               </div>
             </div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#ecfdf5", color: "var(--brand)", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: "var(--brand-soft, #eef3ff)", color: "var(--brand)", display: "grid", placeItems: "center" }}>
               <ShoppingCart size={18} />
             </div>
           </div>
@@ -2673,21 +2673,22 @@ export default function MisaPurchaseWorkspace({
             style={{
               background: "#ffffff",
               borderRadius: 10,
-              padding: "14px 18px",
+              padding: "14px 16px",
               border: "1px solid #e2e8f0",
               boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: 10,
             }}
           >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Công nợ phải trả (TK 331)</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#d97706", fontFamily: "var(--font-mono, monospace)" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Công nợ phải trả (TK 331)</div>
+              <div style={{ fontSize: "clamp(16px, 1.3vw, 19px)", fontWeight: 800, color: "#d97706", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 {formatVND(unpaidDebtVal)} đ
               </div>
             </div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#fef3c7", color: "#d97706", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: "#fef3c7", color: "#d97706", display: "grid", placeItems: "center" }}>
               <CreditCard size={18} />
             </div>
           </div>
@@ -2697,21 +2698,22 @@ export default function MisaPurchaseWorkspace({
             style={{
               background: "#ffffff",
               borderRadius: 10,
-              padding: "14px 18px",
+              padding: "14px 16px",
               border: "1px solid #e2e8f0",
               boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: 10,
             }}
           >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Hóa đơn chờ hạch toán</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#0284c7" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Hóa đơn chờ hạch toán</div>
+              <div style={{ fontSize: "clamp(16px, 1.3vw, 19px)", fontWeight: 800, color: "#0284c7", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 4 <span style={{ fontSize: 13, fontWeight: 500, color: "#64748b" }}>hóa đơn</span>
               </div>
             </div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#f0f9ff", color: "#0284c7", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: "#f0f9ff", color: "#0284c7", display: "grid", placeItems: "center" }}>
               <FileCheck size={18} />
             </div>
           </div>
@@ -2721,21 +2723,22 @@ export default function MisaPurchaseWorkspace({
             style={{
               background: "#ffffff",
               borderRadius: 10,
-              padding: "14px 18px",
+              padding: "14px 16px",
               border: "1px solid #e2e8f0",
               boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: 10,
             }}
           >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Chiết khấu được hưởng</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#9333ea", fontFamily: "var(--font-mono, monospace)" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Chiết khấu được hưởng</div>
+              <div style={{ fontSize: "clamp(16px, 1.3vw, 19px)", fontWeight: 800, color: "#9333ea", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 3.550.000 đ
               </div>
             </div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#faf5ff", color: "#9333ea", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: "#faf5ff", color: "#9333ea", display: "grid", placeItems: "center" }}>
               <Percent size={18} />
             </div>
           </div>
@@ -3203,19 +3206,40 @@ export default function MisaPurchaseWorkspace({
 
                   {/* Trạng thái */}
                   <td style={{ height: 42, padding: "0 12px", textAlign: "center", verticalAlign: "middle", boxSizing: "border-box", whiteSpace: "nowrap" }}>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        padding: "2px 9px",
-                        borderRadius: 12,
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        background: v.status === "Đã thanh toán" ? "#dcfce7" : "#fef3c7",
-                        color: v.status === "Đã thanh toán" ? "#15803d" : "#b45309",
-                      }}
-                    >
-                      {v.status || "Đã ghi sổ"}
-                    </span>
+                    {(() => {
+                      const rawSt = String(v.status || "POSTED").toUpperCase();
+                      const isDone = v.status === "Đã thanh toán" || v.status === "Đã ghi sổ" || rawSt === "POSTED" || rawSt === "PAID" || rawSt === "APPROVED";
+                      const stLabel =
+                        rawSt === "POSTED"
+                          ? "Đã ghi sổ"
+                          : rawSt === "DRAFT"
+                          ? "Bản nháp"
+                          : rawSt === "APPROVED"
+                          ? "Đã duyệt"
+                          : rawSt === "PENDING_APPROVAL"
+                          ? "Chờ duyệt"
+                          : rawSt === "PAID"
+                          ? "Đã thanh toán"
+                          : v.status || "Đã ghi sổ";
+                      return (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: 96,
+                            padding: "2px 9px",
+                            borderRadius: 12,
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            background: isDone ? "#dcfce7" : "#fef3c7",
+                            color: isDone ? "#15803d" : "#b45309",
+                          }}
+                        >
+                          {stLabel}
+                        </span>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}

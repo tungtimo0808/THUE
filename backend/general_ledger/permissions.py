@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 
-from iam.permissions import company_identifiers_agree, has_effective_permission
+from iam.permissions import company_identifiers_agree, get_user_allowed_branch_ids, has_effective_permission
 from organization.models import Company
 
 
@@ -32,13 +32,42 @@ class GeneralLedgerPermission(BasePermission):
         if not code:
             return False
         codes = [code] if isinstance(code, str) else list(code)
-        return any(
+        raw_branch = request.query_params.get("branch_id") or (
+            request.data.get("branch") if isinstance(request.data, dict) else None
+        )
+        branch_id = None if (not raw_branch or str(raw_branch).lower() in ("all", "head-office")) else raw_branch
+        dept_id = request.query_params.get("department_id") or (
+            request.data.get("department") if isinstance(request.data, dict) else None
+        )
+        proj_id = request.query_params.get("project_id") or (
+            request.data.get("project") if isinstance(request.data, dict) else None
+        )
+        cc_id = request.query_params.get("cost_center_id") or (
+            request.data.get("cost_center") if isinstance(request.data, dict) else None
+        )
+        if any(
             has_effective_permission(
                 request.user.iam_account, company, c,
-                branch_id=request.query_params.get("branch_id") or request.data.get("branch"),
-                department_id=request.query_params.get("department_id") or request.data.get("department"),
-                project_id=request.query_params.get("project_id") or request.data.get("project"),
-                cost_center_id=request.query_params.get("cost_center_id") or request.data.get("cost_center"),
+                branch_id=branch_id,
+                department_id=dept_id,
+                project_id=proj_id,
+                cost_center_id=cc_id,
             )
             for c in codes
-        )
+        ):
+            return True
+        if not branch_id and request.method in ("GET", "HEAD", "OPTIONS"):
+            allowed = get_user_allowed_branch_ids(request, company.id)
+            if allowed and any(
+                has_effective_permission(
+                    request.user.iam_account, company, c,
+                    branch_id=bid,
+                    department_id=dept_id,
+                    project_id=proj_id,
+                    cost_center_id=cc_id,
+                )
+                for c in codes
+                for bid in allowed
+            ):
+                return True
+        return False

@@ -765,6 +765,11 @@ def filter_queryset_by_branch(queryset, request, company_id=None, *, filter_bran
                 return queryset.filter(Q(account__account__branch_id=explicit_branch_id) | Q(payment_details__branch=explicit_branch_id))
             if model.__name__ == "SalesDelivery":
                 return queryset.filter(order__branch_id=explicit_branch_id)
+            if model.__name__ == "InventoryTransaction":
+                return queryset.filter(
+                    Q(source_warehouse__branch_id=explicit_branch_id)
+                    | Q(destination_warehouse__branch_id=explicit_branch_id)
+                )
         except (ValueError, TypeError, DjangoValidationError):
             return queryset.none()
 
@@ -785,5 +790,10 @@ def filter_queryset_by_branch(queryset, request, company_id=None, *, filter_bran
             return queryset.filter(Q(account__account__branch_id__in=allowed_branch_ids) | Q(payment_details__branch__in=list(allowed_branch_ids)))
         if model.__name__ == "SalesDelivery":
             return queryset.filter(order__branch_id__in=allowed_branch_ids)
+        if model.__name__ == "InventoryTransaction":
+            return queryset.filter(
+                Q(source_warehouse__branch_id__in=allowed_branch_ids)
+                | Q(destination_warehouse__branch_id__in=allowed_branch_ids)
+            )
 
     return queryset

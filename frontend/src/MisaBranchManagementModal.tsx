@@ -679,6 +679,8 @@ export default function MisaBranchManagementModal({
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
+                                  justifyContent: "center",
+                                  minWidth: 102,
                                   gap: 5,
                                   fontSize: 12,
                                   fontWeight: 600,
@@ -689,6 +691,7 @@ export default function MisaBranchManagementModal({
                                   border: b.status === "ACTIVE" ? "1px solid #a7f3d0" : "1px solid #e2e8f0",
                                   whiteSpace: "nowrap",
                                   flexShrink: 0,
+                                  boxSizing: "border-box",
                                 }}
                               >
                                 {b.status === "ACTIVE" ? (
@@ -703,17 +706,20 @@ export default function MisaBranchManagementModal({
                               </span>
                             </td>
                             <td style={{ padding: "10px 12px", textAlign: "right", whiteSpace: "nowrap" }}>
-                              <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 6, flexWrap: "nowrap" }}>
+                              <div style={{ display: "inline-grid", gridTemplateColumns: onSelectBranch ? "112px 66px" : "66px", alignItems: "center", justifyContent: "end", gap: 6 }}>
                                 {onSelectBranch && !isCurrentActive && (
                                   <button
                                     type="button"
                                     onClick={() => onSelectBranch(b.id, b.name)}
                                     title="Chọn làm việc tại chi nhánh này"
                                     style={{
+                                      width: 112,
+                                      height: 30,
                                       display: "inline-flex",
                                       alignItems: "center",
+                                      justifyContent: "center",
                                       gap: 5,
-                                      padding: "6px 12px",
+                                      padding: "0 8px",
                                       borderRadius: 6,
                                       background: "#eff6ff",
                                       border: "1px solid #bfdbfe",
@@ -723,26 +729,31 @@ export default function MisaBranchManagementModal({
                                       whiteSpace: "nowrap",
                                       flexShrink: 0,
                                       cursor: "pointer",
+                                      boxSizing: "border-box",
                                     }}
                                   >
                                     Chọn làm việc
                                   </button>
                                 )}
-                                {isCurrentActive && (
+                                {onSelectBranch && isCurrentActive && (
                                   <span
                                     style={{
+                                      width: 112,
+                                      height: 30,
                                       fontSize: 12,
                                       fontWeight: 700,
                                       color: "#15803d",
                                       background: "#dcfce7",
                                       border: "1px solid #bbf7d0",
-                                      padding: "5px 10px",
+                                      padding: "0 8px",
                                       borderRadius: 6,
                                       display: "inline-flex",
                                       alignItems: "center",
+                                      justifyContent: "center",
                                       gap: 4,
                                       whiteSpace: "nowrap",
                                       flexShrink: 0,
+                                      boxSizing: "border-box",
                                     }}
                                   >
                                     <Check size={13} /> Đang chọn
@@ -753,16 +764,20 @@ export default function MisaBranchManagementModal({
                                   onClick={() => openEditForm(b)}
                                   title="Sửa thông tin chi nhánh"
                                   style={{
+                                    width: 66,
+                                    height: 30,
                                     display: "inline-flex",
                                     alignItems: "center",
+                                    justifyContent: "center",
                                     gap: 4,
-                                    padding: "6px 12px",
+                                    padding: "0 8px",
                                     borderRadius: 6,
                                     background: "#ffffff",
                                     border: "1px solid #cbd5e1",
                                     color: "#334155",
                                     fontSize: 12,
                                     fontWeight: 600,
+                                    boxSizing: "border-box",
                                     whiteSpace: "nowrap",
                                     flexShrink: 0,
                                     cursor: "pointer",

@@ -176,9 +176,9 @@ function PurchaseDocument({
                 <th>Mã hàng</th>
                 <th>Tên hàng hóa</th>
                 <th>ĐVT</th>
-                <th>Số lượng</th>
-                <th>Đơn giá</th>
-                <th>Thành tiền</th>
+                <th className="numeric">Số lượng</th>
+                <th className="numeric">Đơn giá</th>
+                <th className="numeric">Thành tiền</th>
               </tr>
             </thead>
             <tbody>
@@ -299,7 +299,7 @@ export function PurchaseOrdersWorkspace({ notify }: { notify: Notify }) {
                 <th>Ngày đơn</th>
                 <th>Nhà cung cấp</th>
                 <th>Hạn giao</th>
-                <th>Giá trị</th>
+                <th className="numeric">Giá trị</th>
                 <th>Tình trạng</th>
                 <th></th>
               </tr>
@@ -1881,7 +1881,7 @@ export function ConfiguredListWorkspace({
                     <th>Nội dung diễn giải nghiệp vụ</th>
                     <th>TK Nợ</th>
                     <th>TK Có</th>
-                    <th>Số tiền (VND)</th>
+                    <th className="numeric">Số tiền (VND)</th>
                     <th>Đối tượng / Đơn vị THCP</th>
                   </tr>
                 </thead>
@@ -2227,8 +2227,8 @@ export function OpeningBalanceWorkspace({ notify }: { notify: Notify }) {
               <tr>
                 <th>Số hiệu</th>
                 <th>Tên tài khoản</th>
-                <th>Dư Nợ</th>
-                <th>Dư Có</th>
+                <th className="numeric">Dư Nợ</th>
+                <th className="numeric">Dư Có</th>
                 <th>Ngoại tệ</th>
                 <th>Ghi chú</th>
               </tr>

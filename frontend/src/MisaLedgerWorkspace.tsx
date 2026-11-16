@@ -7234,7 +7234,7 @@ export default function MisaLedgerWorkspace({
                         <th style={{ padding: "10px 14px" }}>Mục đích / Diễn giải</th>
                         <th style={{ padding: "10px 14px", textAlign: "right" }}>Số tiền đề nghị quyết toán</th>
                         <th style={{ padding: "10px 14px", textAlign: "center" }}>Trạng thái</th>
-                        <th style={{ padding: "10px 14px", textAlign: "center" }}>Thao tác</th>
+                        <th style={{ padding: "10px 14px", textAlign: "left", width: 260, whiteSpace: "nowrap" }}>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -8423,7 +8423,7 @@ export default function MisaLedgerWorkspace({
                         <th style={{ padding: "10px 14px" }}>TK Có</th>
                         <th style={{ padding: "10px 14px", textAlign: "right" }}>Số tiền</th>
                         <th style={{ padding: "10px 14px", textAlign: "center" }}>Ghi sổ</th>
-                        <th style={{ padding: "10px 14px", textAlign: "center" }}>Thao tác</th>
+                        <th style={{ padding: "10px 14px", textAlign: "left", width: 230, whiteSpace: "nowrap" }}>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -18498,7 +18498,7 @@ export default function MisaLedgerWorkspace({
                         <th style={{ padding: "9px 10px" }}>TK nguồn</th>
                         <th style={{ padding: "9px 10px" }}>Phương pháp</th>
                         <th style={{ padding: "9px 10px", textAlign: "right" }}>Tổng tiền phân bổ</th>
-                        <th style={{ padding: "9px 10px" }}>Trạng thái</th>
+                        <th style={{ padding: "9px 10px", textAlign: "center" }}>Trạng thái</th>
                         <th style={{ padding: "9px 10px", textAlign: "center" }}>Thao tác</th>
                       </tr>
                     </thead>
@@ -18514,9 +18514,13 @@ export default function MisaLedgerWorkspace({
                           <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700 }}>
                             {Number(run.amount || 0).toLocaleString("vi-VN")} ₫
                           </td>
-                          <td style={{ padding: "8px 10px" }}>
+                          <td style={{ padding: "8px 10px", textAlign: "center" }}>
                             <span
                               style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                minWidth: 86,
                                 padding: "2px 8px",
                                 borderRadius: 12,
                                 fontSize: 11.5,

@@ -1058,11 +1058,11 @@ export default function SuperAdminWorkspace() {
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>Mã</th>
+                        <th style={{ width: 110 }}>Mã</th>
                         <th>Tên Doanh nghiệp</th>
-                        <th>MST</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
+                        <th style={{ width: 130 }}>MST</th>
+                        <th style={{ width: 145, textAlign: "center" }}>Trạng thái</th>
+                        <th style={{ width: 120, textAlign: "center" }}>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1071,9 +1071,9 @@ export default function SuperAdminWorkspace() {
                           <td><strong>{comp.code}</strong></td>
                           <td><strong>{comp.name}</strong></td>
                           <td>{comp.tax_code || "—"}</td>
-                          <td>
+                          <td style={{ textAlign: "center" }}>
                             <span
-                              className={`admin-badge ${
+                              className={`admin-badge admin-status-pill-fixed ${
                                 comp.status === "ACTIVE"
                                   ? "admin-badge-active"
                                   : comp.status === "PENDING_SETUP"
@@ -1090,14 +1090,17 @@ export default function SuperAdminWorkspace() {
                                 : "Ngừng hoạt động"}
                             </span>
                           </td>
-                          <td>
-                            {comp.status !== "ACTIVE" && (
+                          <td style={{ textAlign: "center" }}>
+                            {comp.status !== "ACTIVE" ? (
                               <button
                                 className="admin-btn admin-btn-success admin-btn-sm"
+                                style={{ minWidth: 92, justifyContent: "center" }}
                                 onClick={() => handleSetCompanyStatus(comp.id, "ACTIVE")}
                               >
                                 Kích hoạt
                               </button>
+                            ) : (
+                              <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Đã kích hoạt</span>
                             )}
                           </td>
                         </tr>
@@ -1185,13 +1188,13 @@ export default function SuperAdminWorkspace() {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Mã</th>
-                      <th>Tên Doanh nghiệp</th>
-                      <th>Mã số thuế</th>
-                      <th>Chủ sở hữu (Admin)</th>
-                      <th>Thành viên</th>
-                      <th>Trạng thái</th>
-                      <th style={{ textAlign: "right" }}>Thao tác</th>
+                      <th style={{ width: 120 }}>Mã</th>
+                      <th style={{ minWidth: 220 }}>Tên Doanh nghiệp</th>
+                      <th style={{ width: 130 }}>Mã số thuế</th>
+                      <th style={{ minWidth: 190 }}>Chủ sở hữu (Admin)</th>
+                      <th style={{ width: 110, textAlign: "center" }}>Thành viên</th>
+                      <th style={{ width: 145, textAlign: "center" }}>Trạng thái</th>
+                      <th style={{ width: 430, minWidth: 430, textAlign: "right" }}>Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1210,10 +1213,10 @@ export default function SuperAdminWorkspace() {
                             <span style={{ color: "#94a3b8", fontSize: "13.1px" }}>Chưa chỉ định</span>
                           )}
                         </td>
-                        <td>{c.members_count} người</td>
-                        <td>
+                        <td style={{ textAlign: "center", fontWeight: 600 }}>{c.members_count} người</td>
+                        <td style={{ textAlign: "center" }}>
                           <span
-                            className={`admin-badge ${
+                            className={`admin-badge admin-status-pill-fixed ${
                               c.status === "ACTIVE"
                                 ? "admin-badge-active"
                                 : c.status === "PENDING_SETUP"
@@ -1230,8 +1233,8 @@ export default function SuperAdminWorkspace() {
                               : "Ngừng hoạt động"}
                           </span>
                         </td>
-                        <td style={{ textAlign: "right" }}>
-                          <div style={{ display: "inline-flex", gap: "0.4rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        <td style={{ textAlign: "right", width: 430, minWidth: 430, whiteSpace: "nowrap" }}>
+                          <div className="admin-action-grid-tenant">
                             <button
                               className="admin-btn admin-btn-primary admin-btn-sm"
                               onClick={() => enterCompanyAsSuperAdmin(c.id, "/")}
@@ -1257,7 +1260,7 @@ export default function SuperAdminWorkspace() {
                             >
                               <Users size={13} /> Đổi Admin
                             </button>
-                            {c.status !== "ACTIVE" && (
+                            {c.status !== "ACTIVE" ? (
                               <button
                                 className="admin-btn admin-btn-success admin-btn-sm"
                                 onClick={() => handleSetCompanyStatus(c.id, "ACTIVE")}
@@ -1265,8 +1268,7 @@ export default function SuperAdminWorkspace() {
                               >
                                 <Check size={13} /> Mở
                               </button>
-                            )}
-                            {c.status === "ACTIVE" && (
+                            ) : (
                               <button
                                 className="admin-btn admin-btn-danger admin-btn-sm"
                                 onClick={() => handleSetCompanyStatus(c.id, "SUSPENDED")}
@@ -1532,14 +1534,14 @@ export default function SuperAdminWorkspace() {
 
                           {!isCollapsed && (
                             <div className="admin-table-container">
-                              <table className="admin-table">
+                              <table className="admin-table" style={{ tableLayout: "fixed", minWidth: 880 }}>
                                 <thead>
                                   <tr>
-                                    <th style={{ width: "30%" }}>Nhân sự</th>
-                                    <th style={{ width: "24%" }}>Liên hệ</th>
-                                    <th style={{ width: "20%" }}>Vai trò & Quyền hạn</th>
-                                    <th style={{ width: "12%" }}>Trạng thái</th>
-                                    <th style={{ textAlign: "right", width: "14%" }}>Thao tác</th>
+                                    <th style={{ width: "28%" }}>Nhân sự</th>
+                                    <th style={{ width: "23%" }}>Liên hệ</th>
+                                    <th style={{ width: "21%" }}>Vai trò & Quyền hạn</th>
+                                    <th style={{ width: 120, textAlign: "center" }}>Trạng thái</th>
+                                    <th style={{ textAlign: "right", width: 232 }}>Thao tác</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -1557,8 +1559,8 @@ export default function SuperAdminWorkspace() {
                                             >
                                               {getUserInitials(u.display_name)}
                                             </span>
-                                            <div>
-                                              <div style={{ fontWeight: 600, color: "#0f172a" }}>{u.display_name}</div>
+                                            <div style={{ minWidth: 0 }}>
+                                              <div style={{ fontWeight: 600, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.display_name}</div>
                                               <div style={{ fontSize: "11.8px", color: "#64748b" }}>
                                                 @{u.username}
                                                 {otherCount > 0 && (
@@ -1577,7 +1579,7 @@ export default function SuperAdminWorkspace() {
                                           </div>
                                         </td>
                                         <td>
-                                          <div style={{ color: "#334155" }}>{u.email || "—"}</div>
+                                          <div style={{ color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email || "—"}</div>
                                           {u.phone && u.phone !== u.username && (
                                             <div style={{ fontSize: "11.8px", color: "#94a3b8" }}>{u.phone}</div>
                                           )}
@@ -1606,14 +1608,14 @@ export default function SuperAdminWorkspace() {
                                             )}
                                           </div>
                                         </td>
-                                        <td>
-                                          <span className="admin-status-indicator">
+                                        <td style={{ textAlign: "center" }}>
+                                          <span className="admin-status-indicator" style={{ justifyContent: "center" }}>
                                             <span className={`admin-status-dot ${u.is_active ? "" : "is-locked"}`} />
                                             {u.is_active ? "Hoạt động" : "Đã khóa"}
                                           </span>
                                         </td>
-                                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                                          <div style={{ display: "inline-flex", gap: "0.35rem" }}>
+                                        <td style={{ textAlign: "right", whiteSpace: "nowrap", width: 232 }}>
+                                          <div className="admin-action-grid-user">
                                             <button
                                               type="button"
                                               className="admin-btn admin-btn-secondary admin-btn-sm"
@@ -1658,15 +1660,15 @@ export default function SuperAdminWorkspace() {
                 /* VIEW MODE 2: CLEAN FLAT GLOBAL TABLE */
                 <div className="admin-card">
                   <div className="admin-table-container">
-                    <table className="admin-table">
+                    <table className="admin-table" style={{ minWidth: 920 }}>
                       <thead>
                         <tr>
                           <th>Nhân sự</th>
                           <th>Liên hệ</th>
                           <th>Doanh nghiệp trực thuộc</th>
-                          <th>Quyền Hệ thống</th>
-                          <th>Trạng thái</th>
-                          <th style={{ textAlign: "right" }}>Thao tác</th>
+                          <th style={{ width: 155, textAlign: "center" }}>Quyền Hệ thống</th>
+                          <th style={{ width: 120, textAlign: "center" }}>Trạng thái</th>
+                          <th style={{ textAlign: "right", width: 232 }}>Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1708,21 +1710,21 @@ export default function SuperAdminWorkspace() {
                                 <span style={{ color: "#94a3b8" }}>Chưa thuộc công ty</span>
                               )}
                             </td>
-                            <td>
+                            <td style={{ textAlign: "center" }}>
                               {u.is_superuser ? (
-                                <span className="admin-soft-pill admin-soft-pill-super">Super Admin</span>
+                                <span className="admin-soft-pill admin-soft-pill-super" style={{ minWidth: 128, justifyContent: "center" }}>Super Admin</span>
                               ) : (
-                                <span className="admin-soft-pill admin-soft-pill-role">Người dùng thường</span>
+                                <span className="admin-soft-pill admin-soft-pill-role" style={{ minWidth: 128, justifyContent: "center" }}>Người dùng thường</span>
                               )}
                             </td>
-                            <td>
-                              <span className="admin-status-indicator">
+                            <td style={{ textAlign: "center" }}>
+                              <span className="admin-status-indicator" style={{ justifyContent: "center" }}>
                                 <span className={`admin-status-dot ${u.is_active ? "" : "is-locked"}`} />
                                 {u.is_active ? "Hoạt động" : "Đã khóa"}
                               </span>
                             </td>
-                            <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                              <div style={{ display: "inline-flex", gap: "0.35rem" }}>
+                            <td style={{ textAlign: "right", whiteSpace: "nowrap", width: 232 }}>
+                              <div className="admin-action-grid-user">
                                 <button
                                   type="button"
                                   className="admin-btn admin-btn-secondary admin-btn-sm"

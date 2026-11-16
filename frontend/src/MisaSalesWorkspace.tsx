@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { formatVnDecimal } from "./formatMoney";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MisaApiDocumentStatus from "./MisaApiDocumentStatus";
@@ -184,38 +184,42 @@ export default function MisaSalesWorkspace({
   const [statCardsCollapsed, setStatCardsCollapsed] = useState(false);
   const [inventorySearchQuery, setInventorySearchQuery] = useState("");
   const [selectedInventoryItems, setSelectedInventoryItems] = useState<string[]>([]);
-  const [inventoryItemsList, setInventoryItemsList] = useState<InventoryItemData[]>([
-    {
-      id: "cpmh",
-      name: "Chi phí mua hàng",
-      code: "CPMH",
-      vatPolicy: "Chưa xác định",
-      nature: "Dịch vụ",
-      stockQty: 0.0,
-      stockValue: 0,
-      unit: "Lần",
-    },
-    {
-      id: "hh0002",
-      name: "Hàng hóa mới",
-      code: "HH0002",
-      vatPolicy: "Chưa xác định",
-      nature: "Hàng hóa",
-      stockQty: 0.0,
-      stockValue: 0,
-      unit: "Cái",
-    },
-    {
-      id: "hh0003",
-      name: "Hàng hóa mới",
-      code: "HH0003",
-      vatPolicy: "Chưa xác định",
-      nature: "Hàng hóa",
-      stockQty: 0.0,
-      stockValue: 0,
-      unit: "Cái",
-    },
-  ]);
+  const [inventoryItemsList, setInventoryItemsList] = useState<InventoryItemData[]>(() =>
+    apiConnected
+      ? []
+      : [
+          {
+            id: "cpmh",
+            name: "Chi phí mua hàng",
+            code: "CPMH",
+            vatPolicy: "Chưa xác định",
+            nature: "Dịch vụ",
+            stockQty: 0.0,
+            stockValue: 0,
+            unit: "Lần",
+          },
+          {
+            id: "hh0002",
+            name: "Hàng hóa mới",
+            code: "HH0002",
+            vatPolicy: "Chưa xác định",
+            nature: "Hàng hóa",
+            stockQty: 0.0,
+            stockValue: 0,
+            unit: "Cái",
+          },
+          {
+            id: "hh0003",
+            name: "Hàng hóa mới",
+            code: "HH0003",
+            vatPolicy: "Chưa xác định",
+            nature: "Hàng hóa",
+            stockQty: 0.0,
+            stockValue: 0,
+            unit: "Cái",
+          },
+        ]
+  );
 
   const handleSelectNature = (_natureId: string, natureName: string) => {
     setShowNatureDrawer(false);
@@ -252,8 +256,8 @@ export default function MisaSalesWorkspace({
     }
   };
 
-  // Sample data: Báo giá
-  const [quotes, setQuotes] = useState([
+  // Sample data: Báo giá (offline fallback only when !apiConnected)
+  const [quotes, setQuotes] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "bg-01",
       code: "BG00001",
@@ -277,7 +281,7 @@ export default function MisaSalesWorkspace({
   ]);
 
   // Sample data: Đơn đặt hàng
-  const [orders, setOrders] = useState([
+  const [orders, setOrders] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "so-01",
       code: "ĐH00001",
@@ -301,7 +305,7 @@ export default function MisaSalesWorkspace({
   ]);
 
   // Sample data: Hợp đồng bán hàng
-  const [contracts, setContracts] = useState([
+  const [contracts, setContracts] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "hdb-01",
       code: "HĐB00001",
@@ -337,7 +341,7 @@ export default function MisaSalesWorkspace({
   ]);
 
   // Sample data: Bán hàng (Chứng từ bán hàng / Ghi nhận doanh thu)
-  const [salesVouchers, setSalesVouchers] = useState([
+  const [salesVouchers, setSalesVouchers] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "bh-01",
       code: "BH00001",
@@ -443,7 +447,7 @@ export default function MisaSalesWorkspace({
   ]);
 
   // Sample data: Khách hàng
-  const [customers, setCustomers] = useState([
+  const [customers, setCustomers] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "kh-01",
       code: "KH001",
@@ -465,7 +469,7 @@ export default function MisaSalesWorkspace({
   ]);
 
   // Sample data: Hóa đơn bán hàng (Matching Screenshot 2)
-  const [invoices, setInvoices] = useState([
+  const [invoices, setInvoices] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "inv-01",
       code: "0000001",
@@ -497,7 +501,7 @@ export default function MisaSalesWorkspace({
   ]);
 
   // Sample data: Trả lại hàng bán (BTL00001)
-  const [returns, setReturns] = useState([
+  const [returns, setReturns] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "ret-01",
       code: "BTL00001",
@@ -514,7 +518,7 @@ export default function MisaSalesWorkspace({
   ]);
 
   // Sample data: Giảm giá hàng bán (BGG00001)
-  const [discounts, setDiscounts] = useState([
+  const [discounts, setDiscounts] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "disc-01",
       code: "BGG00001",
@@ -529,7 +533,7 @@ export default function MisaSalesWorkspace({
     },
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!apiConnected) return;
     const customerName = (row: any) => row.customer_name || row.buyer_name ||
       apiRows.customers?.find((customer) => customer.id === row.customer)?.name || "";
@@ -4261,7 +4265,7 @@ export default function MisaSalesWorkspace({
     }
 
     // LIST VIEW MODE - BỨT PHÁ SAAS VỚI BENTO KPI & CHIỀU CAO HÀNG ĐỒNG BỘ 42PX
-    const effectiveSalesVouchers = salesVouchers.length > 0 ? salesVouchers : [
+    const effectiveSalesVouchers = apiConnected || salesVouchers.length > 0 ? salesVouchers : [
       {
         id: "bh-01",
         code: "BH00001",
@@ -4358,13 +4362,13 @@ export default function MisaSalesWorkspace({
               justifyContent: "space-between",
             }}
           >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Doanh thu Bán hàng (Kỳ này)</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", fontFamily: "var(--font-mono, monospace)" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Doanh thu Bán hàng (Kỳ này)</div>
+              <div style={{ fontSize: "clamp(16px, 1.3vw, 19px)", fontWeight: 800, color: "#0f172a", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 {formatVND(totalSalesVal)} đ
               </div>
             </div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#ecfdf5", color: "var(--brand)", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: "var(--brand-soft, #eef3ff)", color: "var(--brand)", display: "grid", placeItems: "center" }}>
               <TrendingUp size={18} />
             </div>
           </div>
@@ -4374,21 +4378,22 @@ export default function MisaSalesWorkspace({
             style={{
               background: "#ffffff",
               borderRadius: 10,
-              padding: "14px 18px",
+              padding: "14px 16px",
               border: "1px solid #e2e8f0",
               boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: 10,
             }}
           >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Phải thu Khách hàng (TK 131)</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#ea580c", fontFamily: "var(--font-mono, monospace)" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Phải thu Khách hàng (TK 131)</div>
+              <div style={{ fontSize: "clamp(16px, 1.3vw, 19px)", fontWeight: 800, color: "#ea580c", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 {formatVND(uncollectedVal)} đ
               </div>
             </div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#fff7ed", color: "#ea580c", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: "#fff7ed", color: "#ea580c", display: "grid", placeItems: "center" }}>
               <CreditCard size={18} />
             </div>
           </div>
@@ -4398,21 +4403,22 @@ export default function MisaSalesWorkspace({
             style={{
               background: "#ffffff",
               borderRadius: 10,
-              padding: "14px 18px",
+              padding: "14px 16px",
               border: "1px solid #e2e8f0",
               boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: 10,
             }}
           >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Thuế GTGT Bán ra (TK 3331)</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#0284c7", fontFamily: "var(--font-mono, monospace)" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Thuế GTGT Bán ra (TK 3331)</div>
+              <div style={{ fontSize: "clamp(16px, 1.3vw, 19px)", fontWeight: 800, color: "#0284c7", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 {formatVND(estTaxOutputVal)} đ
               </div>
             </div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#f0f9ff", color: "#0284c7", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: "#f0f9ff", color: "#0284c7", display: "grid", placeItems: "center" }}>
               <FileText size={18} />
             </div>
           </div>
@@ -4422,21 +4428,22 @@ export default function MisaSalesWorkspace({
             style={{
               background: "#ffffff",
               borderRadius: 10,
-              padding: "14px 18px",
+              padding: "14px 16px",
               border: "1px solid #e2e8f0",
               boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: 10,
             }}
           >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Đã thu tiền khách hàng</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#7c3aed", fontFamily: "var(--font-mono, monospace)" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Đã thu tiền khách hàng</div>
+              <div style={{ fontSize: "clamp(16px, 1.3vw, 19px)", fontWeight: 800, color: "#7c3aed", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 {formatVND(collectedVal)} đ
               </div>
             </div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#faf5ff", color: "#7c3aed", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: "#faf5ff", color: "#7c3aed", display: "grid", placeItems: "center" }}>
               <Coins size={18} />
             </div>
           </div>
@@ -4764,28 +4771,28 @@ export default function MisaSalesWorkspace({
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ background: "#f8fafc", height: 40, maxHeight: 40, borderBottom: "1px solid #e2e8f0", boxSizing: "border-box" }}>
-                <th style={{ width: 120, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                <th style={{ width: 118, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
                   Số chứng từ
                 </th>
-                <th style={{ width: 100, height: 40, padding: "0 12px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                <th style={{ width: 96, height: 40, padding: "0 10px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
                   Ngày
                 </th>
-                <th style={{ width: 180, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                <th style={{ width: 152, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
                   Loại chứng từ
                 </th>
-                <th style={{ width: 260, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                <th style={{ width: 215, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
                   Khách hàng
                 </th>
-                <th style={{ width: 140, height: 40, padding: "0 12px", textAlign: "right", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                <th style={{ width: 132, height: 40, padding: "0 12px", textAlign: "right", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
                   Tổng tiền
                 </th>
-                <th style={{ width: 140, height: 40, padding: "0 12px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
-                  Trạng thái TT
+                <th style={{ width: 118, height: 40, padding: "0 10px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                  Trạng thái
                 </th>
-                <th style={{ width: 120, height: 40, padding: "0 12px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                <th style={{ width: 102, height: 40, padding: "0 10px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
                   Hóa đơn
                 </th>
-                <th style={{ minWidth: 260, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
+                <th style={{ minWidth: 165, height: 40, padding: "0 12px", textAlign: "left", verticalAlign: "middle", fontWeight: 700, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#475569" }}>
                   Diễn giải
                 </th>
               </tr>
@@ -4845,35 +4852,59 @@ export default function MisaSalesWorkspace({
                     {formatVND(v.totalPayment || v.amount)} đ
                   </td>
 
-                  {/* Trạng thái TT */}
-                  <td style={{ height: 42, padding: "0 12px", textAlign: "center", verticalAlign: "middle", boxSizing: "border-box", whiteSpace: "nowrap" }}>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        padding: "2px 9px",
-                        borderRadius: 12,
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        background: v.status === "Đã thanh toán" ? "#dcfce7" : "#ffedd5",
-                        color: v.status === "Đã thanh toán" ? "#15803d" : "#c2410c",
-                      }}
-                    >
-                      {v.status || "Chưa thanh toán"}
-                    </span>
+                  {/* Trạng thái */}
+                  <td style={{ height: 42, padding: "0 10px", textAlign: "center", verticalAlign: "middle", boxSizing: "border-box", whiteSpace: "nowrap" }}>
+                    {(() => {
+                      const rawSt = String(v.status || "POSTED").toUpperCase();
+                      const isDone = v.status === "Đã thanh toán" || v.status === "Đã ghi sổ" || rawSt === "POSTED" || rawSt === "PAID" || rawSt === "APPROVED";
+                      const stLabel =
+                        rawSt === "POSTED"
+                          ? "Đã ghi sổ"
+                          : rawSt === "DRAFT"
+                          ? "Bản nháp"
+                          : rawSt === "APPROVED"
+                          ? "Đã duyệt"
+                          : rawSt === "PENDING_APPROVAL"
+                          ? "Chờ duyệt"
+                          : rawSt === "PAID"
+                          ? "Đã thanh toán"
+                          : v.status || "Chưa thanh toán";
+                      return (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: 94,
+                            padding: "2px 9px",
+                            borderRadius: 12,
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            background: isDone ? "#dcfce7" : "#ffedd5",
+                            color: isDone ? "#15803d" : "#c2410c",
+                          }}
+                        >
+                          {stLabel}
+                        </span>
+                      );
+                    })()}
                   </td>
 
                   {/* Hóa đơn */}
-                  <td style={{ height: 42, padding: "0 12px", textAlign: "center", verticalAlign: "middle", boxSizing: "border-box", whiteSpace: "nowrap" }}>
+                  <td style={{ height: 42, padding: "0 10px", textAlign: "center", verticalAlign: "middle", boxSizing: "border-box", whiteSpace: "nowrap" }}>
                     <span
                       style={{
-                        display: "inline-block",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: 84,
                         padding: "2px 8px",
                         borderRadius: 10,
                         fontSize: 11,
                         fontWeight: 600,
-                        background: "#eff6ff",
+                        background: "var(--brand-soft, #eff6ff)",
                         color: "var(--brand)",
-                        border: "1px solid #bbf7d0",
+                        border: "1px solid var(--brand-border, #bfdbfe)",
                       }}
                     >
                       Đã xuất HĐ

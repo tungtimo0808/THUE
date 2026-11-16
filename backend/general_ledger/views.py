@@ -1890,7 +1890,8 @@ class GeneralBusinessVoucherViewSet(ModelViewSet):
             val = self.request.query_params.get(param)
             if val:
                 qs = qs.filter(**{field: val})
-        return qs
+        from iam.permissions import filter_queryset_by_branch
+        return filter_queryset_by_branch(qs, self.request, company_id)
 
     def create(self, request, *args, **kwargs):
         company = self._resolve_company(request)

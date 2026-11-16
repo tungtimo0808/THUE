@@ -7,7 +7,8 @@ import React, {
   useMemo,
   type ReactNode,
 } from "react";
-import { login, logout, getCompanies, type Company } from "./live-api";
+import { login, logout, getCompanies, clearLiveApiGetCache, type Company } from "./live-api";
+import { clearWarmSnapshots, warmCompanyWorkspaceData } from "./company-prefetch";
 
 export interface ApiSessionData {
   token: string;
@@ -35,13 +36,71 @@ export interface ApiSessionContextType {
 
 const ApiSessionContext = createContext<ApiSessionContextType | null>(null);
 
+function readInitialSessionState(): {
+  token: string;
+  refreshToken: string;
+  companyId: string;
+  companies: Company[];
+  user: any;
+} {
+  try {
+    const raw = localStorage.getItem("erp_api_session");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const tok = String(parsed.token || parsed.access || localStorage.getItem("erp_token") || "");
+      const ref = String(parsed.refresh || localStorage.getItem("erp_refresh") || "");
+      const comps: Company[] = Array.isArray(parsed.companies) ? parsed.companies : [];
+      const storedCompId = localStorage.getItem("erp_company_id") || "";
+      const cId = String(
+        (storedCompId && comps.some((c) => c.id === storedCompId) ? storedCompId : "") ||
+          parsed.companyId ||
+          comps[0]?.id ||
+          storedCompId ||
+          ""
+      );
+      return {
+        token: tok,
+        refreshToken: ref,
+        companyId: cId,
+        companies: comps,
+        user: parsed.user || null,
+      };
+    }
+    const fallbackToken = localStorage.getItem("erp_token") || "";
+    const fallbackRefresh = localStorage.getItem("erp_refresh") || "";
+    const fallbackCompId = localStorage.getItem("erp_company_id") || "";
+    if (fallbackToken) {
+      return {
+        token: fallbackToken,
+        refreshToken: fallbackRefresh,
+        companyId: fallbackCompId,
+        companies: [],
+        user: null,
+      };
+    }
+  } catch (e) {
+    console.error("Failed to parse erp_api_session synchronously:", e);
+  }
+  return {
+    token: "",
+    refreshToken: "",
+    companyId: "",
+    companies: [],
+    user: null,
+  };
+}
+
 export function ApiSessionProvider({ children }: { children: ReactNode }) {
-  const [restoring, setRestoring] = useState(true);
-  const [token, setToken] = useState<string>("");
-  const [refreshToken, setRefreshToken] = useState<string>("");
-  const [companyId, setCompanyId] = useState<string>("");
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [user, setUser] = useState<any>(null);
+  const initial = useMemo(() => readInitialSessionState(), []);
+  // Only mark restoring=true when a bare token exists without cached companies yet
+  const [restoring, setRestoring] = useState<boolean>(
+    () => Boolean(initial.token && initial.companies.length === 0)
+  );
+  const [token, setToken] = useState<string>(initial.token);
+  const [refreshToken, setRefreshToken] = useState<string>(initial.refreshToken);
+  const [companyId, setCompanyId] = useState<string>(initial.companyId);
+  const [companies, setCompanies] = useState<Company[]>(initial.companies);
+  const [user, setUser] = useState<any>(initial.user);
 
   useEffect(() => {
     const onTokenChanged = (event: Event) => {
@@ -76,30 +135,26 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem("erp_api_session");
       if (raw) {
         const parsed = JSON.parse(raw);
-        const tok = parsed.token || parsed.access || "";
-        const ref = parsed.refresh || "";
+        const tok = initial.token || parsed.token || parsed.access || "";
+        const ref = initial.refreshToken || parsed.refresh || "";
         const cId =
+          initial.companyId ||
           parsed.companyId ||
           (parsed.companies && parsed.companies[0]?.id) ||
           "";
-        const comps: Company[] = parsed.companies || [];
-
-        setToken(tok);
-        setRefreshToken(ref);
-        setCompanyId(cId);
-        setCompanies(comps);
-        setUser(parsed.user || null);
 
         // Background update companies if token is present
         if (tok) {
           getCompanies(tok)
             .then((fresh) => {
               const currentRaw = localStorage.getItem("erp_api_session");
-              if (!currentRaw) return;
+              if (!currentRaw && !localStorage.getItem("erp_token")) return;
               try {
-                const currentParsed = JSON.parse(currentRaw);
-                const currentTok = currentParsed.token || currentParsed.access || "";
-                if (currentTok && currentTok !== tok) return;
+                if (currentRaw) {
+                  const currentParsed = JSON.parse(currentRaw);
+                  const currentTok = currentParsed.token || currentParsed.access || "";
+                  if (currentTok && currentTok !== tok) return;
+                }
               } catch {
                 return;
               }
@@ -134,14 +189,50 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
             })
             .catch((err) => {
               console.warn("Could not sync companies on load:", err);
+            })
+            .finally(() => {
+              setRestoring(false);
             });
+          return;
         }
+      } else if (initial.token) {
+        getCompanies(initial.token)
+          .then((fresh) => {
+            if (Array.isArray(fresh) && fresh.length > 0) {
+              setCompanies(fresh);
+              const resolvedId =
+                (initial.companyId && fresh.some((c) => c.id === initial.companyId)
+                  ? initial.companyId
+                  : (fresh.find((c) => c.status === "ACTIVE" || !c.status) || fresh[0]).id);
+              setCompanyId(resolvedId);
+              localStorage.setItem("erp_company_id", resolvedId);
+              try {
+                localStorage.setItem(
+                  "erp_api_session",
+                  JSON.stringify({
+                    token: initial.token,
+                    access: initial.token,
+                    access_token: initial.token,
+                    refresh: initial.refreshToken,
+                    companyId: resolvedId,
+                    companies: fresh,
+                    company: fresh.find((c) => c.id === resolvedId) || fresh[0],
+                  })
+                );
+              } catch {}
+            }
+          })
+          .catch(() => {})
+          .finally(() => {
+            setRestoring(false);
+          });
+        return;
       }
     } catch (e) {
       console.error("Failed to parse erp_api_session:", e);
     }
     setRestoring(false);
-  }, []);
+  }, [initial.companyId, initial.refreshToken, initial.token]);
 
   // Listen for background token updates or session expiry
   useEffect(() => {
@@ -257,6 +348,9 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
 
       setUser(resolvedUser);
       localStorage.setItem("erp_api_session", JSON.stringify(sessionObj));
+      if (initialCompanyId) {
+        void warmCompanyWorkspaceData(access, initialCompanyId);
+      }
     },
     []
   );
@@ -275,6 +369,8 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
     setCompanies([]);
     setUser(null);
 
+    clearLiveApiGetCache();
+    clearWarmSnapshots();
     localStorage.removeItem("erp_api_session");
     localStorage.removeItem("erp_token");
     localStorage.removeItem("erp_refresh");

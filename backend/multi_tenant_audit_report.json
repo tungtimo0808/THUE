@@ -1,0 +1,24 @@
+{
+  "tenant_a": {
+    "id": "614f784c-f253-4fe8-b519-e50631be518e",
+    "code": "ABC"
+  },
+  "tenant_b": {
+    "id": "a4be67ef-a568-4811-9e31-e9f1df401ba5",
+    "code": "SOVIET_272"
+  },
+  "user_a": "loadtest_c01_u01",
+  "user_b": "loadtest_c02_u01",
+  "cross_tenant_leaks": [
+    {
+      "path": "api/v1/common/companies/mine/",
+      "query_param": "company_id",
+      "status": 200,
+      "record_count": 1,
+      "sample": "{'id': '614f784c-f253-4fe8-b519-e50631be518e', 'code': 'ABC', 'name': 'CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ ABC', 'status': 'ACTIVE', 'tax_code': '01012"
+    }
+  ],
+  "missing_scope_leaks": [],
+  "idor_leaks": [],
+  "search_leaks": []
+}

@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.permissions import BasePermission
 
-from iam.permissions import assignment_permission_codes, effective_assignments, has_effective_permission, is_company_admin_member
+from iam.permissions import assignment_permission_codes, effective_assignments, get_user_allowed_branch_ids, has_effective_permission, is_company_admin_member
 from organization.models import Company
 
 from .models import ReportDefinition
@@ -47,14 +47,34 @@ class ReportingPermission(BasePermission):
             return False
         if action in {"list", "retrieve"} and code == "RPT.CENTER.VIEW":
             return self.has_any_grant(request.user.iam_account, company, code)
-        scope = run.parameters if action in {"drill_down", "export"} else request.data
-        return has_effective_permission(
+        scope = run.parameters if action in {"drill_down", "export"} else (request.data if isinstance(request.data, dict) else {})
+        raw_branch = request.query_params.get("branch_id") or scope.get("branch")
+        branch_id = None if (not raw_branch or str(raw_branch).lower() in ("all", "head-office")) else raw_branch
+        dept_id = request.query_params.get("department_id") or scope.get("department")
+        wh_id = request.query_params.get("warehouse_id") or scope.get("warehouse")
+        bank_id = request.query_params.get("bank_account_id") or scope.get("bank_account")
+        if has_effective_permission(
             request.user.iam_account, company, code,
-            branch_id=request.query_params.get("branch_id") or scope.get("branch"),
-            department_id=request.query_params.get("department_id") or scope.get("department"),
-            warehouse_id=request.query_params.get("warehouse_id") or scope.get("warehouse"),
-            bank_account_id=request.query_params.get("bank_account_id") or scope.get("bank_account"),
-        )
+            branch_id=branch_id,
+            department_id=dept_id,
+            warehouse_id=wh_id,
+            bank_account_id=bank_id,
+        ):
+            return True
+        if not branch_id and request.method in ("GET", "HEAD", "OPTIONS"):
+            allowed = get_user_allowed_branch_ids(request, company.id)
+            if allowed and any(
+                has_effective_permission(
+                    request.user.iam_account, company, code,
+                    branch_id=bid,
+                    department_id=dept_id,
+                    warehouse_id=wh_id,
+                    bank_account_id=bank_id,
+                )
+                for bid in allowed
+            ):
+                return True
+        return False
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_superuser:

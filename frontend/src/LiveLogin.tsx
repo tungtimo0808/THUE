@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Lock, Mail } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { AuthField, AuthLayout, AuthSubmit } from "./AuthLayout";
+import { preloadWorkspace } from "./workspace-preloader";
 
 export default function LiveLogin() {
   const {
@@ -22,6 +23,12 @@ export default function LiveLogin() {
   // Status & Feedback
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  // Preload company portal & landing overview chunks while user types credentials
+  useEffect(() => {
+    void import("./LiveCompanySelect");
+    preloadWorkspace("overview");
+  }, []);
 
   // If user is already logged in, redirect straight to company selection
   useEffect(() => {

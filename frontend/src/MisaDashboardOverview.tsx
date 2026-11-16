@@ -27,6 +27,12 @@ import {
   refreshDashboardUcRpt01,
   fetchDashboardMetricDetailsUcRpt01,
 } from "./misa-api-writes";
+import {
+  buildDashboardConfigWarmKey,
+  buildDashboardOverviewWarmKey,
+  readWarmSnapshot,
+  writeWarmSnapshot,
+} from "./company-prefetch";
 
 export type DashboardHref = (path: string, extra?: Record<string, string>) => string;
 
@@ -169,27 +175,45 @@ export function MisaDashboardOverview({
   const [recentModuleFilter, setRecentModuleFilter] = useState<string>("");
   const [recentStatusFilter, setRecentStatusFilter] = useState<string>("");
 
-  const dashCfgCacheKey = effectiveCompanyId ? `sv_dash_cfg_v1_${effectiveCompanyId}` : "";
+  const dashCfgCacheKey = effectiveCompanyId
+    ? buildDashboardConfigWarmKey(effectiveToken, effectiveCompanyId)
+    : "";
   const dashOvrCacheKey = effectiveCompanyId
-    ? `sv_dash_ovr_v1_${effectiveCompanyId}_${selectedPeriod}_${selectedBranchId || "all"}_${comparisonMode}_${revenueBasis}`
+    ? buildDashboardOverviewWarmKey(
+        effectiveToken,
+        effectiveCompanyId,
+        selectedPeriod,
+        selectedBranchId || "all",
+        comparisonMode,
+        revenueBasis,
+      )
     : "";
 
-  const readSessionJson = (key: string) => {
-    if (!key) return null;
-    try {
-      const raw = sessionStorage.getItem(key);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  const [configData, setConfigData] = useState<any>(() => readSessionJson(dashCfgCacheKey));
-  const [overviewData, setOverviewData] = useState<any>(() => readSessionJson(dashOvrCacheKey));
+  const [configData, setConfigData] = useState<any>(() => readWarmSnapshot(dashCfgCacheKey));
+  const [overviewData, setOverviewData] = useState<any>(() => readWarmSnapshot(dashOvrCacheKey));
+  const configCacheKeyRef = useRef<string>(dashCfgCacheKey);
   const overviewCacheKeyRef = useRef<string>(overviewData ? dashOvrCacheKey : "");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(
+    () => Boolean(effectiveToken && effectiveCompanyId && !readWarmSnapshot(dashOvrCacheKey))
+  );
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<string>("");
+
+  // Synchronously swap warm snapshots during render when company/period/branch changes (0-frame lag)
+  if (configCacheKeyRef.current !== dashCfgCacheKey) {
+    configCacheKeyRef.current = dashCfgCacheKey;
+    const warmCfg = readWarmSnapshot(dashCfgCacheKey);
+    if (warmCfg !== configData) {
+      setConfigData(warmCfg);
+    }
+  }
+  if (overviewCacheKeyRef.current !== dashOvrCacheKey) {
+    const warmOvr = readWarmSnapshot(dashOvrCacheKey);
+    overviewCacheKeyRef.current = warmOvr ? dashOvrCacheKey : "";
+    if (warmOvr !== overviewData) {
+      setOverviewData(warmOvr);
+    }
+  }
 
   // Drill-down modal state (MF-06, AF-06..AF-08, BR-RPT-DASH-60..63)
   const [drilldownMetric, setDrilldownMetric] = useState<string | null>(null);
@@ -251,13 +275,13 @@ export function MisaDashboardOverview({
 
   // Seed cached config/overview immediately when switching context
   useEffect(() => {
-    const cachedCfg = readSessionJson(dashCfgCacheKey);
+    const cachedCfg = readWarmSnapshot(dashCfgCacheKey);
     if (cachedCfg) setConfigData(cachedCfg);
   }, [dashCfgCacheKey]);
 
   useEffect(() => {
     if (overviewCacheKeyRef.current === dashOvrCacheKey) return;
-    const cachedOvr = readSessionJson(dashOvrCacheKey);
+    const cachedOvr = readWarmSnapshot(dashOvrCacheKey);
     if (cachedOvr) {
       overviewCacheKeyRef.current = dashOvrCacheKey;
       setOverviewData(cachedOvr);
@@ -273,9 +297,7 @@ export function MisaDashboardOverview({
         if (!active) return;
         setConfigData(res);
         if (dashCfgCacheKey) {
-          try {
-            sessionStorage.setItem(dashCfgCacheKey, JSON.stringify(res));
-          } catch {}
+          writeWarmSnapshot(dashCfgCacheKey, res);
         }
         const rawList = Array.isArray(res?.available_periods)
           ? res.available_periods
@@ -304,7 +326,10 @@ export function MisaDashboardOverview({
     if (!writer) return;
     const currentReqId = ++requestIdRef.current;
     const targetCacheKey = dashOvrCacheKey;
-    const hasWarmSnapshot = Boolean(overviewData && overviewCacheKeyRef.current === targetCacheKey);
+    const warmSnapshot = readWarmSnapshot(targetCacheKey);
+    const hasWarmSnapshot = Boolean(
+      (overviewData && overviewCacheKeyRef.current === targetCacheKey) || warmSnapshot
+    );
     if (opts?.forceRefresh || hasWarmSnapshot) {
       setRefreshing(true);
     } else {
@@ -332,9 +357,7 @@ export function MisaDashboardOverview({
       overviewCacheKeyRef.current = targetCacheKey;
       setOverviewData(payload);
       if (targetCacheKey) {
-        try {
-          sessionStorage.setItem(targetCacheKey, JSON.stringify(payload));
-        } catch {}
+        writeWarmSnapshot(targetCacheKey, payload);
       }
       if (opts?.forceRefresh && notify) {
         notify("Đã làm mới số liệu Dashboard tổng quan từ Sổ cái và các phân hệ nghiệp vụ.");
@@ -475,6 +498,7 @@ export function MisaDashboardOverview({
   // Offline preview fallback ONLY when unauthenticated (!writer)
   const hasApiSession = Boolean(writer);
   const isOfficialApiConnected = Boolean(writer && overviewData);
+  const isColdHydrating = Boolean(hasApiSession && !overviewData && !globalError);
   const postedLocal = items.filter((t) => t.status === "posted");
   const pendingLocal = items.filter((t) => t.status === "pending");
 
@@ -484,10 +508,12 @@ export function MisaDashboardOverview({
       label: "Dự tính thuế GTGT phải nộp",
       status: "READY",
       value: hasApiSession
-        ? Number(dash10.tax_payable_total ?? dash10.total_tax_payable ?? 50600000)
+        ? Number(dash10.tax_payable_total ?? dash10.total_tax_payable ?? 0)
         : 50600000,
-      subtext: `Đầu ra: ${fmtMoney(dash10.vat_output_total ?? 134600000)} · Đầu vào: ${fmtMoney(dash10.vat_input_deductible_total ?? 84000000)}`,
-      deltaPct: "+12.4%",
+      subtext: hasApiSession
+        ? `Đầu ra: ${fmtMoney(dash10.vat_output_total ?? 0)} · Đầu vào: ${fmtMoney(dash10.vat_input_deductible_total ?? 0)}`
+        : `Đầu ra: ${fmtMoney(134600000)} · Đầu vào: ${fmtMoney(84000000)}`,
+      deltaPct: hasApiSession ? fmtPct(dash10.delta_pct) : "+12.4%",
       icon: ShieldCheck,
       tone: "rose",
       isCount: false,
@@ -1065,7 +1091,31 @@ export function MisaDashboardOverview({
                 </span>
               </div>
 
-              {isForbidden ? (
+              {isColdHydrating ? (
+                <div
+                  style={{
+                    height: 32,
+                    minHeight: 32,
+                    maxHeight: 32,
+                    margin: "10px 0 10px",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: "64%",
+                      height: 22,
+                      borderRadius: 6,
+                      background: "linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)",
+                      backgroundSize: "200% 100%",
+                      animation: "sv-shimmer 1.2s ease-in-out infinite",
+                    }}
+                  />
+                  <style>{`@keyframes sv-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+                </div>
+              ) : isForbidden ? (
                 <div style={{ height: 32, minHeight: 32, margin: "10px 0 10px", fontSize: 12.5, color: "#64748b", display: "flex", alignItems: "center" }}>
                   Ngoài phạm vi quyền xem chỉ tiêu
                 </div>
@@ -1137,9 +1187,21 @@ export function MisaDashboardOverview({
                   minHeight: 20,
                 }}
               >
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={card.subtext}>
-                  {card.subtext}
-                </span>
+                {isColdHydrating ? (
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: "52%",
+                      height: 12,
+                      borderRadius: 4,
+                      background: "#f1f5f9",
+                    }}
+                  />
+                ) : (
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={card.subtext}>
+                    {card.subtext}
+                  </span>
+                )}
                 <span style={{ color: "var(--brand)", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>Chi tiết →</span>
               </div>
             </article>

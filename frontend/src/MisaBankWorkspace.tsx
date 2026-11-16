@@ -19,6 +19,7 @@ import { useState, useMemo, useRef, useEffect, cloneElement, type ReactElement }
 import {useNavigate,useSearchParams} from 'react-router-dom';
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
+import { buildBankWarmKey, readWarmSnapshot, writeWarmSnapshot } from "./company-prefetch";
 import {
   completeTransfer, createApiWriter, internalTransfers, openPayables, postMoneyTransaction, reverseMoneyTransaction,
   insurancePaymentRows, salaryPaymentRows, saveBankPaymentDraft, saveCreditContract, saveLoanAgreement, savePayrollPayment, saveSupplierPayment, saveMoneyVoucher, nextVoucherNumber, toApiDate,
@@ -279,7 +280,18 @@ export default function MisaBankWorkspace({
 
   const [activeBranchScope, setActiveBranchScope] = useState<string>(() => resolveActiveBranchScope());
   const bankCacheKey = company?.id ? `${company.id}::${activeBranchScope}` : "";
-  const cachedBank = bankCacheKey ? bankDataCache.get(bankCacheKey) : undefined;
+  const bankWarmKey = company?.id ? buildBankWarmKey(token, company.id, activeBranchScope) : "";
+  const cachedBank = useMemo(() => {
+    if (!bankCacheKey) return undefined;
+    const mem = bankDataCache.get(bankCacheKey);
+    if (mem) return mem;
+    const warm = readWarmSnapshot<any>(bankWarmKey);
+    if (warm && Array.isArray(warm.transactions)) {
+      bankDataCache.set(bankCacheKey, warm);
+      return warm;
+    }
+    return undefined;
+  }, [bankCacheKey, bankWarmKey]);
   const [transactions, setTransactions] = useState<BankTransaction[]>(() => cachedBank?.transactions || []);
   const [bankAccounts, setBankAccounts] = useState<{ account: string; name: string }[]>(() => cachedBank?.bankAccounts || []);
   const [bankProfiles, setBankProfiles] = useState<ApiBankProfile[]>(() => cachedBank?.bankProfiles || []);
@@ -345,13 +357,15 @@ export default function MisaBankWorkspace({
       setBankBalance(totalBalance);
       setBankAccounts(accounts);
       const prev = bankDataCache.get(bankCacheKey);
-      bankDataCache.set(bankCacheKey, {
+      const nextEntry = {
         transactions: prev?.transactions || [],
         bankAccounts: accounts,
         bankProfiles: records,
         bankBalance: totalBalance,
         timestamp: Date.now(),
-      });
+      };
+      bankDataCache.set(bankCacheKey, nextEntry);
+      if (bankWarmKey) writeWarmSnapshot(bankWarmKey, nextEntry);
     }).catch((error) => {
       if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được tài khoản ngân hàng.");
     });
@@ -362,13 +376,15 @@ export default function MisaBankWorkspace({
         const mapped = records.map(mapBankTransaction);
         setTransactions(mapped);
         const prev = bankDataCache.get(bankCacheKey);
-        bankDataCache.set(bankCacheKey, {
+        const nextEntry = {
           transactions: mapped,
           bankAccounts: prev?.bankAccounts || [],
           bankProfiles: prev?.bankProfiles || [],
           bankBalance: prev?.bankBalance || 0,
           timestamp: Date.now(),
-        });
+        };
+        bankDataCache.set(bankCacheKey, nextEntry);
+        if (bankWarmKey) writeWarmSnapshot(bankWarmKey, nextEntry);
         // Internal transfers are listed with the vouchers so they can be reviewed after saving.
         internalTransfers(createApiWriter(company.id, (apiPath, init) => request(apiPath, token, init)), "bank").then((transfers) => {
           if (!active) return;

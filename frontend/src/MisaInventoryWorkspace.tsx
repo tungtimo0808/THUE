@@ -1,5 +1,5 @@
 import { exportVisibleTable } from "./table-actions";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import { formatMoneyInput, formatVnDecimal, parseMoneyInput } from "./formatMoney";
 import { useNavigate } from "react-router-dom";
 import MisaDropdownSelect from "./MisaDropdownSelect";
@@ -642,7 +642,7 @@ export default function MisaInventoryWorkspace({
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
 
   // Production Orders data
-  const [productionOrders, setProductionOrders] = useState([
+  const [productionOrders, setProductionOrders] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "lsx-01",
       code: "LSX00001",
@@ -668,7 +668,7 @@ export default function MisaInventoryWorkspace({
   ]);
 
   // Assembly/Disassembly Orders data
-  const [assemblyOrders, setAssemblyOrders] = useState([
+  const [assemblyOrders, setAssemblyOrders] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "lr-01",
       code: "LR00001",
@@ -694,7 +694,7 @@ export default function MisaInventoryWorkspace({
   ]);
 
   // Catalog items data (exact match to screenshot)
-  const [catalogItems, setCatalogItems] = useState<InventoryItemData[]>([
+  const [catalogItems, setCatalogItems] = useState<InventoryItemData[]>(() => apiConnected ? [] : [
     {
       id: "cpmh",
       name: "Chi phí mua hàng",
@@ -728,7 +728,7 @@ export default function MisaInventoryWorkspace({
   ]);
 
   // Receipts data
-  const [receipts, setReceipts] = useState([
+  const [receipts, setReceipts] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "nk-01",
       code: "NK00001",
@@ -754,7 +754,7 @@ export default function MisaInventoryWorkspace({
   ]);
 
   // Issues data
-  const [issues, setIssues] = useState([
+  const [issues, setIssues] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "xk-01",
       code: "XK00001",
@@ -780,7 +780,7 @@ export default function MisaInventoryWorkspace({
   ]);
 
   // Transfers data
-  const [transfers, setTransfers] = useState([
+  const [transfers, setTransfers] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "ck-01",
       code: "CK00001",
@@ -794,7 +794,7 @@ export default function MisaInventoryWorkspace({
   ]);
 
   // Stocktake data
-  const [stocktakes, setStocktakes] = useState([
+  const [stocktakes, setStocktakes] = useState<any[]>(() => apiConnected ? [] : [
     {
       id: "kk-01",
       code: "KK00001",
@@ -806,7 +806,7 @@ export default function MisaInventoryWorkspace({
     },
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!apiConnected) return;
     const warehouseName = (id: string) => apiRows.warehouses?.find((warehouse) => warehouse.id === id)?.name || "";
     const outputLine = (row: any) => row.lines?.find((line: any) => line.role === "OUTPUT");
@@ -2132,7 +2132,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
     }
 
     // List view mode - BỨT PHÁ SAAS VỚI BENTO KPI KHO & CHIỀU CAO HÀNG ĐỒNG BỘ 42PX
-    const effectiveReceipts = receipts.length > 0 ? receipts : [
+    const effectiveReceipts = apiConnected || receipts.length > 0 ? receipts : [
       {
         id: "nk-01",
         code: "NK00001",
@@ -2225,13 +2225,13 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
               justifyContent: "space-between",
             }}
           >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Tổng nhập kho (Kỳ này)</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", fontFamily: "var(--font-mono, monospace)" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Tổng nhập kho (Kỳ này)</div>
+              <div style={{ fontSize: "clamp(16px, 1.3vw, 19px)", fontWeight: 800, color: "#0f172a", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 {formatVND(totalReceiptVal)} đ
               </div>
             </div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#eff6ff", color: "var(--brand)", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: "#eff6ff", color: "var(--brand)", display: "grid", placeItems: "center" }}>
               <TrendingUp size={18} />
             </div>
           </div>
@@ -2241,21 +2241,22 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
             style={{
               background: "#ffffff",
               borderRadius: 10,
-              padding: "14px 18px",
+              padding: "14px 16px",
               border: "1px solid #e2e8f0",
               boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: 10,
             }}
           >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4 }}>Giá trị Tồn kho (TK 156/152)</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#0284c7", fontFamily: "var(--font-mono, monospace)" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Giá trị Tồn kho (TK 156/152)</div>
+              <div style={{ fontSize: "clamp(16px, 1.3vw, 19px)", fontWeight: 800, color: "#0284c7", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 4.580.200.000 đ
               </div>
             </div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: "#f0f9ff", color: "#0284c7", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: "#f0f9ff", color: "#0284c7", display: "grid", placeItems: "center" }}>
               <Package size={18} />
             </div>
           </div>
@@ -2539,19 +2540,37 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
 
                   {/* Trạng thái */}
                   <td style={{ height: 42, padding: "0 12px", textAlign: "center", verticalAlign: "middle", boxSizing: "border-box", whiteSpace: "nowrap" }}>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        padding: "2px 9px",
-                        borderRadius: 12,
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        background: "#eff6ff",
-                        color: "#15803d",
-                      }}
-                    >
-                      {row.status || "Đã ghi sổ"}
-                    </span>
+                    {(() => {
+                      const rawSt = String(row.status || "POSTED").toUpperCase();
+                      const stLabel =
+                        rawSt === "POSTED"
+                          ? "Đã ghi sổ"
+                          : rawSt === "DRAFT"
+                          ? "Bản nháp"
+                          : rawSt === "APPROVED"
+                          ? "Đã duyệt"
+                          : rawSt === "PENDING_APPROVAL"
+                          ? "Chờ duyệt"
+                          : row.status || "Đã ghi sổ";
+                      return (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: 96,
+                            padding: "2px 9px",
+                            borderRadius: 12,
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            background: "#dcfce7",
+                            color: "#15803d",
+                          }}
+                        >
+                          {stLabel}
+                        </span>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}

@@ -185,12 +185,19 @@ div[style*="border:"] > select:not(.admin-select),
 }
 
 /* Ensure table inputs never stretch beyond 28px */
-table input:not([type="checkbox"]):not([type="radio"]):not([type="button"]),
+table input:not([type="checkbox"]):not([type="radio"]):not([type="button"]) {
+  max-height: 28px !important;
+  height: 26px !important;
+  padding: 0 6px !important;
+  line-height: 24px !important;
+  box-sizing: border-box !important;
+}
+
 table select,
 .misa-table select {
   max-height: 28px !important;
   height: 26px !important;
-  padding: 0 4px !important;
+  padding: 0 28px 0 8px !important;
   line-height: 24px !important;
   box-sizing: border-box !important;
 }

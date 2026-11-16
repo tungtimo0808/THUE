@@ -64,7 +64,7 @@ export default function BankUnmatchedTransactions({ companyId, account, dateFrom
       {loading && <p>Đang tải giao dịch chưa khớp…</p>}
       {error && !selected && <p role="alert" className="br-error">{error}</p>}
       {data && !data.has_statement && <p className="br-statement-empty">Chưa có dữ liệu sao kê ngân hàng trong kỳ đối chiếu.</p>}
-      <table><thead><tr><th>Nguồn</th><th>Ngày giao dịch</th><th>Mã giao dịch</th><th>Nội dung giao dịch</th><th>Thu</th><th>Chi</th><th>Chứng từ liên quan</th><th>Nguyên nhân chưa khớp</th><th>Trạng thái xử lý</th><th></th></tr></thead><tbody>
+      <table><thead><tr><th>Nguồn</th><th>Ngày giao dịch</th><th>Mã giao dịch</th><th>Nội dung giao dịch</th><th className="br-number">Thu</th><th className="br-number">Chi</th><th>Chứng từ liên quan</th><th>Nguyên nhân chưa khớp</th><th>Trạng thái xử lý</th><th></th></tr></thead><tbody>
         {(data?.items || []).map((item) => <tr key={`${item.kind}:${item.id}`}><td>{item.kind === "STATEMENT" ? "Sao kê" : "Chứng từ"}</td>
           <td>{item.date.split("-").reverse().join("/")}</td><td>{item.code}</td><td>{item.description}</td>
           <td className="br-number">{item.direction === "CREDIT" ? money(item.amount) : ""}</td>
