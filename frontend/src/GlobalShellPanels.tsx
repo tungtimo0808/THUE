@@ -116,7 +116,7 @@ export const STANDARD_ROLES_WORKSPACE_SPEC: RoleWorkspaceSpec[] = [
     group: "Management",
     groupVi: "Ban Giám đốc",
     regimes: ["TT58", "TT133", "TT200", "TT99"],
-    allowedModules: ["overview", "cash", "bank", "sales", "purchases", "budget", "reports", "analysis"],
+    allowedModules: ["overview", "cash", "bank", "sales", "purchases", "budget", "reports", "analysis", "directory"],
     allowedQuickCreateTitles: [],
     capabilitiesSummary: "Xem Dashboard điều hành, dòng tiền, công nợ, báo cáo tài chính & Phê duyệt chứng từ theo thẩm quyền (không trực tiếp nhập liệu).",
     isReadOnly: true,
