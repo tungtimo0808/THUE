@@ -4111,6 +4111,7 @@ export async function saveVatDeduction(w: ApiWriter, date: unknown) {
 /** Request body for the directory forms whose fields differ from the generic code/name catalogs. */
 export async function directoryInput(w: ApiWriter, name: string, values: Row): Promise<Row | null> {
   const text = (label: string) => String(values[label] ?? "").trim();
+  const extractCode = (raw: string) => raw.split(/\s+[·—-]\s+/)[0]?.trim() || raw.trim();
   if (name === "Đơn vị tính") {
     const unit = text("Đơn vị tính") || text("Tên");
     if (!unit) throw new FormDataError("Cần nhập đơn vị tính.");
@@ -4119,7 +4120,7 @@ export async function directoryInput(w: ApiWriter, name: string, values: Row): P
   if (name === "Vật tư hàng hóa") {
     if (!text("Mã") || !text("Tên")) throw new FormDataError("Cần nhập mã và tên vật tư, hàng hóa.");
     const nature = text("Tính chất") || text("Loại");
-    const unitText = text("Đơn vị tính chính");
+    const unitText = extractCode(text("Đơn vị tính chính"));
     const units = await w.list("units");
     let unit = units.find((row) => [row.code, row.name, row.symbol].some((value) => String(value || "").toLowerCase() === unitText.toLowerCase()));
     if (!unit && unitText) {
@@ -4129,25 +4130,164 @@ export async function directoryInput(w: ApiWriter, name: string, values: Row): P
     }
     const itemType = /dịch vụ/i.test(nature) ? "SERVICE" : /nguyên|vật liệu|vật tư/i.test(nature) ? "MATERIAL"
       : /thành phẩm/i.test(nature) ? "FINISHED_GOOD" : "GOODS";
-    return {
+    const payload: Row = {
       code: text("Mã"), name: text("Tên"), item_type: itemType, status: "ACTIVE",
       base_uom: unit?.id || units[0]?.id || null, track_inventory: itemType !== "SERVICE",
       purchase_price: num(text("Đơn giá mua cố định")) || null,
+      sales_price: num(text("Đơn giá bán")) || null,
+      description: text("Diễn giải khi bán") || text("Diễn giải khi mua") || "",
     };
+    if (text("Số lượng tồn tối thiểu")) {
+      const minQty = num(text("Số lượng tồn tối thiểu"));
+      if (minQty >= 0) payload.min_stock = String(minQty);
+    }
+    if (text("Nhóm VTHH")) {
+      const catCode = extractCode(text("Nhóm VTHH")).toLowerCase();
+      const cats = await w.list("/api/v1/master-data/item-categories/");
+      const cat = cats.find((r) => [r.code, r.name].some((v) => String(v || "").toLowerCase() === catCode));
+      if (cat && Array.isArray(cat.applicable_types) && cat.applicable_types.includes(itemType)) {
+        payload.category = cat.id;
+      }
+    }
+    for (const [label, key] of [
+      ["Tài khoản kho", "inventory_account"],
+      ["TK doanh thu", "revenue_account"],
+      ["TK Chi phí", "cogs_account"],
+    ] as const) {
+      const accCode = extractCode(text(label));
+      if (accCode) {
+        try { payload[key] = (await w.account(accCode, label)).id; } catch { /* optional if code invalid */ }
+      }
+    }
+    if (text("Thuế suất GTGT (%)")) {
+      try {
+        const rateId = await w.taxRate(text("Thuế suất GTGT (%)"), "OUTPUT");
+        if (rateId) {
+          payload.sales_tax_rate = rateId;
+          payload.default_tax_rate = rateId;
+        }
+      } catch { /* optional */ }
+    }
+    return payload;
+  }
+  if (name === "Kho") {
+    const branchText = extractCode(text("Chi nhánh quản lý"));
+    let branchObj: Row | undefined;
+    if (branchText) {
+      const branches = await w.list("branches");
+      branchObj = branches.find((b) => b.status === "ACTIVE" && [b.code, b.name].some((v) => String(v || "").toLowerCase() === branchText.toLowerCase()));
+    }
+    return {
+      address: text("Địa chỉ"),
+      warehouse_type: "PHYSICAL",
+      warehouse_scope: branchObj ? "BRANCH" : "COMPANY_SHARED",
+      ...(branchObj ? { branch: branchObj.id } : {}),
+    };
+  }
+  if (name === "Khách hàng" || name === "Nhà cung cấp") {
+    const addr = text("Địa chỉ");
+    const phone = text("Điện thoại") || text("Thông tin liên hệ:Số điện thoại");
+    const contactName = text("Thông tin liên hệ:Họ và tên") || text("Tên khách hàng") || text("Tên nhà cung cấp") || text("Tên");
+    const email = text("Thông tin liên hệ:Email");
+    const rep = text("Thông tin liên hệ:Đại diện theo PL");
+    const notes = text("Ghi chú:Ghi chú");
+    const creditDays = text("Điều khoản thanh toán:Số ngày được nợ");
+    const creditLimit = text("Điều khoản thanh toán:Số nợ tối đa");
+    const extra: Row = {};
+    if (rep) extra.representative = rep;
+    if (notes) extra.notes = notes;
+    if (name === "Khách hàng") {
+      if (addr) {
+        extra.addresses = [{ address_type: "BILLING", country_code: "VN", address_line: addr, is_default: true, status: "ACTIVE" }];
+      }
+      if (phone || email) {
+        extra.contacts = [{ contact_type: "PRIMARY", contact_name: contactName || "Liên hệ chính", email, phone, is_default: true, status: "ACTIVE" }];
+      }
+      if (creditDays || creditLimit) {
+        extra.profile = {
+          ...(creditDays ? { credit_days: Math.max(0, Math.round(num(creditDays))) } : {}),
+          ...(creditLimit ? { credit_limit: String(Math.max(0, num(creditLimit))) } : {}),
+        };
+      }
+    }
+    return extra;
   }
   if (name === "Tài khoản ngân hàng") {
     const number = text("Số tài khoản");
-    const bankText = text("Tên ngân hàng").toLowerCase();
-    if (!number || !bankText) throw new FormDataError("Cần nhập số tài khoản và tên ngân hàng.");
-    const bank = (await w.list("banks")).find((row) => [row.code, row.short_name, row.name].some((value) => String(value || "").toLowerCase() === bankText)
-      || String(row.name || "").toLowerCase().includes(bankText));
+    const bankCodeOrName = extractCode(text("Tên ngân hàng")).toLowerCase();
+    const fullBankText = text("Tên ngân hàng").toLowerCase();
+    if (!number || !fullBankText) throw new FormDataError("Cần nhập số tài khoản và tên ngân hàng.");
+    const bank = (await w.list("banks")).find((row) =>
+      [row.code, row.short_name, row.name].some((value) => String(value || "").toLowerCase() === bankCodeOrName || String(value || "").toLowerCase() === fullBankText)
+      || String(row.name || "").toLowerCase().includes(bankCodeOrName)
+    );
     if (!bank) throw new FormDataError(`Ngân hàng "${text("Tên ngân hàng")}" chưa có trong danh mục Ngân hàng.`);
     const company = await w.company();
     return {
       code: number, account_number: number, account_name: text("Chủ tài khoản") || company.legal_name || company.name,
-      bank: bank.id, currency: (await w.currency()).id, status: "ACTIVE", account_type: "PAYMENT",
+      bank: bank.id, currency: (await w.currency()).id, status: text("Trạng thái") === "Ngừng sử dụng" ? "INACTIVE" : "ACTIVE", account_type: "PAYMENT",
       bank_branch: text("Tên chi nhánh ngân hàng"), notes: text("Diễn giải"), account_scope: "COMPANY_SHARED",
       allow_receipt: true, allow_payment: true, gl_account: (await w.account("112", "TK tiền gửi")).id,
+    };
+  }
+  if (name === "Loại tài sản cố định" || name === "Loại công cụ dụng cụ") {
+    const code = text("Mã loại TSCĐ") || text("Mã loại CCDC") || text("Mã");
+    const title = text("Tên loại TSCĐ") || text("Tên loại CCDC") || text("Tên");
+    const payload: Row = {
+      code,
+      name: title,
+      asset_type: name === "Loại tài sản cố định" ? "FIXED_ASSET" : "TOOL",
+      default_method: "STRAIGHT_LINE",
+      default_periods: 12,
+      is_active: text("Trạng thái") !== "Ngừng sử dụng",
+    };
+    if (text("TK nguyên giá")) {
+      try { payload.asset_account = (await w.account(extractCode(text("TK nguyên giá")), "TK nguyên giá")).id; } catch { /* optional */ }
+    }
+    if (text("TK khấu hao")) {
+      try { payload.accumulated_account = (await w.account(extractCode(text("TK khấu hao")), "TK khấu hao")).id; } catch { /* optional */ }
+    }
+    return payload;
+  }
+  if (name === "Công trình") {
+    const startRaw = text("Ngày bắt đầu");
+    const endRaw = text("Ngày kết thúc");
+    return {
+      code: text("Mã công trình") || text("Mã"),
+      name: text("Tên công trình") || text("Tên"),
+      ...(startRaw ? { start_date: toApiDate(startRaw) } : {}),
+      ...(endRaw ? { end_date: toApiDate(endRaw) } : {}),
+      status: text("Trạng thái") === "Ngừng sử dụng" ? "INACTIVE" : "ACTIVE",
+    };
+  }
+  if (name === "Đối tượng tập hợp chi phí") {
+    return {
+      code: text("Mã đối tượng THCP") || text("Mã"),
+      name: text("Tên đối tượng THCP") || text("Tên"),
+      status: text("Trạng thái") === "Ngừng sử dụng" ? "INACTIVE" : "ACTIVE",
+    };
+  }
+  if (name === "Mục thu/chi" || name === "Khoản mục chi phí") {
+    return {
+      code: text("Mã mục thu/chi") || text("Mã khoản mục chi phí") || text("Mã"),
+      name: text("Tên mục thu/chi") || text("Tên khoản mục chi phí") || text("Tên"),
+      expense_type: "OTHER",
+      description: text("Diễn giải"),
+      status: text("Trạng thái") === "Ngừng sử dụng" ? "INACTIVE" : "ACTIVE",
+    };
+  }
+  if (name === "Tài khoản kết chuyển") {
+    const src = await w.account(extractCode(text("Kết chuyển từ") || "511"), "Kết chuyển từ");
+    const dst = await w.account(extractCode(text("Kết chuyển đến") || "911"), "Kết chuyển đến");
+    return {
+      code: text("Mã kết chuyển") || text("Mã"),
+      name: text("Diễn giải") || `${src.code} -> ${dst.code}`,
+      source_account: src.id,
+      destination_account: dst.id,
+      result_type: String(src.code).startsWith("5") || String(src.code).startsWith("7") ? "REVENUE" : "EXPENSE",
+      direction: "AUTO",
+      sequence: Math.max(1, Math.round(num(text("Thứ tự kết chuyển") || "1"))),
+      is_active: text("Trạng thái") !== "Ngừng sử dụng",
     };
   }
   if (name === "Nhân viên") {

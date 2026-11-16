@@ -1642,6 +1642,7 @@ function ReferenceWorkspace() {
         <MisaDirectoryWorkspace
           key={`${params.get("directory") || "menu"}-${ctxKey}`}
           initialName={params.get("directory")}
+          sectionTab={activeTab}
           notify={setNotice}
           legacy={<DirectoryWorkspace notify={setNotice} />}
         />
