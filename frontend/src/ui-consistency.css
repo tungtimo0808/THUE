@@ -2,6 +2,7 @@
 :root {
   --sidebar-surface: #0c172c;
   --app-font: Roboto, Arial, sans-serif;
+  --font-mono: Roboto, Arial, sans-serif;
   --control-radius: 8px;
   --panel-radius: 12px;
 }

@@ -17,6 +17,8 @@ import { useApiSession } from "./ApiSession";
 import { ApiError, request } from "./live-api";
 import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 import MisaDropdownSelect from "./MisaDropdownSelect";
+import { warmCompanyAdminData, warmCompanyWorkspaceData } from "./company-prefetch";
+import { preloadWorkspace } from "./workspace-preloader";
 import "./live-account.css";
 import "./company-select.css";
 
@@ -69,6 +71,18 @@ export default function LiveCompanySelect() {
     }
   }, [restoring, token, navigate, params]);
 
+  // Eagerly preload workspace chunks & pre-warm the active/default company while user views portal
+  useEffect(() => {
+    preloadWorkspace("overview");
+    preloadWorkspace("company-admin");
+    if (!token || companies.length === 0) return;
+    const primaryId = companyId || companies[0]?.id;
+    if (primaryId) {
+      void warmCompanyWorkspaceData(token, primaryId, { redirectPath: params.get("redirect") });
+      void warmCompanyAdminData(token, primaryId);
+    }
+  }, [token, companyId, companies, params]);
+
   // Switch the server-side scope first; only enter the workspace when the backend accepted it,
   // otherwise the user lands on Tổng quan with an access error (the API layer already shows the reason).
   async function switchScope(targetCompanyId: string): Promise<boolean> {
@@ -91,15 +105,34 @@ export default function LiveCompanySelect() {
     }
   }
 
-  // Handle selecting a company and entering workspace
+  // Handle selecting a company and entering workspace (warm target company data in parallel so Frame 1 renders 0ms)
   async function handleSelectAndEnter(targetCompanyId: string) {
-    if (!await switchScope(targetCompanyId)) return;
-    navigate(params.get("redirect") || "/");
+    const redirectTarget = params.get("redirect") || "/";
+    const [switched] = await Promise.all([
+      switchScope(targetCompanyId),
+      token
+        ? Promise.race([
+            warmCompanyWorkspaceData(token, targetCompanyId, { redirectPath: redirectTarget }),
+            new Promise<void>((resolve) => window.setTimeout(resolve, 650)),
+          ])
+        : Promise.resolve(),
+    ]);
+    if (!switched) return;
+    navigate(redirectTarget);
   }
 
-  // Handle selecting a company and going straight to Company Admin
+  // Handle selecting a company and going straight to Company Admin (warm admin data in parallel)
   async function handleSelectAndGoAdmin(targetCompanyId: string) {
-    if (!await switchScope(targetCompanyId)) return;
+    const [switched] = await Promise.all([
+      switchScope(targetCompanyId),
+      token
+        ? Promise.race([
+            warmCompanyAdminData(token, targetCompanyId),
+            new Promise<void>((resolve) => window.setTimeout(resolve, 650)),
+          ])
+        : Promise.resolve(),
+    ]);
+    if (!switched) return;
     navigate("/admin");
   }
 
@@ -803,7 +836,16 @@ export default function LiveCompanySelect() {
                 const isSelected = companyId === c.id;
                 const regime = String(c.accounting_regime || "").toUpperCase();
                 return (
-                  <article key={c.id} className={`company-list-row${isSelected ? " is-current" : ""}`}>
+                  <article
+                    key={c.id}
+                    className={`company-list-row${isSelected ? " is-current" : ""}`}
+                    onMouseEnter={() => {
+                      if (token) void warmCompanyWorkspaceData(token, c.id, { redirectPath: params.get("redirect") });
+                    }}
+                    onFocus={() => {
+                      if (token) void warmCompanyWorkspaceData(token, c.id, { redirectPath: params.get("redirect") });
+                    }}
+                  >
                     <div className="company-list-icon" aria-hidden="true"><Building2 size={24} /></div>
                     <div className="company-list-details">
                       <h3>{c.name}</h3>
@@ -816,7 +858,10 @@ export default function LiveCompanySelect() {
                     <div className="company-list-buttons">
                       {Boolean((c as any).is_company_admin || session?.user?.is_superuser) && (
                         <button type="button" className="company-portal-admin-btn"
-                          disabled={entering} onClick={() => handleSelectAndGoAdmin(c.id)}
+                          disabled={entering}
+                          onMouseEnter={() => { if (token) void warmCompanyAdminData(token, c.id); }}
+                          onFocus={() => { if (token) void warmCompanyAdminData(token, c.id); }}
+                          onClick={() => handleSelectAndGoAdmin(c.id)}
                           aria-label={`Quản trị ${c.name}`}>
                           <ShieldCheck size={16} /><span>Quản trị</span>
                         </button>

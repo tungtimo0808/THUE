@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 
-from iam.permissions import company_identifiers_agree, has_effective_permission
+from iam.permissions import company_identifiers_agree, get_user_allowed_branch_ids, has_effective_permission
 from master_data.models import Warehouse
 from organization.models import Company
 
@@ -44,11 +44,39 @@ class InventoryPermission(BasePermission):
                        for row in Warehouse.objects.filter(company=company).only("id", "branch_id"))
         warehouse_ids = [
             value for value in (
-                request.query_params.get("warehouse_id"), request.data.get("warehouse"),
-                request.data.get("source_warehouse"), request.data.get("destination_warehouse"),
+                request.query_params.get("warehouse_id"),
+                request.data.get("warehouse") if isinstance(request.data, dict) else None,
+                request.data.get("source_warehouse") if isinstance(request.data, dict) else None,
+                request.data.get("destination_warehouse") if isinstance(request.data, dict) else None,
             ) if value
         ]
+        raw_branch = request.query_params.get("branch_id") or (
+            request.data.get("branch") if isinstance(request.data, dict) else None
+        )
+        branch_id = None if (not raw_branch or str(raw_branch).lower() in ("all", "head-office")) else raw_branch
         if not warehouse_ids:
-            return has_effective_permission(request.user.iam_account, company, code)
-        return all(has_effective_permission(request.user.iam_account, company, code, warehouse_id=value) for value in set(warehouse_ids))
+            if has_effective_permission(request.user.iam_account, company, code, branch_id=branch_id):
+                return True
+            if not branch_id and request.method in ("GET", "HEAD", "OPTIONS"):
+                allowed = get_user_allowed_branch_ids(request, company.id)
+                if allowed and any(
+                    has_effective_permission(request.user.iam_account, company, code, branch_id=bid)
+                    for bid in allowed
+                ):
+                    return True
+            return False
+        wh_rows = {
+            str(w.pk): w.branch_id
+            for w in Warehouse.objects.filter(company=company, pk__in=set(warehouse_ids)).only("id", "branch_id")
+        }
+        return all(
+            has_effective_permission(
+                request.user.iam_account,
+                company,
+                code,
+                warehouse_id=value,
+                branch_id=wh_rows.get(str(value)) or branch_id,
+            )
+            for value in set(warehouse_ids)
+        )
 

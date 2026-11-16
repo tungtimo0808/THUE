@@ -1,5 +1,5 @@
 from rest_framework.permissions import BasePermission
-from iam.permissions import company_identifiers_agree, has_effective_permission
+from iam.permissions import company_identifiers_agree, get_user_allowed_branch_ids, has_effective_permission
 from organization.models import Company
 
 
@@ -32,7 +32,19 @@ class AccountsPayablePermission(BasePermission):
         code = getattr(view, "action_permissions", {}).get(view.action) or getattr(view, "iam_permissions", {}).get(request.method)
         if not code:
             return False
-        branch_id = request.query_params.get("branch_id") or request.data.get("branch")
-        if isinstance(code, (list, tuple, set)):
-            return any(has_effective_permission(request.user.iam_account, company, c, branch_id=branch_id) for c in code)
-        return has_effective_permission(request.user.iam_account, company, code, branch_id=branch_id)
+        raw_branch = request.query_params.get("branch_id") or (
+            request.data.get("branch") if isinstance(request.data, dict) else None
+        )
+        branch_id = None if (not raw_branch or str(raw_branch).lower() in ("all", "head-office")) else raw_branch
+        codes = list(code) if isinstance(code, (list, tuple, set)) else [code]
+        if any(has_effective_permission(request.user.iam_account, company, c, branch_id=branch_id) for c in codes):
+            return True
+        if not branch_id and request.method in ("GET", "HEAD", "OPTIONS"):
+            allowed = get_user_allowed_branch_ids(request, company.id)
+            if allowed and any(
+                has_effective_permission(request.user.iam_account, company, c, branch_id=bid)
+                for c in codes
+                for bid in allowed
+            ):
+                return True
+        return False

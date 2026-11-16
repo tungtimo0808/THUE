@@ -5,7 +5,6 @@
  */
 
 export const WORKSPACE_LOADERS: Record<string, () => Promise<unknown>> = {
-  overview: () => import("./MisaDashboardOverview"),
   cash: () => import("./MisaCashWorkspace"),
   bank: () => import("./MisaBankWorkspace"),
   purchases: () => import("./MisaPurchaseWorkspace"),
@@ -67,7 +66,7 @@ export function setupIdlePreloading(): void {
     }
   };
 
-  // Wait 4s so initial screen API calls & paint have 100% network + CPU priority
+  // Wait 1.2s so initial screen API calls & paint have 100% network + CPU priority, then warm core tabs
   window.setTimeout(() => {
     const currentSeg = (window.location.pathname.split("/")[1] || "overview").toLowerCase();
     preloadedModules.add(currentSeg);
@@ -81,11 +80,11 @@ export function setupIdlePreloading(): void {
       scheduleIdle(() => {
         if (idx < priorityModules.length) {
           preloadWorkspace(priorityModules[idx++]);
-          window.setTimeout(prefetchNext, 1200);
+          window.setTimeout(prefetchNext, 750);
         }
       });
     }
 
     prefetchNext();
-  }, 4000);
+  }, 1200);
 }

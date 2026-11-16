@@ -176,9 +176,9 @@ function PurchaseDocument({
                 <th>Mã hàng</th>
                 <th>Tên hàng hóa</th>
                 <th>ĐVT</th>
-                <th>Số lượng</th>
-                <th>Đơn giá</th>
-                <th>Thành tiền</th>
+                <th className="numeric">Số lượng</th>
+                <th className="numeric">Đơn giá</th>
+                <th className="numeric">Thành tiền</th>
               </tr>
             </thead>
             <tbody>
@@ -299,7 +299,7 @@ export function PurchaseOrdersWorkspace({ notify }: { notify: Notify }) {
                 <th>Ngày đơn</th>
                 <th>Nhà cung cấp</th>
                 <th>Hạn giao</th>
-                <th>Giá trị</th>
+                <th className="numeric">Giá trị</th>
                 <th>Tình trạng</th>
                 <th></th>
               </tr>
@@ -1881,7 +1881,7 @@ export function ConfiguredListWorkspace({
                     <th>Nội dung diễn giải nghiệp vụ</th>
                     <th>TK Nợ</th>
                     <th>TK Có</th>
-                    <th>Số tiền (VND)</th>
+                    <th className="numeric">Số tiền (VND)</th>
                     <th>Đối tượng / Đơn vị THCP</th>
                   </tr>
                 </thead>
@@ -2075,85 +2075,220 @@ export function ReportCenterWorkspace({ notify }: { notify: Notify }) {
 
 export function DirectoryWorkspace({ notify }: { notify: Notify }) {
   const [group, setGroup] = useState("Khách hàng");
+  const [treeSearch, setTreeSearch] = useState("");
+  const [tableSearch, setTableSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [reloadTick, setReloadTick] = useState(0);
+  const [catalogData, setCatalogData] = useState<Record<string, any[]>>({});
+
+  const treeEndpoints: Record<string, string> = {
+    "Khách hàng": "/api/v1/master-data/customers/",
+    "Nhà cung cấp": "/api/v1/master-data/parties/",
+    "Nhân viên": "/api/v1/organization/employees/",
+    "Hàng hóa, dịch vụ": "/api/v1/master-data/items/",
+    "Kho": "/api/v1/master-data/warehouses/",
+    "Tài khoản ngân hàng": "/api/v1/master-data/company-bank-accounts/",
+    "Phòng ban": "/api/v1/organization/departments/",
+    "Mục thu, chi": "/api/v1/master-data/expense-items/",
+  };
+
+  useEffect(() => {
+    const cid = getSelectedCompanyId();
+    if (!cid) return;
+    let cancelled = false;
+    const entries = Object.entries(treeEndpoints);
+    Promise.allSettled(
+      entries.map(([, ep]) => apiClient.get(`${ep}?company_id=${encodeURIComponent(cid)}&page_size=200`)),
+    ).then((resList) => {
+      if (cancelled) return;
+      const next: Record<string, any[]> = {};
+      resList.forEach((res, idx) => {
+        const key = entries[idx][0];
+        if (res.status === "fulfilled") {
+          const payload = res.value?.data !== undefined ? res.value.data : res.value;
+          next[key] = Array.isArray(payload) ? payload : payload?.results || [];
+        } else {
+          next[key] = [];
+        }
+      });
+      setCatalogData(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadTick]);
+
+  const activeRows = useMemo(() => {
+    const raw = catalogData[group] || [];
+    const q = tableSearch.trim().toLocaleLowerCase("vi");
+    return raw
+      .map((r) => ({
+        id: String(r.id || r.code || Math.random()),
+        code: String(r.code || r.employee_code || r.account_number || ""),
+        name: String(r.name || r.full_name || r.account_name || r.bank_name || ""),
+        sub: String(r.tax_code || r.bank_name || r.job_title || r.address || r.item_type || ""),
+        category: String(r.customer_group || r.party_type || r.warehouse_type || r.expense_type || group),
+        active: r.status ? r.status === "ACTIVE" : r.is_active !== false,
+      }))
+      .filter(
+        (r) =>
+          !q ||
+          `${r.code} ${r.name} ${r.sub} ${r.category}`.toLocaleLowerCase("vi").includes(q),
+      );
+  }, [catalogData, group, tableSearch]);
+
+  const exportLiveCsv = () => {
+    const esc = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = [
+      ["Mã danh mục", `Tên ${group.toLocaleLowerCase("vi")}`, "Thông tin phụ / MST", "Phân loại", "Trạng thái"]
+        .map(esc)
+        .join(","),
+      ...activeRows.map((r) =>
+        [r.code, r.name, r.sub, r.category, r.active ? "Đang theo dõi" : "Ngừng theo dõi"]
+          .map(esc)
+          .join(","),
+      ),
+    ];
+    const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `danh-sach-${group.toLocaleLowerCase("vi").replace(/\s+/g, "-")}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    notify(`Đã xuất ${activeRows.length} bản ghi "${group}".`);
+  };
+
+  const treeGroups = Object.keys(treeEndpoints).filter((item) =>
+    item.toLocaleLowerCase("vi").includes(treeSearch.trim().toLocaleLowerCase("vi")),
+  );
+
   return (
     <div className="erp3-workspace">
-      <WorkspaceHeader
-        title="Danh mục"
-        description="Quản lý dữ liệu nền dùng chung cho toàn bộ phân hệ."
-        action={`Thêm ${group.toLocaleLowerCase("vi")}`}
-        notify={notify}
-      />
+      <div
+        className="erp3-workspace-header"
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 14 }}
+      >
+        <div>
+          <h1 style={{ margin: 0 }}>Danh sách hiện có — {group}</h1>
+          <p style={{ margin: "4px 0 0" }}>Tra cứu nhanh dữ liệu thực tế theo cây danh mục trên toàn doanh nghiệp.</p>
+        </div>
+        <div className="erp3-header-actions" style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            className="erp3-secondary-btn"
+            onClick={() => {
+              setReloadTick((n) => n + 1);
+              notify("Đã làm mới dữ liệu danh mục từ máy chủ.");
+            }}
+          >
+            <RefreshCw size={15} /> Làm mới
+          </button>
+          <button type="button" className="erp3-primary-btn" onClick={exportLiveCsv}>
+            <ArrowDownToLine size={15} /> Xuất Excel (.csv)
+          </button>
+        </div>
+      </div>
       <div className="erp3-master-layout">
         <aside>
           <label className="erp3-search">
             <Search size={14} />
-            <input aria-label="Tìm nhóm danh mục" placeholder="Tìm nhóm…" />
+            <input
+              aria-label="Tìm nhóm danh mục"
+              placeholder="Tìm nhóm…"
+              value={treeSearch}
+              onChange={(e) => setTreeSearch(e.target.value)}
+            />
           </label>
           <div role="tree" aria-label="Nhóm danh mục">
-            {[
-              "Khách hàng",
-              "Nhà cung cấp",
-              "Nhân viên",
-              "Hàng hóa, dịch vụ",
-              "Kho",
-              "Tài khoản ngân hàng",
-              "Phòng ban",
-              "Mục thu, chi",
-            ].map((item) => (
+            {treeGroups.map((item) => (
               <button
                 role="treeitem"
                 aria-selected={group === item}
                 className={group === item ? "active" : ""}
-                onClick={() => setGroup(item)}
+                onClick={() => {
+                  setGroup(item);
+                  setSelectedIds([]);
+                }}
                 key={item}
               >
                 <span>{item}</span>
-                <small>{item === group ? "126" : "24"}</small>
+                <small>{(catalogData[item] || []).length}</small>
               </button>
             ))}
           </div>
         </aside>
         <section className="erp3-list-card">
-          <ListToolbar title={group} notify={notify} />
+          <div
+            className="erp3-list-toolbar"
+            style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 14px" }}
+          >
+            <strong>
+              {group} ({activeRows.length})
+            </strong>
+            <label className="erp3-search" style={{ minWidth: 260 }}>
+              <Search size={14} />
+              <input
+                placeholder={`Tìm trong ${group.toLocaleLowerCase("vi")}…`}
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+              />
+            </label>
+          </div>
           <div className="erp3-table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>
-                    <input aria-label="Chọn tất cả danh mục" type="checkbox" />
+                    <input
+                      aria-label="Chọn tất cả danh mục"
+                      type="checkbox"
+                      checked={activeRows.length > 0 && activeRows.every((r) => selectedIds.includes(r.id))}
+                      onChange={(e) =>
+                        setSelectedIds(e.target.checked ? activeRows.map((r) => r.id) : [])
+                      }
+                    />
                   </th>
                   <th aria-label="Mã">Mã danh mục</th>
                   <th>Tên {group.toLocaleLowerCase("vi")}</th>
-                  <th aria-label="MST doanh nghiệp">Mã số thuế</th>
-                  <th>Nhóm</th>
+                  <th aria-label="MST doanh nghiệp">Thông tin / MST</th>
+                  <th>Phân loại</th>
                   <th>Trạng thái</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>
-                    <input aria-label="Chọn KH0001" type="checkbox" />
-                  </td>
-                  <td>KH0001</td>
-                  <td>Công ty CP Nội thất Hòa Bình</td>
-                  <td>0109238456</td>
-                  <td>Khách hàng doanh nghiệp</td>
-                  <td>
-                    <span className="erp3-status success">Đang theo dõi</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <input aria-label="Chọn KH0002" type="checkbox" />
-                  </td>
-                  <td>KH0002</td>
-                  <td>Công ty TNHH Kiến trúc Mới</td>
-                  <td>0107754921</td>
-                  <td>Khách hàng dự án</td>
-                  <td>
-                    <span className="erp3-status success">Đang theo dõi</span>
-                  </td>
-                </tr>
+                {activeRows.map((r) => (
+                  <tr key={r.id}>
+                    <td>
+                      <input
+                        aria-label={`Chọn ${r.code}`}
+                        type="checkbox"
+                        checked={selectedIds.includes(r.id)}
+                        onChange={(e) =>
+                          setSelectedIds((prev) =>
+                            e.target.checked ? [...prev, r.id] : prev.filter((x) => x !== r.id),
+                          )
+                        }
+                      />
+                    </td>
+                    <td>{r.code}</td>
+                    <td>{r.name}</td>
+                    <td>{r.sub || "—"}</td>
+                    <td>{r.category}</td>
+                    <td>
+                      <span className={`erp3-status ${r.active ? "success" : "muted"}`}>
+                        {r.active ? "Đang theo dõi" : "Ngừng theo dõi"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {!activeRows.length && (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: "center", padding: 24, color: "#64748b" }}>
+                      Chưa có bản ghi nào trong nhóm "{group}".
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -2227,8 +2362,8 @@ export function OpeningBalanceWorkspace({ notify }: { notify: Notify }) {
               <tr>
                 <th>Số hiệu</th>
                 <th>Tên tài khoản</th>
-                <th>Dư Nợ</th>
-                <th>Dư Có</th>
+                <th className="numeric">Dư Nợ</th>
+                <th className="numeric">Dư Có</th>
                 <th>Ngoại tệ</th>
                 <th>Ghi chú</th>
               </tr>

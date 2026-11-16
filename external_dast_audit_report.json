@@ -1,0 +1,234 @@
+{
+  "target_backend": "http://127.0.0.1:8080",
+  "target_frontend": "http://127.0.0.1:2601",
+  "timestamp": "2026-11-11 15:17:46",
+  "security_headers": {
+    "Backend API": {
+      "status_code": 404,
+      "present_security_headers": [
+        "X-Content-Type-Options",
+        "X-Frame-Options",
+        "Referrer-Policy"
+      ],
+      "missing_security_headers": [
+        "Strict-Transport-Security",
+        "Content-Security-Policy",
+        "Permissions-Policy"
+      ],
+      "server_information_leak": {
+        "Server": "gunicorn"
+      }
+    },
+    "Frontend": {
+      "status_code": 200,
+      "present_security_headers": [],
+      "missing_security_headers": [
+        "Strict-Transport-Security",
+        "Content-Security-Policy",
+        "X-Content-Type-Options",
+        "X-Frame-Options",
+        "Referrer-Policy",
+        "Permissions-Policy"
+      ],
+      "server_information_leak": {}
+    }
+  },
+  "cors_analysis": {
+    "tested_origin": "https://evil-attacker.com",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Credentials": null,
+    "is_cors_vulnerable": false,
+    "risk_level": "LOW_TO_MEDIUM"
+  },
+  "sensitive_files_exposure": [
+    {
+      "path": "/.env",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/.env.local",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/.env.production",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/.git/HEAD",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/.git/config",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/manage.py",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/config/settings.py",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/backup.sql",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/dump.sql",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/admin/",
+      "status_code": 302,
+      "status_desc": "STATUS_302",
+      "exposed": false,
+      "preview": ""
+    },
+    {
+      "path": "/api/v1/schema/",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/api/v1/docs/",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/swagger/",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/redoc/",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/.aws/credentials",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    },
+    {
+      "path": "/server-status",
+      "status_code": 404,
+      "status_desc": "PROTECTED",
+      "exposed": false,
+      "preview": "<!DOCTYPE html> <html lang=\"en\"> <head>   <meta http-equiv=\""
+    }
+  ],
+  "sql_injection_fuzzing": [
+    {
+      "payload": "' OR '1'='1",
+      "status_code": 401,
+      "response_time_sec": 0.043,
+      "sql_error_detected": false
+    },
+    {
+      "payload": "\" OR \"1\"=\"1",
+      "status_code": 401,
+      "response_time_sec": 0.01,
+      "sql_error_detected": false
+    },
+    {
+      "payload": "1' UNION SELECT NULL, NULL, NULL--",
+      "status_code": 401,
+      "response_time_sec": 0.009,
+      "sql_error_detected": false
+    },
+    {
+      "payload": "1; SELECT pg_sleep(0.5)--",
+      "status_code": 401,
+      "response_time_sec": 0.021,
+      "sql_error_detected": false
+    },
+    {
+      "payload": "' AND 1=1--",
+      "status_code": 401,
+      "response_time_sec": 0.565,
+      "sql_error_detected": false
+    },
+    {
+      "payload": "' AND 1=2--",
+      "status_code": 401,
+      "response_time_sec": 0.04,
+      "sql_error_detected": false
+    }
+  ],
+  "auth_rate_limiting": {
+    "rate_limited": false,
+    "triggered_after_requests": null,
+    "status": "FAIL"
+  },
+  "http_method_tampering": [
+    {
+      "method": "GET",
+      "status_code": 401
+    },
+    {
+      "method": "HEAD",
+      "status_code": 401
+    },
+    {
+      "method": "OPTIONS",
+      "status_code": 401
+    },
+    {
+      "method": "POST",
+      "status_code": 401
+    },
+    {
+      "method": "PUT",
+      "status_code": 401
+    },
+    {
+      "method": "DELETE",
+      "status_code": 401
+    },
+    {
+      "method": "PATCH",
+      "status_code": 401
+    },
+    {
+      "method": "TRACE",
+      "status_code": 401
+    }
+  ]
+}

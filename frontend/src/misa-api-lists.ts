@@ -7,6 +7,12 @@ import {
   resolveActiveDatasetYear,
   resolveActivePeriodRange,
 } from "./transaction-period";
+import {
+  buildListWarmKey,
+  clearWarmSnapshots,
+  readWarmSnapshot,
+  writeWarmSnapshot,
+} from "./company-prefetch";
 
 type ApiRow = Record<string, any>;
 type ApiList = ApiRow[] | { results: ApiRow[]; next?: string | null };
@@ -55,6 +61,7 @@ const STATIC_CATALOG_PATTERNS = [
 ];
 
 export function clearMisaApiCache(companyId?: string, onlyDynamic = false) {
+  clearWarmSnapshots(companyId, onlyDynamic);
   if (!companyId) {
     apiListCache.clear();
   } else {
@@ -211,14 +218,27 @@ function filterRowsForDataset(path: string, rawRows: ApiRow[], branchScope: stri
   return yearMatched;
 }
 
-function getInitialRows(companyId: string, branchScope: string, resources: Record<string, string>): Record<string, ApiRow[]> {
+function getInitialRows(
+  token: string,
+  companyId: string,
+  branchScope: string,
+  resources: Record<string, string>,
+): Record<string, ApiRow[]> {
   const result: Record<string, ApiRow[]> = {};
   for (const [name, path] of Object.entries(resources)) {
     const isGlobalCatalog = STATIC_CATALOG_PATTERNS.some((p) => path.includes(p) && !path.includes("/employees/"));
     const scopeKey = isGlobalCatalog ? "all" : branchScope;
     const cacheKey = `${companyId}::${scopeKey}::${path}`;
     const cached = cacheGet(cacheKey);
-    result[name] = cached ? cached.data : [];
+    if (cached) {
+      result[name] = cached.data;
+      continue;
+    }
+    const warm = readWarmSnapshot<ApiRow[]>(buildListWarmKey(token, companyId, scopeKey, path));
+    if (Array.isArray(warm)) {
+      cacheSet(cacheKey, warm);
+      result[name] = warm;
+    }
   }
   return result;
 }
@@ -226,7 +246,7 @@ function getInitialRows(companyId: string, branchScope: string, resources: Recor
 const isUuidCompany = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
-/** Read the existing module tables from the company-scoped backend with SWR in-memory caching. */
+/** Read the existing module tables from the company-scoped backend with SWR in-memory + warm storage caching. */
 export function useMisaApiLists(
   companyId: string,
   resources: Record<string, string>,
@@ -238,7 +258,7 @@ export function useMisaApiLists(
   const [branchScope, setBranchScope] = useState<string>(() => getActiveBranchScope());
   const [datasetScope, setDatasetScope] = useState<string>(() => getActiveDatasetScope());
   const [rows, setRows] = useState<Record<string, ApiRow[]>>(() => {
-    return validCompany ? getInitialRows(companyId, getActiveBranchScope(), JSON.parse(key)) : {};
+    return validCompany ? getInitialRows(token, companyId, getActiveBranchScope(), JSON.parse(key)) : {};
   });
   const [revision, setRevision] = useState(0);
 
@@ -272,7 +292,7 @@ export function useMisaApiLists(
     const entries = Object.entries(resourceMap);
 
     // Hydrate immediately from cache if available so switching tabs has 0ms delay!
-    const cached = getInitialRows(companyId, branchScope, resourceMap);
+    const cached = getInitialRows(token, companyId, branchScope, resourceMap);
     setRows(cached);
 
     const FRESH_SW_WINDOW_MS = 60_000;
@@ -332,6 +352,7 @@ export function useMisaApiLists(
         const scopeKey = isGlobalCatalog ? "all" : branchScope;
         if (res.status === "fulfilled") {
           cacheSet(`${companyId}::${scopeKey}::${path}`, res.value.collected);
+          writeWarmSnapshot(buildListWarmKey(token, companyId, scopeKey, path), res.value.collected);
           batchUpdates[name] = res.value.collected;
           hasUpdates = true;
         } else {

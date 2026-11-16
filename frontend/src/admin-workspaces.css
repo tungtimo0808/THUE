@@ -703,6 +703,7 @@
   border-collapse: collapse;
   font-size: 13.5px;
   text-align: left;
+  font-variant-numeric: tabular-nums;
 }
 
 .admin-table th {
@@ -710,13 +711,14 @@
   color: var(--admin-text-muted);
   font-weight: 600;
   font-size: 12.5px;
-  padding: 12px 16px;
+  padding: 12px 12px;
   border-bottom: 1px solid var(--admin-border);
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 .admin-table td {
-  padding: 12px 16px;
+  padding: 12px 12px;
   font-size: 13.5px;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
@@ -726,23 +728,103 @@
   background-color: #f8fafc;
 }
 
-/* Forms and Inputs */
+/* Deterministic aligned status badges & action grids inside Admin tables */
+.admin-status-pill-fixed {
+  min-width: 100px;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.admin-action-grid-member {
+  display: inline-grid;
+  grid-template-columns: 104px 168px;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-action-grid-member > .admin-btn {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 12.5px;
+  justify-content: center;
+  box-sizing: border-box;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-action-grid-tenant {
+  display: inline-grid;
+  grid-template-columns: 128px 94px 102px 76px;
+  gap: 6px;
+  align-items: center;
+  justify-content: end;
+}
+
+.admin-action-grid-tenant > .admin-btn {
+  width: 100%;
+  height: 31px;
+  padding: 0 8px;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.admin-action-grid-user {
+  display: inline-grid;
+  grid-template-columns: 92px 68px 34px;
+  gap: 6px;
+  align-items: center;
+  justify-content: end;
+}
+
+.admin-action-grid-user > .admin-btn {
+  width: 100%;
+  height: 30px;
+  padding: 0 6px;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* Forms and Inputs — Standardized 38px control height across search, dropdowns, and buttons */
 .admin-search-bar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
+.admin-search-bar .misa-dropdown-container > button,
+.admin-users-toolbar .misa-dropdown-container > button {
+  height: 38px !important;
+  min-height: 38px !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+}
+
+.admin-users-toolbar .admin-btn:not(.admin-btn-sm) {
+  height: 38px;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
 .admin-input {
-  padding: 8px 14px;
+  height: 38px;
+  padding: 0 14px;
   font-size: 13.5px;
   min-height: 38px;
+  box-sizing: border-box;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   outline: none;
   background-color: #ffffff;
   color: var(--admin-text-main);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+textarea.admin-input {
+  height: auto;
+  padding: 8px 14px;
 }
 
 .admin-input:focus {

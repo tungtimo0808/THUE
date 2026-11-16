@@ -82,7 +82,7 @@ export default function BankMatchDialog({ line, companyId, branchId, onClose, on
         <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Số chứng từ, đối tượng, diễn giải" />
       </label>
       {loading ? <p>Đang tải chứng từ đủ điều kiện…</p> : <div className="br-match-table"><table><thead><tr>
-        <th>Chọn</th><th>Ngày hạch toán</th><th>Số chứng từ</th><th>Loại</th><th>Đối tượng</th><th>Diễn giải</th><th>Số tiền</th><th>Còn được ghép</th><th>Số tiền ghép</th>
+        <th>Chọn</th><th>Ngày hạch toán</th><th>Số chứng từ</th><th>Loại</th><th>Đối tượng</th><th>Diễn giải</th><th className="br-number">Số tiền</th><th className="br-number">Còn được ghép</th><th>Số tiền ghép</th>
       </tr></thead><tbody>
         {filtered.map((candidate) => {
           const allocation = allocations.find((entry) => entry.transaction === candidate.id);

@@ -37,6 +37,12 @@ import {
 } from "lucide-react";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
+import {
+  buildAdminWarmKey,
+  readWarmSnapshot,
+  writeWarmSnapshot,
+  type WarmAdminBundle,
+} from "./company-prefetch";
 import { humanizeErrorMessage, showGlobalPopup } from "./global-popup";
 import { MisaModuleApiExtensionPanel } from "./MisaModuleApiExtensionDrawer";
 import MisaDropdownSelect, { DropdownOption } from "./MisaDropdownSelect";
@@ -992,19 +998,59 @@ export default function CompanyAdminWorkspace() {
     });
   };
 
-  // Data states
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
-  const [members, setMembers] = useState<MemberItem[]>([]);
-  const [employees, setEmployees] = useState<EmployeeItem[]>([]);
-  const [branches, setBranches] = useState<Array<{ id: string; code: string; name: string; is_head_office?: boolean }>>([]);
-  const [departments, setDepartments] = useState<OrgUnit[]>([]);
-  const [positions, setPositions] = useState<OrgUnit[]>([]);
-  const [roles, setRoles] = useState<RoleItem[]>([]);
+  const initialAdminContext = useMemo(() => {
+    let parsed: any = {};
+    try {
+      parsed = JSON.parse(localStorage.getItem("erp_api_session") || "{}");
+    } catch {}
+    const effToken =
+      token || localStorage.getItem("erp_token") || parsed.token || parsed.access || "";
+    const effCompId =
+      companyId ||
+      localStorage.getItem("erp_company_id") ||
+      parsed.companyId ||
+      (companies.length > 0 ? companies[0].id : "");
+    const warm =
+      effToken && effCompId
+        ? readWarmSnapshot<WarmAdminBundle>(buildAdminWarmKey(effToken, effCompId))
+        : null;
+    const matchedComp =
+      warm?.companyInfo ||
+      companies.find((c) => c.id === effCompId) ||
+      (Array.isArray(parsed?.companies) ? parsed.companies.find((c: any) => c.id === effCompId) : null);
+    const info: CompanyInfo | null = matchedComp
+      ? {
+          id: matchedComp.id,
+          code: matchedComp.code || "",
+          name: matchedComp.name || "",
+          tax_code: matchedComp.tax_code || "",
+          status: matchedComp.status || "ACTIVE",
+          legal_representative: matchedComp.legal_representative || "",
+          representative_title: matchedComp.representative_title || "",
+          address: matchedComp.address || "",
+          accounting_regime: matchedComp.accounting_regime || "TT99",
+        }
+      : null;
+    return { warm, info };
+  }, []);
+
+  // Data states (hydrated synchronously on Frame 1 when warm cache is available -> 0ms jump)
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(initialAdminContext.info);
+  const [members, setMembers] = useState<MemberItem[]>(() => initialAdminContext.warm?.members || []);
+  const [employees, setEmployees] = useState<EmployeeItem[]>(() => initialAdminContext.warm?.employees || []);
+  const [branches, setBranches] = useState<Array<{ id: string; code: string; name: string; is_head_office?: boolean }>>(
+    () => initialAdminContext.warm?.branches || []
+  );
+  const [departments, setDepartments] = useState<OrgUnit[]>(() => initialAdminContext.warm?.departments || []);
+  const [positions, setPositions] = useState<OrgUnit[]>(() => initialAdminContext.warm?.positions || []);
+  const [roles, setRoles] = useState<RoleItem[]>(() => initialAdminContext.warm?.roles || []);
   const [allPermissions, setAllPermissions] = useState<PermissionItem[]>([]);
   const [modules, setModules] = useState<ModuleSetting[]>([]);
-  const [periods, setPeriods] = useState<FiscalPeriod[]>([]);
+  const [periods, setPeriods] = useState<FiscalPeriod[]>(() => initialAdminContext.warm?.periods || []);
   const [numberingRules, setNumberingRules] = useState<NumberingRule[]>([]);
-  const [joinRequests, setJoinRequests] = useState<AdminJoinRequestItem[]>([]);
+  const [joinRequests, setJoinRequests] = useState<AdminJoinRequestItem[]>(
+    () => initialAdminContext.warm?.joinRequests || []
+  );
   const [joinStatusFilter, setJoinStatusFilter] = useState<string>("PENDING");
   const [decidingJoinReq, setDecidingJoinReq] = useState<{
     item: AdminJoinRequestItem;
@@ -1025,7 +1071,9 @@ export default function CompanyAdminWorkspace() {
   const [roleGroupFilter, setRoleGroupFilter] = useState<string>("ALL");
 
   // Role Matrix Management
-  const [selectedRole, setSelectedRole] = useState<RoleItem | null>(null);
+  const [selectedRole, setSelectedRole] = useState<RoleItem | null>(
+    () => initialAdminContext.warm?.roles?.[0] || null
+  );
   const [roleMatrix, setRoleMatrix] = useState<MatrixData | null>(null);
   const [selectedPermCodes, setSelectedPermCodes] = useState<Set<string>>(new Set());
   const [matrixSaving, setMatrixSaving] = useState<boolean>(false);
@@ -1166,38 +1214,37 @@ export default function CompanyAdminWorkspace() {
         request<AdminJoinRequestItem[] | { results: AdminJoinRequestItem[] }>(`/api/v1/common/company-join-requests/?company_id=${effectiveCompanyId}`, effectiveToken),
       ]);
 
-      if (memRes.status === "fulfilled") {
-        const val = memRes.value;
-        setMembers(Array.isArray(val) ? val : val.results || []);
-      }
-      if (empRes.status === "fulfilled") {
-        const val = empRes.value;
-        setEmployees(Array.isArray(val) ? val : val.results || []);
-      }
-      if (branchRes.status === "fulfilled") {
-        const val = branchRes.value;
-        setBranches(Array.isArray(val) ? val : val.results || []);
-      }
-      if (deptRes.status === "fulfilled") {
-        const val = deptRes.value;
-        setDepartments(Array.isArray(val) ? val : val.results || []);
-      }
-      if (posRes.status === "fulfilled") {
-        const val = posRes.value;
-        setPositions(Array.isArray(val) ? val : val.results || []);
-      }
-      if (roleRes.status === "fulfilled") {
-        const val = roleRes.value;
-        const roleList: RoleItem[] = Array.isArray(val) ? val : val.results || [];
+      const memList = memRes.status === "fulfilled" ? (Array.isArray(memRes.value) ? memRes.value : memRes.value.results || []) : undefined;
+      const empList = empRes.status === "fulfilled" ? (Array.isArray(empRes.value) ? empRes.value : empRes.value.results || []) : undefined;
+      const branchList = branchRes.status === "fulfilled" ? (Array.isArray(branchRes.value) ? branchRes.value : branchRes.value.results || []) : undefined;
+      const deptList = deptRes.status === "fulfilled" ? (Array.isArray(deptRes.value) ? deptRes.value : deptRes.value.results || []) : undefined;
+      const posList = posRes.status === "fulfilled" ? (Array.isArray(posRes.value) ? posRes.value : posRes.value.results || []) : undefined;
+      const roleList: RoleItem[] | undefined = roleRes.status === "fulfilled" ? (Array.isArray(roleRes.value) ? roleRes.value : roleRes.value.results || []) : undefined;
+      const joinList = joinRes.status === "fulfilled" ? (Array.isArray(joinRes.value) ? joinRes.value : joinRes.value.results || []) : undefined;
+
+      if (memList) setMembers(memList);
+      if (empList) setEmployees(empList);
+      if (branchList) setBranches(branchList);
+      if (deptList) setDepartments(deptList);
+      if (posList) setPositions(posList);
+      if (roleList) {
         setRoles(roleList);
         setSelectedRole((prev) =>
           prev && roleList.some((r) => r.id === prev.id) ? prev : roleList[0] || null
         );
       }
-      if (joinRes.status === "fulfilled") {
-        const val = joinRes.value;
-        setJoinRequests(Array.isArray(val) ? val : val.results || []);
-      }
+      if (joinList) setJoinRequests(joinList);
+
+      writeWarmSnapshot(buildAdminWarmKey(effectiveToken, effectiveCompanyId), {
+        companyInfo: activeComp || undefined,
+        members: memList,
+        employees: empList,
+        branches: branchList,
+        departments: deptList,
+        positions: posList,
+        roles: roleList,
+        joinRequests: joinList,
+      });
     } catch (err: any) {
       setAlertMsg({ type: "error", text: err.message || "Không thể tải dữ liệu nhân sự doanh nghiệp." });
     } finally {
@@ -2304,12 +2351,12 @@ export default function CompanyAdminWorkspace() {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th style={{ minWidth: 260, whiteSpace: "nowrap" }}>Thành viên / Tài khoản đăng nhập</th>
-                      <th style={{ minWidth: 190, whiteSpace: "nowrap" }}>Phân cấp Quản trị</th>
-                      <th style={{ minWidth: 240, whiteSpace: "nowrap" }}>Vai trò Nghiệp vụ hiện tại</th>
-                      <th style={{ minWidth: 170, whiteSpace: "nowrap" }}>Phòng ban / Đơn vị</th>
-                      <th style={{ minWidth: 110, whiteSpace: "nowrap" }}>Trạng thái</th>
-                      <th style={{ width: 220, minWidth: 220, textAlign: "center", whiteSpace: "nowrap" }}>Thao tác</th>
+                      <th style={{ minWidth: 196, maxWidth: 230, whiteSpace: "nowrap" }}>Thành viên / Tài khoản</th>
+                      <th style={{ width: 176, minWidth: 176, whiteSpace: "nowrap" }}>Phân cấp Quản trị</th>
+                      <th style={{ minWidth: 178, whiteSpace: "nowrap" }}>Vai trò Nghiệp vụ</th>
+                      <th style={{ minWidth: 162, whiteSpace: "nowrap" }}>Phòng ban / Đơn vị</th>
+                      <th style={{ width: 112, minWidth: 112, textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái</th>
+                      <th style={{ width: 294, minWidth: 294, textAlign: "center", whiteSpace: "nowrap" }}>Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2357,7 +2404,7 @@ export default function CompanyAdminWorkspace() {
                                     </strong>
                                     {isCompanyAdmin && <Sparkles size={13} color="#eab308" />}
                                   </div>
-                                  <div style={{ fontSize: "12.8px", color: "#64748b", fontFamily: "Roboto, Arial, sans-serif" }}>
+                                  <div style={{ fontSize: "12.5px", color: "#64748b", fontFamily: "Roboto, Arial, sans-serif", wordBreak: "break-all" }}>
                                     {m.email}
                                   </div>
                                   {m.phone && (
@@ -2370,19 +2417,19 @@ export default function CompanyAdminWorkspace() {
                             </td>
                             <td>
                               {isCompanyAdmin ? (
-                                <span className="admin-badge admin-badge-gold">
-                                  <ShieldCheck size={14} className="ui-inline-icon" aria-hidden="true" /> ADMIN DOANH NGHIỆP
+                                <span className="admin-badge admin-badge-gold" style={{ minWidth: 164, fontSize: 11.5, padding: "4px 8px", justifyContent: "center", boxSizing: "border-box" }}>
+                                  <ShieldCheck size={13} className="ui-inline-icon" aria-hidden="true" /> ADMIN DOANH NGHIỆP
                                 </span>
                               ) : (
-                                <span className="admin-badge admin-badge-blue">
-                                  <UserRound size={14} className="ui-inline-icon" aria-hidden="true" /> NHÂN SỰ DOANH NGHIỆP
+                                <span className="admin-badge admin-badge-blue" style={{ minWidth: 164, fontSize: 11.5, padding: "4px 8px", justifyContent: "center", boxSizing: "border-box" }}>
+                                  <UserRound size={13} className="ui-inline-icon" aria-hidden="true" /> NHÂN SỰ DOANH NGHIỆP
                                 </span>
                               )}
                             </td>
                             <td>
                               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
                                 {m.role_assignments && m.role_assignments.length > 0 ? (
-                                  m.role_assignments.map((ra) => {
+                                  Array.from(new Map(m.role_assignments.map((r) => [r.role_code, r])).values()).map((ra) => {
                                     let badgeClass = "admin-badge-role";
                                     let icon = <Briefcase size={12} />;
                                     if (isAdminRoleCode(ra.role_code)) {
@@ -2464,20 +2511,19 @@ export default function CompanyAdminWorkspace() {
                                 </div>
                               </div>
                             </td>
-                            <td>
+                            <td style={{ textAlign: "center", width: 112, minWidth: 112, whiteSpace: "nowrap" }}>
                               {m.membership_status === "LOCKED" || (m as any).is_locked ? (
-                                <span className="admin-badge admin-badge-suspended">Tạm khóa</span>
+                                <span className="admin-badge admin-badge-suspended admin-status-pill-fixed">Tạm khóa</span>
                               ) : m.membership_status === "INACTIVE" || m.membership_status === "TERMINATED" ? (
-                                <span className="admin-badge admin-badge-suspended">Ngừng hoạt động</span>
+                                <span className="admin-badge admin-badge-suspended admin-status-pill-fixed">Ngừng hoạt động</span>
                               ) : (
-                                <span className="admin-badge admin-badge-active">Hoạt động</span>
+                                <span className="admin-badge admin-badge-active admin-status-pill-fixed">Hoạt động</span>
                               )}
                             </td>
-                            <td style={{ textAlign: "center", width: 220, minWidth: 220, whiteSpace: "nowrap" }}>
-                              <div style={{ display: "inline-flex", gap: "0.45rem", alignItems: "center", justifyContent: "center", flexWrap: "nowrap" }}>
+                            <td style={{ textAlign: "center", width: 294, minWidth: 294, whiteSpace: "nowrap" }}>
+                              <div className="admin-action-grid-member">
                                 <button
                                   className="admin-btn admin-btn-primary admin-btn-sm"
-                                  style={{ whiteSpace: "nowrap", flexShrink: 0, minWidth: 98, justifyContent: "center" }}
                                   onClick={() => {
                                     setAssignModalMember(m);
                                     setTargetRoleCode(m.role_assignments[0]?.role_code || "ROLE_CHIEF_ACCOUNTANT");
@@ -2493,7 +2539,6 @@ export default function CompanyAdminWorkspace() {
                                 </button>
                                 <button
                                   className="admin-btn admin-btn-secondary admin-btn-sm"
-                                  style={{ whiteSpace: "nowrap", flexShrink: 0, minWidth: 96, justifyContent: "center" }}
                                   onClick={() => {
                                     setViewingPermsMember(m);
                                     setViewingPermSearch("");
@@ -3482,19 +3527,19 @@ export default function CompanyAdminWorkspace() {
                       <thead>
                         <tr>
                           <th>Kỳ số</th>
-                          <th>Ngày bắt đầu</th>
-                          <th>Ngày kết thúc</th>
-                          <th>Trạng thái</th>
+                          <th style={{ textAlign: "center" }}>Ngày bắt đầu</th>
+                          <th style={{ textAlign: "center" }}>Ngày kết thúc</th>
+                          <th style={{ textAlign: "center" }}>Trạng thái</th>
                         </tr>
                       </thead>
                       <tbody>
                         {periods.slice(0, 6).map((p) => (
                           <tr key={p.id}>
-                            <td>Kỳ {p.period_number}</td>
-                            <td>{p.start_date}</td>
-                            <td>{p.end_date}</td>
-                            <td>
-                              <span className={`admin-badge ${p.status === "OPEN" ? "admin-badge-active" : "admin-badge-pending"}`}>
+                            <td><strong>Kỳ {p.period_number}</strong></td>
+                            <td style={{ textAlign: "center" }}>{p.start_date}</td>
+                            <td style={{ textAlign: "center" }}>{p.end_date}</td>
+                            <td style={{ textAlign: "center" }}>
+                              <span className={`admin-badge admin-status-pill-fixed ${p.status === "OPEN" ? "admin-badge-active" : "admin-badge-pending"}`}>
                                 {p.status === "OPEN" ? "Đang mở" : "Đã khóa"}
                               </span>
                             </td>

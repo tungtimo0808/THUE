@@ -239,7 +239,7 @@ class BalanceViewSet(ReadOnlyModelViewSet):
         for field, param in (("warehouse_id", "warehouse_id"), ("item_id", "item_id"), ("lot_serial_id", "lot_serial_id")):
             if value := self.request.query_params.get(param):
                 queryset = queryset.filter(**{field: value})
-        return queryset
+        return filter_queryset_by_branch(queryset, self.request, company)
 
     def _summary_company(self, request):
         from organization.models import Company

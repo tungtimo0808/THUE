@@ -1,0 +1,79 @@
+{
+  "timestamp": "2026-11-12 17:29:24",
+  "superadmin_results": [
+    [
+      "SA-01",
+      "Chặn user thường vào cổng SuperAdmin",
+      true,
+      "HTTP 403"
+    ],
+    [
+      "SA-02",
+      "Đăng nhập Super Admin",
+      true,
+      "Token cấp thành công"
+    ],
+    [
+      "SA-03",
+      "Xem Platform Stats",
+      true,
+      "HTTP 200"
+    ],
+    [
+      "SA-04",
+      "Duyệt danh sách DN toàn sàn",
+      true,
+      "34 doanh nghiệp"
+    ],
+    [
+      "SA-05",
+      "SuperAdmin tạo Doanh nghiệp mới",
+      true,
+      "HTTP 201"
+    ],
+    [
+      "SA-07",
+      "Duyệt danh sách Users toàn sàn",
+      true,
+      "224 users"
+    ]
+  ],
+  "company_admin_results": [
+    [
+      "CA-01",
+      "Đăng nhập Company Admin",
+      true,
+      "Công ty: CÔNG TY TNHH CÔNG NGHỆ MINH PHÁT"
+    ],
+    [
+      "CA-02",
+      "Chặn Company Admin vào chức năng Super Admin",
+      true,
+      "100% 403 Forbidden"
+    ],
+    [
+      "CA-03",
+      "Xem danh sách thành viên công ty",
+      true,
+      "23 thành viên"
+    ],
+    [
+      "CA-04",
+      "Quản lý quy tắc đánh số chứng từ",
+      true,
+      "0 quy tắc"
+    ],
+    [
+      "CA-05",
+      "Quản lý kỳ kế toán công ty",
+      true,
+      "36 kỳ"
+    ],
+    [
+      "CA-07",
+      "Gán & Thu hồi vai trò nội bộ",
+      true,
+      "Vai trò: ROLE_CHIEF_ACCOUNTANT"
+    ]
+  ]
+}

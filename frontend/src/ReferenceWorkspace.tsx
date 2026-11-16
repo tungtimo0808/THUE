@@ -80,6 +80,13 @@ import {
 } from "./GlobalShellPanels";
 import { SidebarNavigation } from "./SidebarNavigation";
 import { preloadWorkspace, setupIdlePreloading } from "./workspace-preloader";
+import MisaDashboardOverview from "./MisaDashboardOverview";
+import {
+  buildBranchesWarmKey,
+  readWarmSnapshot,
+  warmCompanyWorkspaceData,
+  writeWarmSnapshot,
+} from "./company-prefetch";
 import type { ComponentType } from "react";
 
 function lazyWithRetry<T extends ComponentType<any>>(factory: () => Promise<{ default: T }>) {
@@ -139,7 +146,6 @@ const MisaBudgetWorkspace = lazyWithRetry(() => import("./MisaBudgetWorkspace"))
 const MisaReportCenterWorkspace = lazyWithRetry(() => import("./MisaReportCenterWorkspace"));
 const MisaFinancialAnalysisWorkspace = lazyWithRetry(() => import("./MisaFinancialAnalysisWorkspace"));
 const MisaOpeningBalanceWorkspace = lazyWithRetry(() => import("./MisaOpeningBalanceWorkspace"));
-const MisaDashboardOverview = lazyWithRetry(() => import("./MisaDashboardOverview"));
 const MisaInvoiceWorkspace = lazyWithRetry(() => import("./MisaInvoiceWorkspace"));
 const InvoiceLookupWorkspace = lazyWithRetry(() => import("./InvoiceLookupWorkspace"));
 const CashPaymentLimitWarningWorkspace = lazyWithRetry(() => import("./CashPaymentLimitWarningWorkspace"));
@@ -780,11 +786,19 @@ function ReferenceWorkspace() {
     return matched ? Number(matched) : 2026;
   }, [activeDatasetObj, dataset]);
 
-  const [companyBranches, setCompanyBranches] = useState<BranchData[]>([]);
+  const [companyBranches, setCompanyBranches] = useState<BranchData[]>(() => {
+    if (!apiToken || !company?.id) return [];
+    return readWarmSnapshot<BranchData[]>(buildBranchesWarmKey(apiToken, company.id)) || [];
+  });
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
 
   const fetchBranches = useCallback(async () => {
     if (!apiToken || !company?.id) return;
+    const warmKey = buildBranchesWarmKey(apiToken, company.id);
+    const cachedBranches = readWarmSnapshot<BranchData[]>(warmKey);
+    if (cachedBranches && cachedBranches.length > 0) {
+      setCompanyBranches((prev) => (prev.length > 0 ? prev : cachedBranches));
+    }
     try {
       const res = await request<BranchData[] | { results: BranchData[] }>(
         `/api/v1/organization/branches/?company_id=${encodeURIComponent(company.id)}`,
@@ -792,6 +806,7 @@ function ReferenceWorkspace() {
       );
       const list = Array.isArray(res) ? res : res.results || [];
       setCompanyBranches(list);
+      writeWarmSnapshot(warmKey, list);
       if (list.length === 1) {
         const onlyBranch = list[0];
         setBranch((prev) => {
@@ -1062,8 +1077,26 @@ function ReferenceWorkspace() {
     [info, setInfo] = useState(""),
     [settingsSearch, setSettingsSearch] = useState(""),
     [query, setQuery] = useState(""),
-    [workMode, setWorkMode] = useState("ROLE_CHIEF_ACCOUNTANT"),
-    [assignedRoleCodes, setAssignedRoleCodes] = useState<string[]>([]),
+    [assignedRoleCodes, setAssignedRoleCodes] = useState<string[]>(() => {
+      const compAny = company as any;
+      if (Array.isArray(compAny?.role_codes) && compAny.role_codes.length > 0) {
+        return compAny.role_codes;
+      }
+      if (compAny?.is_company_admin) {
+        return ["ROLE_ADMIN"];
+      }
+      return [];
+    }),
+    [workMode, setWorkMode] = useState<string>(() => {
+      const compAny = company as any;
+      if (Array.isArray(compAny?.role_codes) && compAny.role_codes.length > 0) {
+        return getRoleWorkspaceSpec(compAny.role_codes[0]).code;
+      }
+      if (compAny?.is_company_admin) {
+        return "ROLE_ADMIN";
+      }
+      return "ROLE_CHIEF_ACCOUNTANT";
+    }),
     [showThemeCustomizer, setShowThemeCustomizer] = useState(false);
 
   useEffect(() => {
@@ -1609,6 +1642,7 @@ function ReferenceWorkspace() {
         <MisaDirectoryWorkspace
           key={`${params.get("directory") || "menu"}-${ctxKey}`}
           initialName={params.get("directory")}
+          sectionTab={activeTab}
           notify={setNotice}
           legacy={<DirectoryWorkspace notify={setNotice} />}
         />
@@ -1888,8 +1922,17 @@ function ReferenceWorkspace() {
                         key={c.id}
                         type="button"
                         className={`ref-cluster-popover-item ${isSelected ? "active" : ""}`}
+                        onMouseEnter={() => {
+                          if (apiToken) void warmCompanyWorkspaceData(apiToken, c.id);
+                        }}
+                        onFocus={() => {
+                          if (apiToken) void warmCompanyWorkspaceData(apiToken, c.id);
+                        }}
                         onClick={() => {
-                          setCompanyBranches([]);
+                          const warmBr = apiToken
+                            ? readWarmSnapshot<BranchData[]>(buildBranchesWarmKey(apiToken, c.id))
+                            : null;
+                          setCompanyBranches(warmBr || []);
                           setBranch("all");
                           try {
                             localStorage.setItem("ref_branch", "all");
@@ -1897,6 +1940,7 @@ function ReferenceWorkspace() {
                           if (apiCompanies.some((ac) => ac.id === c.id)) {
                             apiSelectCompany(c.id);
                             if (apiToken) {
+                              void warmCompanyWorkspaceData(apiToken, c.id);
                               void request("/api/v1/common/companies/switch/", apiToken, {
                                 method: "POST",
                                 body: JSON.stringify({ company: c.id, company_id: c.id, all_branches: true }),

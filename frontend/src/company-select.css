@@ -79,8 +79,10 @@
 .company-list-details h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
 .company-list-meta { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; line-height: 1.5; color: #64748b; }
 .company-current-label { display: block; margin-top: 8px; color: var(--brand); font-size: 12px; }
-.company-list-buttons { display: flex; gap: 8px; flex-shrink: 0; }
-.sv-company-page .company-list-buttons button { flex: none; height: 40px; }
+.company-list-buttons { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-shrink: 0; min-width: 268px; }
+.sv-company-page .company-list-buttons button { flex: none; height: 40px; justify-content: center; }
+.sv-company-page .company-portal-admin-btn { min-width: 114px; }
+.sv-company-page .company-portal-enter-btn { min-width: 146px; }
 .sv-company-page button:focus-visible,
 .sv-company-page a:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
 .sv-company-page .inline-form-box { max-width: none !important; box-shadow: none; border-radius: 6px; }

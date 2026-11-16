@@ -26,6 +26,7 @@ import {
 } from "./misa-api-writes";
 import type { CollectionDebtSource } from "./MisaInvoiceCollectionModals";
 import { request } from "./live-api";
+import { buildCashWarmKey, readWarmSnapshot, writeWarmSnapshot } from "./company-prefetch";
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import {currentCashDate,isCashDateInRange,cashDateValue} from './cash-date';
 import {nextCashCode,cashLedger,type CashEntry} from './cash-operations';
@@ -4897,10 +4898,10 @@ export function CreateVoucherModal({
                       <th style={{ width: 40, textAlign: "center" }}>#</th>
                       <th>Diễn giải</th>
                       {showAccount && (
-                        <th style={{ width: 75, textAlign: "center" }}>TK Nợ</th>
+                        <th style={{ width: 100, minWidth: 100, textAlign: "center" }}>TK Nợ</th>
                       )}
                       {showAccount && (
-                        <th style={{ width: 75, textAlign: "center" }}>TK Có</th>
+                        <th style={{ width: 100, minWidth: 100, textAlign: "center" }}>TK Có</th>
                       )}
                       <th style={{ width: 130, textAlign: "right" }}>Số tiền</th>
                       {currentType.extraColumns?.includes("bankAccount") && (
@@ -5106,9 +5107,9 @@ export function CreateVoucherModal({
                       <th style={{ width: 40, textAlign: "center" }}>#</th>
 <th>Diễn giải thuế</th>
 <th style={{ width: 90 }}>Có hóa đơn</th>
-<th style={{ width: 85, textAlign: "center" }}>% thuế GTGT</th>
+<th style={{ width: 98, minWidth: 98, textAlign: "center" }}>% thuế GTGT</th>
 <th style={{ width: 120, textAlign: "right" }}>Tiền thuế GTGT</th>
-<th style={{ width: 75, textAlign: "center" }}>TK thuế GTGT</th>
+<th style={{ width: 108, minWidth: 108, textAlign: "center" }}>TK thuế GTGT</th>
 <th style={{ width: 110 }}>Ngày hóa đơn</th>
 <th style={{ width: 110 }}>Số hóa đơn</th>
 <th style={{ width: 180 }}>Nhóm HHDV mua vào</th>
@@ -5316,10 +5317,11 @@ export function CreateVoucherModal({
                 <select
                   style={{
                     height: 24,
+                    minWidth: 58,
                     border: "1px solid #cbd5e1",
                     borderRadius: 4,
                     fontSize: 12,
-                    padding: "0 4px",
+                    padding: "0 28px 0 8px",
                   }}
                   defaultValue="20"
                 >
@@ -6075,12 +6077,12 @@ export function CashReportsTab({ notify,entries=[],companyId,initialReport }: { 
                 <table className="misa-report-data-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 40 }}>STT</th>
-                      <th style={{ width: 85 }}>Ngày HT</th>
-                      <th style={{ width: 85 }}>Ngày CT</th>
-                      <th style={{ width: 90 }}>Số chứng từ</th>
+                      <th style={{ width: 40, textAlign: "center" }}>STT</th>
+                      <th style={{ width: 85, textAlign: "center" }}>Ngày HT</th>
+                      <th style={{ width: 85, textAlign: "center" }}>Ngày CT</th>
+                      <th style={{ width: 90, textAlign: "center" }}>Số chứng từ</th>
                       <th>Diễn giải nghiệp vụ</th>
-                      <th style={{ width: 75 }}>TK đối ứng</th>
+                      <th style={{ width: 75, textAlign: "center" }}>TK đối ứng</th>
                       <th style={{ width: 120, textAlign: "right" }}>Số tiền Thu</th>
                       <th style={{ width: 120, textAlign: "right" }}>Số tiền Chi</th>
                       <th style={{ width: 130, textAlign: "right" }}>Số dư Tồn quỹ</th>
@@ -7704,7 +7706,7 @@ export function PaymentRequestsTab({
               <th className="numeric" style={{ whiteSpace: "nowrap" }}>Số tiền đề nghị</th>
               <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Trạng thái</th>
               <th style={{ whiteSpace: "nowrap" }}>Chứng từ chi</th>
-              <th style={{ textAlign: "center", whiteSpace: "nowrap" }}>Thao tác</th>
+              <th style={{ textAlign: "left", whiteSpace: "nowrap", width: 224, paddingLeft: 14 }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -9126,7 +9128,18 @@ export default function MisaCashWorkspace({
 
   const [activeBranchScope, setActiveBranchScope] = useState<string>(() => resolveActiveBranchScope());
   const cashCacheKey = company?.id ? `${company.id}::${activeBranchScope}` : "";
-  const cachedCash = cashCacheKey ? cashDataCache.get(cashCacheKey) : undefined;
+  const cashWarmKey = company?.id ? buildCashWarmKey(token, company.id, activeBranchScope) : "";
+  const cachedCash = useMemo(() => {
+    if (!cashCacheKey) return undefined;
+    const mem = cashDataCache.get(cashCacheKey);
+    if (mem) return mem;
+    const warm = readWarmSnapshot<any>(cashWarmKey);
+    if (warm && Array.isArray(warm.transactions)) {
+      cashDataCache.set(cashCacheKey, warm);
+      return warm;
+    }
+    return undefined;
+  }, [cashCacheKey, cashWarmKey]);
   const [transactions, setTransactions] = useState<any[]>(() => cachedCash?.transactions || []);
   const [cashBalance, setCashBalance] = useState(() => cachedCash?.cashBalance || 0);
   const [cashApiRevision, setCashApiRevision] = useState(0);
@@ -9179,12 +9192,14 @@ export default function MisaCashWorkspace({
       setCashFunds(funds);
       setCashBalance(totalBalance);
       const prev = cashDataCache.get(cashCacheKey);
-      cashDataCache.set(cashCacheKey, {
+      const nextEntry = {
         transactions: prev?.transactions || [],
         cashBalance: totalBalance,
         cashFunds: funds,
         timestamp: Date.now(),
-      });
+      };
+      cashDataCache.set(cashCacheKey, nextEntry);
+      if (cashWarmKey) writeWarmSnapshot(cashWarmKey, nextEntry);
     }).catch((error) => {
       if (active && !hasCache) notify(error instanceof Error ? error.message : "Không tải được số dư quỹ tiền mặt.");
     });
@@ -9197,12 +9212,14 @@ export default function MisaCashWorkspace({
       const mapped = records.map(mapCashTransaction);
       setTransactions(mapped);
       const prev = cashDataCache.get(cashCacheKey);
-      cashDataCache.set(cashCacheKey, {
+      const nextEntry = {
         transactions: mapped,
         cashBalance: prev?.cashBalance || 0,
         cashFunds: prev?.cashFunds || [],
         timestamp: Date.now(),
-      });
+      };
+      cashDataCache.set(cashCacheKey, nextEntry);
+      if (cashWarmKey) writeWarmSnapshot(cashWarmKey, nextEntry);
       // Internal transfers are listed with the vouchers so they can be reviewed after saving.
       internalTransfers(createApiWriter(company.id, (path, init) => request(path, token, init)), "cash").then((transfers) => {
         if (!active) return;

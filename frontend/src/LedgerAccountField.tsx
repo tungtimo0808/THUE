@@ -125,51 +125,64 @@ export default function LedgerAccountField({
       aria-expanded={!!position}
       aria-label={label}
       title={`Nhấp để chọn ${label}`}
+      className="misa-voucher-cell-input"
       style={{
         position: 'relative',
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
+        justifyContent: 'center',
+        gap: 9,
         width: '100%',
+        minWidth: 72,
+        height: 28,
+        padding: '0 8px',
         cursor: 'pointer',
         userSelect: 'none',
+        background: position ? '#f8fafc' : undefined,
+        borderColor: position ? 'var(--brand)' : undefined,
+        boxShadow: position ? '0 0 0 1px var(--brand)' : undefined,
       }}
     >
       <input
         aria-label={label}
-        className="misa-voucher-cell-input"
         value={value}
         readOnly
         placeholder="--"
         tabIndex={-1}
         style={{
-          textAlign: 'center',
-          height: 24,
-          fontSize: 12,
-          paddingRight: 18,
-          cursor: 'pointer',
-          fontWeight: value ? 600 : 400,
-          color: value ? '#0f172a' : '#94a3b8',
-          background: position ? '#f8fafc' : undefined,
-          borderColor: position ? 'var(--brand)' : undefined,
-          boxShadow: position ? '0 0 0 1px var(--brand)' : undefined,
+          position: 'absolute',
+          opacity: 0,
+          width: 1,
+          height: 1,
+          pointerEvents: 'none',
         }}
       />
-      <div
+      <span
         style={{
-          position: 'absolute',
-          right: 5,
-          top: '50%',
-          transform: `translateY(-50%) ${position ? 'rotate(180deg)' : ''}`,
-          transition: 'transform 0.15s ease',
-          display: 'flex',
+          fontSize: 12.5,
+          fontWeight: value ? 600 : 400,
+          color: value ? '#0f172a' : '#94a3b8',
+          fontVariantNumeric: 'tabular-nums',
+          lineHeight: 1,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {value || '--'}
+      </span>
+      <span
+        style={{
+          display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: position ? 'var(--brand)' : '#94a3b8',
+          flexShrink: 0,
+          transform: position ? 'rotate(180deg)' : 'rotate(0deg)',
+          transition: 'transform 0.15s ease',
+          color: position ? 'var(--brand)' : '#64748b',
           pointerEvents: 'none',
         }}
       >
-        <ChevronDown size={11} />
-      </div>
+        <ChevronDown size={12} />
+      </span>
 
       {position &&
         createPortal(

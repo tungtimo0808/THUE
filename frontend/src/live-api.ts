@@ -142,6 +142,8 @@ function isSessionCacheablePath(path: string): boolean {
     path.includes("/api/v1/organization/branches/") ||
     path.includes("/api/v1/common/companies/mine/") ||
     path.includes("/api/v1/common/settings/") ||
+    path.includes("/api/v1/iam/memberships/me/") ||
+    path.includes("/api/v1/iam/roles/") ||
     path.includes("/api/v1/master-data/")
   );
 }
@@ -206,6 +208,9 @@ function clearSessionCacheStorage() {
 export function clearLiveApiGetCache() {
   getResponseCache.clear();
   clearSessionCacheStorage();
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("sv_warm_cache_invalidated"));
+  }
 }
 
 export async function request<T>(path: string, token?: string, options?: RequestInit): Promise<T> {

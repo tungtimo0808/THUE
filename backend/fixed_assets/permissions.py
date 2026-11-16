@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 
-from iam.permissions import has_effective_permission
+from iam.permissions import get_user_allowed_branch_ids, has_effective_permission
 from organization.models import Company
 
 
@@ -322,5 +322,14 @@ class FixedAssetPermission(BasePermission):
                 for value in set(branches)
             )
         if not branches:
-            return has_effective_permission(request.user.iam_account, company, code)
+            if has_effective_permission(request.user.iam_account, company, code):
+                return True
+            if request.method in ("GET", "HEAD", "OPTIONS"):
+                allowed = get_user_allowed_branch_ids(request, company.id)
+                if allowed and any(
+                    has_effective_permission(request.user.iam_account, company, code, branch_id=bid)
+                    for bid in allowed
+                ):
+                    return True
+            return False
         return all(has_effective_permission(request.user.iam_account, company, code, branch_id=value) for value in set(branches))

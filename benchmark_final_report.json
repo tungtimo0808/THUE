@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-11-11T14:19:41.977790",
+  "security": [
+    [
+      "SEC-01",
+      "Sổ quỹ / Phiếu thu chi",
+      true,
+      "Bị chặn tuyệt đối (HTTP 403 Forbidden)"
+    ],
+    [
+      "SEC-01",
+      "Danh mục hàng hóa kho",
+      true,
+      "Bị chặn tuyệt đối (HTTP 403 Forbidden)"
+    ],
+    [
+      "SEC-01",
+      "Hóa đơn mua vào AP",
+      true,
+      "Bị chặn tuyệt đối (HTTP 403 Forbidden)"
+    ],
+    [
+      "SEC-01",
+      "Đơn bán hàng Sales",
+      true,
+      "Bị chặn tuyệt đối (HTTP 403 Forbidden)"
+    ],
+    [
+      "SEC-02",
+      "Direct Item UUID",
+      true,
+      "HTTP 403"
+    ],
+    [
+      "SEC-03",
+      "Cross-tenant Post",
+      true,
+      "HTTP 403"
+    ],
+    [
+      "SEC-04",
+      "Salesperson GL Closing",
+      true,
+      "HTTP 403"
+    ],
+    [
+      "SEC-04",
+      "Salesperson IAM Grant",
+      true,
+      "HTTP 403"
+    ]
+  ],
+  "burst_load": {
+    "Profile / Auth verify": {
+      "total": 200,
+      "success": 200,
+      "status_counts": {
+        "200": 200
+      },
+      "total_time_s": 1.1293781000022136,
+      "rps": 177.08861186489094,
+      "min_ms": 64.90819999817177,
+      "avg_ms": 531.7152834998706,
+      "p50_ms": 500.4848499993386,
+      "p95_ms": 1058.3806699998604,
+      "p99_ms": 1096.8456539986073,
+      "max_ms": 1101.3588999994681
+    },
+    "Danh mục Hàng hóa riêng": {
+      "total": 200,
+      "success": 186,
+      "status_counts": {
+        "200": 186,
+        "403": 14
+      },
+      "total_time_s": 12.450971299997036,
+      "rps": 16.0630038557753,
+      "min_ms": 685.0530999981856,
+      "avg_ms": 7232.053171500083,
+      "p50_ms": 7487.885099999403,
+      "p95_ms": 11693.231795002066,
+      "p99_ms": 12270.512891998333,
+      "max_ms": 12271.727300001658
+    },
+    "Sổ Quỹ riêng (Kiểm tra RBAC theo vai trò)": {
+      "total": 200,
+      "success": 56,
+      "status_counts": {
+        "200": 56,
+        "Server disconnected without sending a response.": 1,
+        "403": 143
+      },
+      "total_time_s": 11.323497500001395,
+      "rps": 17.66238743815463,
+      "min_ms": 232.32740000094054,
+      "avg_ms": 4368.200289000215,
+      "p50_ms": 3749.9233500002447,
+      "p95_ms": 9859.823895000045,
+      "p99_ms": 11106.71876900058,
+      "max_ms": 11108.87670000011
+    }
+  },
+  "race_condition": {
+    "total_writes": 20,
+    "success_writes": 4,
+    "unique_numbers_count": 4,
+    "has_duplicates": false,
+    "sample_voucher_numbers": [
+      "LRTD-CONC-547099-01",
+      "LRTD-CONC-547099-18",
+      "LRTD-CONC-547099-07",
+      "LRTD-CONC-547099-03"
+    ],
+    "total_time_s": 0.9617771000011999,
+    "avg_write_lat_ms": 514.5258500006094
+  },
+  "sustained_load": {
+    "actual_duration_s": 33.90075899999647,
+    "total_requests": 1146,
+    "successful_requests": 1110,
+    "error_requests": 36,
+    "sustained_rps": 33.80455287151887,
+    "avg_ms": 4823.398484729507,
+    "p50_ms": 4104.582749998372,
+    "p95_ms": 11247.999109998273,
+    "p99_ms": 12740.430168001005,
+    "max_ms": 15009.294200001023,
+    "status_distribution": {
+      "200": 1110,
+      "403": 34,
+      "ReadTimeout": 1,
+      "RemoteProtocolError": 1
+    }
+  }
+}

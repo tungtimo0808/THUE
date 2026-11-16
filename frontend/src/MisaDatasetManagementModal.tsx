@@ -629,10 +629,10 @@ export default function MisaDatasetManagementModal({
                       <th style={{ padding: "10px 10px", fontWeight: 600, color: "#475569", width: 90, whiteSpace: "nowrap" }}>
                         Chế độ KT
                       </th>
-                      <th style={{ padding: "10px 10px", fontWeight: 600, color: "#475569", width: 108, whiteSpace: "nowrap" }}>
+                      <th style={{ padding: "10px 10px", fontWeight: 600, color: "#475569", width: 118, textAlign: "center", whiteSpace: "nowrap" }}>
                         Trạng thái
                       </th>
-                      <th style={{ padding: "10px 10px", fontWeight: 600, color: "#475569", textAlign: "right", width: 235, whiteSpace: "nowrap" }}>
+                      <th style={{ padding: "10px 10px", fontWeight: 600, color: "#475569", textAlign: "right", width: 278, whiteSpace: "nowrap" }}>
                         Thao tác
                       </th>
                     </tr>
@@ -744,12 +744,14 @@ export default function MisaDatasetManagementModal({
                                 : "TT99/2025"}
                             </span>
                           </td>
-                          <td style={{ padding: "10px 10px", whiteSpace: "nowrap" }}>
+                          <td style={{ padding: "10px 10px", textAlign: "center", whiteSpace: "nowrap" }}>
                             {item.status === "ACTIVE" ? (
                               <span
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
+                                  justifyContent: "center",
+                                  minWidth: 102,
                                   gap: 4,
                                   fontSize: 11.5,
                                   fontWeight: 600,
@@ -758,6 +760,7 @@ export default function MisaDatasetManagementModal({
                                   padding: "3px 9px",
                                   borderRadius: 999,
                                   whiteSpace: "nowrap",
+                                  boxSizing: "border-box",
                                 }}
                               >
                                 <CheckCircle2 size={12} /> Đang mở
@@ -767,6 +770,8 @@ export default function MisaDatasetManagementModal({
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
+                                  justifyContent: "center",
+                                  minWidth: 102,
                                   gap: 4,
                                   fontSize: 11.5,
                                   fontWeight: 600,
@@ -775,6 +780,7 @@ export default function MisaDatasetManagementModal({
                                   padding: "3px 9px",
                                   borderRadius: 999,
                                   whiteSpace: "nowrap",
+                                  boxSizing: "border-box",
                                 }}
                               >
                                 <Lock size={12} /> Đã khóa sổ
@@ -782,21 +788,25 @@ export default function MisaDatasetManagementModal({
                             )}
                           </td>
                           <td style={{ padding: "10px 10px", textAlign: "right", whiteSpace: "nowrap" }}>
-                            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "nowrap" }}>
+                            <div style={{ display: "inline-grid", gridTemplateColumns: "110px 62px 84px", alignItems: "center", justifyContent: "end", gap: 6 }}>
                               {isCurrent ? (
                                 <span
                                   style={{
+                                    width: "100%",
+                                    height: 29,
                                     display: "inline-flex",
                                     alignItems: "center",
+                                    justifyContent: "center",
                                     gap: 4,
                                     fontSize: 12,
                                     fontWeight: 700,
                                     color: "var(--brand)",
                                     background: "#e0f2fe",
                                     border: "1px solid #bae6fd",
-                                    padding: "5px 10px",
+                                    padding: "0 8px",
                                     borderRadius: 6,
                                     whiteSpace: "nowrap",
+                                    boxSizing: "border-box",
                                   }}
                                 >
                                   <Check size={13} /> Đang chọn
@@ -809,7 +819,9 @@ export default function MisaDatasetManagementModal({
                                     onClose();
                                   }}
                                   style={{
-                                    padding: "5px 10px",
+                                    width: "100%",
+                                    height: 29,
+                                    padding: "0 8px",
                                     borderRadius: 6,
                                     border: "1px solid #bae6fd",
                                     background: "#f0f9ff",
@@ -817,7 +829,11 @@ export default function MisaDatasetManagementModal({
                                     fontSize: 12,
                                     fontWeight: 600,
                                     cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
                                     whiteSpace: "nowrap",
+                                    boxSizing: "border-box",
                                   }}
                                 >
                                   Chọn làm việc
@@ -827,7 +843,9 @@ export default function MisaDatasetManagementModal({
                                 type="button"
                                 onClick={() => openEditForm(item)}
                                 style={{
-                                  padding: "5px 9px",
+                                  width: "100%",
+                                  height: 29,
+                                  padding: "0 6px",
                                   borderRadius: 6,
                                   border: "1px solid #cbd5e1",
                                   background: "#ffffff",
@@ -837,8 +855,10 @@ export default function MisaDatasetManagementModal({
                                   cursor: "pointer",
                                   display: "inline-flex",
                                   alignItems: "center",
+                                  justifyContent: "center",
                                   gap: 4,
                                   whiteSpace: "nowrap",
+                                  boxSizing: "border-box",
                                 }}
                               >
                                 <Edit2 size={12} /> Sửa
@@ -848,7 +868,9 @@ export default function MisaDatasetManagementModal({
                                 onClick={() => void handleToggleLock(item)}
                                 title={item.status === "LOCKED" ? "Mở khóa sổ năm tài chính" : "Khóa sổ năm tài chính"}
                                 style={{
-                                  padding: "5px 9px",
+                                  width: "100%",
+                                  height: 29,
+                                  padding: "0 6px",
                                   borderRadius: 6,
                                   border: "1px solid #cbd5e1",
                                   background: "#ffffff",
@@ -858,8 +880,10 @@ export default function MisaDatasetManagementModal({
                                   cursor: "pointer",
                                   display: "inline-flex",
                                   alignItems: "center",
+                                  justifyContent: "center",
                                   gap: 4,
                                   whiteSpace: "nowrap",
+                                  boxSizing: "border-box",
                                 }}
                               >
                                 {item.status === "LOCKED" ? <Unlock size={12} /> : <Lock size={12} />}
