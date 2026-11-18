@@ -2264,22 +2264,24 @@ export default function MisaBudgetWorkspace({
                 </div>
               </div>
 
-              <div
-                style={{
-                  background: "#ffffff",
-                  borderRadius: 6,
-                  border: "1px solid #e2e8f0",
-                  overflowX: "auto",
-                }}
-              >
-                <table
+                <div
                   style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    fontSize: 13,
-                    textAlign: "left",
+                    background: "#ffffff",
+                    borderRadius: 6,
+                    border: "1px solid #e2e8f0",
+                    overflow: "auto",
+                    maxHeight: "calc(100dvh - 300px)",
+                    minHeight: 220,
                   }}
                 >
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 13,
+                      textAlign: "left",
+                    }}
+                  >
                   <thead>
                     <tr
                       style={{
@@ -2552,7 +2554,9 @@ export default function MisaBudgetWorkspace({
                   background: "#ffffff",
                   borderRadius: 6,
                   border: "1px solid #cbd5e1",
-                  overflowX: "auto",
+                  overflow: "auto",
+                  maxHeight: "calc(100dvh - 300px)",
+                  minHeight: 220,
                 }}
               >
                 <table

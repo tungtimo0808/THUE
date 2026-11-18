@@ -4156,10 +4156,10 @@ export default function MisaPayrollWorkspace({
         </div>
 
         {/* Attendance Matrix / Editable Sheet Table */}
-        <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
+        <div style={{ flex: 1, minHeight: 0, padding: 16, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {apiConnected ? (
             activeDetailSheet ? (
-              <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflowX: "auto" }}>
+              <div style={{ flex: 1, minHeight: 180, background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflow: "auto" }}>
                 <table className="misa-table" style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse", whiteSpace: "nowrap" }}>
                   <thead>
                     <tr style={{ background: "#f8fafc", color: "#334155", borderBottom: "2px solid #cbd5e1", height: 38 }}>
@@ -4562,8 +4562,8 @@ export default function MisaPayrollWorkspace({
         </div>
 
         {/* Table summary */}
-        <div style={{ flex: 1, padding: "14px 20px 16px 20px", overflow: "auto" }}>
-          <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflowX: "auto" }}>
+        <div style={{ flex: 1, minHeight: 0, padding: "14px 20px 16px 20px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ flex: 1, minHeight: 180, background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflow: "auto" }}>
             <table className="misa-table" style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f8fafc", color: "#334155", borderBottom: "2px solid #cbd5e1", height: 38 }}>
@@ -5104,8 +5104,8 @@ export default function MisaPayrollWorkspace({
         </div>
 
         {/* Salary Sheets List Table */}
-        <div style={{ flex: 1, padding: "10px 20px 16px 20px", overflow: "auto" }}>
-          <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflowX: "auto" }}>
+        <div style={{ flex: 1, minHeight: 0, padding: "10px 20px 16px 20px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ flex: 1, minHeight: 180, background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflow: "auto" }}>
             <table className="misa-table" style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f8fafc", color: "#334155", borderBottom: "2px solid #cbd5e1", height: 38 }}>
@@ -5668,8 +5668,8 @@ export default function MisaPayrollWorkspace({
         </div>
 
         {/* Deduction details table */}
-        <div style={{ flex: 1, padding: "14px 20px 16px 20px", overflow: "auto" }}>
-          <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflowX: "auto" }}>
+        <div style={{ flex: 1, minHeight: 0, padding: "14px 20px 16px 20px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ flex: 1, minHeight: 180, background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflow: "auto" }}>
             <table className="misa-table" style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f8fafc", color: "#334155", borderBottom: "2px solid #cbd5e1", height: 38 }}>

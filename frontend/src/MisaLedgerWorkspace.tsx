@@ -5736,13 +5736,20 @@ export default function MisaLedgerWorkspace({
     setShowAddVoucherMenu(false);
   };
 
+  const isLedgerRegisterLocked =
+    (currentTab === "transactions" && showVoucherTable) ||
+    (currentTab === "advance-settlement-request" && showAdvanceRequestTable) ||
+    (currentTab === "closing-entry" && showClosingTable);
+
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
         flex: 1,
-        minHeight: "100%",
+        height: isLedgerRegisterLocked ? "100%" : undefined,
+        minHeight: isLedgerRegisterLocked ? 0 : "100%",
+        overflow: isLedgerRegisterLocked ? "hidden" : undefined,
         minWidth: 0,
         maxWidth: "100%",
         boxSizing: "border-box",
@@ -5752,7 +5759,7 @@ export default function MisaLedgerWorkspace({
       onClick={handleBackdropClick}
     >
       {/* Main Tab Body */}
-      <div style={{ padding: "16px 20px 32px", display: "flex", flexDirection: "column", gap: 16, minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }}>
+      <div style={{ padding: isLedgerRegisterLocked ? "14px 20px" : "16px 20px 32px", display: "flex", flexDirection: "column", flex: isLedgerRegisterLocked ? 1 : undefined, minHeight: isLedgerRegisterLocked ? 0 : undefined, overflow: isLedgerRegisterLocked ? "hidden" : undefined, gap: 16, minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }}>
         {/* ========================================================================= */}
         {/* TAB 1: QUY TRÌNH (Exact Image 1 & 2)                                      */}
         {/* ========================================================================= */}
@@ -6588,7 +6595,7 @@ export default function MisaLedgerWorkspace({
         {/* TAB 2: ĐỀ NGHỊ QUYẾT TOÁN TẠM ỨNG (Exact Match to User Screenshot)         */}
         {/* ========================================================================= */}
         {currentTab === "advance-settlement-request" && (
-          <div style={{ display: "flex", justifyContent: "flex-start", width: "100%" }}>
+          <div style={{ display: "flex", justifyContent: "flex-start", width: "100%", flex: showAdvanceRequestTable ? 1 : undefined, minHeight: showAdvanceRequestTable ? 0 : undefined, overflow: showAdvanceRequestTable ? "hidden" : undefined }}>
             {!showAdvanceRequestTable ? (
               /* Exact 3-Step Flow Diagram from Screenshot */
               <div
@@ -7132,9 +7139,9 @@ export default function MisaLedgerWorkspace({
               </div>
             ) : (
               /* Synced Data Table View (UC-GL-01) */
-              <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: 20, width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }}>
+              <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: 20, width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
                 {/* Toolbar */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+                <div style={{ flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", flex: "1 1 auto", minWidth: 0 }}>
                     <button
                       type="button"
@@ -7242,7 +7249,7 @@ export default function MisaLedgerWorkspace({
                 </div>
 
                 {/* Table */}
-                <div style={{ width: "100%", minWidth: 0, maxWidth: "100%", overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                <div style={{ flex: "1 1 0%", width: "100%", minWidth: 0, maxWidth: "100%", minHeight: 180, overflow: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
                   <table style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>
@@ -7523,7 +7530,7 @@ export default function MisaLedgerWorkspace({
         {/* TAB 3: CHỨNG TỪ NGHIỆP VỤ KHÁC (Exact Match to User Screenshot 1 & 2)     */}
         {/* ========================================================================= */}
         {currentTab === "transactions" && (
-          <div style={{ width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+          <div style={{ width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", flex: showVoucherTable ? 1 : undefined, minHeight: showVoucherTable ? 0 : undefined, overflow: showVoucherTable ? "hidden" : undefined }}>
             {!showVoucherTable ? (
               /* LANDING / EMPTY STATE VIEW (Exact Match to Screenshot 1 & 2) */
               <div
@@ -8003,10 +8010,11 @@ export default function MisaLedgerWorkspace({
               </div>
             ) : (
               /* TABLE VIEW (when toggled via "Xem danh sách chứng từ") */
-              <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: 20, width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }}>
+              <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: 20, width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
                 {/* 4 Modern Bento KPI Cards for General Ledger */}
                 <div
                   style={{
+                    flexShrink: 0,
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                     gap: 12,
@@ -8439,7 +8447,7 @@ export default function MisaLedgerWorkspace({
                 </div>
 
                 {/* Table */}
-                <div style={{ width: "100%", minWidth: 0, maxWidth: "100%", overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                <div style={{ flex: "1 1 0%", width: "100%", minWidth: 0, maxWidth: "100%", minHeight: 180, overflow: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
                   <table style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>
@@ -8769,7 +8777,7 @@ export default function MisaLedgerWorkspace({
                 )}
 
                 {/* Table Footer */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, fontSize: 12.5, color: "#64748b" }}>
+                <div style={{ flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, fontSize: 12.5, color: "#64748b" }}>
                   <span>Tổng số: {generalVouchers.length} chứng từ</span>
                   <div style={{ fontWeight: 600, color: "#1e293b" }}>
                     Tổng tiền: {formatVND(generalVouchers.reduce((acc, v) => acc + v.amount, 0))}
@@ -8789,7 +8797,8 @@ export default function MisaLedgerWorkspace({
               background: "#ffffff",
               borderRadius: 8,
               border: "1px solid #e2e8f0",
-              minHeight: 620,
+              minHeight: showClosingTable ? 0 : 620,
+              flex: showClosingTable ? 1 : undefined,
               display: "flex",
               flexDirection: "column",
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
@@ -9062,10 +9071,11 @@ export default function MisaLedgerWorkspace({
               </div>
             ) : (
               /* TABLE VIEW: DANH SÁCH CHỨNG TỪ KẾT CHUYỂN */
-              <div style={{ padding: 20 }}>
+              <div style={{ padding: 20, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
                 {/* Top Control Bar in Table View */}
                 <div
                   style={{
+                    flexShrink: 0,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
@@ -9160,7 +9170,7 @@ export default function MisaLedgerWorkspace({
                 </div>
 
                 {/* Table */}
-                <div style={{ width: "100%", minWidth: 0, maxWidth: "100%", overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                <div style={{ flex: "1 1 0%", width: "100%", minWidth: 0, maxWidth: "100%", minHeight: 180, overflow: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
                   <table style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>
@@ -9200,7 +9210,7 @@ export default function MisaLedgerWorkspace({
                 </div>
 
                 {/* Table Footer */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, fontSize: 12.5, color: "#64748b" }}>
+                <div style={{ flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, fontSize: 12.5, color: "#64748b" }}>
                   <span>Tổng số: {closingEntries.length} chứng từ kết chuyển</span>
                   <div style={{ fontWeight: 600, color: "#1e293b" }}>
                     Tổng tiền: {formatVND(closingEntries.reduce((acc, v) => acc + v.amount, 0))}

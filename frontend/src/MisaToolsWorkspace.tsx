@@ -8533,7 +8533,7 @@ export default function MisaToolsWorkspace({
     tab === "stocktake"
   ) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         
         {/* SUB-TABS BAR (Ghi tăng | Phân bổ chi phí | Điều chỉnh | Điều chuyển | Ghi giảm | Kiểm kê) */}
         <div
@@ -8736,7 +8736,7 @@ export default function MisaToolsWorkspace({
             </div>
           ) : (
             /* List Mode for Ghi tăng */
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
               <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <button
@@ -8765,7 +8765,7 @@ export default function MisaToolsWorkspace({
                 </button>
               </div>
 
-              <div style={{ flex: 1, overflow: "auto" }}>
+              <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -8975,7 +8975,7 @@ export default function MisaToolsWorkspace({
             </div>
           ) : (
             /* List Mode for Phân bổ chi phí */
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
               {/* List Toolbar */}
               <div
                 style={{
@@ -9092,7 +9092,7 @@ export default function MisaToolsWorkspace({
               </div>
 
               {/* Table of Allocation Vouchers */}
-              <div style={{ flex: 1, overflow: "auto" }}>
+              <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -9393,7 +9393,7 @@ export default function MisaToolsWorkspace({
             </div>
           ) : (
             /* List Mode for Điều chỉnh CCDC */
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
               {/* List Toolbar */}
               <div
                 style={{
@@ -9518,7 +9518,7 @@ export default function MisaToolsWorkspace({
               </div>
 
               {/* Table of Adjustment Vouchers */}
-              <div style={{ flex: 1, overflow: "auto" }}>
+              <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -9807,7 +9807,7 @@ export default function MisaToolsWorkspace({
             </div>
           ) : (
             /* List Mode for Điều chuyển CCDC */
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
               {/* List Toolbar */}
               <div
                 style={{
@@ -9948,7 +9948,7 @@ export default function MisaToolsWorkspace({
               </div>
 
               {/* Table of Transfer Vouchers */}
-              <div style={{ flex: 1, overflow: "auto" }}>
+              <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -10254,7 +10254,7 @@ export default function MisaToolsWorkspace({
             </div>
           ) : (
             /* List Mode for Ghi giảm CCDC */
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
               {/* List Toolbar */}
               <div
                 style={{
@@ -10393,7 +10393,7 @@ export default function MisaToolsWorkspace({
               </div>
 
               {/* Table of Decrease Vouchers */}
-              <div style={{ flex: 1, overflow: "auto" }}>
+              <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -10682,7 +10682,7 @@ export default function MisaToolsWorkspace({
             </div>
           ) : (
             /* List Mode for Kiểm kê CCDC */
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
               {/* List Toolbar */}
               <div
                 style={{
@@ -10818,7 +10818,7 @@ export default function MisaToolsWorkspace({
               </div>
 
               {/* Table of Stocktake Vouchers */}
-              <div style={{ flex: 1, overflow: "auto" }}>
+              <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -10986,7 +10986,7 @@ export default function MisaToolsWorkspace({
     const totalPrepaidRemaining = filteredPrepaidList.reduce((s, r) => s + (r.remainingAmount || 0), 0);
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         
         {/* Header Subtabs */}
         <div style={{ background: "#ffffff", padding: "0 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 28, flexShrink: 0 }}>
@@ -11246,7 +11246,7 @@ export default function MisaToolsWorkspace({
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
               {/* Toolbar danh sách */}
               <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -11386,7 +11386,7 @@ export default function MisaToolsWorkspace({
               </div>
 
               {/* Bảng danh sách CPTT */}
-              <div style={{ flex: 1, overflow: "auto" }}>
+              <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -11529,7 +11529,7 @@ export default function MisaToolsWorkspace({
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
               {/* Toolbar danh sách chứng từ phân bổ */}
               <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -11597,7 +11597,7 @@ export default function MisaToolsWorkspace({
               </div>
 
               {/* Bảng danh sách chứng từ phân bổ */}
-              <div style={{ flex: 1, overflow: "auto" }}>
+              <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -11773,7 +11773,7 @@ export default function MisaToolsWorkspace({
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
               {/* Toolbar danh sách ghi giảm */}
               <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -11844,7 +11844,7 @@ export default function MisaToolsWorkspace({
               </div>
 
               {/* Bảng danh sách chứng từ ghi giảm */}
-              <div style={{ flex: 1, overflow: "auto" }}>
+              <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
                   <thead>
                     <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -14908,7 +14908,7 @@ export default function MisaToolsWorkspace({
     const filterText = reportSearch.toLowerCase().trim();
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         
         <div style={{ padding: "10px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>

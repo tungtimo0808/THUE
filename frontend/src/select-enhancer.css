@@ -8,7 +8,9 @@ select[size="1"]:not([multiple]):not([data-native-select]) {
   background-repeat: no-repeat !important;
   background-position: right 10px center !important;
   background-size: 15px 15px !important;
-  padding-right: 32px !important;
+  padding-right: 34px !important;
+  padding-inline-end: 34px !important;
+  box-sizing: border-box !important;
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap !important;

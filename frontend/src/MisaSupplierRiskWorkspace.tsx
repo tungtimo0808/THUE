@@ -72,11 +72,13 @@ export default function MisaSupplierRiskWorkspace({ companyId, notify }: { compa
 
   const visible = rows.filter(row => `${row.supplier_code} ${row.supplier_name} ${row.tax_code}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   return (
-    <div style={{ height: "100%", overflow: "auto", background: "#f4f5f8", padding: "14px 20px", boxSizing: "border-box" }}>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", background: "#f4f5f8", padding: "14px 20px", boxSizing: "border-box" }}>
       <button
         type="button"
         onClick={() => navigate("/purchases/invoice-processing")}
         style={{
+          alignSelf: "flex-start",
+          flexShrink: 0,
           border: 0,
           background: "none",
           color: "var(--brand)",
@@ -97,7 +99,7 @@ export default function MisaSupplierRiskWorkspace({ companyId, notify }: { compa
         <ChevronLeft size={16} /> Xử lý hóa đơn đầu vào
       </button>
 
-      <div style={{ background: "#fff", border: "1px solid #cbd5e1", borderRadius: 8, minHeight: 380, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+      <div style={{ background: "#fff", border: "1px solid #cbd5e1", borderRadius: 8, flex: 1, minHeight: 220, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
         <div className="ce-toolbar" style={{ padding: "12px 18px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 12 }}>
           <h2 style={{ flex: 1, margin: 0, fontSize: 18, fontWeight: 700, color: "#0f172a" }}>Kiểm tra rủi ro nhà cung cấp</h2>
           <label style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#ffffff", border: "1px solid #cbd5e1", padding: "0 12px", borderRadius: 6, height: 34 }}>
@@ -138,7 +140,7 @@ export default function MisaSupplierRiskWorkspace({ companyId, notify }: { compa
         </p>
         {error && <p role="alert" style={{ color: "#b91c1c", margin: "10px 18px" }}><AlertCircle size={14} /> {error}</p>}
         {loading && <p role="status" style={{ margin: 18, color: "#64748b" }}>Đang tải nhà cung cấp...</p>}
-        <div style={{ overflowX: "auto" }}>
+        <div style={{ flex: 1, minHeight: 180, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f8fafc" }}>
@@ -211,7 +213,7 @@ export default function MisaSupplierRiskWorkspace({ companyId, notify }: { compa
             </tbody>
           </table>
         </div>
-        <div style={{ padding: "10px 18px", borderTop: "1px solid #e2e8f0", fontSize: 13, color: "#64748b" }}>
+        <div style={{ flexShrink: 0, padding: "10px 18px", borderTop: "1px solid #e2e8f0", fontSize: 13, color: "#64748b" }}>
           Tổng số: <strong style={{ color: "#0f172a" }}>{visible.length}</strong> nhà cung cấp
         </div>
       </div>

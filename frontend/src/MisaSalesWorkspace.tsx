@@ -2621,7 +2621,7 @@ export default function MisaSalesWorkspace({
 
     // LIST VIEW MODE FOR QUOTES
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* List Toolbar */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -3113,7 +3113,7 @@ export default function MisaSalesWorkspace({
 
     // LIST VIEW MODE FOR ORDERS
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* List Toolbar */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -3615,7 +3615,7 @@ export default function MisaSalesWorkspace({
 
     // LIST VIEW MODE
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* Top Action & Search Bar */}
         <div
           style={{
@@ -5226,7 +5226,7 @@ export default function MisaSalesWorkspace({
 
     // 2. LIST VIEW MODE
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* Toolbar */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -5549,7 +5549,7 @@ export default function MisaSalesWorkspace({
   // -------------------------------------------------------------------------
   if (tab === "returns") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* Toolbar */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -5679,7 +5679,7 @@ export default function MisaSalesWorkspace({
   // -------------------------------------------------------------------------
   if (tab === "discounts") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* Toolbar */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -5809,7 +5809,7 @@ export default function MisaSalesWorkspace({
   // -------------------------------------------------------------------------
   if (tab === "reports") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <strong style={{ fontSize: 14, color: "#1e293b" }}>Báo cáo bán hàng</strong>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -5871,7 +5871,7 @@ export default function MisaSalesWorkspace({
   // -------------------------------------------------------------------------
   if (tab === "receivables") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
@@ -5938,7 +5938,7 @@ export default function MisaSalesWorkspace({
   // -------------------------------------------------------------------------
   if (tab === "reconciliation") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button
             type="button"
@@ -5997,7 +5997,7 @@ export default function MisaSalesWorkspace({
     const totalStockVal = filteredItems.reduce((acc, curr) => acc + (curr.stockValue || 0), 0);
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* Secondary Sub-nav: Hàng hóa, dịch vụ | Khách hàng (Matching Screenshot) */}
         <div
           style={{
@@ -6231,7 +6231,7 @@ export default function MisaSalesWorkspace({
         </div>
 
         {/* Data Table */}
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -6335,7 +6335,7 @@ export default function MisaSalesWorkspace({
         </div>
 
         {/* Pagination Footer */}
-        <div style={{ padding: "8px 16px", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff", fontSize: 13, color: "#475569" }}>
+        <div style={{ flexShrink: 0, padding: "8px 16px", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff", fontSize: 13, color: "#475569" }}>
           <div>
             Tổng số: <strong>{filteredItems.length}</strong>
           </div>
@@ -6368,7 +6368,7 @@ export default function MisaSalesWorkspace({
   // -------------------------------------------------------------------------
   if (tab === "customers") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* Breadcrumb matching user screenshot */}
         <div style={{ padding: "10px 16px 4px", display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--brand)", cursor: "pointer" }} onClick={() => notify("Quay lại Tất cả danh mục")}>
           <ChevronLeft size={16} />
@@ -6464,7 +6464,7 @@ export default function MisaSalesWorkspace({
   // -------------------------------------------------------------------------
   if (tab === "auto-posting") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button
             type="button"

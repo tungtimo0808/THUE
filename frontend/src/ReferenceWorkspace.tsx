@@ -435,6 +435,7 @@ function ReferenceWorkspace() {
   );
 
   const isProcessTab = (optimisticTab || tab) === "process";
+  const isWorkspaceViewportFixed = moduleId !== "overview";
 
   useEffect(() => {
     if (isProcessTab) {
@@ -444,11 +445,20 @@ function ReferenceWorkspace() {
       document.body.classList.remove("ref-process-scroll-lock");
       document.documentElement.classList.remove("ref-process-scroll-lock");
     }
+    if (isWorkspaceViewportFixed) {
+      document.body.classList.add("ref-workspace-scroll-lock");
+      document.documentElement.classList.add("ref-workspace-scroll-lock");
+    } else {
+      document.body.classList.remove("ref-workspace-scroll-lock");
+      document.documentElement.classList.remove("ref-workspace-scroll-lock");
+    }
     return () => {
       document.body.classList.remove("ref-process-scroll-lock");
       document.documentElement.classList.remove("ref-process-scroll-lock");
+      document.body.classList.remove("ref-workspace-scroll-lock");
+      document.documentElement.classList.remove("ref-workspace-scroll-lock");
     };
-  }, [isProcessTab]);
+  }, [isProcessTab, isWorkspaceViewportFixed]);
 
   const [configuredTabs, setConfiguredTabs] = useState<Record<string, string[]>>(() => {
     try {
@@ -2683,7 +2693,7 @@ function ReferenceWorkspace() {
           </button>
         </div>
       </aside>
-      <main id="reference-main" className={`ref-main ${isSwitchingContext ? "ref-switching-context" : ""} ${isProcessTab ? "ref-process-fixed" : ""}`} tabIndex={-1}>
+      <main id="reference-main" className={`ref-main ${isSwitchingContext ? "ref-switching-context" : ""} ${isProcessTab ? "ref-process-fixed" : ""} ${isWorkspaceViewportFixed ? "ref-workspace-fixed" : ""}`} tabIndex={-1}>
         <span className="sr-only">
           Phân hệ {module?.label || "Không tìm thấy"}
         </span>

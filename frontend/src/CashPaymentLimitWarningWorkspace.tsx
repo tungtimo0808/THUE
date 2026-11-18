@@ -175,7 +175,7 @@ export default function CashPaymentLimitWarningWorkspace({
             <p style={{ color: "#64748b", fontSize: 13, margin: "4px 0 0" }}>Không có hóa đơn đầu vào nào vượt ngưỡng cảnh báo thanh toán tiền mặt.</p>
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div style={{ overflow: "auto", maxHeight: "calc(100dvh - 300px)", minHeight: 200 }}>
             <table style={{ width: "100%", minWidth: 1050, fontSize: 13, borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0", textAlign: "left", color: "#475569" }}>

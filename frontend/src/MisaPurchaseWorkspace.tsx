@@ -2175,7 +2175,7 @@ export default function MisaPurchaseWorkspace({
         </div>
 
         {/* Data Table (Screenshot 2) */}
-        <div style={{ flex: 1, overflow: "auto", borderTop: "1px solid #e2e8f0" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto", borderTop: "1px solid #e2e8f0" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -2246,7 +2246,7 @@ export default function MisaPurchaseWorkspace({
         </div>
 
         {/* Bottom Pagination */}
-        <div style={{ padding: "8px 16px", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff" }}>
+        <div style={{ flexShrink: 0, padding: "8px 16px", borderTop: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff" }}>
           <span style={{ fontSize: 12, color: "#64748b" }}>Tổng số: <strong>{filteredItems.length}</strong></span>
           <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: "#64748b" }}>
             <span>Số dòng/trang</span>
@@ -2418,7 +2418,7 @@ export default function MisaPurchaseWorkspace({
           </button>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto", background: "#ffffff" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto", background: "#ffffff" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -2487,7 +2487,7 @@ export default function MisaPurchaseWorkspace({
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto", background: "#ffffff" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto", background: "#ffffff" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -2557,7 +2557,7 @@ export default function MisaPurchaseWorkspace({
           </button>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto", background: "#ffffff" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto", background: "#ffffff" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -3346,7 +3346,7 @@ export default function MisaPurchaseWorkspace({
           </button>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto", background: "#ffffff" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto", background: "#ffffff" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -3848,7 +3848,7 @@ export default function MisaPurchaseWorkspace({
         </div>
 
         {/* Invoices Data Table */}
-        <div style={{ flex: 1, overflow: "auto", background: "#ffffff" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto", background: "#ffffff" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -4652,7 +4652,7 @@ export default function MisaPurchaseWorkspace({
           </div>
 
           {/* Table Area (Screenshot 1 & 2) */}
-          <div style={{ flex: 1, overflow: "auto", position: "relative" }}>
+          <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto", position: "relative" }}>
             <table
               className="misa-table"
               style={{
@@ -4928,6 +4928,7 @@ export default function MisaPurchaseWorkspace({
           {/* Bottom Pagination matching Screenshot 1 & 2 */}
           <div
             style={{
+              flexShrink: 0,
               height: 44,
               padding: "0 14px",
               background: "#ffffff",

@@ -90,7 +90,7 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
       ? "Thông tư 200/2014/TT-BTC (Chế độ kế toán Doanh nghiệp) · Đặc trưng: Tập hợp giá thành qua TK 621, 622, 627 → 154; Chi phí bán hàng TK 641 & QLDN TK 642; TK 244, 34311..34313."
       : "Thông tư 99/2025/TT-BTC (Hiệu lực từ 01/01/2026 thay thế TT200) · Đặc trưng: Bổ sung TK 215 (Tài sản sinh học), TK 332 (Phải trả cổ tức/lợi nhuận), TK 158 (Nguyên liệu, vật liệu tại kho bảo thuế), TK 2295.";
   const filteredAccounts = chartAccounts.filter(item => `${item.code} ${item.name}`.toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi")));
-  return <div style={{ width: "100%", background: "#ffffff", borderRadius: 8, padding: "12px 16px" }}>
+  return <div style={{ width: "100%", height: "100%", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box", background: "#ffffff", borderRadius: 8, padding: "12px 16px" }}>
     {onBack && <button type="button" onClick={onBack} style={{ marginBottom: 10, padding: "5px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#f8fafc", cursor: "pointer", fontWeight: 600 }}>← Danh mục</button>}
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
       <div>
@@ -126,7 +126,7 @@ export default function AccountCatalogWorkspace({ onBack }: { onBack?: () => voi
           <button type="button" onClick={exportExcel} disabled={!chartId} style={{ height: 34, padding: "0 12px", borderRadius: 6, background: "#f8fafc", color: "var(--brand)", border: "1px solid #bae6fd", fontWeight: 600, cursor: "pointer" }}>Xuất Excel</button>
         </div>
       </div>
-      <div style={{ maxHeight: 460, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+      <div style={{ flex: 1, minHeight: 200, overflow: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
           <thead style={{ position: "sticky", top: 0, background: "#f1f5f9", zIndex: 1 }}>
             <tr style={{ borderBottom: "1px solid #cbd5e1", color: "#1e293b" }}>

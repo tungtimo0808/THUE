@@ -4223,6 +4223,99 @@ body.ref-process-scroll-lock {
   overflow: hidden !important;
 }
 
+/* Giữ các màn hình sổ/danh sách cố định chiều cao khung nhìn để tiêu đề bảng sticky trên cùng và thanh cuộn ngang luôn ghim cuối màn hình */
+@media (min-width: 641px) and (min-height: 480px) {
+  html.ref-workspace-scroll-lock,
+  body.ref-workspace-scroll-lock {
+    overflow: hidden !important;
+    height: 100% !important;
+  }
+
+  .ref-main.ref-workspace-fixed:not(.ref-process-fixed) {
+    display: flex !important;
+    flex-direction: column !important;
+    height: calc(100vh - var(--ref-header)) !important;
+    height: calc(100dvh - var(--ref-header)) !important;
+    max-height: calc(100vh - var(--ref-header)) !important;
+    max-height: calc(100dvh - var(--ref-header)) !important;
+    min-height: 0 !important;
+    padding-bottom: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .ref-main.ref-workspace-fixed > .ref-module-bar {
+    flex: 0 0 44px !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    top: auto !important;
+  }
+
+  .ref-main.ref-workspace-fixed:not(.ref-process-fixed) > [style*="display: contents"] > *,
+  .ref-main.ref-workspace-fixed:not(.ref-process-fixed) > div:not(.ref-module-bar):not(.ref-module-bar-measure):not(.ref-context-transition-overlay):not([style*="display: none"]):not([style*="display: contents"]) {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .ref-main.ref-workspace-fixed:not(.ref-process-fixed) > [style*="display: contents"] > div[style*="flex-direction: column"] > :not([style*="overflow: auto"]):not([style*="overflow-y: auto"]) {
+    flex-shrink: 0;
+  }
+}
+
+/* Giữ hàng tiêu đề bảng (Ngày hạch toán, Số chứng từ, ...) luôn dính trên cùng trong mọi khung cuộn sổ */
+.reference-app .ref-main table thead th,
+.reference-app .misa-table thead th,
+.reference-app .misa-tax-table thead th,
+.reference-app .misa-purchase-table thead th,
+.reference-app .misa-voucher-table thead th,
+.reference-app .ref-table thead th,
+.reference-app .ref-data-table thead th,
+.reference-app .md-table th,
+.reference-app .il-panel th {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background-clip: padding-box;
+}
+
+.reference-app .ar-print-paper table thead th {
+  position: static;
+}
+
+.reference-app table thead th[style*="sticky"],
+.reference-app table thead th.sticky-col,
+.reference-app .misa-table thead th:last-child,
+.reference-app .misa-tax-table thead th:last-child {
+  z-index: 15;
+}
+
+/* Thanh cuộn ngang & dọc của vùng bảng sổ dễ nhìn và dễ kéo */
+.reference-app .ref-main :is(div[style*="overflow: auto"], div[style*="overflow-x: auto"], .md-table, .il-table-wrap) {
+  scrollbar-gutter: stable;
+}
+
+.reference-app .ref-main :is(div[style*="overflow: auto"], div[style*="overflow-x: auto"], .md-table, .il-table-wrap)::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+.reference-app .ref-main :is(div[style*="overflow: auto"], div[style*="overflow-x: auto"], .md-table, .il-table-wrap)::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.reference-app .ref-main :is(div[style*="overflow: auto"], div[style*="overflow-x: auto"], .md-table, .il-table-wrap)::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.reference-app .ref-main :is(div[style*="overflow: auto"], div[style*="overflow-x: auto"], .md-table, .il-table-wrap)::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
 .ref-main.ref-process-fixed .ref-module-bar {
   flex: 0 0 40px !important;
   position: sticky !important;
