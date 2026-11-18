@@ -355,12 +355,31 @@
 }
 
 /* Form controls */
+.misa-opening-container.misa-opening-detail-view {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.misa-opening-container.misa-opening-detail-view .misa-opening-detail-header,
+.misa-opening-container.misa-opening-detail-view .misa-opening-detail-toolbar {
+  flex-shrink: 0;
+}
+
 .misa-opening-form-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 14px;
   width: 100%;
   box-sizing: border-box;
+}
+
+.misa-opening-form-row .misa-opening-btn-secondary {
+  height: 32px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .misa-opening-field {
@@ -399,13 +418,15 @@
   min-width: 0;
   box-sizing: border-box;
   height: 32px;
-  padding: 0 8px;
+  padding: 0 34px 0 10px;
+  padding-inline-end: 34px;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
   font-size: 13px;
+  line-height: 30px;
   color: #1e293b;
   outline: none;
-  background: #ffffff;
+  background-color: #ffffff;
   cursor: pointer;
 }
 

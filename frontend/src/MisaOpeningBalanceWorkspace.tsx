@@ -1244,7 +1244,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   // VIEW 2: CATEGORY DETAIL PAGE (LANDING + MODALS)
   // =========================================================================
   return (
-    <div className="misa-opening-container">
+    <div className="misa-opening-container misa-opening-detail-view">
       {/* Top Header */}
       <div className="misa-opening-detail-header">
         <div className="misa-opening-detail-left" style={{ display: "flex", alignItems: "center" }}>
@@ -1418,9 +1418,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       )}
 
       {/* Dynamic Data Table & KPI Stats View for Opening Balances */}
-      <div style={{ padding: "16px 24px", background: "#f8fafc", flex: 1, display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ padding: "16px 24px", background: "#f8fafc", flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", gap: 14 }}>
         {/* Top Action Bar */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#ffffff", padding: "12px 18px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+        <div className="misa-opening-detail-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#ffffff", padding: "12px 18px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <button
               type="button"
@@ -1497,9 +1497,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
         {/* Category: Công nợ khách hàng */}
         {activeCategoryId === "customers" && (
-          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
             {/* KPI Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+            <div style={{ flexShrink: 0, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Nợ đầu kỳ (TK 131)</span>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#16a34a", marginTop: 4 }}>
@@ -1521,7 +1521,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
 
             {/* Table */}
-            <div style={{ overflowX: "auto", width: "100%" }}>
+            <div style={{ flex: 1, minHeight: 180, overflow: "auto", width: "100%" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -1606,8 +1606,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
         {/* Category: Công nợ nhà cung cấp */}
         {activeCategoryId === "suppliers" && (
-          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+            <div style={{ flexShrink: 0, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Có đầu kỳ (TK 331)</span>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#f59e0b", marginTop: 4 }}>
@@ -1628,7 +1628,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               </div>
             </div>
 
-            <div style={{ overflowX: "auto", width: "100%" }}>
+            <div style={{ flex: 1, minHeight: 180, overflow: "auto", width: "100%" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -1718,8 +1718,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
           const totalC = combinedAccounts.reduce((s, r) => s + (Number(r.credit) || 0), 0);
           const isBalanced = totalD === totalC;
           return (
-            <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+            <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+              <div style={{ flexShrink: 0, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
                 <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
                   <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Nợ đầu kỳ (Toàn bộ Sổ Cái)</span>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "#16a34a", marginTop: 4 }}>
@@ -1749,7 +1749,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
               </div>
 
-              <div style={{ overflowX: "auto", width: "100%" }}>
+              <div style={{ flex: 1, minHeight: 180, overflow: "auto", width: "100%" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -1799,8 +1799,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
         {/* Category: Số dư TK ngân hàng */}
         {activeCategoryId === "bank" && (
-          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+            <div style={{ flexShrink: 0, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng tiền gửi quy đổi VNĐ</span>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)", marginTop: 4 }}>
@@ -1815,7 +1815,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               </div>
             </div>
 
-            <div style={{ overflowX: "auto", width: "100%" }}>
+            <div style={{ flex: 1, minHeight: 180, overflow: "auto", width: "100%" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -1859,8 +1859,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
         {/* Category: Tồn kho vật tư hàng hóa */}
         {activeCategoryId === "inventory" && (
-          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+            <div style={{ flexShrink: 0, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng giá trị tồn kho (TK 1561)</span>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#059669", marginTop: 4 }}>
@@ -1881,7 +1881,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               </div>
             </div>
 
-            <div style={{ overflowX: "auto", width: "100%" }}>
+            <div style={{ flex: 1, minHeight: 180, overflow: "auto", width: "100%" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -1934,8 +1934,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
         {/* Category: Công nợ nhân viên */}
         {activeCategoryId === "employees" && (
-          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ overflowX: "auto", width: "100%" }}>
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+            <div style={{ flex: 1, minHeight: 180, overflow: "auto", width: "100%" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -1977,8 +1977,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
         {/* Category: CCDC đang sử dụng đầu kỳ (Luồng G) */}
         {activeCategoryId === "tools" && (
-          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+            <div style={{ flexShrink: 0, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng thành tiền CCDC đầu kỳ</span>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)", marginTop: 4 }}>
@@ -1998,7 +1998,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
               </div>
             </div>
-            <div style={{ overflowX: "auto", width: "100%" }}>
+            <div style={{ flex: 1, minHeight: 180, overflow: "auto", width: "100%" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -2040,8 +2040,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
         {/* Category: Tài sản cố định đầu kỳ (Luồng H) */}
         {activeCategoryId === "assets" && (
-          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+            <div style={{ flexShrink: 0, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng nguyên giá TSCĐ (TK 211/213)</span>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)", marginTop: 4 }}>
@@ -2061,7 +2061,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
               </div>
             </div>
-            <div style={{ overflowX: "auto", width: "100%" }}>
+            <div style={{ flex: 1, minHeight: 180, overflow: "auto", width: "100%" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -2103,8 +2103,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
         {/* Category: Chi phí trả trước đầu kỳ (Luồng I) */}
         {activeCategoryId === "prepaid" && (
-          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+            <div style={{ flexShrink: 0, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng chi phí trả trước đầu kỳ (TK 242)</span>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#16a34a", marginTop: 4 }}>
@@ -2118,7 +2118,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
               </div>
             </div>
-            <div style={{ overflowX: "auto", width: "100%" }}>
+            <div style={{ flex: 1, minHeight: 180, overflow: "auto", width: "100%" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -2154,8 +2154,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
         {/* Category: Chi phí dở dang (Luồng J) */}
         {activeCategoryId === "wip" && (
-          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+            <div style={{ flexShrink: 0, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Hình thức theo dõi đang chọn</span>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--brand)", marginTop: 4 }}>{wipSubtab}</div>
@@ -2167,7 +2167,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 </div>
               </div>
             </div>
-            <div style={{ overflowX: "auto", width: "100%" }}>
+            <div style={{ flex: 1, minHeight: 180, overflow: "auto", width: "100%" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
@@ -2495,7 +2495,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     <option value="">-- Chọn số tài khoản ngân hàng --</option>
                     {bankAccountCatalog.filter((row) => row.status === "ACTIVE").map((row) => <option key={row.id} value={row.account_number}>{row.account_number} - {row.bank_name} ({row.currency_code})</option>)}
                   </select>
-                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Tài khoản ngân hàng")} style={{ width: 34, padding: 0, justifyContent: "center" }}>
+                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Tài khoản ngân hàng")} style={{ width: 32, height: 32, padding: 0, justifyContent: "center" }}>
                     +
                   </button>
                 </div>
@@ -2553,7 +2553,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-body" style={{ maxHeight: "calc(92vh - 125px)" }}>
               <div className="misa-opening-form-row">
-                <div className="misa-opening-field" style={{ flex: 1 }}>
+                <div className="misa-opening-field" style={{ flex: 1.5, minWidth: 235 }}>
                   <label className="misa-opening-label">Số tài khoản <span style={{ color: "#ef4444" }}>*</span></label>
                   <select aria-label="Số tài khoản công nợ khách hàng" className="misa-opening-select" value={partnerAccCode} onChange={(e) => setPartnerAccCode(e.target.value)}>
                     <option value="131">131 - Phải thu của khách hàng</option>
@@ -2574,7 +2574,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         </option>
                       ))}
                     </select>
-                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Khách hàng")} style={{ width: 34, padding: 0, justifyContent: "center" }}>
+                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Khách hàng")} style={{ width: 32, height: 32, padding: 0, justifyContent: "center" }}>
                       +
                     </button>
                   </div>
@@ -2697,7 +2697,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-body" style={{ maxHeight: "calc(92vh - 125px)" }}>
               <div className="misa-opening-form-row">
-                <div className="misa-opening-field" style={{ flex: 1.2 }}>
+                <div className="misa-opening-field" style={{ flex: 1.5, minWidth: 235 }}>
                   <label className="misa-opening-label">Số tài khoản <span style={{ color: "#ef4444" }}>*</span></label>
                   <select className="misa-opening-select" value={supplierAccCode} onChange={(e) => setSupplierAccCode(e.target.value)}>
                     <option value="331">331 - Phải trả cho người bán</option>
@@ -2720,7 +2720,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         </option>
                       ))}
                     </select>
-                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Nhà cung cấp")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
+                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Nhà cung cấp")} style={{ width: 32, height: 32, padding: 0, justifyContent: "center" }}>+</button>
                   </div>
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>
@@ -2841,7 +2841,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-body">
               <div className="misa-opening-form-row">
-                <div className="misa-opening-field" style={{ flex: 1 }}>
+                <div className="misa-opening-field" style={{ flex: 1.5, minWidth: 235 }}>
                   <label className="misa-opening-label">Số tài khoản <span style={{ color: "#ef4444" }}>*</span></label>
                   <select className="misa-opening-select" value={employeeAccCode} onChange={(e) => setEmployeeAccCode(e.target.value)}>
                     <option value="141">141 - Tạm ứng</option>
@@ -2867,7 +2867,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           );
                         })}
                     </select>
-                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Nhân viên")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
+                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Nhân viên")} style={{ width: 32, height: 32, padding: 0, justifyContent: "center" }}>+</button>
                   </div>
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>
@@ -2922,7 +2922,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     <option value="">-- Chọn hàng hóa, vật tư --</option>
                     {itemCatalog.filter((row) => row.status === "ACTIVE").map((row) => <option key={row.id} value={row.code}>{row.code} - {row.name}</option>)}
                   </select>
-                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Vật tư hàng hóa")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
+                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Vật tư hàng hóa")} style={{ width: 32, height: 32, padding: 0, justifyContent: "center" }}>+</button>
                 </div>
               </div>
               <div className="misa-opening-field">
@@ -2932,7 +2932,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     <option value="">-- Chọn kho lưu trữ --</option>
                     {warehouseCatalog.filter((row) => row.status === "ACTIVE").map((row) => <option key={row.id} value={row.code}>{row.code} - {row.name}</option>)}
                   </select>
-                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Kho")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
+                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Kho")} style={{ width: 32, height: 32, padding: 0, justifyContent: "center" }}>+</button>
                 </div>
               </div>
               <div className="misa-opening-form-row">
