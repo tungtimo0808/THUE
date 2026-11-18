@@ -308,6 +308,22 @@ export default function MisaInventoryWorkspace({
     setShowIssueModal(false);
   };
   const [showTransferModal, setShowTransferModal] = useState(false);
+
+  useEffect(() => {
+    const consumeQuickCreate = (raw?: string | null) => {
+      const target = raw || sessionStorage.getItem("sv_pending_quick_create");
+      if (target === "inv-receipt" || target === "inv-issue" || target === "inv-transfer") {
+        try { sessionStorage.removeItem("sv_pending_quick_create"); } catch {}
+        if (target === "inv-receipt") setShowReceiptModal(true);
+        else if (target === "inv-issue") setShowIssueModal(true);
+        else setShowTransferModal(true);
+      }
+    };
+    consumeQuickCreate();
+    const onQuick = (ev: Event) => consumeQuickCreate((ev as CustomEvent)?.detail);
+    window.addEventListener("sv_quick_create", onQuick);
+    return () => window.removeEventListener("sv_quick_create", onQuick);
+  }, []);
   const [transferType, setTransferType] = useState<
     "Xuất kho kiêm vận chuyển nội bộ" | "Xuất kho gửi bán đại lý" | "Xuất chuyển kho nội bộ"
   >("Xuất kho kiêm vận chuyển nội bộ");

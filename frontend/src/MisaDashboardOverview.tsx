@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowDownLeft,
@@ -49,6 +49,17 @@ interface MisaDashboardOverviewProps {
   onSelectTransaction?: (t: Transaction) => void;
 }
 
+type ComplianceSummary = {
+  loaded: boolean;
+  riskyInvoices: number;
+  totalIncomingInvoices: number;
+  riskySuppliers: number;
+  totalSuppliers: number;
+  vatSubmitted: boolean;
+};
+
+const complianceMemoryCache = new Map<string, ComplianceSummary>();
+
 function fmtMoney(val: unknown): string {
   const n = Number(val ?? 0);
   if (!Number.isFinite(n)) return "0 ₫";
@@ -77,6 +88,7 @@ export function MisaDashboardOverview({
   const { token, companyId, companies: sessionCompanies } = useApiSession();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const effectiveToken = useMemo(() => {
     if (token) return token;
@@ -223,6 +235,8 @@ export function MisaDashboardOverview({
 
   // Race condition guard for rapid period/filter switching (EF-29)
   const requestIdRef = useRef<number>(0);
+  const retryTimerRef = useRef<number | null>(null);
+  const retryCountRef = useRef<number>(0);
 
   const prevUrlPeriodRef = useRef<string>(urlPeriod);
   if (urlPeriod && urlPeriod !== prevUrlPeriodRef.current) {
@@ -322,8 +336,15 @@ export function MisaDashboardOverview({
   }, [writer, dashCfgCacheKey]);
 
   // Load overview data with EF-29 race-condition protection & instant SWR revalidation
-  const loadDashboardOverview = async (opts?: { forceRefresh?: boolean }) => {
+  const loadDashboardOverview = async (opts?: { forceRefresh?: boolean; isAutoRetry?: boolean }) => {
     if (!writer) return;
+    if (retryTimerRef.current !== null) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    if (!opts?.isAutoRetry) {
+      retryCountRef.current = 0;
+    }
     const currentReqId = ++requestIdRef.current;
     const targetCacheKey = dashOvrCacheKey;
     const warmSnapshot = readWarmSnapshot(targetCacheKey);
@@ -335,7 +356,9 @@ export function MisaDashboardOverview({
     } else {
       setLoading(true);
     }
-    setGlobalError("");
+    if (!opts?.isAutoRetry) {
+      setGlobalError("");
+    }
 
     try {
       const payload = opts?.forceRefresh
@@ -354,27 +377,89 @@ export function MisaDashboardOverview({
 
       // EF-29: Ignore stale response if a newer request was fired
       if (currentReqId !== requestIdRef.current) return;
+      retryCountRef.current = 0;
+      setGlobalError("");
       overviewCacheKeyRef.current = targetCacheKey;
       setOverviewData(payload);
       if (targetCacheKey) {
         writeWarmSnapshot(targetCacheKey, payload);
+      }
+      if (!configData) {
+        fetchDashboardConfigUcRpt01(writer)
+          .then((cfgRes) => {
+            setConfigData(cfgRes);
+            if (dashCfgCacheKey) writeWarmSnapshot(dashCfgCacheKey, cfgRes);
+          })
+          .catch(() => {});
       }
       if (opts?.forceRefresh && notify) {
         notify("Đã làm mới số liệu Dashboard tổng quan từ Sổ cái và các phân hệ nghiệp vụ.");
       }
     } catch (err: any) {
       if (currentReqId !== requestIdRef.current) return;
+      const status = Number(err?.status ?? 0);
       const msg = err instanceof Error ? err.message : String(err || "Không thể tải dữ liệu Dashboard.");
-      if (!hasWarmSnapshot) {
+      const isTransientGateway =
+        status === 0 ||
+        status === 502 ||
+        status === 503 ||
+        status === 504 ||
+        msg.includes("tạm thời") ||
+        msg.includes("kết nối");
+
+      if (isTransientGateway) {
+        retryCountRef.current += 1;
+        const delayMs = retryCountRef.current <= 3 ? 1800 : 3000;
+        setGlobalError("");
+        if (retryCountRef.current <= 30) {
+          retryTimerRef.current = window.setTimeout(() => {
+            retryTimerRef.current = null;
+            void loadDashboardOverview({ isAutoRetry: true });
+          }, delayMs);
+        }
+      } else if (!hasWarmSnapshot) {
         setGlobalError(msg);
       }
     } finally {
       if (currentReqId === requestIdRef.current) {
-        setLoading(false);
-        setRefreshing(false);
+        const keepInitialStartupSpinner =
+          retryTimerRef.current !== null && retryCountRef.current > 0 && retryCountRef.current < 2 && !overviewData;
+        if (!keepInitialStartupSpinner) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current !== null) {
+        window.clearTimeout(retryTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!writer || (overviewData && !globalError)) return;
+    const onRecover = () => {
+      void loadDashboardOverview({ isAutoRetry: true });
+    };
+    window.addEventListener("focus", onRecover);
+    window.addEventListener("online", onRecover);
+    return () => {
+      window.removeEventListener("focus", onRecover);
+      window.removeEventListener("online", onRecover);
+    };
+  }, [writer, overviewData, globalError]);
+
+  useEffect(() => {
+    if (!writer) return;
+    const isOverviewRoute = location.pathname === "/" || location.pathname.startsWith("/overview");
+    if (isOverviewRoute && (!overviewData || globalError)) {
+      void loadDashboardOverview({ isAutoRetry: true });
+    }
+  }, [location.pathname, writer]);
 
   useEffect(() => {
     if (!writer) return;
@@ -655,6 +740,121 @@ export function MisaDashboardOverview({
     return null;
   }, [selectedPeriod, filterInfo.from_date, filterInfo.to_date]);
 
+  const [liveCompliance, setLiveCompliance] = useState<ComplianceSummary>(() => {
+    const cached = effectiveCompanyId ? complianceMemoryCache.get(effectiveCompanyId) : undefined;
+    return (
+      cached || {
+        loaded: false,
+        riskyInvoices: 0,
+        totalIncomingInvoices: 0,
+        riskySuppliers: 0,
+        totalSuppliers: 0,
+        vatSubmitted: false,
+      }
+    );
+  });
+
+  useEffect(() => {
+    if (!effectiveToken || !effectiveCompanyId) return;
+    let active = true;
+    const cached = complianceMemoryCache.get(effectiveCompanyId);
+    if (cached) setLiveCompliance(cached);
+    const cid = encodeURIComponent(effectiveCompanyId);
+    Promise.allSettled([
+      request<any>(`/api/v1/purchases/supplier-risk/?company_id=${cid}`, effectiveToken),
+      request<any>(`/api/v1/purchases/input-invoices/?company_id=${cid}&page_size=100`, effectiveToken),
+      request<any>(`/api/v1/tax/declarations/?company_id=${cid}`, effectiveToken),
+      request<any>(`/api/v1/general-ledger/journals/?company_id=${cid}&page_size=100`, effectiveToken),
+    ]).then(([riskRes, invRes, decRes, jrnRes]) => {
+      if (!active) return;
+      const unwrap = (val: any): any[] =>
+        Array.isArray(val) ? val : Array.isArray(val?.results) ? val.results : [];
+      const riskRows = riskRes.status === "fulfilled" ? unwrap(riskRes.value) : [];
+      const invRows = invRes.status === "fulfilled" ? unwrap(invRes.value) : [];
+      const decRows = decRes.status === "fulfilled" ? unwrap(decRes.value) : [];
+      const jrnRows = jrnRes.status === "fulfilled" ? unwrap(jrnRes.value) : [];
+
+      const riskySups = riskRows.filter(
+        (r: any) =>
+          r.latest_risk_level === "HIGH" ||
+          r.latest_risk_level === "MEDIUM" ||
+          r.status_code === "INACTIVE",
+      ).length;
+      const riskyInvs = invRows.filter(
+        (inv: any) =>
+          (inv.validation_status && inv.validation_status !== "VALID") ||
+          inv.risk_level === "HIGH" ||
+          inv.risk_level === "MEDIUM",
+      ).length;
+      const vatJrnCount = jrnRows.filter((j: any) => {
+        const desc = String(j.description || "");
+        const num = String(j.number || "");
+        return (
+          /HĐ\s*\d+/i.test(desc) &&
+          (num.startsWith("PNK") || num.startsWith("PC") || num.startsWith("GBN") || num.startsWith("BBGG"))
+        );
+      }).length;
+      const totalIncoming = invRows.length > 0 ? invRows.length : vatJrnCount;
+      const vatSubmitted = decRows.some((d: any) =>
+        ["SUBMITTED", "ACCEPTED", "FILED"].includes(String(d.status || "").toUpperCase()),
+      );
+
+      const nextSummary: ComplianceSummary = {
+        loaded: true,
+        riskyInvoices: riskyInvs,
+        totalIncomingInvoices: totalIncoming,
+        riskySuppliers: riskySups,
+        totalSuppliers: riskRows.length,
+        vatSubmitted,
+      };
+      complianceMemoryCache.set(effectiveCompanyId, nextSummary);
+      setLiveCompliance(nextSummary);
+    });
+    return () => {
+      active = false;
+    };
+  }, [effectiveToken, effectiveCompanyId]);
+
+  const taxBannerInfo = useMemo(() => {
+    const p = String(selectedPeriod || "2026-12").trim();
+    let yr = 2026;
+    let q = 4;
+    const qMatch = /^(\d{4})-Q([1-4])$/i.exec(p);
+    const mMatch = /^(\d{4})-(\d{2})$/.exec(p);
+    const yMatch = /^(\d{4})$/.exec(p);
+    if (qMatch) {
+      yr = Number(qMatch[1]);
+      q = Number(qMatch[2]);
+    } else if (mMatch) {
+      yr = Number(mMatch[1]);
+      q = Math.ceil(Number(mMatch[2]) / 3) || 4;
+    } else if (yMatch) {
+      yr = Number(yMatch[1]);
+      q = 4;
+    }
+    const deadlines: Record<number, { d: string; iso: string }> = {
+      1: { d: `30/04/${yr}`, iso: `${yr}-04-30` },
+      2: { d: `31/07/${yr}`, iso: `${yr}-07-31` },
+      3: { d: `31/10/${yr}`, iso: `${yr}-10-31` },
+      4: { d: `31/01/${yr + 1}`, iso: `${yr + 1}-01-31` },
+    };
+    const dl = deadlines[q] || deadlines[4];
+    const now = new Date();
+    const target = new Date(`${dl.iso}T23:59:59`);
+    const diffDays = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const badgeText = liveCompliance.vatSubmitted
+      ? "Đã nộp tờ khai kỳ này"
+      : diffDays > 0
+        ? `Còn ${diffDays} ngày nộp tờ khai`
+        : "Đến kỳ hạn nộp tờ khai";
+    return {
+      periodTitle: `Quý ${q}/${yr}`,
+      deadlineStr: dl.d,
+      badgeText,
+      isSubmitted: liveCompliance.vatSubmitted,
+    };
+  }, [selectedPeriod, liveCompliance.vatSubmitted]);
+
   return (
     <div className="ref-overview" style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 14 }}>
       {/* BANNER CẢNH BÁO THUẾ KHẨN CẤP & HẠN NỘP TỜ KHAI (MODERN FINTECH STYLE) */}
@@ -692,7 +892,7 @@ export function MisaDashboardOverview({
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <span style={{ fontSize: 13.5, fontWeight: 700, color: "#1e3a8a" }}>
-                Kiểm soát tuân thủ Thuế &amp; Hóa đơn Quý 4/2026
+                Kiểm soát tuân thủ Thuế &amp; Hóa đơn {taxBannerInfo.periodTitle}
               </span>
               <span
                 style={{
@@ -700,16 +900,33 @@ export function MisaDashboardOverview({
                   fontWeight: 700,
                   padding: "2px 8px",
                   borderRadius: 999,
-                  background: "#fef3c7",
-                  color: "#b45309",
-                  border: "1px solid #fde68a",
+                  background: taxBannerInfo.isSubmitted ? "#dcfce7" : "#fef3c7",
+                  color: taxBannerInfo.isSubmitted ? "#15803d" : "#b45309",
+                  border: `1px solid ${taxBannerInfo.isSubmitted ? "#86efac" : "#fde68a"}`,
                 }}
               >
-                Còn 8 ngày nộp tờ khai
+                {taxBannerInfo.badgeText}
               </span>
             </div>
             <p style={{ margin: "3px 0 0", fontSize: 12, color: "#475569", lineHeight: 1.4 }}>
-              Hạn nộp Tờ khai 01/GTGT: <strong>31/01/2027</strong> · Phát hiện <strong>2 hóa đơn đầu vào</strong> từ NCC thuộc diện cảnh báo rủi ro hóa đơn.
+              Hạn nộp Tờ khai 01/GTGT: <strong>{taxBannerInfo.deadlineStr}</strong> ·{" "}
+              {liveCompliance.loaded ? (
+                liveCompliance.riskyInvoices > 0 || liveCompliance.riskySuppliers > 0 ? (
+                  <>
+                    Phát hiện <strong>{liveCompliance.riskyInvoices} hóa đơn đầu vào</strong> &amp;{" "}
+                    <strong>{liveCompliance.riskySuppliers} NCC</strong> thuộc diện cảnh báo rủi ro hóa đơn.
+                  </>
+                ) : (
+                  <>
+                    Đã đối chiếu <strong>{liveCompliance.totalSuppliers} nhà cung cấp</strong> &amp;{" "}
+                    <strong>{liveCompliance.totalIncomingInvoices} hóa đơn đầu vào</strong> (<strong>0</strong> cảnh báo rủi ro).
+                  </>
+                )
+              ) : (
+                <>
+                  Đang đồng bộ dữ liệu đối chiếu nhà cung cấp &amp; hóa đơn đầu vào trong kỳ...
+                </>
+              )}
             </p>
           </div>
         </div>

@@ -194,8 +194,20 @@ def _row_identifiers(row: dict) -> set:
 
 def _resolve_setup(company, config: dict) -> dict:
     """MF-02, BR-GL-OB-01/02/44/48: start date, regime and bookkeeping method of the data set."""
+    opening_entry = models.JournalEntry.objects.filter(company=company, entry_type="OPENING").order_by("-posting_date").first()
     first_period = models.AccountingPeriod.objects.filter(company=company).order_by("start_date").first()
-    start = _parse_date(config.get("accounting_start_date")) or (first_period.start_date if first_period else None)
+    start = _parse_date(config.get("accounting_start_date"))
+    if opening_entry and opening_entry.posting_date and (not start or start < opening_entry.posting_date):
+        start = opening_entry.posting_date
+        first_period = (
+            opening_entry.period
+            or models.AccountingPeriod.objects.filter(company=company, start_date=start).first()
+            or first_period
+        )
+    elif start and first_period and first_period.start_date != start:
+        first_period = models.AccountingPeriod.objects.filter(company=company, start_date=start).first() or first_period
+    elif not start:
+        start = first_period.start_date if first_period else None
     if not start:
         start_month = int(getattr(company, "fiscal_year_start_month", 1) or 1)
         if start_month < 1 or start_month > 12:
@@ -282,6 +294,101 @@ def _assert_writable(setup: dict, payload: dict, config: dict) -> int:
     return current_version
 
 
+def _hydrate_legacy_saved(company, saved: dict) -> dict:
+    """Normalise legacy pre-UC15 seed snapshots (missing bank accountCode/debitVnd, inventoryAccount, or duplicate detail lines)."""
+    if not saved:
+        return saved
+    for row in saved.get("bank") or []:
+        if isinstance(row, dict) and _text(row, "accountNumber", "account_number") and not _text(row, "accountCode", "account_code"):
+            ccy = _text(row, "currency").upper() or "VND"
+            row["accountCode"] = "1122" if ccy != "VND" else "1121"
+            if "debitVnd" not in row and row.get("amountVnd") is not None:
+                row["debitVnd"] = str(int(_to_dec_uc15(row.get("amountVnd"))))
+            if "creditVnd" not in row:
+                row["creditVnd"] = "0"
+            if ccy != "VND" and not row.get("exchangeRate"):
+                orig = _to_dec_uc15(row.get("originalAmount"))
+                vnd = _to_dec_uc15(row.get("amountVnd"))
+                if orig > 0 and vnd > 0:
+                    row["exchangeRate"] = int((vnd / orig).quantize(Decimal("1")))
+    inv_rows = [r for r in (saved.get("inventory") or []) if isinstance(r, dict)]
+    if any(not _text(r, "inventoryAccount") for r in inv_rows):
+        from master_data.models import Item
+
+        item_acc_map = {
+            it.code: (it.inventory_account.code if it.inventory_account_id else "")
+            for it in Item.objects.filter(company=company).select_related("inventory_account")
+        }
+        for row in inv_rows:
+            if not _text(row, "inventoryAccount"):
+                code = _text(row, "itemCode", "item_code")
+                wh = _text(row, "warehouse")
+                fallback = "152" if "152" in wh else ("1531" if "153" in wh else "1561")
+                row["inventoryAccount"] = item_acc_map.get(code) or fallback
+    acc_rows = [r for r in (saved.get("accounts") or []) if isinstance(r, dict)]
+    if acc_rows:
+        detail_accounts = {p[1]: p[0] for p in _detail_postings(saved) if p[1]}
+        if any(any(_related(_text(r, "account", "code"), acc) for acc in detail_accounts) for r in acc_rows):
+            coa = list(models.Account.objects.filter(company=company, status="ACTIVE").select_related("parent"))
+            parent_codes = {a.parent.code for a in coa if a.parent_id}
+            by_code = {a.code: a for a in coa}
+            opening_je = models.JournalEntry.objects.filter(company=company, entry_type="OPENING").first()
+            if opening_je and opening_je.lines.exists():
+                je_buckets = {}
+                for ln in opening_je.lines.select_related("account").order_by("line_no"):
+                    c_code = ln.account.code
+                    if any(_related(c_code, acc) for acc in detail_accounts):
+                        continue
+                    if c_code in parent_codes or not getattr(ln.account, "is_postable", True):
+                        children = sorted([a.code for a in coa if a.code != c_code and a.code.startswith(c_code) and a.code not in parent_codes and getattr(a, "is_postable", True)])
+                        if children:
+                            c_code = children[0]
+                    b = je_buckets.setdefault(c_code, [Decimal(0), Decimal(0)])
+                    b[0] += ln.debit or Decimal(0)
+                    b[1] += ln.credit or Decimal(0)
+                det_d = sum((p[2] for p in _detail_postings(saved) if p[1]), Decimal(0))
+                det_c = sum((p[3] for p in _detail_postings(saved) if p[1]), Decimal(0))
+                dir_d = sum((v[0] for v in je_buckets.values()), Decimal(0))
+                dir_c = sum((v[1] for v in je_buckets.values()), Decimal(0))
+                diff = (det_d + dir_d) - (det_c + dir_c)
+                if diff != 0 and "4111" in je_buckets and je_buckets["4111"][1] + diff > 0:
+                    je_buckets["4111"][1] += diff
+                pruned = [
+                    {
+                        "account": c_code,
+                        "name": by_code[c_code].name if c_code in by_code else f"Tài khoản {c_code}",
+                        "debit": int(vals[0]),
+                        "credit": int(vals[1]),
+                    }
+                    for c_code, vals in sorted(je_buckets.items())
+                    if vals[0] > 0 or vals[1] > 0
+                ]
+            else:
+                pruned = [r for r in acc_rows if not any(_related(_text(r, "account", "code"), acc) for acc in detail_accounts)]
+                for r in pruned:
+                    code = _text(r, "account", "code")
+                    acc_obj = by_code.get(code)
+                    if code in parent_codes or (acc_obj and not getattr(acc_obj, "is_postable", True)):
+                        children = sorted([a.code for a in coa if a.code != code and a.code.startswith(code) and a.code not in parent_codes and getattr(a, "is_postable", True)])
+                        if children:
+                            r["account"] = children[0]
+            saved["accounts"] = pruned
+    return saved
+
+
+def _prune_detail_managed_accounts(saved: dict):
+    """When saving a detail group (B–I), supersede any prior direct line in accounts for that subledger account."""
+    acc_rows = [r for r in (saved.get("accounts") or []) if isinstance(r, dict)]
+    if not acc_rows:
+        return
+    detail_accounts = {p[1]: p[0] for p in _detail_postings(saved) if p[1]}
+    if detail_accounts:
+        saved["accounts"] = [
+            r for r in acc_rows
+            if not any(_related(_text(r, "account", "code"), acc) for acc in detail_accounts)
+        ]
+
+
 def _load(company, *, lock=False):
     from common_services.models import CoreCompanySetting
 
@@ -289,7 +396,7 @@ def _load(company, *, lock=False):
     setting, _ = qs.get_or_create(company=company)
     config = dict(setting.configuration or {})
     setup = _resolve_setup(company, config)
-    saved = dict(config.get(_storage_key(setup)) or {})
+    saved = _hydrate_legacy_saved(company, dict(config.get(_storage_key(setup)) or {}))
     return setting, config, setup, saved
 
 
@@ -921,6 +1028,24 @@ def get_opening_balances_uc_gl_15(company, params=None, request=None) -> dict:
     total_credit = int(sum((v[1] for v in lines.values()), Decimal(0)))
     entry = models.JournalEntry.objects.filter(company=company, entry_type="OPENING").first()
     categories = {key: saved[key] for key in UC_GL_15_CATEGORIES}
+    acc_names = {a.code: a.name for a in models.Account.objects.filter(company=company)}
+    detail_buckets = {}
+    for group, code, d_val, c_val, _obj in _detail_postings(saved):
+        if code:
+            b = detail_buckets.setdefault(code, [Decimal(0), Decimal(0), group])
+            b[0] += d_val
+            b[1] += c_val
+    detail_managed_accounts = [
+        {
+            "account": code,
+            "name": acc_names.get(code, f"Tài khoản {code}"),
+            "debit": int(vals[0]),
+            "credit": int(vals[1]),
+            "managed_by": vals[2],
+            "managed_by_title": UC_GL_15_CATEGORY_TITLES.get(vals[2], vals[2]),
+        }
+        for code, vals in sorted(detail_buckets.items())
+    ]
     return {
         "company_id": str(company.id),
         "company_name": company.name,
@@ -937,6 +1062,7 @@ def get_opening_balances_uc_gl_15(company, params=None, request=None) -> dict:
         "gl_sync_status": _gl_sync_status(company, saved, setup),
         **categories,
         "categories": categories,
+        "detail_managed_accounts": detail_managed_accounts,
         "account_rollup": _account_rollup(company, saved["accounts"]),
         "total_debit": total_debit,
         "total_credit": total_credit,
@@ -1009,6 +1135,8 @@ def save_opening_balances_uc_gl_15(company, payload: dict, request=None) -> dict
                 if row_id not in new_ids or old != next((r for r in validated if _row_id(r) == row_id), old):
                     _assert_no_dependency(company, category, old)
             saved[category] = validated
+        if "accounts" not in incoming:
+            _prune_detail_managed_accounts(saved)
         sync_status = _persist(company, setting, config, setup, saved, request, current_version,
                                "SAVE_OPENING_BALANCES_UC_GL_15", {"version": current_version},
                                {"categories": list(incoming), "action_mode": payload.get("action_mode") or "SAVE"})
@@ -1047,6 +1175,8 @@ def upsert_opening_balance_item_uc_gl_15(company, payload: dict, request=None) -
         valid["id"] = valid.get("id") or _row_id(valid) or f"{category}-{int(timezone.now().timestamp() * 1000)}"
         valid["updated_at"] = timezone.now().isoformat()
         saved[category] = [valid if r is before else r for r in existing] if before else [valid, *existing]
+        if category != "accounts":
+            _prune_detail_managed_accounts(saved)
         sync_status = _persist(company, setting, config, setup, saved, request, current_version,
                                "EDIT_OPENING_BALANCE_ITEM" if before else "ADD_OPENING_BALANCE_ITEM",
                                {"category": category, "item": before},
@@ -1132,6 +1262,8 @@ def import_opening_balances_excel_uc_gl_15(company, payload: dict, request=None)
         if row_errors and (atomic or not valid_rows):
             _fail("EF-20", f"Phát hiện {len(row_errors)} dòng lỗi trong tệp Excel; không nhập các dòng lỗi.", **summary)
         saved[category] = accepted
+        if category != "accounts":
+            _prune_detail_managed_accounts(saved)
         sync_status = _persist(company, setting, config, setup, saved, request, current_version,
                                "IMPORT_OPENING_BALANCES_EXCEL_UC_GL_15", {"category": category},
                                {"category": category, "imported_count": len(valid_rows), "error_count": len(row_errors)})
@@ -1185,7 +1317,7 @@ def check_opening_balances_uc_gl_15(company, params=None, request=None) -> dict:
                 add("WARNING", "inventory", "Mặt hàng chưa có tài khoản kho nên chưa đối chiếu được với Sổ cái.",
                     obj=_text(row, "itemCode"))
     for group in ("prepaid", "wip"):
-        if saved.get(group):
+        if any(not _text(r, "accountCode", "account_code", "account") for r in (saved.get(group) or [])):
             add("WARNING", group, "Nhóm chưa khai báo tài khoản kế toán; cần đối chiếu thủ công với số dư tài khoản liên quan.")
     for category in ("customers", "suppliers"):
         for row in saved.get(category) or []:

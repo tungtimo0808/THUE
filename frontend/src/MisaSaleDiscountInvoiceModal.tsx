@@ -18,7 +18,7 @@ import {
   Paperclip,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
-import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS } from "./MisaSalesModals";
+import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS, useSyncLiveSalesCatalogs } from "./MisaSalesModals";
 
 export interface DiscountInvoiceItem {
   id: string;
@@ -51,6 +51,7 @@ export function SaleInvoiceDiscountModal({
   customers,
   loadEligible,
 }: SaleInvoiceDiscountModalProps) {
+  useSyncLiveSalesCatalogs();
   // Master fields Left
   const [customerCode, setCustomerCode] = useState(initialData?.customerCode || "");
   const [customerName, setCustomerName] = useState(initialData?.customer || initialData?.customerName || "");
@@ -1206,7 +1207,8 @@ export function SaleInvoiceDiscountModal({
                       <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                         <input
                           type="text"
-                          value={row.unitPrice === 0 ? "0,00" : formatVND(row.unitPrice)}
+                          inputMode="numeric"
+                          value={row.unitPrice === 0 ? "0" : formatVND(row.unitPrice)}
                           onChange={(e) => {
                             const v = Number(e.target.value.replace(/\D/g, "")) || 0;
                             handleItemChange(idx, "unitPrice", v);

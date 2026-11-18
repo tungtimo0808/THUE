@@ -563,5 +563,45 @@ export const LIVE_REPORTS: Record<string, LiveReportTarget> = {
   "Đối chiếu nhập xuất giữa kế toán và thủ kho": {
     "area": "inventory",
     "code": "RPT-0155"
+  },
+  "Số chi tiết mua hàng": {
+    "area": "purchase",
+    "code": "RPT-0047"
+  },
+  "Số nhật ký mua hàng": {
+    "area": "purchase",
+    "code": "RPT-0051"
+  },
+  "Sổ chi tiết bán hàng": {
+    "area": "sales",
+    "code": "RPT-0078"
+  },
+  "Số chi tiết bán hàng": {
+    "area": "sales",
+    "code": "RPT-0078"
+  },
+  "Số chi tiết chuyển tiền nội bộ": {
+    "area": "money",
+    "code": "RPT-0040"
+  },
+  "S34 - DN: Số chi tiết tiền vay": {
+    "area": "money",
+    "code": "RPT-0042"
+  },
+  "S34-DN: Số chi tiết tiền vay": {
+    "area": "money",
+    "code": "RPT-0042"
+  },
+  "Thông báo công nợ với nhà cung cấp": {
+    "area": "debt",
+    "code": "RPT-0058"
+  },
+  "Đối chiếu chứng từ công nợ phải trả và chứng từ thanh toán": {
+    "area": "debt",
+    "code": "RPT-0058"
+  },
+  "Đối chiếu chi phí mua hàng trên chứng từ mua hàng và chứng từ chi phí": {
+    "area": "inventory",
+    "code": "RPT-0154"
   }
 };

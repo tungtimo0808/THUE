@@ -155,7 +155,21 @@ export default function MisaSalesWorkspace({
     setSalesParams(next, { replace: true });
   }, [correctionCreateMode]);
 
-  // Quote view mode & selection
+  useEffect(() => {
+    const consumeQuickCreate = (raw?: string | null) => {
+      const target = raw || sessionStorage.getItem("sv_pending_quick_create");
+      if (target === "sal-goods" || target === "sal-service") {
+        try { sessionStorage.removeItem("sv_pending_quick_create"); } catch {}
+        setSelectedVoucher(null);
+        setIsServiceSale(target === "sal-service");
+        setShowVoucherModal(true);
+      }
+    };
+    consumeQuickCreate();
+    const onQuick = (ev: Event) => consumeQuickCreate((ev as CustomEvent)?.detail);
+    window.addEventListener("sv_quick_create", onQuick);
+    return () => window.removeEventListener("sv_quick_create", onQuick);
+  }, []);
   const [quoteViewMode, setQuoteViewMode] = useState<"landing" | "list">("list");
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
 

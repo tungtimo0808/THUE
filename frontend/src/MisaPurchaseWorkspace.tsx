@@ -62,6 +62,7 @@ import {
   type UninvoicedVoucher,
 
   SAMPLE_SUPPLIERS,
+  SAMPLE_ITEMS,
   formatVND,
 } from "./MisaPurchaseModals";
 import {
@@ -167,6 +168,22 @@ export default function MisaPurchaseWorkspace({
   const [showAIModal, setShowAIModal] = useState(false);
   const [showReceiveInvoiceModal, setShowReceiveInvoiceModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
+
+  useEffect(() => {
+    const consumeQuickCreate = (raw?: string | null) => {
+      const target = raw || sessionStorage.getItem("sv_pending_quick_create");
+      if (target === "pur-goods" || target === "pur-service") {
+        try { sessionStorage.removeItem("sv_pending_quick_create"); } catch {}
+        setEditingVoucher(null);
+        if (target === "pur-goods") setShowVoucherModal(true);
+        else setShowServiceModal(true);
+      }
+    };
+    consumeQuickCreate();
+    const onQuick = (ev: Event) => consumeQuickCreate((ev as CustomEvent)?.detail);
+    window.addEventListener("sv_quick_create", onQuick);
+    return () => window.removeEventListener("sv_quick_create", onQuick);
+  }, []);
   const [showMultiInvoiceModal, setShowMultiInvoiceModal] = useState(false);
   const [showAddPurchaseMenu, setShowAddPurchaseMenu] = useState(false);
   const [showNatureDrawer, setShowNatureDrawer] = useState(false);
@@ -458,20 +475,59 @@ export default function MisaPurchaseWorkspace({
     const parties = apiRows.suppliers;
     const supplierName = (row: any) => row.supplier_name || row.seller_name ||
       parties?.find((party) => party.id === row.supplier)?.name || "";
-    if (parties) setSuppliers(parties.map((party) => ({
-      id: party.id, code: party.code || "", name: party.name || "",
-      address: party.address || "",
-      debtAmount: apiRows.payables?.filter((debt) => debt.supplier === party.id)
-        .reduce((total, debt) => total + apiNumber(debt.balance), 0) || 0,
-      taxCode: party.tax_code || "",
-      invoiceRisk: "", refDoc: "", phone: party.phone || "",
-      isInternal: false, isBranch: false, partnerType: "org" as const, isCustomer: false,
-    })));
-    if (apiRows.items) setInventoryItems(apiRows.items.map((item) => ({
-      id: item.id, code: item.code || "", name: item.name || "",
-      vatPolicy: "", nature: item.item_type || "Hàng hóa", stockQty: 0,
-      stockValue: 0, unit: apiUnitName(apiRows.units, item.base_uom),
-    })));
+    if (parties) {
+      const mappedSups = parties.map((party) => ({
+        id: party.id, code: party.code || "", name: party.name || "",
+        address: party.address || (party.addresses?.find((a: any) => a.is_default) || party.addresses?.[0])?.address_line || "",
+        debtAmount: apiRows.payables?.filter((debt) => debt.supplier === party.id)
+          .reduce((total, debt) => total + apiNumber(debt.balance), 0) || 0,
+        taxCode: party.tax_code || "",
+        invoiceRisk: "", refDoc: "",
+        phone: party.phone || (party.contacts?.find((c: any) => c.is_default) || party.contacts?.[0])?.phone || "",
+        contact: party.representative || (party.contacts?.find((c: any) => c.is_default) || party.contacts?.[0])?.full_name || party.name || "",
+        isInternal: false, isBranch: false, partnerType: "org" as const, isCustomer: false,
+      }));
+      setSuppliers(mappedSups);
+      if (mappedSups.length > 0) {
+        SAMPLE_SUPPLIERS.splice(
+          0,
+          SAMPLE_SUPPLIERS.length,
+          ...mappedSups.map((s) => ({
+            code: s.code,
+            name: s.name,
+            taxCode: s.taxCode,
+            address: s.address,
+            contact: s.contact,
+            phone: s.phone,
+            debtDays: 30,
+          })),
+        );
+      }
+    }
+    if (apiRows.items) {
+      const mappedItems = apiRows.items.map((item) => ({
+        id: item.id, code: item.code || "", name: item.name || "",
+        vatPolicy: "", nature: item.item_type || "Hàng hóa", stockQty: 0,
+        stockValue: 0, unit: apiUnitName(apiRows.units, item.base_uom),
+        purchasePrice: Number(item.default_purchase_price || item.purchase_price || item.standard_cost || 0),
+      }));
+      setInventoryItems(mappedItems);
+      if (mappedItems.length > 0) {
+        SAMPLE_ITEMS.splice(
+          0,
+          SAMPLE_ITEMS.length,
+          ...mappedItems.map((it) => ({
+            code: it.code,
+            name: it.name,
+            unit: it.unit || "Cái",
+            price: it.purchasePrice || 0,
+            vat: 10,
+            stock: "156",
+            stockName: "156 - Kho hàng hóa",
+          })),
+        );
+      }
+    }
     if (apiRows.orders) setOrders(apiRows.orders.map((row) => ({
       id: row.id, code: row.number || "", date: apiDate(row.document_date),
       deliveryDate: apiDate(row.delivery_date), supplier: supplierName(row),

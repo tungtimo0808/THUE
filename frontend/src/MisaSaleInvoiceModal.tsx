@@ -15,7 +15,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
-import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS } from "./MisaSalesModals";
+import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS, useSyncLiveSalesCatalogs } from "./MisaSalesModals";
 
 export type SaleInvoiceFormType =
   | "Hóa đơn bán hàng hóa, dịch vụ trong nước"
@@ -57,6 +57,7 @@ export function SaleInvoiceModal({
   onOpenCustomerModal,
   notify = () => {},
 }: SaleInvoiceModalProps) {
+  useSyncLiveSalesCatalogs();
   // 1. Invoice Form Type (Dropdown in top header)
   const [invoiceType, setInvoiceType] = useState<SaleInvoiceFormType>(
     initialData?.invoiceFormType || initialType
@@ -1318,8 +1319,9 @@ export function SaleInvoiceModal({
                     <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                       <input
                         type="text"
+                        inputMode="numeric"
                         aria-label={`Đơn giá dòng ${idx + 1}`}
-                        value={row.unitPrice === 0 ? "0,00" : formatVND(row.unitPrice)}
+                        value={row.unitPrice === 0 ? "0" : formatVND(row.unitPrice)}
                         onChange={(e) => {
                           const v = Number(e.target.value.replace(/\D/g, "")) || 0;
                           handleItemChange(idx, "unitPrice", v);

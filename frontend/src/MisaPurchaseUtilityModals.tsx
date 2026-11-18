@@ -16,7 +16,7 @@ import {
   DollarSign,
   CheckCircle2,
 } from "lucide-react";
-import { formatVND, SAMPLE_SUPPLIERS } from "./MisaPurchaseModals";
+import { formatVND, SAMPLE_SUPPLIERS, useSyncLivePurchaseCatalogs } from "./MisaPurchaseModals";
 
 import { showNotice, showPendingFeature } from "./global-popup";
 const CURRENT_YEAR = new Date().getFullYear();
@@ -30,6 +30,7 @@ export interface DebtOffsetModalProps {
 }
 
 export function DebtOffsetModal({ onClose, onSuccess }: DebtOffsetModalProps) {
+  useSyncLivePurchaseCatalogs();
   const [supplier, setSupplier] = useState(SAMPLE_SUPPLIERS[0]?.code || "NCC001");
   const [offsetDate, setOffsetDate] = useState(`09/10/${CURRENT_YEAR}`);
   const [currency, setCurrency] = useState("VND");
@@ -418,12 +419,29 @@ export interface MultiDebtOffsetModalProps {
 }
 
 export function MultiDebtOffsetModal({ onClose, onSuccess }: MultiDebtOffsetModalProps) {
+  const liveLookup = useSyncLivePurchaseCatalogs();
   const [step, setStep] = useState<1 | 2>(1);
   const [account, setAccount] = useState("331");
   const [group, setGroup] = useState("Tất cả");
   const [offsetDate, setOffsetDate] = useState(`09/10/${CURRENT_YEAR}`);
 
-  const [suppliersList, setSuppliersList] = useState([
+  const [suppliersList, setSuppliersList] = useState(() =>
+    liveLookup.connected && liveLookup.suppliers.length > 0
+      ? liveLookup.suppliers.slice(0, 8).map((s, idx) => {
+          const debt = liveLookup.supplierDebtSummary(s.code);
+          const unpaidDebt = debt.currentBalance || 0;
+          const unpaidPayment = debt.totalPaid || 0;
+          return {
+            id: `sup-${idx + 1}`,
+            selected: unpaidDebt > 0 && unpaidPayment > 0,
+            code: s.code,
+            name: s.name,
+            unpaidPayment,
+            unpaidDebt,
+            expectedOffset: Math.min(unpaidPayment, unpaidDebt),
+          };
+        })
+      : [
     {
       id: "sup-01",
       selected: true,
@@ -697,6 +715,7 @@ export interface UnOffsetModalProps {
 }
 
 export function UnOffsetModal({ onClose, onSuccess }: UnOffsetModalProps) {
+  useSyncLivePurchaseCatalogs();
   const [account, setAccount] = useState("331");
   const [supplier, setSupplier] = useState(SAMPLE_SUPPLIERS[0]?.code || "NCC001");
   const [fromDate, setFromDate] = useState(`01/01/${CURRENT_YEAR}`);
@@ -887,6 +906,7 @@ export interface MultiUnOffsetModalProps {
 }
 
 export function MultiUnOffsetModal({ onClose, onSuccess }: MultiUnOffsetModalProps) {
+  useSyncLivePurchaseCatalogs();
   const [account, setAccount] = useState("331");
   const [group, setGroup] = useState("Tất cả");
   const [period, setPeriod] = useState("Tháng này");
@@ -1103,7 +1123,12 @@ export interface DebtClearingModalProps {
 }
 
 export function DebtClearingModal({ onClose, onSuccess }: DebtClearingModalProps) {
-  const [partner, setPartner] = useState("KH-NCC-001 - Công ty CP Tập đoàn Hoàng Hà");
+  const liveLookup = useSyncLivePurchaseCatalogs();
+  const defaultPartner =
+    liveLookup.connected && liveLookup.suppliers.length > 0
+      ? `${liveLookup.suppliers[0].code} - ${liveLookup.suppliers[0].name}`
+      : "KH-NCC-001 - Công ty CP Tập đoàn Hoàng Hà";
+  const [partner, setPartner] = useState(defaultPartner);
   const [clearDate, setClearDate] = useState(`09/10/${CURRENT_YEAR}`);
   const [receivableAccount, setReceivableAccount] = useState("131");
   const [payableAccount, setPayableAccount] = useState("331");

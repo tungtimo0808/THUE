@@ -19,7 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
-import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS } from "./MisaSalesModals";
+import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS, useSyncLiveSalesCatalogs } from "./MisaSalesModals";
 
 // Common customer list fallback
 const DEFAULT_CUSTOMERS = SAMPLE_SALE_CUSTOMERS || [
@@ -77,6 +77,7 @@ export function SaleInvoiceAdjustmentModal({
   originalInvoices = [],
   initialOriginalId = "",
 }: SpecializedInvoiceModalProps) {
+  useSyncLiveSalesCatalogs();
   // Top Filter
   const [targetInvoiceSearch, setTargetInvoiceSearch] = useState<string>("");
   const [originalInvoiceId, setOriginalInvoiceId] = useState(initialOriginalId);

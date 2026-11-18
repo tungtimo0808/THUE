@@ -2,6 +2,7 @@ import VoucherDateField from "./VoucherDateField";
 import {SupplierModal} from "./MisaPurchaseModals";
 import MisaDirectoryWorkspace from "./MisaDirectoryWorkspace";
 import { useState } from "react";
+import { useLiveVoucherLookups } from "./live-voucher-lookups";
 import {
   X,
   HelpCircle,
@@ -33,9 +34,23 @@ export function LoanContractModal({
   onSubmit,
   onOpenCreditContract,
 }: LoanContractModalProps) {
+  const liveLookup = useLiveVoucherLookups();
+  const defaultBorrower =
+    liveLookup.connected && liveLookup.saleCustomers.length > 0
+      ? liveLookup.saleCustomers[0].name
+      : "Công ty TNHH Đầu tư Thương mại Sao Mai";
+  const defaultPartyBank =
+    liveLookup.connected && liveLookup.partyBankAccounts.length > 0
+      ? liveLookup.partyBankAccounts[0]
+      : null;
+  const defaultCompanyBank =
+    liveLookup.connected && liveLookup.companyBankAccounts.length > 0
+      ? liveLookup.companyBankAccounts[0]
+      : null;
+
   // Master fields
   const [contractCode, setContractCode] = useState("KUCV00001");
-  const [borrower, setBorrower] = useState("Công ty TNHH Đầu tư Thương mại Sao Mai");
+  const [borrower, setBorrower] = useState(defaultBorrower);
   const [creditContract, setCreditContract] = useState("");
   const [purpose, setPurpose] = useState("Bổ sung vốn lưu động phục vụ SXKD");
   const [debitAccount, setDebitAccount] = useState("1283");
@@ -54,8 +69,12 @@ export function LoanContractModal({
   const currentDebt = Math.max(0, disbursedAmount - recoveredPrincipal);
 
   const [disbursementMethod, setDisbursementMethod] = useState("Chuyển khoản");
-  const [beneficiaryAccount, setBeneficiaryAccount] = useState("2151000849201");
-  const [bankName, setBankName] = useState("BIDV - Ngân hàng TMCP Đầu tư và Phát triển VN");
+  const [beneficiaryAccount, setBeneficiaryAccount] = useState(
+    defaultPartyBank?.account || "2151000849201",
+  );
+  const [bankName, setBankName] = useState(
+    defaultPartyBank?.name || "BIDV - Ngân hàng TMCP Đầu tư và Phát triển VN",
+  );
   const [loanTerm, setLoanTerm] = useState(12);
   const [termUnit, setTermUnit] = useState("Tháng");
   const [disbursementDate, setDisbursementDate] = useState(`09/10/${CURRENT_YEAR}`);
@@ -75,8 +94,12 @@ export function LoanContractModal({
   const [collectionMethod, setCollectionMethod] = useState("Nộp vào tài khoản");
   const [firstPrincipalDate, setFirstPrincipalDate] = useState(`09/11/${CURRENT_YEAR}`);
   const [firstInterestDate, setFirstInterestDate] = useState(`09/11/${CURRENT_YEAR}`);
-  const [collectionAccount, setCollectionAccount] = useState("1028475929 - VCB");
-  const [collectionBankName, setCollectionBankName] = useState("Vietcombank - CN Hà Nội");
+  const [collectionAccount, setCollectionAccount] = useState(
+    defaultCompanyBank ? `${defaultCompanyBank.account} - ${defaultCompanyBank.name}` : "1028475929 - VCB",
+  );
+  const [collectionBankName, setCollectionBankName] = useState(
+    defaultCompanyBank?.name || "Vietcombank - CN Hà Nội",
+  );
 
   // Tab 4: Thống kê khác
   const [project, setProject] = useState("");

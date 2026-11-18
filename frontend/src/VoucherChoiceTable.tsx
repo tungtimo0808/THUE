@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { ChevronDown, X } from "lucide-react";
 
 export type VoucherChoice = {
   code: string;
@@ -253,6 +254,21 @@ export default function VoucherChoiceTable<T extends VoucherChoice>({
           >
             Tìm nhanh (F3)
           </button>
+        ) : onNew ? (
+          <button
+            type="button"
+            onClick={() => onNew("Nhân viên")}
+            style={{
+              border: 0,
+              background: "transparent",
+              color: "var(--brand)",
+              fontWeight: 600,
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            + Thêm nhân viên mới
+          </button>
         ) : (
           <span />
         )}
@@ -307,9 +323,21 @@ export default function VoucherChoiceTable<T extends VoucherChoice>({
                   type="button"
                   aria-label="Đóng tìm nhanh đối tượng"
                   onClick={close}
-                  style={{ border: 0, background: "transparent", fontSize: 20, cursor: "pointer" }}
+                  style={{
+                    width: 30,
+                    height: 30,
+                    padding: 0,
+                    border: 0,
+                    borderRadius: 6,
+                    background: "transparent",
+                    color: "#64748b",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                  }}
                 >
-                  ×
+                  <X size={18} aria-hidden="true" />
                 </button>
               </header>
               <div style={{ padding: 16, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -325,15 +353,19 @@ export default function VoucherChoiceTable<T extends VoucherChoice>({
                       width: 320,
                       padding: "0 10px",
                       border: "1px solid #cbd5e1",
-                      borderRadius: 4,
+                      borderRadius: 6,
                       boxSizing: "border-box",
                     }}
                   />
-                  <div style={{ position: "relative", display: "flex", height: 32 }}>
+                  <div style={{ position: "relative", display: "inline-flex", height: 32 }}>
                     <button
                       type="button"
                       className="misa-voucher-btn-green"
-                      style={{ height: 32 }}
+                      style={{
+                        height: 32,
+                        borderTopRightRadius: 0,
+                        borderBottomRightRadius: 0,
+                      }}
                       onClick={() => {
                         close();
                         onNew?.();
@@ -344,12 +376,30 @@ export default function VoucherChoiceTable<T extends VoucherChoice>({
                     <button
                       type="button"
                       className="misa-voucher-btn-green"
-                      style={{ height: 32 }}
+                      style={{
+                        height: 32,
+                        width: 28,
+                        padding: 0,
+                        borderTopLeftRadius: 0,
+                        borderBottomLeftRadius: 0,
+                        borderLeft: "1px solid rgba(255, 255, 255, 0.28)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
                       aria-label="Loại đối tượng thêm mới"
                       aria-expanded={addMenu}
                       onClick={() => setAddMenu(!addMenu)}
                     >
-                      ⌄
+                      <ChevronDown
+                        size={14}
+                        strokeWidth={2.2}
+                        aria-hidden="true"
+                        style={{
+                          transform: addMenu ? "rotate(180deg)" : "rotate(0deg)",
+                          transition: "transform 0.16s ease",
+                        }}
+                      />
                     </button>
                     {addMenu && (
                       <div

@@ -95,3 +95,33 @@ class SalarySheetTests(FounderCompanyMixin, TestCase):
             "company": str(self.company.pk), "period": self.period, "attendance_sheet": attendance.data["id"],
         }, format="json")
         self.assertEqual(Decimal(sheet.data["lines"][0]["gross"]), Decimal("10000000"))
+
+    def test_update_and_delete_attendance_and_unposted_salary_sheet(self):
+        attendance = self.client.post(f"/api/v1/payroll/attendance-sheets/{self.q}", {
+            "company": str(self.company.pk), "name": "Chấm công T10", "period": self.period,
+        }, format="json")
+        self.assertEqual(attendance.status_code, 201, attendance.data)
+        att_id = attendance.data["id"]
+
+        patched = self.client.patch(f"/api/v1/payroll/attendance-sheets/{att_id}/{self.q}", {
+            "lines": [{"employee": str(self.employee.pk), "working_days": "18", "paid_leave_days": "2", "overtime_hours": "4"}],
+        }, format="json")
+        self.assertEqual(patched.status_code, 200, patched.data)
+        self.assertEqual(Decimal(patched.data["lines"][0]["working_days"]), Decimal("18"))
+        self.assertEqual(Decimal(patched.data["lines"][0]["paid_leave_days"]), Decimal("2"))
+
+        sheet = self.client.post(f"/api/v1/payroll/salary-sheets/{self.q}", {
+            "company": str(self.company.pk), "period": self.period, "attendance_sheet": att_id,
+        }, format="json")
+        self.assertEqual(sheet.status_code, 201, sheet.data)
+        sheet_id = sheet.data["id"]
+
+        # Cannot delete attendance sheet while linked to a salary sheet
+        blocked = self.client.delete(f"/api/v1/payroll/attendance-sheets/{att_id}/{self.q}")
+        self.assertEqual(blocked.status_code, 400)
+
+        # Delete unposted salary sheet, then delete attendance sheet
+        deleted_sheet = self.client.delete(f"/api/v1/payroll/salary-sheets/{sheet_id}/{self.q}")
+        self.assertEqual(deleted_sheet.status_code, 204)
+        deleted_att = self.client.delete(f"/api/v1/payroll/attendance-sheets/{att_id}/{self.q}")
+        self.assertEqual(deleted_att.status_code, 204)

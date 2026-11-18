@@ -19,7 +19,7 @@ import {
   Pin,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
-import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS } from "./MisaSalesModals";
+import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS, useSyncLiveSalesCatalogs } from "./MisaSalesModals";
 import MisaDropdownSelect from "./MisaDropdownSelect";
 
 export interface SaleVoucherItem {
@@ -262,10 +262,32 @@ export function SaleVoucherModal({
     );
   };
 
+  const liveLookup = useSyncLiveSalesCatalogs();
+  const liveSaleCustomers = liveLookup.connected
+    ? liveLookup.allParties.map((p: any) => ({
+        code: String(p.code || ""),
+        name: String(p.name || ""),
+        taxCode: String(p.tax_code || ""),
+        address: String(p.address || p.addresses?.[0]?.address_line || ""),
+        contact: String(p.representative || p.name || ""),
+        phone: String(p.phone || p.contacts?.[0]?.phone || ""),
+      }))
+    : SAMPLE_SALE_CUSTOMERS;
+
+  const notifyCustomerDebt = () => {
+    const summary = liveLookup.customerDebtSummary(customerCode);
+    const targetLabel = customerCode
+      ? `${customerCode}${customerName ? ` - ${customerName}` : ""}`
+      : "toàn bộ khách hàng";
+    notify(
+      `Công nợ phải thu hiện tại của ${targetLabel}: ${formatVND(summary.currentBalance)} đ (${summary.count} chứng từ còn nợ).`,
+    );
+  };
+
   // Select customer helper
   const handleSelectCustomer = (code: string) => {
     setCustomerCode(code);
-    const found = SAMPLE_SALE_CUSTOMERS.find((c) => c.code === code);
+    const found = liveSaleCustomers.find((c) => c.code === code);
     if (found) {
       setCustomerName(found.name);
       setTaxCode(found.taxCode);
@@ -1151,7 +1173,7 @@ export function SaleVoucherModal({
                         {/* ($) Button */}
                         <button
                           type="button"
-                          onClick={() => notify(`Công nợ hiện tại của khách hàng: 64.000.000 đ`)}
+                          onClick={notifyCustomerDebt}
                           title="Tra cứu công nợ khách hàng"
                           style={{
                             background: "#f1f5f9",
@@ -1194,7 +1216,7 @@ export function SaleVoucherModal({
                           <div style={{ padding: "6px 10px", fontSize: 11.5, background: "#f8fafc", color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>
                             Chọn khách hàng:
                           </div>
-                          {SAMPLE_SALE_CUSTOMERS.map((c) => (
+                          {liveSaleCustomers.map((c) => (
                             <div
                               key={c.code}
                               onClick={() => handleSelectCustomer(c.code)}
@@ -1633,7 +1655,7 @@ export function SaleVoucherModal({
                         </div>
                         <button
                           type="button"
-                          onClick={() => notify(`Công nợ hiện tại của khách hàng: 64.000.000 đ`)}
+                          onClick={notifyCustomerDebt}
                           title="Tra cứu công nợ khách hàng"
                           style={{
                             background: "#f1f5f9",
@@ -1675,7 +1697,7 @@ export function SaleVoucherModal({
                           <div style={{ padding: "6px 10px", fontSize: 11.5, background: "#f8fafc", color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>
                             Chọn khách hàng:
                           </div>
-                          {SAMPLE_SALE_CUSTOMERS.map((c) => (
+                          {liveSaleCustomers.map((c) => (
                             <div
                               key={c.code}
                               onClick={() => handleSelectCustomer(c.code)}
@@ -2006,7 +2028,7 @@ export function SaleVoucherModal({
                         </div>
                         <button
                           type="button"
-                          onClick={() => notify(`Công nợ hiện tại của khách hàng: 64.000.000 đ`)}
+                          onClick={notifyCustomerDebt}
                           title="Tra cứu công nợ khách hàng"
                           style={{
                             background: "#f1f5f9",
@@ -2048,7 +2070,7 @@ export function SaleVoucherModal({
                           <div style={{ padding: "6px 10px", fontSize: 11.5, background: "#f8fafc", color: "#64748b", borderBottom: "1px solid #e2e8f0" }}>
                             Chọn khách hàng:
                           </div>
-                          {SAMPLE_SALE_CUSTOMERS.map((c) => (
+                          {liveSaleCustomers.map((c) => (
                             <div
                               key={c.code}
                               onClick={() => handleSelectCustomer(c.code)}
@@ -3131,8 +3153,13 @@ export function SaleVoucherModal({
                           <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                             <input
                               type="text"
-                              value={it.quantity === 0 ? "0,00" : it.quantity.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              onChange={(e) => handleItemChange(idx, "quantity", e.target.value.replace(",", "."))}
+                              inputMode="decimal"
+                              placeholder="0"
+                              value={it.quantity === 0 ? "" : String(it.quantity)}
+                              onChange={(e) => {
+                                const cleaned = e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "");
+                                handleItemChange(idx, "quantity", cleaned === "" ? 0 : cleaned.endsWith(".") ? cleaned : Number(cleaned) || 0);
+                              }}
                               style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "right", fontSize: 12.5, fontWeight: 600, color: "#0f172a" }}
                             />
                           </td>
@@ -3141,11 +3168,9 @@ export function SaleVoucherModal({
                           <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                             <input
                               type="text"
-                              value={it.unitPrice === 0 ? "0,00" : formatVND(it.unitPrice)}
-                              onChange={(e) => {
-                                const v = Number(e.target.value.replace(/\D/g, "")) || 0;
-                                handleItemChange(idx, "unitPrice", v);
-                              }}
+                              inputMode="numeric"
+                              value={formatMoneyInput(it.unitPrice)}
+                              onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))}
                               style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "right", fontSize: 12.5 }}
                             />
                           </td>
@@ -3251,8 +3276,13 @@ export function SaleVoucherModal({
                         <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                           <input
                             type="text"
-                            value={it.quantity === 0 ? "0,00" : Number(it.quantity).toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            onChange={(e) => handleItemChange(idx, "quantity", e.target.value.replace(",", "."))}
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={it.quantity === 0 ? "" : String(it.quantity)}
+                            onChange={(e) => {
+                              const cleaned = e.target.value.replace(/,/g, ".").replace(/[^0-9.]/g, "");
+                              handleItemChange(idx, "quantity", cleaned === "" ? 0 : cleaned.endsWith(".") ? cleaned : Number(cleaned) || 0);
+                            }}
                             style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "right", fontSize: 12.5, fontWeight: 600, color: "#0f172a" }}
                           />
                         </td>
@@ -3295,11 +3325,9 @@ export function SaleVoucherModal({
                         <td style={{ borderRight: "1px solid #cbd5e1", padding: "2px 6px", textAlign: "right" }}>
                           <input
                             type="text"
-                            value={it.unitPrice === 0 ? "0,00" : formatVND(it.unitPrice)}
-                            onChange={(e) => {
-                              const v = Number(e.target.value.replace(/\D/g, "")) || 0;
-                              handleItemChange(idx, "unitPrice", v);
-                            }}
+                            inputMode="numeric"
+                            value={formatMoneyInput(it.unitPrice)}
+                            onChange={(e) => handleItemChange(idx, "unitPrice", parseMoneyInput(e.target.value))}
                             style={{ width: "100%", border: "none", outline: "none", background: "transparent", textAlign: "right", fontSize: 12.5 }}
                           />
                         </td>

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
+import { useLiveVoucherLookups } from "./live-voucher-lookups";
 
 import { showPendingFeature } from "./global-popup";
 export function formatVND(amount: number): string {
@@ -251,6 +252,41 @@ export function getItemsBySupplier(supplierCodeOrName?: string) {
   return filtered.length > 0 ? filtered : SAMPLE_ITEMS;
 }
 
+export function useSyncLivePurchaseCatalogs() {
+  const lookup = useLiveVoucherLookups();
+  if (lookup.connected && lookup.suppliers.length > 0) {
+    SAMPLE_SUPPLIERS.splice(
+      0,
+      SAMPLE_SUPPLIERS.length,
+      ...lookup.suppliers.map((s) => ({
+        code: s.code,
+        name: s.name,
+        taxCode: s.taxCode,
+        address: s.address,
+        contact: s.contact,
+        phone: s.phone,
+        debtDays: 30,
+      })),
+    );
+  }
+  if (lookup.connected && lookup.catalogItems.length > 0) {
+    SAMPLE_ITEMS.splice(
+      0,
+      SAMPLE_ITEMS.length,
+      ...lookup.catalogItems.map((it) => ({
+        code: it.code,
+        name: it.name,
+        unit: it.unit,
+        price: it.purchasePrice || it.price,
+        vat: it.vat,
+        stock: it.stockAccount || "156",
+        stockName: `${it.stockAccount || "156"} - Kho hàng hóa`,
+      })),
+    );
+  }
+  return lookup;
+}
+
 // ============================================================================
 // 1. MODAL: ĐƠN MUA HÀNG (MATCHING IMAGE 2)
 // ============================================================================
@@ -282,6 +318,7 @@ export function PurchaseOrderModal({
   supplierCatalog,
   itemCatalog,
 }: PurchaseOrderModalProps) {
+  useSyncLivePurchaseCatalogs();
   // Master fields
   const [supplierCode, setSupplierCode] = useState(supplierCatalog ? "" : "NCC001");
   const [supplierName, setSupplierName] = useState(supplierCatalog ? "" : "Công ty TNHH Thiết bị Công nghiệp Tân Phát");
@@ -1113,6 +1150,7 @@ export function PurchaseContractModal({
   onSubmit,
   onOpenSupplierModal,
 }: PurchaseContractModalProps) {
+  useSyncLivePurchaseCatalogs();
   // Master fields
   const [contractCode, setContractCode] = useState("HĐM00002");
   const [signDate, setSignDate] = useState(`12/10/${CURRENT_YEAR}`);
@@ -2646,6 +2684,8 @@ export function PurchaseVoucherModal({
     setPaymentDueDate(`${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`);
   }, [docDate, debtDays, manualDueDate]);
 
+  const liveLookup = useSyncLivePurchaseCatalogs();
+  const liveDebtInfo = liveLookup.supplierDebtSummary(supplierCode);
   const [einvoiceLookupCode, setEinvoiceLookupCode] = useState("");
   const [einvoiceLookupUrl, setEinvoiceLookupUrl] = useState("");
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
@@ -4859,20 +4899,20 @@ export function PurchaseVoucherModal({
 
                 <div style={{ padding: "16px 20px", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
-                    <span style={{ color: "#475569" }}>Số dư nợ đầu kỳ:</span>
-                    <strong style={{ color: "#0f172a" }}>0 đ</strong>
+                    <span style={{ color: "#475569" }}>Số chứng từ còn nợ:</span>
+                    <strong style={{ color: "#0f172a" }}>{liveDebtInfo.count} chứng từ</strong>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
                     <span style={{ color: "#475569" }}>Số phát sinh nợ trong kỳ:</span>
-                    <strong style={{ color: "#0f172a" }}>0 đ</strong>
+                    <strong style={{ color: "#0f172a" }}>{formatVND(liveDebtInfo.totalInvoiced)} đ</strong>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
                     <span style={{ color: "#475569" }}>Số đã thanh toán trong kỳ:</span>
-                    <strong style={{ color: "var(--brand)" }}>0 đ</strong>
+                    <strong style={{ color: "var(--brand)" }}>{formatVND(liveDebtInfo.totalPaid)} đ</strong>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 12, marginTop: 4, color: "#dc2626", fontWeight: 700, fontSize: 15 }}>
                     <span>Số dư nợ hiện tại:</span>
-                    <strong>0 đ</strong>
+                    <strong>{formatVND(liveDebtInfo.currentBalance)} đ</strong>
                   </div>
                 </div>
               </div>
@@ -4917,6 +4957,7 @@ export function PurchaseReturnModal({
   onSubmit,
   onOpenSupplierModal,
 }: PurchaseReturnModalProps) {
+  useSyncLivePurchaseCatalogs();
   // Option bar (Image 5)
   const [returnOption, setReturnOption] = useState<"debt_reduction" | "cash">("debt_reduction");
   const [returnFromStock, setReturnFromStock] = useState(true);
@@ -5428,6 +5469,7 @@ export function PurchaseDiscountModal({
   purchaseSources = [],
   sourceCatalog,
 }: PurchaseDiscountModalProps) {
+  useSyncLivePurchaseCatalogs();
   // Option bar states (Matching Screenshots 1, 2, 3, 4)
   const [discountOption, setDiscountOption] = useState<"debt_reduction" | "cash">("debt_reduction");
   const [reduceStockValue, setReduceStockValue] = useState(true);
@@ -9035,6 +9077,7 @@ export function PurchaseServiceModal({
   onSubmit,
   onOpenSupplierModal,
 }: PurchaseServiceModalProps) {
+  useSyncLivePurchaseCatalogs();
   // Top bar options
   const [paymentStatus, setPaymentStatus] = useState<"unpaid" | "paid">("unpaid");
   const [paymentMethod, setPaymentMethod] = useState<string>("Tiền mặt");
@@ -10374,6 +10417,7 @@ export function PurchaseMultiInvoiceModal({
   onSubmit,
   onOpenSupplierModal,
 }: PurchaseMultiInvoiceModalProps) {
+  useSyncLivePurchaseCatalogs();
   // Top bar options
   const [purchaseKind, setPurchaseKind] = useState<PurchaseVoucherTemplate>(
     "Mua hàng trong nước nhập kho"

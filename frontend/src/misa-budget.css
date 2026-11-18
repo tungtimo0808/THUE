@@ -40,18 +40,23 @@
 
 .misa-budget-select {
   height: 32px;
-  padding: 0 12px;
+  padding: 0 32px 0 12px;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
-  background: #ffffff;
+  background-color: #ffffff;
   font-size: 13px;
+  line-height: 30px;
   color: #1e293b;
   outline: none;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: inline-block;
+  max-width: 100%;
   transition: border-color 0.15s;
+}
+
+.misa-budget-charts-bar .misa-budget-select {
+  width: 280px;
+  max-width: 100%;
 }
 
 .misa-budget-select:hover {
@@ -108,11 +113,13 @@
 }
 
 .misa-budget-btn-custom {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   height: 32px;
   padding: 0 14px;
+  line-height: 1;
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
@@ -179,7 +186,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px 8px;
+  padding: 12px 18px;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -191,10 +198,11 @@
 }
 
 .misa-budget-card-unit {
-  font-size: 12px;
+  font-size: 11.5px;
   color: #64748b;
-  text-align: right;
-  margin-top: 2px;
+  text-align: center;
+  line-height: 1.2;
+  margin-top: 0;
 }
 
 .misa-budget-card-body {
@@ -283,7 +291,9 @@
 .misa-budget-chart-header-right {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .misa-budget-bar-canvas {
@@ -382,6 +392,11 @@
 .misa-budget-btn-primary {
   height: 36px;
   padding: 0 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1;
   background: var(--brand);
   color: #ffffff;
   border: none;
@@ -401,8 +416,12 @@
 .misa-budget-landing-bottom-btn {
   position: absolute;
   bottom: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 32px;
   padding: 0 18px;
+  line-height: 1;
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
@@ -557,8 +576,13 @@
 }
 
 .misa-budget-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 34px;
   padding: 0 18px;
+  line-height: 1;
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 4px;

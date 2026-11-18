@@ -58,7 +58,7 @@ const OPENING_CATEGORIES: OpeningCategory[] = [
     id: "accounts",
     title: "Số dư tài khoản",
     heading: "Để bắt đầu một năm tài chính mới, bạn cần nhập số dư đầu kỳ cho các tài khoản",
-    catalogLink: "/directory/accounting",
+    catalogLink: "/directory?directory=Hệ thống tài khoản",
     catalogName: "Danh mục Hệ thống tài khoản",
     tooltipText: "Nhấn vào đây để nhập số dư đầu kì của tài khoản",
     color: "var(--brand)",
@@ -67,7 +67,7 @@ const OPENING_CATEGORIES: OpeningCategory[] = [
     id: "bank",
     title: "Số dư TK ngân hàng",
     heading: "Để bắt đầu một năm tài chính mới, bạn cần nhập số dư đầu kỳ cho các tài khoản ngân hàng",
-    catalogLink: "/directory/bank-accounts",
+    catalogLink: "/directory?directory=Tài khoản ngân hàng",
     catalogName: "Danh mục Tài khoản ngân hàng",
     tooltipText: "Nhấn vào đây để nhập số dư đầu kì của tài khoản ngân hàng",
     color: "var(--brand)",
@@ -76,7 +76,7 @@ const OPENING_CATEGORIES: OpeningCategory[] = [
     id: "customers",
     title: "Công nợ khách hàng",
     heading: "Để bắt đầu một năm tài chính mới, bạn cần nhập số dư công nợ khách hàng",
-    catalogLink: "/directory/partners?type=customer",
+    catalogLink: "/directory?directory=Khách hàng",
     catalogName: "Danh mục Khách hàng",
     tooltipText: "Nhấn vào đây để nhập số dư đầu kì của công nợ khách hàng",
     color: "#10b981",
@@ -85,7 +85,7 @@ const OPENING_CATEGORIES: OpeningCategory[] = [
     id: "suppliers",
     title: "Công nợ nhà cung cấp",
     heading: "Để bắt đầu một năm tài chính mới, bạn cần nhập số dư công nợ đầu kỳ của các nhà cung cấp",
-    catalogLink: "/directory/partners?type=supplier",
+    catalogLink: "/directory?directory=Nhà cung cấp",
     catalogName: "Danh mục Nhà cung cấp",
     tooltipText: "Nhấn vào đây để nhập số dư đầu kì của công nợ nhà cung cấp",
     color: "#f59e0b",
@@ -94,7 +94,7 @@ const OPENING_CATEGORIES: OpeningCategory[] = [
     id: "employees",
     title: "Công nợ nhân viên",
     heading: "Để bắt đầu một năm tài chính mới, bạn cần nhập số dư công nợ đầu kỳ của các nhân viên",
-    catalogLink: "/directory/organization",
+    catalogLink: "/directory?directory=Nhân viên",
     catalogName: "Danh mục Nhân viên",
     tooltipText: "Nhấn vào đây để nhập số dư đầu kì của công nợ nhân viên",
     color: "#6366f1",
@@ -103,7 +103,7 @@ const OPENING_CATEGORIES: OpeningCategory[] = [
     id: "inventory",
     title: "Tồn kho vật tư, hàng hóa và CCDC",
     heading: "Để bắt đầu một năm tài chính mới, bạn cần nhập số dư tồn kho đầu kỳ của các vật tư, hàng hóa trên từng kho",
-    catalogLink: "/directory/items",
+    catalogLink: "/directory?directory=Vật tư hàng hóa",
     catalogName: "Danh mục vật tư hàng hóa",
     tooltipText: "Nhấn vào đây để nhập tồn kho đầu kì của vật tư hàng hóa",
     color: "#059669",
@@ -139,7 +139,7 @@ const OPENING_CATEGORIES: OpeningCategory[] = [
     id: "wip",
     title: "Chi phí dở dang",
     heading: "Nhập ngay chi phí dở dang để bắt đầu một năm tài chính mới",
-    catalogLink: "/cost",
+    catalogLink: "/directory?directory=Đối tượng tập hợp chi phí",
     catalogName: "Danh mục Đối tượng tập hợp chi phí",
     tooltipText: "Nhấn vào đây để nhập chi phí dở dang đầu kỳ",
     color: "#0d9488",
@@ -406,13 +406,50 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   const [assetBalances, setAssetBalances] = useState<any[]>([]);
   const [prepaidBalances, setPrepaidBalances] = useState<any[]>([]);
   const [wipBalances, setWipBalances] = useState<any[]>([]);
+  const [detailManagedAccounts, setDetailManagedAccounts] = useState<any[]>([]);
+  const [accountModalSearch, setAccountModalSearch] = useState("");
   const [bankAccountCatalog, setBankAccountCatalog] = useState<any[]>([]);
   const [partyCatalog, setPartyCatalog] = useState<any[]>([]);
+  const [partyRoleCatalog, setPartyRoleCatalog] = useState<any[]>([]);
+  const [employeeCatalog, setEmployeeCatalog] = useState<any[]>([]);
   const [itemCatalog, setItemCatalog] = useState<any[]>([]);
   const [warehouseCatalog, setWarehouseCatalog] = useState<any[]>([]);
   const [departmentCatalog, setDepartmentCatalog] = useState<any[]>([]);
+  const [costCenterCatalog, setCostCenterCatalog] = useState<any[]>([]);
+  const [projectCatalog, setProjectCatalog] = useState<any[]>([]);
+  const [salesOrderCatalog, setSalesOrderCatalog] = useState<any[]>([]);
+  const [salesContractCatalog, setSalesContractCatalog] = useState<any[]>([]);
+  const [coaCatalog, setCoaCatalog] = useState<any[]>([]);
   // H3 & AF-04: departments and suppliers come from the live catalogs, not from sample lists
   const assetDepartmentOptions: Array<{ code: string; name: string }> = departmentCatalog.map((d: any) => ({ code: String(d.code || ""), name: String(d.name || "") }));
+
+  const customerCatalogOptions = useMemo(() => {
+    const active = partyCatalog.filter((c) => !c.status || c.status === "ACTIVE");
+    if (!partyRoleCatalog.length) return active;
+    const custIds = new Set<string>();
+    const vendorOnlyIds = new Set<string>();
+    for (const pr of partyRoleCatalog) {
+      const pid = String(pr.party || "");
+      if (pr.role_type === "CUSTOMER") custIds.add(pid);
+      if (pr.role_type === "VENDOR") vendorOnlyIds.add(pid);
+    }
+    const filtered = active.filter((c) => custIds.has(String(c.id)) || (!vendorOnlyIds.has(String(c.id)) && !/^(NCC|CCT|BHXH|KBNH)/i.test(String(c.code || ""))));
+    return filtered.length > 0 ? filtered : active;
+  }, [partyCatalog, partyRoleCatalog]);
+
+  const supplierCatalogOptions = useMemo(() => {
+    const active = partyCatalog.filter((s) => !s.status || s.status === "ACTIVE");
+    if (!partyRoleCatalog.length) return active;
+    const vendorIds = new Set<string>();
+    const custOnlyIds = new Set<string>();
+    for (const pr of partyRoleCatalog) {
+      const pid = String(pr.party || "");
+      if (pr.role_type === "VENDOR") vendorIds.add(pid);
+      if (pr.role_type === "CUSTOMER") custOnlyIds.add(pid);
+    }
+    const filtered = active.filter((s) => vendorIds.has(String(s.id)) || !custOnlyIds.has(String(s.id)));
+    return filtered.length > 0 ? filtered : active;
+  }, [partyCatalog, partyRoleCatalog]);
 
   // UC-GL-15: Metadata & Auxiliary Modal states (AF-03, AF-09, AF-10, AF-12, AF-13, EF-16, EF-19, EF-21)
   const [startDate, setStartDate] = useState("");
@@ -437,6 +474,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
   // Prepaid controlled form fields (Luồng I)
   const [prepaidCode, setPrepaidCode] = useState("");
   const [prepaidName, setPrepaidName] = useState("");
+  const [prepaidAccountCode, setPrepaidAccountCode] = useState("242");
   const [prepaidAmount, setPrepaidAmount] = useState<number>(0);
   const [prepaidAllocMonths, setPrepaidAllocMonths] = useState<number>(0);
 
@@ -468,6 +506,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
     if (typeof res.version === "number") setBalanceVersion(res.version);
     if (Array.isArray(res.supported_categories)) setSupportedCategories(res.supported_categories);
     setAccountRows(Array.isArray(res.accounts) ? res.accounts : []);
+    setDetailManagedAccounts(Array.isArray(res.detail_managed_accounts) ? res.detail_managed_accounts : []);
     setBankBalances(Array.isArray(res.bank) ? res.bank : []);
     setCustomerDebts(Array.isArray(res.customers) ? res.customers : []);
     setSupplierDebts(Array.isArray(res.suppliers) ? res.suppliers : []);
@@ -570,6 +609,13 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       load("/api/v1/master-data/items/"),
       load("/api/v1/master-data/warehouses/"),
       load("/api/v1/organization/departments/"),
+      load("/api/v1/organization/employees/"),
+      load("/api/v1/master-data/party-roles/"),
+      load("/api/v1/master-data/cost-centers/"),
+      load("/api/v1/master-data/projects/"),
+      load("/api/v1/sales/orders/"),
+      load("/api/v1/sales/contracts/"),
+      load("/api/v1/general-ledger/accounts/"),
     ]).then((results) => {
       if (!active) return;
       setBankAccountCatalog(results[0].status === "fulfilled" ? results[0].value : []);
@@ -577,6 +623,13 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       setItemCatalog(results[2].status === "fulfilled" ? results[2].value : []);
       setWarehouseCatalog(results[3].status === "fulfilled" ? results[3].value : []);
       setDepartmentCatalog(results[4].status === "fulfilled" ? results[4].value : []);
+      setEmployeeCatalog(results[5].status === "fulfilled" ? results[5].value : []);
+      setPartyRoleCatalog(results[6].status === "fulfilled" ? results[6].value : []);
+      setCostCenterCatalog(results[7].status === "fulfilled" ? results[7].value : []);
+      setProjectCatalog(results[8].status === "fulfilled" ? results[8].value : []);
+      setSalesOrderCatalog(results[9].status === "fulfilled" ? results[9].value : []);
+      setSalesContractCatalog(results[10].status === "fulfilled" ? results[10].value : []);
+      setCoaCatalog(results[11].status === "fulfilled" ? results[11].value : []);
     });
     return () => { active = false; };
   }, [companyId, token]);
@@ -614,6 +667,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
   const [inventoryItem, setInventoryItem] = useState("");
   const [inventoryWarehouse, setInventoryWarehouse] = useState("");
+  const [inventoryUnit, setInventoryUnit] = useState("Cái");
   const [inventoryQty, setInventoryQty] = useState(0);
   const [inventoryVal, setInventoryVal] = useState(0);
 
@@ -683,11 +737,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
     } else if (category === "inventory") {
       setInventoryItem(item.itemCode || "DT_IP15");
       setInventoryWarehouse(item.warehouse || "Kho 156");
+      setInventoryUnit(item.unit || "Cái");
       setInventoryQty(Number(item.quantity || 0));
       setInventoryVal(Number(item.amount || 0));
     } else if (category === "tools") {
       setToolVoucherNo(item.voucherNo || "OPN");
-      setToolVoucherDate(item.voucherDate || "01/01/2026");
+      setToolVoucherDate(item.voucherDate || startDate || "01/01/2026");
       setToolCode(item.code || "");
       setToolName(item.name || "");
       setToolUnit(item.unit || "Chiếc");
@@ -697,21 +752,26 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       setToolRemainingVal(String(item.remainingVal || 0));
       setToolAllocPeriod(String(item.allocPeriod || 12));
       setToolRemainingPeriod(String(item.remainingPeriod || 8));
+      setToolWaitingAccount(item.waitingAccount || "242");
     } else if (category === "assets") {
       setAssetVoucherNo(item.voucherNo || "OPN");
-      setAssetVoucherDate(item.voucherDate || "01/01/2026");
+      setAssetVoucherDate(item.voucherDate || startDate || "01/01/2026");
       setAssetCode(item.code || "");
       setAssetName(item.name || "");
       setAssetType(item.assetType || "03 - Phương tiện vận tải, truyền dẫn");
       setAssetDepartment(item.department || "P.GD - Phòng Giám đốc");
       setAssetCostAcc(item.costAcc || "2113");
       setAssetDeprAcc(item.deprAcc || "2141");
+      setAssetDeprStartDate(item.deprStartDate || item.voucherDate || startDate || "01/01/2026");
+      setAssetUsageTime(String(item.usageTime ?? 5));
+      setAssetRemainingTime(String(item.remainingTime ?? 3));
       setAssetOriginalCost(String(item.originalCost || 0));
       setAssetAccumDepr(String(item.accumDepr || 0));
       setAssetRemainingVal(String(item.remainingVal || 0));
     } else if (category === "prepaid") {
       setPrepaidCode(item.code || "");
       setPrepaidName(item.name || "");
+      setPrepaidAccountCode(item.accountCode || "242");
       setPrepaidAmount(Number(item.amount || 0));
       setPrepaidAllocMonths(Number(item.allocMonths || 12));
     } else if (category === "wip") {
@@ -864,20 +924,20 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
     const actionMode = andPrint ? "SAVE_AND_PRINT" : andAdd ? "SAVE_AND_ADD" : "SAVE_AND_CLOSE";
 
     if (type === "Số dư tài khoản") {
-      for (const r of accountRows) {
+      const managedCodes = detailManagedAccounts.map((d) => String(d.account || ""));
+      const cleanedRows = accountRows.filter((r) => {
+        const code = String(r.account || "").trim();
+        if (!code || r.isParent) return false;
+        if (managedCodes.some((mc) => mc && (code.startsWith(mc) || mc.startsWith(code)))) return false;
+        return (Number(r.debit) || 0) > 0 || (Number(r.credit) || 0) > 0 || (Array.isArray(r.details) && r.details.length > 0);
+      });
+      for (const r of cleanedRows) {
         if ((Number(r.debit) || 0) < 0 || (Number(r.credit) || 0) < 0) {
           notify?.(`Tài khoản ${r.account} không được có Dư Nợ hoặc Dư Có âm.`);
           return;
         }
       }
-      if (!await persistOpening("", { category: "accounts", items: accountRows, action_mode: actionMode })) return;
-      const totalD = accountRows.reduce((s, r) => s + (Number(r.debit) || 0), 0);
-      const totalC = accountRows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
-      if (totalD !== totalC) {
-        notify?.(`Lưu số dư tài khoản thành công. Cảnh báo: Tổng Dư Nợ và Tổng Dư Có đang lệch ${formatOpeningMoney(Math.abs(totalD - totalC))} đ.`);
-      } else {
-        notify?.("Lưu số dư tài khoản thành công.");
-      }
+      if (!await persistOpening("", { category: "accounts", items: cleanedRows, action_mode: actionMode })) return;
       if (andPrint) handlePrintCategory("accounts");
       if (!andAdd) setActiveModal(null);
       return;
@@ -1007,17 +1067,19 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
         notify?.("Số dư phải là số hợp lệ và không được âm.");
         return;
       }
+      const empCode = employeeName.split(" - ")[0]?.trim() || employeeName;
+      const empObj = employeeCatalog.find((e) => String(e.employee_code || e.code) === empCode);
+      const existingEmp = employeeDebts.find((e) => e.id === editingItemId || e.code === empCode);
       const newEmp = {
         id: editingItemId || ("emp-" + Date.now()),
-        code: employeeName.split(" - ")[0] || employeeName,
-        name: employeeName === "NV001" ? "Nguyễn Văn An" : employeeName === "NV002" ? "Lê Thị Bình" : employeeName,
+        code: empObj ? String(empObj.employee_code || empObj.code) : empCode,
+        name: empObj ? String(empObj.full_name || empObj.name) : (existingEmp?.name || employeeName.split(" - ")[1] || empCode),
         accCode: employeeAccCode || "141",
         debit: Number(employeeDebit) || 0,
         credit: Number(employeeCredit) || 0,
-        reason: "Số dư công nợ nhân viên đầu kỳ",
+        reason: existingEmp?.reason || "Số dư công nợ nhân viên đầu kỳ",
       };
       if (!await persistOpening("save-item/", { category: "employees", item: newEmp, editing_id: editingItemId, action_mode: actionMode })) return;
-      notify?.(`Đã lưu thành công công nợ nhân viên ${newEmp.name}!`);
       setEmployeeDebit(0);
       setEmployeeCredit(0);
       setEditingItemId(null);
@@ -1035,18 +1097,18 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
         notify?.("Số lượng tồn và giá trị tồn không hợp lệ hoặc âm.");
         return;
       }
+      const matchedItem = itemCatalog.find((row) => row.code === inventoryItem);
       const newInv = {
         id: editingItemId || `inv-${inventoryItem}-${inventoryWarehouse}`,
         itemCode: inventoryItem,
-        itemName: itemCatalog.find((row) => row.code === inventoryItem)?.name || inventoryItem,
+        itemName: matchedItem?.name || inventoryItem,
         warehouse: inventoryWarehouse,
-        unit: itemCatalog.find((row) => row.code === inventoryItem)?.unit_name || "",
+        unit: matchedItem?.unit_name || matchedItem?.uom_name || inventoryUnit || "Cái",
         quantity: Number(inventoryQty) || 0,
         unitPrice: inventoryQty > 0 ? Math.round(inventoryVal / inventoryQty) : inventoryVal,
         amount: Number(inventoryVal) || 0,
       };
       if (!await persistOpening("save-item/", { category: "inventory", item: newInv, editing_id: editingItemId, action_mode: actionMode })) return;
-      notify?.(`Đã lưu thành công tồn kho vật tư hàng hóa ${newInv.itemCode}!`);
       setEditingItemId(null);
       if (andPrint) handlePrintCategory("inventory");
       if (!andAdd) setActiveModal(null);
@@ -1066,13 +1128,18 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
         id: editingItemId || prepaidCode.trim(),
         code: prepaidCode.trim(),
         name: prepaidName.trim(),
+        accountCode: prepaidAccountCode || "242",
         amount: Number(prepaidAmount),
         allocMonths: Number(prepaidAllocMonths),
         opening_date: startDate,
       };
       if (!await persistOpening("save-item/", { category: "prepaid", item: newPrepaid, editing_id: editingItemId, action_mode: actionMode })) return;
-      notify?.(`Đã lưu chi phí trả trước đầu kỳ ${newPrepaid.code} thành công!`);
       setEditingItemId(null);
+      if (andAdd) {
+        setPrepaidCode("");
+        setPrepaidName("");
+        setPrepaidAmount(0);
+      }
       if (andPrint) handlePrintCategory("prepaid");
       if (!andAdd) setActiveModal(null);
       return;
@@ -1197,17 +1264,10 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               }}
               onClick={(e) => {
                 e.preventDefault();
-                notify?.(
-                  `Mở ${
-                    wipSubtab === "Công trình"
-                      ? "Danh mục Công trình"
-                      : wipSubtab === "Đơn hàng"
-                      ? "Đơn hàng"
-                      : wipSubtab === "Hợp đồng"
-                      ? "Hợp đồng"
-                      : "Danh mục Đối tượng tập chi phí"
-                  }...`
-                );
+                if (wipSubtab === "Công trình") navigate("/directory?directory=Công trình");
+                else if (wipSubtab === "Đơn hàng") navigate("/sales/orders");
+                else if (wipSubtab === "Hợp đồng") navigate("/sales/contracts");
+                else navigate("/directory?directory=Đối tượng tập hợp chi phí");
               }}
             >
               <RotateCcw size={13} color="var(--brand)" />
@@ -1238,7 +1298,9 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               }}
               onClick={(e) => {
                 e.preventDefault();
-                notify?.(`Đang mở ${activeCategory?.catalogName}...`);
+                if (activeCategory?.catalogLink) {
+                  navigate(activeCategory.catalogLink);
+                }
               }}
             >
               <RotateCcw size={13} color="var(--brand)" />
@@ -1648,20 +1710,24 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
 
         {/* Category: Số dư tài khoản */}
         {activeCategoryId === "accounts" && (() => {
-          const totalD = accountRows.reduce((s, r) => s + (Number(r.debit) || 0), 0);
-          const totalC = accountRows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
+          const combinedAccounts = [
+            ...accountRows.map((a) => ({ ...a, isDetailManaged: false })),
+            ...detailManagedAccounts.map((d) => ({ ...d, isDetailManaged: true })),
+          ].sort((x, y) => String(x.account || "").localeCompare(String(y.account || "")));
+          const totalD = combinedAccounts.reduce((s, r) => s + (Number(r.debit) || 0), 0);
+          const totalC = combinedAccounts.reduce((s, r) => s + (Number(r.credit) || 0), 0);
           const isBalanced = totalD === totalC;
           return (
             <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
                 <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
-                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Nợ đầu kỳ</span>
+                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Nợ đầu kỳ (Toàn bộ Sổ Cái)</span>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "#16a34a", marginTop: 4 }}>
                     {formatOpeningMoney(totalD)} đ
                   </div>
                 </div>
                 <div style={{ padding: "12px 20px", borderRight: "1px solid #e2e8f0" }}>
-                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Có đầu kỳ</span>
+                  <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>Tổng Dư Có đầu kỳ (Toàn bộ Sổ Cái)</span>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "#16a34a", marginTop: 4 }}>
                     {formatOpeningMoney(totalC)} đ
                   </div>
@@ -1690,18 +1756,32 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                       <th style={{ padding: "10px 14px", textAlign: "left", width: 50 }}>STT</th>
                       <th style={{ padding: "10px 14px", textAlign: "left", width: 140 }}>Số tài khoản</th>
                       <th style={{ padding: "10px 14px", textAlign: "left" }}>Tên tài khoản</th>
-                      <th style={{ padding: "10px 14px", textAlign: "right", width: 180 }}>Dư Nợ đầu kỳ (VNĐ)</th>
-                      <th style={{ padding: "10px 14px", textAlign: "right", width: 180 }}>Dư Có đầu kỳ (VNĐ)</th>
+                      <th style={{ padding: "10px 14px", textAlign: "left", width: 220 }}>Nguồn dữ liệu</th>
+                      <th style={{ padding: "10px 14px", textAlign: "right", width: 170 }}>Dư Nợ đầu kỳ (VNĐ)</th>
+                      <th style={{ padding: "10px 14px", textAlign: "right", width: 170 }}>Dư Có đầu kỳ (VNĐ)</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {accountRows
-                      .filter((a) => !searchTerm || a.account.includes(searchTerm) || a.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                    {combinedAccounts
+                      .filter((a) => !searchTerm || String(a.account || "").includes(searchTerm) || String(a.name || "").toLowerCase().includes(searchTerm.toLowerCase()))
                       .map((a, i) => (
-                        <tr key={a.account || i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <tr key={`${a.account}-${a.isDetailManaged ? "det" : "dir"}-${i}`} style={{ borderBottom: "1px solid #f1f5f9", background: a.isDetailManaged ? "#f8fafc" : "#ffffff" }}>
                           <td style={{ padding: "10px 14px", color: "#64748b" }}>{i + 1}</td>
                           <td style={{ padding: "10px 14px", fontWeight: 700, color: "var(--brand)" }}>{a.account}</td>
                           <td style={{ padding: "10px 14px", color: "#1e293b", fontWeight: 500 }}>{a.name}</td>
+                          <td style={{ padding: "10px 14px" }}>
+                            {a.isDetailManaged ? (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCategory(a.managed_by)}
+                                style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8", borderRadius: 4, padding: "2px 8px", fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}
+                              >
+                                Chi tiết: {a.managed_by_title} ↗
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: 12, color: "#64748b" }}>Nhập trực tiếp</span>
+                            )}
+                          </td>
                           <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 600, color: a.debit > 0 ? "#16a34a" : "#94a3b8" }}>
                             {formatOpeningMoney(a.debit)}
                           </td>
@@ -2092,30 +2172,40 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 <thead>
                   <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1", color: "#334155" }}>
                     <th style={{ padding: "10px 14px", textAlign: "left", width: 50 }}>STT</th>
-                    <th style={{ padding: "10px 14px", textAlign: "left", width: 170 }}>Hình thức theo dõi</th>
-                    <th style={{ padding: "10px 14px", textAlign: "left", width: 120 }}>Mã đối tượng</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 165 }}>Hình thức theo dõi</th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", width: 115 }}>Mã đối tượng</th>
                     <th style={{ padding: "10px 14px", textAlign: "left" }}>Tên đối tượng / Công trình / Đơn hàng / HĐ</th>
-                    <th style={{ padding: "10px 14px", textAlign: "right", width: 140 }}>CP NVL trực tiếp</th>
-                    <th style={{ padding: "10px 14px", textAlign: "right", width: 140 }}>CP nhân công</th>
-                    <th style={{ padding: "10px 14px", textAlign: "right", width: 140 }}>CP sản xuất chung</th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", width: 90 }}>Xóa</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 125 }}>CP NVL trực tiếp</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 120 }}>CP nhân công</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 120 }}>CP máy TC</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 120 }}>CP SX chung</th>
+                    <th style={{ padding: "10px 14px", textAlign: "right", width: 135 }}>Tổng chi phí</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", width: 105 }}>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {wipBalances.map((w, i) => (
-                    <tr key={w.id || w.code || i} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "10px 14px", color: "#64748b" }}>{i + 1}</td>
-                      <td style={{ padding: "10px 14px", color: "var(--brand)", fontWeight: 600 }}>{w.trackingMode || wipSubtab}</td>
-                      <td style={{ padding: "10px 14px", fontWeight: 700, color: "var(--brand)" }}>{w.code}</td>
-                      <td style={{ padding: "10px 14px", fontWeight: 500, color: "#1e293b" }}>{w.name || w.desc || "-"}</td>
-                      <td style={{ padding: "10px 14px", textAlign: "right" }}>{formatOpeningMoney(w.rawMaterial)}</td>
-                      <td style={{ padding: "10px 14px", textAlign: "right" }}>{formatOpeningMoney(w.labor)}</td>
-                      <td style={{ padding: "10px 14px", textAlign: "right" }}>{formatOpeningMoney(w.general)}</td>
-                      <td style={{ padding: "10px 14px", textAlign: "center" }}>
-                        <button type="button" onClick={() => handleDeleteOpeningItem("wip", w.code || w.id)} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
-                      </td>
-                    </tr>
-                  ))}
+                  {wipBalances.map((w, i) => {
+                    const rowSum = (Number(w.rawMaterial) || 0) + (Number(w.labor) || 0) + (Number(w.machinery) || 0) + (Number(w.general) || 0);
+                    return (
+                      <tr key={w.id || w.code || i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "10px 14px", color: "#64748b" }}>{i + 1}</td>
+                        <td style={{ padding: "10px 14px", color: "var(--brand)", fontWeight: 600 }}>{w.trackingMode || wipSubtab}</td>
+                        <td style={{ padding: "10px 14px", fontWeight: 700, color: "var(--brand)" }}>{w.code}</td>
+                        <td style={{ padding: "10px 14px", fontWeight: 500, color: "#1e293b" }}>{w.name || w.desc || "-"}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right" }}>{formatOpeningMoney(w.rawMaterial)}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right" }}>{formatOpeningMoney(w.labor)}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right" }}>{formatOpeningMoney(w.machinery)}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right" }}>{formatOpeningMoney(w.general)}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#059669" }}>{formatOpeningMoney(rowSum)} đ</td>
+                        <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                          <div style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                            <button type="button" onClick={() => handleEditOpeningItem("wip", w)} style={{ background: "transparent", border: "none", color: "var(--brand)", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>Sửa</button>
+                            <button type="button" onClick={() => handleDeleteOpeningItem("wip", w.code || w.id)} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}><Trash2 size={14} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -2127,26 +2217,38 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       {/* MODAL 1: SỐ DƯ TÀI KHOẢN (FULL-SCREEN TABLE ENTRY)                         */}
       {/* ========================================================================= */}
       {activeModal === "accounts" && (
-        <div className="misa-opening-modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="misa-opening-modal large" style={{ maxWidth: 1040 }} onClick={(e) => e.stopPropagation()}>
+        <div className="misa-opening-modal-overlay">
+          <div className="misa-opening-modal large" style={{ maxWidth: 1380, width: "min(1380px, 96vw)" }} onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
               <h3 className="misa-opening-modal-title">Nhập số dư tài khoản</h3>
               <button type="button" className="misa-opening-close-btn" onClick={() => setActiveModal(null)}>
                 <X size={18} />
               </button>
             </div>
-            <div className="misa-opening-modal-body" style={{ maxHeight: 520 }}>
+            <div className="misa-opening-modal-body" style={{ maxHeight: "calc(92vh - 125px)" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <div style={{ position: "relative", width: 260 }}>
                   <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
                   <input
                     type="text"
+                    value={accountModalSearch}
+                    onChange={(e) => setAccountModalSearch(e.target.value)}
                     placeholder="Nhập từ khóa tìm kiếm"
                     className="misa-opening-input"
                     style={{ paddingLeft: 32, width: "100%" }}
                   />
                 </div>
+                <span style={{ fontSize: 12, color: "#64748b" }}>
+                  Các TK quản lý theo sổ chi tiết (112, 131, 141, 15x, 21x, 242, 331) được tự động tổng hợp từ các tab chi tiết.
+                </span>
               </div>
+              <datalist id="opening-coa-options">
+                {coaCatalog
+                  .filter((acc) => acc.status === "ACTIVE" && acc.is_postable && ["1", "2", "3", "4"].includes(String(acc.code || "").charAt(0)))
+                  .map((acc) => (
+                    <option key={acc.code} value={acc.code}>{acc.name}</option>
+                  ))}
+              </datalist>
 
               <div style={{ overflowX: "auto", width: "100%" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, border: "1px solid #cbd5e1" }}>
@@ -2156,14 +2258,49 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                       <th style={{ padding: "8px 12px", textAlign: "left" }}>Tên tài khoản</th>
                       <th style={{ padding: "8px 12px", textAlign: "right", width: 150 }}>Dư Nợ</th>
                       <th style={{ padding: "8px 12px", textAlign: "right", width: 150 }}>Dư Có</th>
-                      <th style={{ padding: "8px 12px", textAlign: "center", width: 120 }}>Chi tiết số dư</th>
+                      <th style={{ padding: "8px 12px", textAlign: "center", width: 150 }}>Chi tiết số dư</th>
                       <th style={{ padding: "8px 12px", width: 40 }}></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {accountRows.map((row, idx) => (
+                    {detailManagedAccounts
+                      .filter((d) => !accountModalSearch || String(d.account || "").includes(accountModalSearch) || String(d.name || "").toLowerCase().includes(accountModalSearch.toLowerCase()))
+                      .map((d) => (
+                        <tr key={`det-${d.account}`} style={{ borderBottom: "1px solid #f1f5f9", background: "#f8fafc" }}>
+                          <td style={{ padding: "6px 12px", fontWeight: 700, color: "#475569" }}>{d.account}</td>
+                          <td style={{ padding: "6px 12px", color: "#475569" }}>{d.name}</td>
+                          <td style={{ padding: "6px 12px", textAlign: "right", fontWeight: 600, color: "#16a34a" }}>{formatOpeningMoney(d.debit)}</td>
+                          <td style={{ padding: "6px 12px", textAlign: "right", fontWeight: 600, color: "#dc2626" }}>{formatOpeningMoney(d.credit)}</td>
+                          <td colSpan={2} style={{ padding: "6px 12px", textAlign: "center" }}>
+                            <button
+                              type="button"
+                              onClick={() => { setActiveModal(null); handleOpenCategory(d.managed_by); }}
+                              style={{ background: "transparent", border: "none", color: "var(--brand)", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+                            >
+                              {d.managed_by_title} ↗
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    {accountRows.map((row, idx) => {
+                      if (accountModalSearch && !String(row.account || "").includes(accountModalSearch) && !String(row.name || "").toLowerCase().includes(accountModalSearch.toLowerCase())) {
+                        return null;
+                      }
+                      return (
                       <tr key={`${row.account}-${idx}`} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "6px 12px", fontWeight: 600 }}><input className="misa-opening-input" aria-label={`Số tài khoản dòng ${idx + 1}`} value={row.account || ""} onChange={(e) => setAccountRows(accountRows.map((item, i) => i === idx ? { ...item, account: e.target.value } : item))} /></td>
+                        <td style={{ padding: "6px 12px", fontWeight: 600 }}>
+                          <input
+                            list="opening-coa-options"
+                            className="misa-opening-input"
+                            aria-label={`Số tài khoản dòng ${idx + 1}`}
+                            value={row.account || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const matchedAcc = coaCatalog.find((acc) => String(acc.code) === val.trim());
+                              setAccountRows(accountRows.map((item, i) => i === idx ? { ...item, account: val, name: matchedAcc ? String(matchedAcc.name) : item.name } : item));
+                            }}
+                          />
+                        </td>
                         <td style={{ padding: "6px 12px" }}><input className="misa-opening-input" aria-label={`Tên tài khoản dòng ${idx + 1}`} value={row.name || ""} onChange={(e) => setAccountRows(accountRows.map((item, i) => i === idx ? { ...item, name: e.target.value } : item))} /></td>
                         <td style={{ padding: "6px 12px" }}>
                           <input
@@ -2220,14 +2357,15 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                     <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
-                      <td colSpan={2} style={{ padding: "8px 12px" }}>Tổng</td>
+                      <td colSpan={2} style={{ padding: "8px 12px" }}>Tổng cộng toàn bảng cân đối</td>
                       <td style={{ padding: "8px 12px", textAlign: "right" }}>
-                        {accountRows.reduce((a, b) => a + b.debit, 0).toLocaleString("vi-VN")}
+                        {(accountRows.reduce((a, b) => a + (Number(b.debit) || 0), 0) + detailManagedAccounts.reduce((a, b) => a + (Number(b.debit) || 0), 0)).toLocaleString("vi-VN")}
                       </td>
                       <td style={{ padding: "8px 12px", textAlign: "right" }}>
-                        {accountRows.reduce((a, b) => a + b.credit, 0).toLocaleString("vi-VN")}
+                        {(accountRows.reduce((a, b) => a + (Number(b.credit) || 0), 0) + detailManagedAccounts.reduce((a, b) => a + (Number(b.credit) || 0), 0)).toLocaleString("vi-VN")}
                       </td>
                       <td colSpan={2}></td>
                     </tr>
@@ -2332,7 +2470,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       {/* MODAL 2: SỐ DƯ TÀI KHOẢN NGÂN HÀNG                                        */}
       {/* ========================================================================= */}
       {activeModal === "bank" && (
-        <div className="misa-opening-modal-overlay" onClick={() => setActiveModal(null)}>
+        <div className="misa-opening-modal-overlay">
           <div className="misa-opening-modal" onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
               <h3 className="misa-opening-modal-title">Số dư tài khoản ngân hàng</h3>
@@ -2357,7 +2495,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     <option value="">-- Chọn số tài khoản ngân hàng --</option>
                     {bankAccountCatalog.filter((row) => row.status === "ACTIVE").map((row) => <option key={row.id} value={row.account_number}>{row.account_number} - {row.bank_name} ({row.currency_code})</option>)}
                   </select>
-                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/company-bank-accounts")} style={{ width: 34, padding: 0, justifyContent: "center" }}>
+                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Tài khoản ngân hàng")} style={{ width: 34, padding: 0, justifyContent: "center" }}>
                     +
                   </button>
                 </div>
@@ -2404,7 +2542,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       {/* MODAL 3: CÔNG NỢ KHÁCH HÀNG (EXPANDABLE SECTIONS)                        */}
       {/* ========================================================================= */}
       {activeModal === "customers" && (
-        <div className="misa-opening-modal-overlay" onClick={() => setActiveModal(null)}>
+        <div className="misa-opening-modal-overlay">
           <div className="misa-opening-modal large" onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
               <h3 className="misa-opening-modal-title">Nhập chi tiết công nợ khách hàng</h3>
@@ -2413,7 +2551,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 <X size={18} color="#64748b" style={{ cursor: "pointer" }} onClick={() => setActiveModal(null)} />
               </div>
             </div>
-            <div className="misa-opening-modal-body" style={{ maxHeight: 520 }}>
+            <div className="misa-opening-modal-body" style={{ maxHeight: "calc(92vh - 125px)" }}>
               <div className="misa-opening-form-row">
                 <div className="misa-opening-field" style={{ flex: 1 }}>
                   <label className="misa-opening-label">Số tài khoản <span style={{ color: "#ef4444" }}>*</span></label>
@@ -2430,7 +2568,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   <div style={{ display: "flex", gap: 6 }}>
                     <select aria-label="Khách hàng đầu kỳ" className="misa-opening-select" style={{ flex: 1 }} value={partnerName} onChange={(e) => setPartnerName(e.target.value)}>
                       <option value="">-- Chọn khách hàng --</option>
-                      {partyCatalog.filter((c) => c.status === "ACTIVE").map((c) => (
+                      {customerCatalogOptions.map((c) => (
                         <option key={c.code} value={c.code}>
                           {c.code} - {c.name}
                         </option>
@@ -2470,7 +2608,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                             <th style={{ textAlign: "right" }}>Số còn phải thu</th>
                             <th style={{ textAlign: "right" }}>Số thu trước</th>
                             <th>Nhân viên</th>
-                            <th style={{ width: 30 }}></th>
+                            <th style={{ width: 46 }}></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2512,7 +2650,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                             <th>Hợp đồng bán</th>
                             <th style={{ textAlign: "right" }}>Dư Nợ</th>
                             <th style={{ textAlign: "right" }}>Dư Có</th>
-                            <th style={{ width: 30 }}></th>
+                            <th style={{ width: 46 }}></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2548,7 +2686,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       {/* MODAL 4: CÔNG NỢ NHÀ CUNG CẤP                                              */}
       {/* ========================================================================= */}
       {activeModal === "suppliers" && (
-        <div className="misa-opening-modal-overlay" onClick={() => setActiveModal(null)}>
+        <div className="misa-opening-modal-overlay">
           <div className="misa-opening-modal large" onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
               <h3 className="misa-opening-modal-title">Nhập chi tiết công nợ nhà cung cấp</h3>
@@ -2557,7 +2695,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                 <X size={18} color="#64748b" style={{ cursor: "pointer" }} onClick={() => setActiveModal(null)} />
               </div>
             </div>
-            <div className="misa-opening-modal-body" style={{ maxHeight: 520 }}>
+            <div className="misa-opening-modal-body" style={{ maxHeight: "calc(92vh - 125px)" }}>
               <div className="misa-opening-form-row">
                 <div className="misa-opening-field" style={{ flex: 1.2 }}>
                   <label className="misa-opening-label">Số tài khoản <span style={{ color: "#ef4444" }}>*</span></label>
@@ -2576,7 +2714,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   <div style={{ display: "flex", gap: 6 }}>
                     <select className="misa-opening-select" style={{ flex: 1 }} value={supplierName} onChange={(e) => setSupplierName(e.target.value)}>
                       <option value="">-- Chọn nhà cung cấp --</option>
-                      {partyCatalog.filter((s) => s.status === "ACTIVE").map((s) => (
+                      {supplierCatalogOptions.map((s) => (
                         <option key={s.code} value={s.code}>
                           {s.code} - {s.name}
                         </option>
@@ -2614,7 +2752,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                             <th style={{ textAlign: "right" }}>Số còn phải trả</th>
                             <th style={{ textAlign: "right" }}>Số trả trước</th>
                             <th>Nhân viên</th>
-                            <th style={{ width: 30 }}></th>
+                            <th style={{ width: 46 }}></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2656,7 +2794,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                             <th>Hợp đồng mua</th>
                             <th style={{ textAlign: "right" }}>Dư Nợ</th>
                             <th style={{ textAlign: "right" }}>Dư Có</th>
-                            <th style={{ width: 30 }}></th>
+                            <th style={{ width: 46 }}></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2692,7 +2830,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       {/* MODAL 5: CÔNG NỢ NHÂN VIÊN                                                */}
       {/* ========================================================================= */}
       {activeModal === "employees" && (
-        <div className="misa-opening-modal-overlay" onClick={() => setActiveModal(null)}>
+        <div className="misa-opening-modal-overlay">
           <div className="misa-opening-modal large" onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
               <h3 className="misa-opening-modal-title">Nhập chi tiết công nợ nhân viên</h3>
@@ -2716,10 +2854,20 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   <div style={{ display: "flex", gap: 6 }}>
                     <select className="misa-opening-select" style={{ flex: 1 }} value={employeeName} onChange={(e) => setEmployeeName(e.target.value)}>
                       <option value="">-- Chọn nhân viên --</option>
-                      <option value="NV001">NV001 - Nguyễn Văn An (Phòng Kế toán)</option>
-                      <option value="NV002">NV002 - Lê Thị Bình (Phòng Kinh doanh)</option>
+                      {employeeCatalog
+                        .filter((emp) => !emp.status || emp.status === "ACTIVE")
+                        .map((emp) => {
+                          const code = String(emp.employee_code || emp.code || "");
+                          const fullName = String(emp.full_name || emp.name || "");
+                          const deptName = departmentCatalog.find((d) => String(d.id) === String(emp.department))?.name;
+                          return (
+                            <option key={emp.id || code} value={code}>
+                              {code} - {fullName}{deptName ? ` (${deptName})` : ""}
+                            </option>
+                          );
+                        })}
                     </select>
-                    <button type="button" className="misa-opening-btn-secondary" style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
+                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Nhân viên")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
                   </div>
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>
@@ -2745,7 +2893,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       {/* MODAL 6: TỒN KHO VẬT TƯ, HÀNG HÓA VÀ CCDC                                  */}
       {/* ========================================================================= */}
       {activeModal === "inventory" && (
-        <div className="misa-opening-modal-overlay" onClick={() => setActiveModal(null)}>
+        <div className="misa-opening-modal-overlay">
           <div className="misa-opening-modal" onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
               <h3 className="misa-opening-modal-title">Nhập chi tiết tồn kho vật tư hàng hóa</h3>
@@ -2758,11 +2906,23 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               <div className="misa-opening-field">
                 <label className="misa-opening-label">Hàng hóa <span style={{ color: "#ef4444" }}>*</span></label>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <select className="misa-opening-select" style={{ flex: 1 }} value={inventoryItem} onChange={(e) => setInventoryItem(e.target.value)}>
+                  <select
+                    className="misa-opening-select"
+                    style={{ flex: 1 }}
+                    value={inventoryItem}
+                    onChange={(e) => {
+                      const code = e.target.value;
+                      setInventoryItem(code);
+                      const found = itemCatalog.find((r) => r.code === code);
+                      if (found && (found.unit_name || found.uom_name)) {
+                        setInventoryUnit(String(found.unit_name || found.uom_name));
+                      }
+                    }}
+                  >
                     <option value="">-- Chọn hàng hóa, vật tư --</option>
                     {itemCatalog.filter((row) => row.status === "ACTIVE").map((row) => <option key={row.id} value={row.code}>{row.code} - {row.name}</option>)}
                   </select>
-                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/items")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
+                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Vật tư hàng hóa")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
                 </div>
               </div>
               <div className="misa-opening-field">
@@ -2772,16 +2932,20 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     <option value="">-- Chọn kho lưu trữ --</option>
                     {warehouseCatalog.filter((row) => row.status === "ACTIVE").map((row) => <option key={row.id} value={row.code}>{row.code} - {row.name}</option>)}
                   </select>
-                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/warehouses")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
+                  <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Kho")} style={{ width: 34, padding: 0, justifyContent: "center" }}>+</button>
                 </div>
               </div>
               <div className="misa-opening-form-row">
                 <div className="misa-opening-field">
                   <label className="misa-opening-label">Đơn vị tính</label>
-                  <select className="misa-opening-select">
-                    <option>Chiếc</option>
-                    <option>Bộ</option>
-                    <option>Hộp</option>
+                  <select className="misa-opening-select" value={inventoryUnit} onChange={(e) => setInventoryUnit(e.target.value)}>
+                    <option value="Cái">Cái</option>
+                    <option value="Chiếc">Chiếc</option>
+                    <option value="Bộ">Bộ</option>
+                    <option value="Hộp">Hộp</option>
+                    <option value="Cuộn">Cuộn</option>
+                    <option value="Kg">Kg</option>
+                    <option value="Lọ">Lọ</option>
                   </select>
                 </div>
                 <div className="misa-opening-field">
@@ -2819,13 +2983,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             justifyContent: "center",
             padding: 16,
           }}
-          onClick={() => setActiveModal(null)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
               width: "96vw",
-              maxWidth: 1280,
+              maxWidth: 1380,
               maxHeight: "92vh",
               background: "#ffffff",
               borderRadius: 6,
@@ -3537,13 +3700,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             justifyContent: "center",
             padding: 16,
           }}
-          onClick={() => setActiveModal(null)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
               width: "96vw",
-              maxWidth: 1260,
+              maxWidth: 1380,
               maxHeight: "94vh",
               background: "#ffffff",
               borderRadius: 6,
@@ -3678,7 +3840,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                       </select>
                       <button
                         type="button"
-                        onClick={() => notify?.("Thêm nhanh loại tài sản...")}
+                        onClick={() => navigate("/directory?directory=Loại tài sản cố định")}
                         title="Thêm nhanh loại tài sản"
                         style={{
                           border: "none",
@@ -4881,7 +5043,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           }}
                         >
                           <option value="">Chọn nhà cung cấp</option>
-                          {partyCatalog.filter((p: any) => ["SUPPLIER", "BOTH", "CUSTOMER_SUPPLIER"].includes(String(p.party_type || "").toUpperCase())).map((s: any) => (
+                          {supplierCatalogOptions.map((s: any) => (
                             <option key={s.code} value={s.code}>
                               {s.code} - {s.name}
                             </option>
@@ -4889,7 +5051,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         </select>
                         <button
                           type="button"
-                          onClick={() => notify?.("Thêm nhanh nhà cung cấp...")}
+                          onClick={() => navigate("/directory?directory=Nhà cung cấp")}
                           title="Thêm nhanh nhà cung cấp"
                           style={{
                             border: "none",
@@ -5189,13 +5351,12 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             justifyContent: "center",
             padding: 16,
           }}
-          onClick={() => setActiveModal(null)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
               width: "96vw",
-              maxWidth: 1280,
+              maxWidth: 1420,
               maxHeight: "92vh",
               background: "#ffffff",
               borderRadius: 6,
@@ -5272,6 +5433,26 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
               </div>
 
               {/* Data Table per Subtab Format */}
+              <datalist id="opening-wip-thcp-options">
+                {costCenterCatalog.map((c: any) => (
+                  <option key={c.code} value={c.code}>{c.name}</option>
+                ))}
+              </datalist>
+              <datalist id="opening-wip-project-options">
+                {projectCatalog.map((p: any) => (
+                  <option key={p.code} value={p.code}>{p.name}</option>
+                ))}
+              </datalist>
+              <datalist id="opening-wip-order-options">
+                {salesOrderCatalog.map((o: any) => (
+                  <option key={o.number || o.code} value={o.number || o.code}>{o.customer_name || o.description || ""}</option>
+                ))}
+              </datalist>
+              <datalist id="opening-wip-contract-options">
+                {salesContractCatalog.map((ct: any) => (
+                  <option key={ct.number || ct.code} value={ct.number || ct.code}>{ct.name || ct.customer_name || ""}</option>
+                ))}
+              </datalist>
               <div style={{ border: "1px solid #cbd5e1", borderRadius: 4, overflowX: "auto", width: "100%" }}>
                 {/* ========================================================================= */}
                 {/* FORMAT 1: ĐỐI TƯỢNG TẬP HỢP CHI PHÍ (Screenshot 1)                       */}
@@ -5295,7 +5476,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32, background: "#ffffff" }}>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                              <input className="misa-opening-input" aria-label={`Mã đối tượng THCP ${idx + 1}`} value={row.code} onChange={(e) => setWipThcpRows(wipThcpRows.map((item, i) => i === idx ? { ...item, code: e.target.value } : item))} />
+                              <input list="opening-wip-thcp-options" className="misa-opening-input" aria-label={`Mã đối tượng THCP ${idx + 1}`} value={row.code} onChange={(e) => { const v = e.target.value; const m = costCenterCatalog.find((c: any) => c.code === v); setWipThcpRows(wipThcpRows.map((item, i) => i === idx ? { ...item, code: v, name: m ? String(m.name || item.name) : item.name } : item)); }} />
                             </div>
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
@@ -5410,7 +5591,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                           <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32, background: "#ffffff" }}>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                               <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                                <input className="misa-opening-input" aria-label={`Mã công trình ${idx + 1}`} value={row.code} onChange={(e) => setWipProjectRows(wipProjectRows.map((item, i) => i === idx ? { ...item, code: e.target.value } : item))} />
+                                <input list="opening-wip-project-options" className="misa-opening-input" aria-label={`Mã công trình ${idx + 1}`} value={row.code} onChange={(e) => { const v = e.target.value; const m = projectCatalog.find((p: any) => p.code === v); setWipProjectRows(wipProjectRows.map((item, i) => i === idx ? { ...item, code: v, name: m ? String(m.name || item.name) : item.name } : item)); }} />
                               </div>
                             </td>
                             <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
@@ -5561,7 +5742,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32, background: "#ffffff" }}>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                              <input className="misa-opening-input" aria-label={`Mã đơn hàng ${idx + 1}`} value={row.code} onChange={(e) => setWipOrderRows(wipOrderRows.map((item, i) => i === idx ? { ...item, code: e.target.value } : item))} />
+                              <input list="opening-wip-order-options" className="misa-opening-input" aria-label={`Mã đơn hàng ${idx + 1}`} value={row.code} onChange={(e) => { const v = e.target.value; const m = salesOrderCatalog.find((o: any) => (o.number || o.code) === v); setWipOrderRows(wipOrderRows.map((item, i) => i === idx ? { ...item, code: v, customer: m ? String(m.customer_name || item.customer) : item.customer, date: m ? String(m.order_date || item.date) : item.date } : item)); }} />
                             </div>
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
@@ -5672,7 +5853,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0", height: 32, background: "#ffffff" }}>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1" }}>
                             <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                              <input className="misa-opening-input" aria-label={`Mã hợp đồng ${idx + 1}`} value={row.code} onChange={(e) => setWipContractRows(wipContractRows.map((item, i) => i === idx ? { ...item, code: e.target.value } : item))} />
+                              <input list="opening-wip-contract-options" className="misa-opening-input" aria-label={`Mã hợp đồng ${idx + 1}`} value={row.code} onChange={(e) => { const v = e.target.value; const m = salesContractCatalog.find((ct: any) => (ct.number || ct.code) === v); setWipContractRows(wipContractRows.map((item, i) => i === idx ? { ...item, code: v, name: m ? String(m.name || item.name) : item.name, customer: m ? String(m.customer_name || item.customer) : item.customer } : item)); }} />
                             </div>
                           </td>
                           <td style={{ padding: "2px 8px", borderRight: "1px dotted #cbd5e1", color: "#334155" }}>
@@ -5867,9 +6048,6 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   <span style={{ cursor: "pointer", padding: "0 4px", color: "#94a3b8" }}>&gt;|</span>
                 </div>
               </div>
-
-              {/* Scrollbar placeholder line */}
-              <div style={{ height: 6, background: "#cbd5e1", borderRadius: 3, marginTop: 14, opacity: 0.6 }} />
             </div>
 
             {/* Modal Footer */}
@@ -5916,6 +6094,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                     .map((r: any) => ({
                       ...r,
                       id: r.id || r.code,
+                      accountCode: r.accountCode || "154",
                       trackingMode: wipSubtab,
                     }));
                   if (validWip.length === 0) {
@@ -5950,7 +6129,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       {/* MODAL 10: CHI PHÍ TRẢ TRƯỚC ĐẦU KỲ                                        */}
       {/* ========================================================================= */}
       {activeModal === "prepaid" && (
-        <div className="misa-opening-modal-overlay" onClick={() => setActiveModal(null)}>
+        <div className="misa-opening-modal-overlay">
           <div className="misa-opening-modal large" onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
               <h3 className="misa-opening-modal-title">Khai báo chi phí trả trước đầu kỳ</h3>
@@ -5961,6 +6140,14 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             </div>
             <div className="misa-opening-modal-body">
               <div className="misa-opening-form-row">
+                <div className="misa-opening-field">
+                  <label className="misa-opening-label">TK chờ phân bổ *</label>
+                  <select className="misa-opening-select" value={prepaidAccountCode} onChange={(e) => setPrepaidAccountCode(e.target.value)}>
+                    <option value="242">242 - Chi phí trả trước</option>
+                    <option value="2421">2421 - Chi phí trả trước ngắn hạn</option>
+                    <option value="2422">2422 - Chi phí trả trước dài hạn</option>
+                  </select>
+                </div>
                 <div className="misa-opening-field">
                   <label className="misa-opening-label">Mã chi phí trả trước *</label>
                   <input type="text" className="misa-opening-input" value={prepaidCode} onChange={(e) => setPrepaidCode(e.target.value)} />
@@ -5982,7 +6169,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
             <div className="misa-opening-modal-footer">
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setActiveModal(null)}>Đóng</button>
               <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Chi phí trả trước", false, true)}>Lưu và In</button>
-              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Chi phí trả trước", false)}>Lưu và Đóng</button>
+              <button type="button" className="misa-opening-btn-secondary" onClick={() => handleSaveModal("Chi phí trả trước", false)}>Lưu</button>
+              <button type="button" className="misa-opening-btn-primary" onClick={() => handleSaveModal("Chi phí trả trước", true)}>Lưu và Thêm</button>
             </div>
           </div>
         </div>
@@ -5992,8 +6180,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       {/* AUXILIARY MODAL A: NHẬP SỐ DƯ TỪ EXCEL (AF-03, EF-18, BR41)               */}
       {/* ========================================================================= */}
       {excelModalOpen && (
-        <div className="misa-opening-modal-overlay" onClick={() => setExcelModalOpen(false)}>
-          <div className="misa-opening-modal large" style={{ maxWidth: 820 }} onClick={(e) => e.stopPropagation()}>
+        <div className="misa-opening-modal-overlay">
+          <div className="misa-opening-modal large" style={{ maxWidth: 880 }} onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
               <h3 className="misa-opening-modal-title">Nhập số dư ban đầu từ Excel – {activeCategory?.title}</h3>
               <X size={18} color="#64748b" style={{ cursor: "pointer" }} onClick={() => setExcelModalOpen(false)} />
@@ -6026,8 +6214,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       {/* AUXILIARY MODAL B: XEM DANH SÁCH CHỨNG TỪ SỐ DƯ ĐẦU KỲ (AF-09)             */}
       {/* ========================================================================= */}
       {voucherListModalOpen && (
-        <div className="misa-opening-modal-overlay" onClick={() => setVoucherListModalOpen(false)}>
-          <div className="misa-opening-modal large" style={{ maxWidth: 960 }} onClick={(e) => e.stopPropagation()}>
+        <div className="misa-opening-modal-overlay">
+          <div className="misa-opening-modal large" style={{ maxWidth: 1120 }} onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
               <h3 className="misa-opening-modal-title">Danh sách chứng từ / bản ghi số dư đầu kỳ</h3>
               <X size={18} color="#64748b" style={{ cursor: "pointer" }} onClick={() => setVoucherListModalOpen(false)} />
@@ -6073,8 +6261,8 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
       {/* AUXILIARY MODAL C: BẢN IN SỐ DƯ ĐẦU KỲ (AF-13, EF-17, BR34, BR35)         */}
       {/* ========================================================================= */}
       {printModalOpen && printPreviewData && (
-        <div className="misa-opening-modal-overlay" onClick={() => setPrintModalOpen(false)}>
-          <div className="misa-opening-modal large" style={{ maxWidth: 880 }} onClick={(e) => e.stopPropagation()}>
+        <div className="misa-opening-modal-overlay">
+          <div className="misa-opening-modal large" style={{ maxWidth: 1080 }} onClick={(e) => e.stopPropagation()}>
             <div className="misa-opening-modal-header">
               <h3 className="misa-opening-modal-title">
                 Bản in Bảng kê Số dư ban đầu – Mẫu {printPreviewData.form_code || "01-SĐĐK/TT99"} ({printPreviewData.circular_ref || "TT 99/2025/TT-BTC"})
@@ -6092,9 +6280,34 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                   <div><strong>Số dòng:</strong> {printPreviewData.row_count} bản ghi</div>
                 </div>
               </div>
-              <pre style={{ background: "#f8fafc", padding: 12, borderRadius: 6, border: "1px solid #e2e8f0", fontSize: 12, overflowX: "auto" }}>
-                {JSON.stringify(printPreviewData.rows || [], null, 2)}
-              </pre>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, border: "1px solid #cbd5e1" }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9", borderBottom: "1px solid #cbd5e1" }}>
+                    <th style={{ padding: "7px 10px", textAlign: "center", width: 44 }}>STT</th>
+                    <th style={{ padding: "7px 10px", textAlign: "left" }}>Mã / Số TK</th>
+                    <th style={{ padding: "7px 10px", textAlign: "left" }}>Tên đối tượng / Tài khoản / Hàng hóa</th>
+                    <th style={{ padding: "7px 10px", textAlign: "right" }}>Dư Nợ / Giá trị (VNĐ)</th>
+                    <th style={{ padding: "7px 10px", textAlign: "right" }}>Dư Có / HM lũy kế (VNĐ)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(printPreviewData.rows || []).map((r: any, idx: number) => {
+                    const code = r.account || r.accountNumber || r.code || r.itemCode || "-";
+                    const name = r.name || r.bankName || r.itemName || r.desc || "-";
+                    const debitVal = Number(r.debit ?? r.amountVnd ?? r.amount ?? r.originalCost ?? r.remainingVal ?? r.total ?? 0);
+                    const creditVal = Number(r.credit ?? r.accumDepr ?? 0);
+                    return (
+                      <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "6px 10px", textAlign: "center", color: "#64748b" }}>{idx + 1}</td>
+                        <td style={{ padding: "6px 10px", fontWeight: 600 }}>{code}</td>
+                        <td style={{ padding: "6px 10px" }}>{name}</td>
+                        <td style={{ padding: "6px 10px", textAlign: "right" }}>{formatOpeningMoney(debitVal)}</td>
+                        <td style={{ padding: "6px 10px", textAlign: "right" }}>{formatOpeningMoney(creditVal)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
             <div className="misa-opening-modal-footer">
               <button type="button" className="misa-opening-btn-secondary" onClick={() => setPrintModalOpen(false)}>Đóng</button>

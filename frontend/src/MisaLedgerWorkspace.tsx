@@ -1295,6 +1295,24 @@ export default function MisaLedgerWorkspace({
     setShowAddVoucherMenu(false);
   };
 
+  useEffect(() => {
+    const consumeQuickCreate = (raw?: string | null) => {
+      const target = raw || sessionStorage.getItem("sv_pending_quick_create");
+      if (target === "gl-voucher" || target === "gl-advance") {
+        try { sessionStorage.removeItem("sv_pending_quick_create"); } catch {}
+        if (target === "gl-voucher") {
+          openAddVoucherWithType("4. Khác");
+        } else {
+          setAddAdvanceRequestModalOpen(true);
+        }
+      }
+    };
+    consumeQuickCreate();
+    const onQuick = (ev: Event) => consumeQuickCreate((ev as CustomEvent)?.detail);
+    window.addEventListener("sv_quick_create", onQuick);
+    return () => window.removeEventListener("sv_quick_create", onQuick);
+  }, []);
+
   const handleGeneralVoucherAttachmentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -5725,13 +5743,16 @@ export default function MisaLedgerWorkspace({
         flexDirection: "column",
         flex: 1,
         minHeight: "100%",
+        minWidth: 0,
+        maxWidth: "100%",
+        boxSizing: "border-box",
         background: "#f4f5f8",
         position: "relative",
       }}
       onClick={handleBackdropClick}
     >
       {/* Main Tab Body */}
-      <div style={{ padding: "16px 20px 32px", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ padding: "16px 20px 32px", display: "flex", flexDirection: "column", gap: 16, minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }}>
         {/* ========================================================================= */}
         {/* TAB 1: QUY TRÌNH (Exact Image 1 & 2)                                      */}
         {/* ========================================================================= */}
@@ -7111,10 +7132,10 @@ export default function MisaLedgerWorkspace({
               </div>
             ) : (
               /* Synced Data Table View (UC-GL-01) */
-              <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: 20, width: "100%" }}>
+              <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: 20, width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }}>
                 {/* Toolbar */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", flex: "1 1 auto", minWidth: 0 }}>
                     <button
                       type="button"
                       onClick={() => setShowAdvanceRequestTable(false)}
@@ -7129,13 +7150,14 @@ export default function MisaLedgerWorkspace({
                         fontSize: 13,
                         color: "var(--brand)",
                         fontWeight: 600,
+                        whiteSpace: "nowrap",
                         cursor: "pointer",
                       }}
                     >
                       <span>← Quay lại luồng quy trình</span>
                     </button>
 
-                    <div style={{ position: "relative", width: 280 }}>
+                    <div style={{ position: "relative", flex: "1 1 200px", minWidth: 165, maxWidth: 280 }}>
                       <Search size={16} color="#94a3b8" style={{ position: "absolute", left: 10, top: 10 }} />
                       <input
                         type="text"
@@ -7220,8 +7242,8 @@ export default function MisaLedgerWorkspace({
                 </div>
 
                 {/* Table */}
-                <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <div style={{ width: "100%", minWidth: 0, maxWidth: "100%", overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                  <table style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>
                         <th style={{ padding: "10px 14px", width: 40 }}>
@@ -7501,7 +7523,7 @@ export default function MisaLedgerWorkspace({
         {/* TAB 3: CHỨNG TỪ NGHIỆP VỤ KHÁC (Exact Match to User Screenshot 1 & 2)     */}
         {/* ========================================================================= */}
         {currentTab === "transactions" && (
-          <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
+          <div style={{ width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
             {!showVoucherTable ? (
               /* LANDING / EMPTY STATE VIEW (Exact Match to Screenshot 1 & 2) */
               <div
@@ -7981,7 +8003,7 @@ export default function MisaLedgerWorkspace({
               </div>
             ) : (
               /* TABLE VIEW (when toggled via "Xem danh sách chứng từ") */
-              <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: 20 }}>
+              <div style={{ background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0", padding: 20, width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }}>
                 {/* 4 Modern Bento KPI Cards for General Ledger */}
                 <div
                   style={{
@@ -8018,16 +8040,16 @@ export default function MisaLedgerWorkspace({
                       >
                         <TrendingUp size={20} />
                       </div>
-                      <div>
+                      <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
                           Tổng phát sinh Nợ
                         </div>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", fontVariantNumeric: "tabular-nums" }}>
+                        <div style={{ fontSize: "clamp(15px, 1.35vw, 18px)", fontWeight: 700, color: "#1e293b", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                           {generalVouchers.reduce((s, v) => s + (Number(v.amount) || 0), 0).toLocaleString("vi-VN")} đ
                         </div>
                       </div>
                     </div>
-                    <span style={{ fontSize: 10.5, color: "#2563eb", background: "#dbeafe", padding: "2px 7px", borderRadius: 999, fontWeight: 600 }}>
+                    <span style={{ fontSize: 10.5, color: "#2563eb", background: "#dbeafe", padding: "2px 7px", borderRadius: 999, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
                       TK Loại 1 - 9
                     </span>
                   </div>
@@ -8042,9 +8064,11 @@ export default function MisaLedgerWorkspace({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
+                      gap: 8,
+                      minWidth: 0,
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                       <div
                         style={{
                           width: 38,
@@ -8059,16 +8083,16 @@ export default function MisaLedgerWorkspace({
                       >
                         <BookOpen size={20} />
                       </div>
-                      <div>
+                      <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
                           Tổng phát sinh Có
                         </div>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)", fontVariantNumeric: "tabular-nums" }}>
+                        <div style={{ fontSize: "clamp(15px, 1.35vw, 18px)", fontWeight: 700, color: "var(--brand)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                           {generalVouchers.reduce((s, v) => s + (Number(v.amount) || 0), 0).toLocaleString("vi-VN")} đ
                         </div>
                       </div>
                     </div>
-                    <span style={{ fontSize: 10.5, color: "var(--brand-ink)", background: "#eff6ff", padding: "2px 7px", borderRadius: 999, fontWeight: 600 }}>
+                    <span style={{ fontSize: 10.5, color: "var(--brand-ink)", background: "#eff6ff", padding: "2px 7px", borderRadius: 999, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
                       Cân đối Nợ = Có
                     </span>
                   </div>
@@ -8083,9 +8107,11 @@ export default function MisaLedgerWorkspace({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
+                      gap: 8,
+                      minWidth: 0,
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                       <div
                         style={{
                           width: 38,
@@ -8100,16 +8126,16 @@ export default function MisaLedgerWorkspace({
                       >
                         <Shield size={20} />
                       </div>
-                      <div>
+                      <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
                           Chênh lệch Nợ/Có
                         </div>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#059669" }}>
+                        <div style={{ fontSize: "clamp(15px, 1.35vw, 18px)", fontWeight: 700, color: "#059669", whiteSpace: "nowrap" }}>
                           0 đ (Khớp 100%)
                         </div>
                       </div>
                     </div>
-                    <span style={{ fontSize: 10.5, color: "var(--brand-ink)", background: "#eff6ff", padding: "2px 7px", borderRadius: 999, fontWeight: 600 }}>
+                    <span style={{ fontSize: 10.5, color: "var(--brand-ink)", background: "#eff6ff", padding: "2px 7px", borderRadius: 999, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
                       TT 99/2025/TT-BTC
                     </span>
                   </div>
@@ -8124,9 +8150,11 @@ export default function MisaLedgerWorkspace({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
+                      gap: 8,
+                      minWidth: 0,
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                       <div
                         style={{
                           width: 38,
@@ -8141,23 +8169,23 @@ export default function MisaLedgerWorkspace({
                       >
                         <Sparkles size={20} />
                       </div>
-                      <div>
+                      <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
                           Tiến độ ghi Sổ cái (GL)
                         </div>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#7c3aed" }}>
+                        <div style={{ fontSize: "clamp(15px, 1.35vw, 18px)", fontWeight: 700, color: "#7c3aed", whiteSpace: "nowrap" }}>
                           {generalVouchers.filter((v) => v.posted).length} / {generalVouchers.length} chứng từ
                         </div>
                       </div>
                     </div>
-                    <span style={{ fontSize: 10.5, color: "#7c3aed", background: "#ede9fe", padding: "2px 7px", borderRadius: 999, fontWeight: 600 }}>
+                    <span style={{ fontSize: 10.5, color: "#7c3aed", background: "#ede9fe", padding: "2px 7px", borderRadius: 999, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
                       Đã ghi sổ
                     </span>
                   </div>
                 </div>
                 {/* Toolbar */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between", alignItems: "center", marginBottom: 16, minWidth: 0, maxWidth: "100%" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, flex: "1 1 auto", minWidth: 0 }}>
                     <button
                       type="button"
                       onClick={() => setShowVoucherTable(false)}
@@ -8172,6 +8200,7 @@ export default function MisaLedgerWorkspace({
                         fontSize: 13,
                         fontWeight: 500,
                         color: "#334155",
+                        whiteSpace: "nowrap",
                         cursor: "pointer",
                       }}
                     >
@@ -8179,8 +8208,8 @@ export default function MisaLedgerWorkspace({
                       <span>Quay lại giao diện chính</span>
                     </button>
 
-                    <div style={{ position: "relative", width: 280 }}>
-                      <Search size={16} color="#94a3b8" style={{ position: "absolute", left: 10, top: 10 }} />
+                    <div style={{ position: "relative", flex: "1 1 190px", minWidth: 160, maxWidth: 280 }}>
+                      <Search size={16} color="#94a3b8" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                       <input
                         type="text"
                         placeholder="Tìm theo số CT, diễn giải, tài khoản..."
@@ -8192,6 +8221,7 @@ export default function MisaLedgerWorkspace({
                           borderRadius: 6,
                           border: "1px solid #cbd5e1",
                           fontSize: 13,
+                          boxSizing: "border-box",
                         }}
                       />
                     </div>
@@ -8207,6 +8237,7 @@ export default function MisaLedgerWorkspace({
                         background: "#ffffff",
                         fontSize: 13,
                         color: "#334155",
+                        whiteSpace: "nowrap",
                         cursor: "pointer",
                       }}
                     >
@@ -8215,7 +8246,7 @@ export default function MisaLedgerWorkspace({
                     </button>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, position: "relative", minWidth: 0 }}>
                     <button
                       type="button"
                       onClick={() => { void handleBatchPostVouchers(); }}
@@ -8230,6 +8261,7 @@ export default function MisaLedgerWorkspace({
                         color: "#15803d",
                         fontWeight: 600,
                         fontSize: 12.5,
+                        whiteSpace: "nowrap",
                         cursor: "pointer",
                       }}
                     >
@@ -8251,6 +8283,7 @@ export default function MisaLedgerWorkspace({
                         color: "#b45309",
                         fontWeight: 600,
                         fontSize: 12.5,
+                        whiteSpace: "nowrap",
                         cursor: "pointer",
                       }}
                     >
@@ -8270,6 +8303,7 @@ export default function MisaLedgerWorkspace({
                         border: "1px solid #cbd5e1",
                         background: "#ffffff",
                         fontSize: 13,
+                        whiteSpace: "nowrap",
                         cursor: "pointer",
                       }}
                     >
@@ -8405,8 +8439,8 @@ export default function MisaLedgerWorkspace({
                 </div>
 
                 {/* Table */}
-                <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <div style={{ width: "100%", minWidth: 0, maxWidth: "100%", overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                  <table style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>
                         <th style={{ padding: "10px 14px", width: 40 }}>
@@ -9126,8 +9160,8 @@ export default function MisaLedgerWorkspace({
                 </div>
 
                 {/* Table */}
-                <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <div style={{ width: "100%", minWidth: 0, maxWidth: "100%", overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                  <table style={{ width: "100%", minWidth: 880, borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", textAlign: "left" }}>
                         <th style={{ padding: "10px 14px", width: 40 }}>#</th>
@@ -9464,8 +9498,8 @@ export default function MisaLedgerWorkspace({
               /* STATEMENT LIST / TABLE VIEW */
               <div style={{ padding: 20 }}>
                 {/* Table Header Toolbar */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
                     <button
                       type="button"
                       onClick={() => setShowStatementTable(false)}

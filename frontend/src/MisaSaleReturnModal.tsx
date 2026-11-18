@@ -20,7 +20,7 @@ import {
   Bot,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
-import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS } from "./MisaSalesModals";
+import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS, useSyncLiveSalesCatalogs } from "./MisaSalesModals";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 
 export interface SaleReturnItem {
@@ -69,6 +69,7 @@ export function SaleReturnModal({
   onOpenCustomerModal,
   notify = () => {},
 }: SaleReturnModalProps) {
+  useSyncLiveSalesCatalogs();
   // Mode selection: "Giảm trừ công nợ" vs "Trả lại tiền mặt"
   const [returnType, setReturnType] = useState<"debt" | "cash">(
     initialData?.returnType || "debt"

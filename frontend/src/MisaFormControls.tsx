@@ -186,20 +186,21 @@ export function MisaSelect({
         onKeyDown={onKeyDown}
         style={{
           ...controlBox(open),
-          display: "flex",
+          display: "inline-flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 8,
+          gap: 6,
           padding: "0 10px",
+          lineHeight: 1.2,
           cursor: "pointer",
           textAlign: "left",
           ...style,
         }}
       >
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: selected ? "#0f172a" : "#94a3b8" }}>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.25, color: selected ? "#0f172a" : "#94a3b8" }}>
           {selected ? selected.label : placeholder}
         </span>
-        <ChevronDown size={15} style={{ flexShrink: 0, color: "#64748b", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+        <ChevronDown size={14} style={{ flexShrink: 0, color: "#64748b", display: "block", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
       </button>
       {open && rect && (
         <div

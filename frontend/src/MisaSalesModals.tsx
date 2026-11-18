@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
+import { useLiveVoucherLookups } from "./live-voucher-lookups";
 
 // Real catalog items for sales from Company ABC (TT99/2025/TT-BTC)
 export const SAMPLE_SALE_ITEMS = [
@@ -97,6 +98,38 @@ export const SAMPLE_SALE_CUSTOMERS = [
   },
 ];
 
+export function useSyncLiveSalesCatalogs() {
+  const lookup = useLiveVoucherLookups();
+  if (lookup.connected && lookup.saleCustomers.length > 0) {
+    SAMPLE_SALE_CUSTOMERS.splice(
+      0,
+      SAMPLE_SALE_CUSTOMERS.length,
+      ...lookup.saleCustomers.map((c) => ({
+        code: c.code,
+        name: c.name,
+        taxCode: c.taxCode,
+        address: c.address,
+        contact: c.contact,
+        phone: c.phone,
+      })),
+    );
+  }
+  if (lookup.connected && lookup.catalogItems.length > 0) {
+    SAMPLE_SALE_ITEMS.splice(
+      0,
+      SAMPLE_SALE_ITEMS.length,
+      ...lookup.catalogItems.map((it) => ({
+        code: it.code,
+        name: it.name,
+        unit: it.unit,
+        price: it.price,
+        vat: it.vat,
+      })),
+    );
+  }
+  return lookup;
+}
+
 // ============================================================================
 // 1. MODAL: BÁO GIÁ (MATCHING SCREENSHOT 1 BG00001)
 // ============================================================================
@@ -150,6 +183,8 @@ export function SaleQuoteModal({
 
   // Balance popup state
   const [showBalanceModal, setShowBalanceModal] = useState(false);
+  const liveQuoteLookup = useSyncLiveSalesCatalogs();
+  const quoteBalanceInfo = liveQuoteLookup.customerDebtSummary(customerCode);
 
   // Table rows
   const [items, setItems] = useState<SaleQuoteItem[]>(
@@ -1419,15 +1454,17 @@ export function SaleQuoteModal({
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: 6 }}>
                 <span style={{ color: "#64748b" }}>Công nợ hiện tại:</span>
-                <span style={{ color: "#ea580c", fontWeight: 700 }}>64.000.000 đ</span>
+                <span style={{ color: "#ea580c", fontWeight: 700 }}>{formatVND(quoteBalanceInfo.currentBalance)} đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: 6 }}>
                 <span style={{ color: "#64748b" }}>Hạn mức nợ cho phép:</span>
-                <span style={{ color: "var(--brand)", fontWeight: 600 }}>150.000.000 đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>
+                  {quoteBalanceInfo.creditLimit > 0 ? `${formatVND(quoteBalanceInfo.creditLimit)} đ` : "Theo hợp đồng"}
+                </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#64748b" }}>Số ngày nợ cho phép:</span>
-                <span>30 ngày</span>
+                <span>{quoteBalanceInfo.dueDays} ngày</span>
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
                 <button
@@ -1527,6 +1564,8 @@ export function SaleOrderModal({
 
   // Customer balance modal
   const [showBalanceModal, setShowBalanceModal] = useState(false);
+  const liveOrderLookup = useSyncLiveSalesCatalogs();
+  const quoteBalanceInfo = liveOrderLookup.customerDebtSummary(customerCode);
 
   // Stock unreserved modal
   const [showStockModal, setShowStockModal] = useState(false);
@@ -3358,15 +3397,17 @@ export function SaleOrderModal({
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: 6 }}>
                 <span style={{ color: "#64748b" }}>Công nợ hiện tại:</span>
-                <span style={{ color: "#ea580c", fontWeight: 700 }}>64.000.000 đ</span>
+                <span style={{ color: "#ea580c", fontWeight: 700 }}>{formatVND(quoteBalanceInfo.currentBalance)} đ</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: 6 }}>
                 <span style={{ color: "#64748b" }}>Hạn mức nợ cho phép:</span>
-                <span style={{ color: "var(--brand)", fontWeight: 600 }}>150.000.000 đ</span>
+                <span style={{ color: "var(--brand)", fontWeight: 600 }}>
+                  {quoteBalanceInfo.creditLimit > 0 ? `${formatVND(quoteBalanceInfo.creditLimit)} đ` : "Theo hợp đồng"}
+                </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#64748b" }}>Số ngày nợ cho phép:</span>
-                <span>30 ngày</span>
+                <span>{quoteBalanceInfo.dueDays} ngày</span>
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
                 <button
@@ -3471,6 +3512,7 @@ export function SaleContractModal({
 
   // Collapsible: Điều khoản thanh toán
   const [expandPaymentTerms, setExpandPaymentTerms] = useState(false);
+  useSyncLiveSalesCatalogs();
 
   // Table items
   const [items, setItems] = useState<SaleContractItem[]>(
@@ -4006,10 +4048,10 @@ export function SaleContractModal({
                   <label className="misa-purchase-label">{contractType === "project" ? "Giá trị dự án" : "Giá trị hợp đồng"}</label>
                   <input
                     type="text"
-                    value={contractAmount === 0 ? "0,00" : formatVND(contractAmount)}
+                    inputMode="numeric"
+                    value={contractAmount === 0 ? "0" : formatVND(contractAmount)}
                     onChange={(e) => {
-                      const raw = e.target.value.replace(/\D/g, "");
-                      const v = Number(raw) || 0;
+                      const v = parseMoneyInput(e.target.value);
                       setContractAmount(v);
                       setContractAmountConverted(v);
                     }}
@@ -4362,10 +4404,10 @@ export function SaleContractModal({
                       <label className="misa-purchase-label">Giá trị thanh lý</label>
                       <input
                         type="text"
-                        value={liquidationAmount === 0 ? "0,00" : formatVND(liquidationAmount)}
+                        inputMode="numeric"
+                        value={liquidationAmount === 0 ? "0" : formatVND(liquidationAmount)}
                         onChange={(e) => {
-                          const raw = e.target.value.replace(/\D/g, "");
-                          setLiquidationAmount(Number(raw) || 0);
+                          setLiquidationAmount(parseMoneyInput(e.target.value));
                         }}
                         style={{ width: "100%", height: 28, padding: "0 8px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, textAlign: "right", background: "#ffffff", boxSizing: "border-box" }}
                       />

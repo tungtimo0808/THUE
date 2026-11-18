@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { cashDateValue, currentCashDate } from "./cash-date";
 
 export default function VoucherDateField({
@@ -79,12 +79,17 @@ export default function VoucherDateField({
 
   const days = new Date(year, month + 1, 0).getDate();
   const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+  const isDirectoryDate = className === "md-date-input";
+  const fieldHeight = isDirectoryDate ? 34 : 32;
   const buttonStyle = {
     border: 0,
     background: "transparent",
     height: 32,
     cursor: "pointer",
     color: "#475569",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
 
   return (
@@ -93,8 +98,9 @@ export default function VoucherDateField({
       style={{
         position: "relative",
         width: "100%",
-        height: 32,
-        minHeight: 32,
+        height: fieldHeight,
+        minHeight: fieldHeight,
+        maxHeight: fieldHeight,
         display: "flex",
         alignItems: "center",
         zIndex: open ? 2000 : undefined,
@@ -112,10 +118,28 @@ export default function VoucherDateField({
         value={value}
         placeholder="DD/MM/YYYY"
         onChange={(event) => onChange(event.target.value)}
-        style={{ width: "100%", height: "100%", paddingRight: 28, boxSizing: "border-box" }}
+        style={{
+          width: "100%",
+          height: fieldHeight,
+          minHeight: fieldHeight,
+          maxHeight: fieldHeight,
+          padding: "0 34px 0 10px",
+          borderRadius: isDirectoryDate ? 6 : undefined,
+          border: isDirectoryDate
+            ? `1px solid ${open ? "var(--brand, #1d4ed8)" : "#cbd5e1"}`
+            : undefined,
+          boxShadow:
+            isDirectoryDate && open
+              ? "0 0 0 3px rgba(29, 78, 216, 0.12)"
+              : isDirectoryDate
+                ? "0 1px 2px rgba(15, 23, 42, 0.03)"
+                : undefined,
+          boxSizing: "border-box",
+        }}
       />
       <button
         type="button"
+        className="md-date-trigger"
         aria-label={`Chọn ngày ${label}`}
         aria-expanded={open}
         onClick={show}
@@ -124,19 +148,23 @@ export default function VoucherDateField({
           right: 4,
           top: "50%",
           transform: "translateY(-50%)",
-          width: 24,
-          height: 24,
+          width: 26,
+          height: 26,
+          minWidth: 26,
+          minHeight: 26,
           padding: 0,
+          margin: 0,
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
           border: 0,
-          background: "transparent",
+          borderRadius: 5,
+          background: open ? "#eff6ff" : "transparent",
           cursor: "pointer",
-          color: "var(--brand)",
+          color: open ? "var(--brand, #1d4ed8)" : "#64748b",
         }}
       >
-        <Calendar size={15} />
+        <Calendar size={14.5} aria-hidden="true" />
       </button>
       {open &&
         createPortal(
@@ -159,23 +187,24 @@ export default function VoucherDateField({
               overflow: "auto",
               padding: 12,
               background: "white",
-              border: "1px solid #d1d5db",
-              borderRadius: 7,
-              boxShadow: "0 4px 14px #0002",
+              border: "1px solid #e2e8f0",
+              borderRadius: 10,
+              boxShadow:
+                "0 14px 32px -6px rgba(15, 23, 42, 0.16), 0 6px 14px -4px rgba(15, 23, 42, 0.08)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <button
                 type="button"
                 aria-label="Kỳ trước trên lịch"
-                style={buttonStyle}
+                style={{ ...buttonStyle, width: 30, borderRadius: 6 }}
                 onClick={() => move(-1)}
               >
-                ‹
+                <ChevronLeft size={16} aria-hidden="true" />
               </button>
               <button
                 type="button"
-                style={{ ...buttonStyle, fontWeight: 600 }}
+                style={{ ...buttonStyle, fontWeight: 600, padding: "0 10px", borderRadius: 6 }}
                 onClick={() =>
                   setView(view === "days" ? "months" : view === "months" ? "years" : "days")
                 }
@@ -189,10 +218,10 @@ export default function VoucherDateField({
               <button
                 type="button"
                 aria-label="Kỳ sau trên lịch"
-                style={buttonStyle}
+                style={{ ...buttonStyle, width: 30, borderRadius: 6 }}
                 onClick={() => move(1)}
               >
-                ›
+                <ChevronRight size={16} aria-hidden="true" />
               </button>
             </div>
             {view === "days" ? (

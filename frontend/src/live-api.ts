@@ -116,6 +116,7 @@ export async function refreshAccessToken(): Promise<string> {
 
 const inFlightRequests = new Map<string, Promise<any>>();
 const getResponseCache = new Map<string, { data: any; timestamp: number }>();
+let cacheGeneration = 0;
 const GET_CACHE_TTL_MS = 45_000;
 const REPORT_CACHE_TTL_MS = 300_000; // 5 minutes for reports, context & master catalogs
 const SESSION_CACHE_PREFIX = "erp_api_cache_v1:";
@@ -205,10 +206,12 @@ function clearSessionCacheStorage() {
   }
 }
 
-export function clearLiveApiGetCache() {
+export function clearLiveApiGetCache(notifyListeners = true) {
+  cacheGeneration += 1;
+  inFlightRequests.clear();
   getResponseCache.clear();
   clearSessionCacheStorage();
-  if (typeof window !== "undefined") {
+  if (notifyListeners && typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("sv_warm_cache_invalidated"));
   }
 }
@@ -227,7 +230,7 @@ export async function request<T>(path: string, token?: string, options?: Request
 
   if (!isGet) {
     if (shouldInvalidateCacheOnMutation(path)) {
-      clearLiveApiGetCache();
+      clearLiveApiGetCache(false);
     }
   } else if (dedupeKey) {
     const cached = getResponseCache.get(dedupeKey);
@@ -246,6 +249,7 @@ export async function request<T>(path: string, token?: string, options?: Request
     return inFlightRequests.get(dedupeKey)! as Promise<T>;
   }
 
+  const requestGen = cacheGeneration;
   const exec = (async (): Promise<T> => {
     let response: Response;
     const initialToken = effectiveToken || undefined;
@@ -260,7 +264,13 @@ export async function request<T>(path: string, token?: string, options?: Request
             ...(access ? { Authorization: `Bearer ${access}` } : {}),
           },
         });
+      const isRetryableRead =
+        isGet || path.includes("/api/v1/reports/dashboard/refresh");
       response = await fetchWithToken(initialToken);
+      if (isRetryableRead && [502, 503, 504].includes(response.status)) {
+        await new Promise((r) => setTimeout(r, 450));
+        response = await fetchWithToken(initialToken);
+      }
       const isAuthOrPlatformEndpoint =
         path.startsWith("/api/token/") ||
         path.includes("/auth/login/") ||
@@ -294,7 +304,13 @@ export async function request<T>(path: string, token?: string, options?: Request
       }
       const isSilentCheck =
         path.includes("/duplicates/") ||
-        (isGet && (path.includes("/notifications") || path.includes("/work-items") || path.includes("/common/settings")));
+        path.includes("/api/v1/reports/dashboard/refresh") ||
+        (isGet && (
+          [502, 503, 504].includes(response.status) ||
+          path.includes("/notifications") ||
+          path.includes("/work-items") ||
+          path.includes("/common/settings")
+        ));
       if (!isSilentCheck) {
         showGlobalPopup({
           type: "error",
@@ -352,7 +368,7 @@ export async function request<T>(path: string, token?: string, options?: Request
         });
       }
     }
-    if (dedupeKey) {
+    if (dedupeKey && requestGen === cacheGeneration) {
       const entry = { data: body, timestamp: Date.now() };
       getResponseCache.set(dedupeKey, entry);
       if (getResponseCache.size > 200) {

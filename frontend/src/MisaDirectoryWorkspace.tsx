@@ -12,6 +12,8 @@ import type { ReactNode } from "react";
 import {
   ArrowLeft,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Plus,
   RefreshCw,
@@ -88,6 +90,9 @@ const writableDirectories = new Set([
   "Tài khoản ngân hàng",
   "Nhân viên",
   "Cơ cấu tổ chức",
+  "Tài khoản ngầm định",
+  "Biểu thuế tiêu thụ đặc biệt",
+  "Biểu thuế tài nguyên",
 ]);
 
 const STANDARD_PIT_BRACKETS: DirectoryRow[] = [
@@ -345,7 +350,8 @@ export default function MisaDirectoryWorkspace({
     if (
       definition.name === "Loại tài sản cố định" ||
       definition.name === "Loại công cụ dụng cụ" ||
-      definition.name === "Tài khoản kết chuyển"
+      definition.name === "Tài khoản kết chuyển" ||
+      definition.name === "Tài khoản ngầm định"
     ) {
       map.accounts = "/api/v1/general-ledger/accounts/";
     }
@@ -361,8 +367,24 @@ export default function MisaDirectoryWorkspace({
   const [legacyView, setLegacyView] = useState(false);
   const [menuQuery, setMenuQuery] = useState("");
   const [query, setQuery] = useState("");
-  const [records, setRecords] = useState<Record<string, DirectoryRow[]>>({});
-  useEffect(() => setRecords({}), [companyId]);
+  const localRecordsKey = `sv_custom_directories_${companyId || "default"}`;
+  const [records, setRecords] = useState<Record<string, DirectoryRow[]>>(() => {
+    try {
+      const raw = localStorage.getItem(`sv_custom_directories_${companyId || "default"}`);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(localRecordsKey);
+      setRecords(raw ? JSON.parse(raw) : {});
+    } catch {
+      setRecords({});
+    }
+  }, [localRecordsKey]);
+  const [quickAddTarget, setQuickAddTarget] = useState<{ field: string; target: string } | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [hidden, setHidden] = useState<string[]>([]);
   const [columnsOpen, setColumnsOpen] = useState(false);
@@ -1124,12 +1146,20 @@ export default function MisaDirectoryWorkspace({
         return;
       }
     } else {
-      setRecords((previous) => ({
-        ...previous,
-        [definition.name]: allRows.some((row) => row.id === editor.id)
-          ? allRows.map((row) => (row.id === editor.id ? normalized : row))
-          : [...allRows, normalized],
-      }));
+      setRecords((previous) => {
+        const nextMap = {
+          ...previous,
+          [definition.name]: allRows.some((row) => row.id === editor.id)
+            ? allRows.map((row) => (row.id === editor.id ? normalized : row))
+            : [...allRows, normalized],
+        };
+        try {
+          localStorage.setItem(localRecordsKey, JSON.stringify(nextMap));
+        } catch {
+          /* ignore quota */
+        }
+        return nextMap;
+      });
     }
     notify(
       apiConnected && apiPath && writableDirectories.has(definition.name)
@@ -1572,7 +1602,7 @@ export default function MisaDirectoryWorkspace({
           <ArrowLeft size={18} />
         </button>
         <h1>{definition.name}</h1>
-        {definition.canAdd && writableDirectories.has(definition.name) && (
+        {definition.canAdd && (
           <button disabled={employeeDirectory && !apiConnected} onClick={() => showEditor()}>
             <Plus size={15} /> Thêm
           </button>
@@ -1724,7 +1754,7 @@ export default function MisaDirectoryWorkspace({
                 <tr
                   key={row.id}
                   onDoubleClick={() => {
-                    if (writableDirectories.has(definition.name)) showEditor(row);
+                    if (definition.canAdd || writableDirectories.has(definition.name)) showEditor(row);
                   }}
                 >
                   <td>
@@ -1745,7 +1775,7 @@ export default function MisaDirectoryWorkspace({
                     <td key={header}>
                       {header === "Chức năng" ? (
                         <div style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
-                          {writableDirectories.has(definition.name) ? (
+                          {definition.canAdd || writableDirectories.has(definition.name) ? (
                             <button onClick={() => showEditor(row)}>Sửa</button>
                           ) : (
                             <span style={{ color: "#64748b", fontSize: 12 }}>Chuẩn hệ thống</span>
@@ -1863,7 +1893,7 @@ export default function MisaDirectoryWorkspace({
           aria-label="Trang trước danh mục"
           onClick={() => setPage(visiblePage - 1)}
         >
-          ‹
+          <ChevronLeft size={15} aria-hidden="true" />
         </button>
         <span>
           {visiblePage}/{pageCount}
@@ -1873,15 +1903,12 @@ export default function MisaDirectoryWorkspace({
           aria-label="Trang sau danh mục"
           onClick={() => setPage(visiblePage + 1)}
         >
-          ›
+          <ChevronRight size={15} aria-hidden="true" />
         </button>
       </footer>
       {editor && (
         <div
           className="md-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeEditor();
-          }}
         >
           <div
             className="md-editor"
@@ -1974,6 +2001,11 @@ export default function MisaDirectoryWorkspace({
                                 }
                               : undefined
                           }
+                          onQuickAdd={
+                            manageTarget && manageTarget !== "Hệ thống tài khoản" && !isEmbeddedModal
+                              ? () => setQuickAddTarget({ field: field.label, target: manageTarget })
+                              : undefined
+                          }
                           label={field.label}
                           value={editor.values[field.label] || ""}
                           onChange={(value) => updateEditor(field.label, value)}
@@ -1983,6 +2015,7 @@ export default function MisaDirectoryWorkspace({
                           field.label,
                         ) ? (
                         <VoucherDateField
+                          className="md-date-input"
                           value={editor.values[field.label] || ""}
                           onChange={(value) => updateEditor(field.label, value)}
                           label={field.label}
@@ -2082,17 +2115,42 @@ export default function MisaDirectoryWorkspace({
             )}
             <footer>
               <button onClick={() => closeEditor()}>Hủy</button>
-              <button onClick={() => save()}>Lưu</button>
+              <button className="md-secondary-save" onClick={() => save()}>
+                Lưu
+              </button>
               <MisaSaveSplitButton
                 defaultMode="save_and_add"
                 showPrint={false}
-                height={32}
+                height={34}
                 onSaveAndClose={() => save(false)}
                 onSaveAndAdd={() => save(true)}
               />
             </footer>
           </div>
         </div>
+      )}
+      {quickAddTarget && (
+        <MisaDirectoryWorkspace
+          legacy={null}
+          initialName={quickAddTarget.target}
+          initialCreate={true}
+          onEntrySaved={(savedValues) => {
+            const code = savedValues["Mã"] || savedValues["Mã đơn vị"] || savedValues["Tên viết tắt"] || "";
+            const name = savedValues["Tên"] || savedValues["Đơn vị tính"] || savedValues["Tên đơn vị"] || savedValues["Tên đầy đủ"] || "";
+            const formatted =
+              quickAddTarget.target === "Đơn vị tính" || quickAddTarget.target === "Cơ cấu tổ chức" || quickAddTarget.target === "Ngân hàng"
+                ? name || code
+                : code && name
+                  ? `${code} — ${name}`
+                  : name || code;
+            if (formatted) {
+              updateEditor(quickAddTarget.field, formatted);
+            }
+            reloadApi();
+          }}
+          onEditorClose={() => setQuickAddTarget(null)}
+          notify={notify}
+        />
       )}
     </div>
   );

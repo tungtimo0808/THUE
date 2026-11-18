@@ -88,12 +88,34 @@ def create_salary_sheet(company, data, request):
         attendance = models.AttendanceSheet.objects.filter(company=company, pk=data["attendance_sheet"]).first()
         if not attendance:
             raise ValidationError({"attendance_sheet": "Bảng chấm công không thuộc doanh nghiệp."})
+    emp_qs = models.PayProfile._meta.get_field("employee").remote_field.model.objects.filter(
+        company=company, status="ACTIVE", agreed_salary__gt=0
+    )
+    if data.get("departments"):
+        emp_qs = emp_qs.filter(department_id__in=data["departments"])
+    existing_emp_ids = set(
+        models.PayProfile.objects.filter(company=company).values_list("employee_id", flat=True)
+    )
+    for emp in emp_qs:
+        if emp.pk not in existing_emp_ids:
+            exp_acc = _account(company, (emp.expense_account or "").strip() or "642")
+            models.PayProfile.objects.create(
+                company=company,
+                employee=emp,
+                base_salary=emp.agreed_salary,
+                allowance=Decimal("0"),
+                insurance_salary=emp.insurance_salary if emp.insurance_salary is not None else emp.agreed_salary,
+                dependents=emp.dependent_count or 0,
+                expense_account=exp_acc,
+                is_active=True,
+            )
+
     profiles = models.PayProfile.objects.filter(company=company, is_active=True).select_related("employee", "expense_account")
     if data.get("departments"):
         profiles = profiles.filter(employee__department_id__in=data["departments"])
     profiles = list(profiles)
     if not profiles:
-        raise ValidationError("Chưa có nhân viên nào có hồ sơ lương đang áp dụng.")
+        raise ValidationError("Chưa có nhân viên nào có hồ sơ lương đang áp dụng. Vui lòng thiết lập mức lương tại mục Nhân viên trước khi tính lương.")
     days = {line.employee_id: line.working_days + line.paid_leave_days for line in attendance.lines.all()} if attendance else {}
     sheet = models.SalarySheet.objects.create(
         company=company, name=str(data.get("name") or f"Bảng lương tháng {month:02d}/{year}")[:255], period=period,

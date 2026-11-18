@@ -57,7 +57,7 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
         position: "relative",
         display: "inline-flex",
         alignItems: "stretch",
-        borderRadius: 4,
+        borderRadius: 6,
         boxShadow: "0 1px 3px rgba(37, 99, 235, 0.3)",
       }}
     >
@@ -67,12 +67,12 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
         onClick={handlePrimaryClick}
         style={{
           height,
+          minHeight: height,
           padding: "0 14px",
           background: disabled ? "#93c5fd" : "var(--brand)",
           color: "#ffffff",
           border: "none",
-          borderTopLeftRadius: 4,
-          borderBottomLeftRadius: 4,
+          borderRadius: "6px 0 0 6px",
           fontSize: 13,
           fontWeight: 600,
           cursor: disabled ? "not-allowed" : "pointer",
@@ -102,14 +102,14 @@ export const MisaSaveSplitButton: React.FC<MisaSaveSplitButtonProps> = ({
         }}
         style={{
           height,
+          minHeight: height,
           width: 28,
           padding: 0,
           background: disabled ? "#93c5fd" : open ? "var(--brand-hover)" : "var(--brand)",
           color: "#ffffff",
           border: "none",
           borderLeft: "1px solid rgba(255, 255, 255, 0.28)",
-          borderTopRightRadius: 4,
-          borderBottomRightRadius: 4,
+          borderRadius: "0 6px 6px 0",
           cursor: disabled ? "not-allowed" : "pointer",
           display: "inline-flex",
           alignItems: "center",
