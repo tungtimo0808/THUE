@@ -1,5 +1,5 @@
 import { exportVisibleTable, printVisibleTable } from "./table-actions";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { formatMoneyInput, parseMoneyInputString } from "./formatMoney";
 import { useLocation } from "react-router-dom";
 import {
@@ -13,6 +13,7 @@ import {
   RotateCw,
   Users,
   ChevronDown,
+  ChevronLeft,
   FileText,
   DollarSign,
   Printer,
@@ -20,21 +21,31 @@ import {
   Scale,
   ShieldCheck,
   UserCheck,
-  Check,
-  Clock,
   Layers,
-  SlidersHorizontal,
   CircleHelp,
   ArrowLeft,
   ChevronUp,
   Coins,
   TrendingUp,
+  Save,
+  Trash2,
 } from "lucide-react";
 import { SalaryPaymentModal, InsurancePaymentModal } from "./MisaBankModals";
 import { apiDate, apiNumber, useMisaApiLists, useMisaApiSave } from "./misa-api-lists";
 import {
-  createApiWriter, insurancePaymentRows, payrollEmployees, postSalarySheet, salaryPaymentRows, saveAttendanceSheet,
-  savePayProfiles, savePayrollPayment, saveSalarySheet,
+  createApiWriter,
+  deleteAttendanceSheet,
+  deletePayProfile,
+  deleteSalarySheet,
+  insurancePaymentRows,
+  payrollEmployees,
+  postSalarySheet,
+  salaryPaymentRows,
+  saveAttendanceSheet,
+  savePayProfiles,
+  savePayrollPayment,
+  saveSalarySheet,
+  updateAttendanceSheet,
 } from "./misa-api-writes";
 import { useApiSession } from "./ApiSession";
 import { request } from "./live-api";
@@ -349,11 +360,35 @@ export default function MisaPayrollWorkspace({
 }: MisaPayrollWorkspaceProps) {
   const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(company.id, {
     salarySheets: "/api/v1/payroll/salary-sheets/",
+    attendanceSheets: "/api/v1/payroll/attendance-sheets/",
+    payProfiles: "/api/v1/payroll/profiles/",
+    departments: "/api/v1/organization/departments/",
+    branches: "/api/v1/organization/branches/",
+    postedJournals: "/api/v1/general-ledger/journals/?status=POSTED",
   }, notify);
   const apiSave = useMisaApiSave(company.id, notify, reloadApi);
   const { token: apiToken } = useApiSession();
-  const payrollWriter = () => createApiWriter(company.id, (path, init) => request(path, apiToken, init));
+  const payrollWriter = useCallback(
+    () => createApiWriter(company.id, (path, init) => request(path, apiToken, init)),
+    [company.id, apiToken],
+  );
   const [apiEmployees, setApiEmployees] = useState<any[] | null>(null);
+  const [empModalSearch, setEmpModalSearch] = useState("");
+  const [empModalDept, setEmpModalDept] = useState("");
+
+  const refreshPayrollEmployees = useCallback(() => {
+    if (!apiConnected) return;
+    payrollEmployees(payrollWriter())
+      .then(setApiEmployees)
+      .catch((error) =>
+        notify(`Không tải được nhân viên: ${error instanceof Error ? error.message : String(error)}`),
+      );
+  }, [apiConnected, payrollWriter, notify]);
+
+  useEffect(() => {
+    refreshPayrollEmployees();
+  }, [refreshPayrollEmployees, apiRows.payProfiles]);
+
   // Navigation helper
   const navigateTo = (tabName: string) => {
     const url = href(`/payroll/${tabName}`);
@@ -369,8 +404,8 @@ export default function MisaPayrollWorkspace({
   const [showEmployeesModal, setShowEmployeesModal] = useState(false);
   useEffect(() => {
     if (!apiConnected || !showEmployeesModal) return;
-    payrollEmployees(payrollWriter()).then(setApiEmployees).catch((error) => notify(`Không tải được nhân viên: ${error instanceof Error ? error.message : String(error)}`));
-  }, [apiConnected, showEmployeesModal]);
+    refreshPayrollEmployees();
+  }, [apiConnected, showEmployeesModal, refreshPayrollEmployees]);
   const [showAttendanceSymbolsModal, setShowAttendanceSymbolsModal] = useState(false);
   const [showTaxBracketsModal, setShowTaxBracketsModal] = useState(false);
   const [showRegulationsModal, setShowRegulationsModal] = useState(false);
@@ -380,6 +415,9 @@ export default function MisaPayrollWorkspace({
 
   // Attendance Mode & Add Attendance Sheet Form State
   const [attendanceMode, setAttendanceMode] = useState<"empty" | "sheet_view">("sheet_view");
+  const [activeDetailSheetId, setActiveDetailSheetId] = useState<string>("");
+  const [editableAttLines, setEditableAttLines] = useState<any[]>([]);
+  const [attLinesDirty, setAttLinesDirty] = useState(false);
   const [showAddAttendanceModal, setShowAddAttendanceModal] = useState(() => {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
@@ -398,9 +436,10 @@ export default function MisaPayrollWorkspace({
   const [attSheetName, setAttSheetName] = useState("Bảng chấm công theo buổi tháng 10 năm 2026");
   const [isBasedOnOther, setIsBasedOnOther] = useState(false);
   const [selectAllUnits, setSelectAllUnits] = useState(false);
-  const [orgUnits, setOrgUnits] = useState([
-    { id: "81ehd8ngkphy", name: "Tung", level: "Tổng công ty/Công ty", checked: false },
-    { id: "81ehd8ngkphy_01", name: "Tung", level: "Phòng ban", checked: false },
+  const [orgUnits, setOrgUnits] = useState<
+    { id: string; code: string; name: string; level: string; deptId?: string; checked: boolean }[]
+  >([
+    { id: company.id, code: "TONGCONGTY", name: company.name, level: "Tổng công ty/Công ty", checked: false },
   ]);
 
   const handleToggleSelectAllUnits = (checked: boolean) => {
@@ -416,7 +455,7 @@ export default function MisaPayrollWorkspace({
     });
   };
 
-  // Attendance Summary Mode & Add Summary Form State (Ảnh 1 & Ảnh 2)
+  // Attendance Summary Mode & Add Summary Form State
   const [summaryMode, setSummaryMode] = useState<"empty" | "list_view">("list_view");
   const [showAddSummaryModal, setShowAddSummaryModal] = useState(() => {
     if (typeof window !== "undefined") {
@@ -432,11 +471,12 @@ export default function MisaPayrollWorkspace({
   const [summaryMonth, setSummaryMonth] = useState("10");
   const [summaryYear, setSummaryYear] = useState(CURRENT_YEAR);
   const [summarySheetName, setSummarySheetName] = useState("Bảng tổng hợp chấm công theo buổi tháng 10 năm 2026");
-  const [isAggregatedFromDetails, setIsAggregatedFromDetails] = useState(false);
+  const [isAggregatedFromDetails, setIsAggregatedFromDetails] = useState(true);
   const [selectAllSummaryUnits, setSelectAllSummaryUnits] = useState(false);
-  const [summaryOrgUnits, setSummaryOrgUnits] = useState([
-    { id: "81ehd8ngkphy", name: "Tung", level: "Tổng công ty/Công ty", checked: false },
-    { id: "81ehd8ngkphy_01", name: "Tung", level: "Phòng ban", checked: false },
+  const [summaryOrgUnits, setSummaryOrgUnits] = useState<
+    { id: string; code: string; name: string; level: string; deptId?: string; checked: boolean }[]
+  >([
+    { id: company.id, code: "TONGCONGTY", name: company.name, level: "Tổng công ty/Công ty", checked: false },
   ]);
 
   const handleToggleSelectAllSummaryUnits = (checked: boolean) => {
@@ -452,7 +492,7 @@ export default function MisaPayrollWorkspace({
     });
   };
 
-  // Calculation (Tính lương) Mode & Add Salary Sheet Form State (Ảnh 1 & Ảnh 2)
+  // Calculation (Tính lương) Mode & Add Salary Sheet Form State
   const [calcMode, setCalcMode] = useState<"empty" | "sheet_view">("sheet_view");
   const [showAddSalarySheetModal, setShowAddSalarySheetModal] = useState(() => {
     if (typeof window !== "undefined") {
@@ -472,10 +512,42 @@ export default function MisaPayrollWorkspace({
   const [calcSheetName, setCalcSheetName] = useState("Bảng lương cố định tháng 10 năm 2026");
   const [isSalaryBasedOnOther, setIsSalaryBasedOnOther] = useState(false);
   const [selectAllCalcUnits, setSelectAllCalcUnits] = useState(false);
-  const [calcOrgUnits, setCalcOrgUnits] = useState([
-    { id: "81ehd8ngkphy", name: "Tung", level: "Tổng công ty/Công ty", checked: false },
-    { id: "81ehd8ngkphy_01", name: "Tung", level: "Phòng ban", checked: false },
+  const [calcOrgUnits, setCalcOrgUnits] = useState<
+    { id: string; code: string; name: string; level: string; deptId?: string; checked: boolean }[]
+  >([
+    { id: company.id, code: "TONGCONGTY", name: company.name, level: "Tổng công ty/Công ty", checked: false },
   ]);
+
+  // Populate real organization units (Company -> Branches -> Departments)
+  useEffect(() => {
+    if (!apiConnected) return;
+    const activeBranches = (apiRows.branches || []).filter((b: any) => !b.status || b.status === "ACTIVE");
+    const activeDepts = (apiRows.departments || []).filter((d: any) => !d.status || d.status === "ACTIVE");
+    const built: { id: string; code: string; name: string; level: string; deptId?: string; checked: boolean }[] = [
+      { id: `company-${company.id}`, code: "TONGCONGTY", name: company.name, level: "Tổng công ty/Công ty", checked: false },
+      ...activeBranches.map((b: any) => ({
+        id: `branch-${b.id}`,
+        code: String(b.code || ""),
+        name: String(b.name || ""),
+        level: b.is_head_office ? "Trụ sở chính" : "Chi nhánh",
+        checked: false,
+      })),
+      ...activeDepts.map((d: any) => ({
+        id: `dept-${d.id}`,
+        code: String(d.code || ""),
+        name: String(d.name || ""),
+        level: "Phòng ban",
+        deptId: String(d.id),
+        checked: false,
+      })),
+    ];
+    setOrgUnits(built.map((u) => ({ ...u })));
+    setSummaryOrgUnits(built.map((u) => ({ ...u })));
+    setCalcOrgUnits(built.map((u) => ({ ...u })));
+    setSelectAllUnits(false);
+    setSelectAllSummaryUnits(false);
+    setSelectAllCalcUnits(false);
+  }, [apiConnected, apiRows.branches, apiRows.departments, company.id, company.name]);
 
   const handleToggleSelectAllCalcUnits = (checked: boolean) => {
     setSelectAllCalcUnits(checked);
@@ -490,6 +562,13 @@ export default function MisaPayrollWorkspace({
     });
   };
 
+  const selectedDeptUuids = (units: { checked: boolean; deptId?: string }[]) => {
+    const allChecked = units.length > 0 && units.every((u) => u.checked);
+    const companyChecked = units.some((u) => !u.deptId && u.checked);
+    if (allChecked || companyChecked) return [];
+    return units.filter((u) => u.checked && u.deptId).map((u) => String(u.deptId));
+  };
+
   const [createdSalarySheets, setCreatedSalarySheets] = useState<any[]>([]);
   useEffect(() => {
     if (!apiConnected || !apiRows.salarySheets) return;
@@ -497,22 +576,140 @@ export default function MisaPayrollWorkspace({
     setCreatedSalarySheets(apiRows.salarySheets.map((row) => {
       const lines = row.lines || [];
       const sum = (field: string) => lines.reduce((total: number, line: any) => total + apiNumber(line[field]), 0);
+      const deptNames = Array.from(new Set(lines.map((l: any) => String(l.department_name || "").trim()).filter(Boolean)));
       return {
-        id: row.id, name: row.name, period: `Tháng ${String(row.period).slice(5, 7)}/${String(row.period).slice(0, 4)}`, dept: "Toàn công ty",
-        employeeCount: lines.length, standardDays: apiNumber(row.standard_days), grossSalary: sum("gross"),
-        insuranceAmount: sum("employee_insurance"), taxAmount: sum("personal_income_tax"), netSalary: sum("net"),
-        status: labels[row.status] || row.status, createdDate: apiDate(row.created_at), approvedBy: row.journal_number || "",
+        id: row.id,
+        code: `BL-${row.period}-${String(row.id).slice(0, 4).toUpperCase()}`,
+        name: row.name,
+        rawPeriod: String(row.period || ""),
+        period: `Tháng ${String(row.period).slice(5, 7)}/${String(row.period).slice(0, 4)}`,
+        dept: deptNames.length === 1 ? deptNames[0] : deptNames.length > 1 ? `${deptNames.length} phòng ban` : "Toàn công ty",
+        employeeCount: lines.length,
+        standardDays: apiNumber(row.standard_days),
+        grossSalary: sum("gross"),
+        insuranceAmount: sum("employee_insurance"),
+        employerInsuranceAmount: sum("employer_insurance"),
+        taxAmount: sum("personal_income_tax"),
+        netSalary: sum("net"),
+        rawStatus: row.status,
+        status: labels[row.status] || row.status,
+        createdDate: apiDate(row.created_at),
+        approvedBy: row.journal_number || row.created_by_name || "Chưa hạch toán",
+        journalNumber: row.journal_number || "",
+        paymentRef: row.payment_reference || "",
+        insuranceRef: row.insurance_payment_reference || "",
+        lines,
       };
     }));
-  }, [apiConnected, apiRows]);
+  }, [apiConnected, apiRows.salarySheets]);
 
-  // Posting (Hạch toán chi phí) Mode & Select Salary Sheet Modal State (Ảnh 3)
+  // Live Attendance Sheets (DETAIL & SUMMARY)
+  const allAttendanceSheets = useMemo(() => apiRows.attendanceSheets || [], [apiRows.attendanceSheets]);
+  const detailAttendanceSheets = useMemo(
+    () => allAttendanceSheets.filter((s: any) => s.kind !== "SUMMARY"),
+    [allAttendanceSheets],
+  );
+  const summaryAttendanceSheets = useMemo(
+    () => allAttendanceSheets.filter((s: any) => s.kind === "SUMMARY"),
+    [allAttendanceSheets],
+  );
+
+  const activeDetailSheet = useMemo(() => {
+    if (!detailAttendanceSheets.length) return null;
+    return detailAttendanceSheets.find((s: any) => String(s.id) === activeDetailSheetId) || detailAttendanceSheets[0];
+  }, [detailAttendanceSheets, activeDetailSheetId]);
+
+  useEffect(() => {
+    if (!activeDetailSheet) {
+      setEditableAttLines([]);
+      setAttLinesDirty(false);
+      return;
+    }
+    if (String(activeDetailSheet.id) !== activeDetailSheetId) {
+      setActiveDetailSheetId(String(activeDetailSheet.id));
+    }
+    setEditableAttLines(
+      (activeDetailSheet.lines || []).map((l: any) => ({
+        employee: l.employee,
+        employee_code: l.employee_code,
+        employee_name: l.employee_name,
+        department_name: l.department_name || "",
+        working_days: apiNumber(l.working_days),
+        paid_leave_days: apiNumber(l.paid_leave_days),
+        overtime_hours: apiNumber(l.overtime_hours),
+      })),
+    );
+    setAttLinesDirty(false);
+  }, [activeDetailSheet, activeDetailSheetId]);
+
+  // Posting (Hạch toán chi phí) Mode & Select Salary Sheet Modal State
   const [postingMode, setPostingMode] = useState<"empty" | "voucher_view">("voucher_view");
   const [showSelectSalaryModal, setShowSelectSalaryModal] = useState(false);
   const [selectedSalarySheetForPosting, setSelectedSalarySheetForPosting] = useState("");
   const [isSelectSalaryDropdownOpen, setIsSelectSalaryDropdownOpen] = useState(true);
 
-  // Tax Deduction (Khấu trừ thuế TNCN) Mode State (Ảnh 1)
+  const unpostedSalarySheets = useMemo(
+    () => createdSalarySheets.filter((s: any) => s.rawStatus === "CALCULATED"),
+    [createdSalarySheets],
+  );
+
+  // Real posted payroll journal vouchers from General Ledger
+  const livePostingVouchers = useMemo(() => {
+    if (!apiConnected) return SAMPLE_POSTING_VOUCHERS;
+    const journals = apiRows.postedJournals || [];
+    const matched = journals.filter((entry: any) => {
+      const ev = String(entry.source_event_id || "");
+      if (ev.startsWith("PAYROLL:")) return true;
+      const lines = entry.lines || [];
+      const has334Credit = lines.some(
+        (l: any) => String(l.account_code || "").startsWith("334") && apiNumber(l.credit) > 0,
+      );
+      const isOpening = String(entry.entry_type || "").toUpperCase() === "OPENING" || String(entry.number || "").startsWith("OPEN-");
+      return has334Credit && !isOpening;
+    });
+    return matched.map((entry: any) => {
+      const rawLines = entry.lines || [];
+      // Pair or display debit/credit accounting lines clearly
+      const pairedLines: { debitAcc: string; creditAcc: string; amount: number; desc: string }[] = [];
+      let i = 0;
+      while (i < rawLines.length) {
+        const cur = rawLines[i];
+        const nxt = rawLines[i + 1];
+        const curDeb = apiNumber(cur?.debit);
+        const nxtCred = apiNumber(nxt?.credit);
+        if (cur && nxt && curDeb > 0 && apiNumber(cur?.credit) === 0 && nxtCred === curDeb && apiNumber(nxt?.debit) === 0) {
+          pairedLines.push({
+            debitAcc: String(cur.account_code || ""),
+            creditAcc: String(nxt.account_code || ""),
+            amount: curDeb,
+            desc: String(cur.description || entry.description || ""),
+          });
+          i += 2;
+        } else {
+          const amt = curDeb || apiNumber(cur?.credit);
+          pairedLines.push({
+            debitAcc: curDeb > 0 ? String(cur.account_code || "") : "—",
+            creditAcc: apiNumber(cur?.credit) > 0 ? String(cur.account_code || "") : "—",
+            amount: amt,
+            desc: String(cur?.description || entry.description || ""),
+          });
+          i += 1;
+        }
+      }
+      return {
+        voucherNo: String(entry.number || ""),
+        postDate: apiDate(entry.posting_date),
+        docDate: apiDate(entry.document_date || entry.posting_date),
+        description: String(entry.description || "Hạch toán chi phí tiền lương"),
+        totalAmount: apiNumber(entry.total_debit || entry.total_credit),
+        refDoc: String(entry.source_event_id || ""),
+        status: "Đã ghi sổ",
+        lines: pairedLines,
+      };
+    });
+  }, [apiConnected, apiRows.postedJournals]);
+
+  // Tax Deduction (Khấu trừ thuế TNCN) Mode State
   const [taxDeductionMode, setTaxDeductionMode] = useState<"empty" | "detail_view">("detail_view");
 
   // Filter states
@@ -533,8 +730,7 @@ export default function MisaPayrollWorkspace({
         setStandardDaysOption(apiNumber(settings.standard_days) || 22);
       })
       .catch((error) => notify(`Không tải được thiết lập lương: ${error instanceof Error ? error.message : String(error)}`));
-  }, [apiConnected, apiToken, company.id]);
-  const [showPayrollOptionDropdown, setShowPayrollOptionDropdown] = useState(false);
+  }, [apiConnected, apiToken, company.id, notify]);
   const [reportLanguage, setReportLanguage] = useState("Tiếng Việt");
   const [showReportVisibilityModal, setShowReportVisibilityModal] = useState(false);
   const [visibleReports, setVisibleReports] = useState<string[]>([
@@ -569,15 +765,87 @@ export default function MisaPayrollWorkspace({
     }
   }, [location.search, tab]);
 
-  // Filtered employees for Attendance tab
-  const filteredEmployees = SAMPLE_EMPLOYEES.filter((emp) => {
-    const matchDept = selectedDept === "all" || emp.dept.toLowerCase().includes(selectedDept.toLowerCase());
+  // Live Department Options for Filters
+  const departmentOptions = useMemo(() => {
+    if (!apiConnected) {
+      return [
+        { id: "văn phòng", name: "Khối Văn phòng" },
+        { id: "sản xuất", name: "Phân xưởng Sản xuất" },
+        { id: "kinh doanh", name: "Phòng Kinh doanh" },
+      ];
+    }
+    return (apiRows.departments || [])
+      .filter((d: any) => !d.status || d.status === "ACTIVE")
+      .map((d: any) => ({ id: String(d.name || d.code), name: String(d.name || d.code) }));
+  }, [apiConnected, apiRows.departments]);
+
+  // Filtered employees for Attendance fallback & Employees modal
+  const baseEmployeeList = apiConnected ? (apiEmployees || []) : SAMPLE_EMPLOYEES;
+  const filteredEmployees = baseEmployeeList.filter((emp: any) => {
+    const matchDept = selectedDept === "all" || String(emp.dept || "").toLowerCase() === selectedDept.toLowerCase() || String(emp.dept || "").toLowerCase().includes(selectedDept.toLowerCase());
     const matchSearch =
       !attendanceSearch ||
-      emp.name.toLowerCase().includes(attendanceSearch.toLowerCase()) ||
-      emp.id.toLowerCase().includes(attendanceSearch.toLowerCase());
+      String(emp.name || "").toLowerCase().includes(attendanceSearch.toLowerCase()) ||
+      String(emp.id || "").toLowerCase().includes(attendanceSearch.toLowerCase());
     return matchDept && matchSearch;
   });
+
+  const modalFilteredEmployees = baseEmployeeList.filter((emp: any) => {
+    const matchDept = !empModalDept || String(emp.dept || "") === empModalDept;
+    const q = empModalSearch.trim().toLowerCase();
+    const matchSearch =
+      !q ||
+      String(emp.id || "").toLowerCase().includes(q) ||
+      String(emp.name || "").toLowerCase().includes(q) ||
+      String(emp.dept || "").toLowerCase().includes(q);
+    return matchDept && matchSearch;
+  });
+
+  // Calculation Tab KPIs (from real SalarySheets, falling back to posted 334/338/3335 ledger lines if 0 SalarySheets)
+  const displaySalarySheets = apiConnected ? createdSalarySheets : SAMPLE_SALARY_SHEETS;
+  const calcKpis = useMemo(() => {
+    if (!apiConnected) {
+      return { gross: 880000000, insurance: 92400000, tax: 38350000, net: 749250000, labelPeriod: "Tháng 09/2026" };
+    }
+    if (createdSalarySheets.length > 0) {
+      const gross = createdSalarySheets.reduce((s, sh) => s + apiNumber(sh.grossSalary), 0);
+      const insurance = createdSalarySheets.reduce(
+        (s, sh) => s + apiNumber(sh.insuranceAmount) + apiNumber(sh.employerInsuranceAmount),
+        0,
+      );
+      const tax = createdSalarySheets.reduce((s, sh) => s + apiNumber(sh.taxAmount), 0);
+      const net = createdSalarySheets.reduce((s, sh) => s + apiNumber(sh.netSalary), 0);
+      return {
+        gross,
+        insurance,
+        tax,
+        net,
+        labelPeriod: createdSalarySheets[0]?.period || `Kỳ ${_period}`,
+      };
+    }
+    // Aggregate from posted Sổ cái payroll entries if no SalarySheet created yet
+    let gross334 = 0;
+    let ins338 = 0;
+    let tax3335 = 0;
+    for (const entry of apiRows.postedJournals || []) {
+      const isOpening = String(entry.entry_type || "").toUpperCase() === "OPENING" || String(entry.number || "").startsWith("OPEN-");
+      if (isOpening) continue;
+      for (const l of entry.lines || []) {
+        const code = String(l.account_code || "");
+        const cr = apiNumber(l.credit);
+        if (code.startsWith("334") && cr > 0) gross334 += cr;
+        else if ((code === "3382" || code === "3383" || code === "3384" || code === "3386") && cr > 0) ins338 += cr;
+        else if (code === "3335" && cr > 0) tax3335 += cr;
+      }
+    }
+    return {
+      gross: gross334,
+      insurance: ins338,
+      tax: tax3335,
+      net: Math.max(0, gross334 - tax3335),
+      labelPeriod: _period ? `Kỳ ${_period}` : `Năm ${CURRENT_YEAR}`,
+    };
+  }, [apiConnected, createdSalarySheets, apiRows.postedJournals, _period]);
 
   // =========================================================================
   // RENDER POPUPS & MODALS
@@ -617,14 +885,14 @@ export default function MisaPayrollWorkspace({
           />
         )}
 
-        {/* 3. Danh mục Nhân viên Modal */}
+        {/* 3. Danh mục Nhân viên & Hồ sơ lương Modal */}
         {showEmployeesModal && (
           <div className="misa-modal-overlay">
-            <div className="misa-modal-card" style={{ width: 1000, maxWidth: "95vw", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+            <div className="misa-modal-card" style={{ width: 1080, maxWidth: "96vw", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
               <div className="misa-modal-header" style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <UserCheck size={20} style={{ color: "var(--brand)" }} />
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>Danh mục Cán bộ Nhân viên</h3>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>Danh mục Cán bộ Nhân viên & Hồ sơ lương</h3>
                 </div>
                 <button
                   type="button"
@@ -635,32 +903,40 @@ export default function MisaPayrollWorkspace({
                 </button>
               </div>
 
-              <div style={{ padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", background: "#ffffff" }}>
+              <div style={{ padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", background: "#ffffff", flexWrap: "wrap", gap: 10 }}>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                   <div style={{ position: "relative", width: 260 }}>
                     <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "#94a3b8" }} />
                     <input
                       type="text"
+                      value={empModalSearch}
+                      onChange={(e) => setEmpModalSearch(e.target.value)}
                       placeholder="Tìm theo mã, tên CBNV..."
                       style={{ width: "100%", height: 32, paddingLeft: 30, borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13 }}
                     />
                   </div>
                   <select
-                    style={{ height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, background: "#ffffff" }}
+                    value={empModalDept}
+                    onChange={(e) => setEmpModalDept(e.target.value)}
+                    style={{ height: 32, padding: "0 28px 0 10px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13, background: "#ffffff" }}
                   >
                     <option value="">Tất cả phòng ban</option>
-                    <option value="vp">Khối Văn phòng</option>
-                    <option value="sx">Phân xưởng Sản xuất</option>
-                    <option value="kd">Phòng Kinh doanh</option>
+                    {departmentOptions.map((d) => (
+                      <option key={d.id} value={d.name}>{d.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     type="button"
-                    onClick={() => notify(apiConnected ? "Thêm nhân viên mới tại Danh mục > Nhân viên, sau đó nhập lương trong bảng này." : "Thêm mới hồ sơ nhân viên thành công")}
-                    style={{ height: 32, padding: "0 12px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        window.location.href = href("/directory?tab=employees");
+                      }
+                    }}
+                    style={{ height: 32, padding: "0 12px", background: "#eff6ff", color: "var(--brand)", border: "1px solid #bfdbfe", borderRadius: 4, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
                   >
-                    <Plus size={15} /> Thêm nhân viên
+                    <Plus size={15} /> Mở Danh mục Nhân viên
                   </button>
                   <button
                     type="button"
@@ -679,50 +955,95 @@ export default function MisaPayrollWorkspace({
                       <th style={{ padding: "8px 10px", textAlign: "left" }}>Mã NV</th>
                       <th style={{ padding: "8px 10px", textAlign: "left" }}>Họ và tên</th>
                       <th style={{ padding: "8px 10px", textAlign: "left" }}>Phòng ban</th>
-                      <th style={{ padding: "8px 10px", textAlign: "left" }}>Chức danh</th>
-                      <th style={{ padding: "8px 10px", textAlign: "right" }}>Lương cơ bản</th>
-                      <th style={{ padding: "8px 10px", textAlign: "right" }}>Phụ cấp</th>
-                      <th style={{ padding: "8px 10px", textAlign: "left" }}>Số tài khoản ngân hàng</th>
-                      <th style={{ padding: "8px 10px", textAlign: "center" }}>NPT</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", width: 130 }}>Lương cơ bản</th>
+                      <th style={{ padding: "8px 10px", textAlign: "right", width: 115 }}>Phụ cấp</th>
+                      <th style={{ padding: "8px 10px", textAlign: "center", width: 80 }}>TK CP</th>
+                      <th style={{ padding: "8px 10px", textAlign: "left" }}>Số tài khoản NH</th>
+                      <th style={{ padding: "8px 10px", textAlign: "center", width: 64 }}>NPT</th>
                       <th style={{ padding: "8px 10px", textAlign: "center" }}>Trạng thái</th>
+                      {apiConnected && <th style={{ padding: "8px 6px", textAlign: "center", width: 44 }}>Xóa</th>}
                     </tr>
                   </thead>
                   <tbody>
-                    {(apiConnected && apiEmployees ? apiEmployees : SAMPLE_EMPLOYEES).map((emp: any) => (
+                    {modalFilteredEmployees.map((emp: any) => (
                       <tr key={emp.id} style={{ borderBottom: "1px solid #f1f5f9", height: 38 }}>
                         <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{emp.id}</td>
                         <td style={{ padding: "8px 10px", fontWeight: 600, color: "#1e293b" }}>{emp.name}</td>
-                        <td style={{ padding: "8px 10px", color: "#475569" }}>{emp.dept}</td>
-                        <td style={{ padding: "8px 10px", color: "#475569" }}>{emp.title}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{apiConnected && apiEmployees ? <input inputMode="numeric" value={formatMoneyInput(emp.salaryRate)} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, salaryRate: parseMoneyInputString(e.target.value, { emptyWhenBlank: false }), dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "right" }} /> : formatVND(emp.salaryRate)}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right" }}>{apiConnected && apiEmployees ? <input inputMode="numeric" value={formatMoneyInput(emp.allowance)} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, allowance: parseMoneyInputString(e.target.value, { emptyWhenBlank: false }), dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "right" }} /> : formatVND(emp.allowance)}</td>
-                        <td style={{ padding: "8px 10px", color: "#64748b" }}>{apiConnected && apiEmployees ? <input value={emp.bankAcc} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, bankAcc: e.target.value, dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "left" }} /> : emp.bankAcc}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "center" }}>{apiConnected && apiEmployees ? <input value={emp.dependents} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, dependents: e.target.value, dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "center" }} /> : emp.dependents}</td>
+                        <td style={{ padding: "8px 10px", color: "#475569" }}>{emp.dept || "—"}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{apiConnected && apiEmployees ? <input aria-label={`Lương cơ bản ${emp.id}`} inputMode="numeric" value={formatMoneyInput(emp.salaryRate)} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, salaryRate: parseMoneyInputString(e.target.value, { emptyWhenBlank: false }), dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "right" }} /> : formatVND(emp.salaryRate)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right" }}>{apiConnected && apiEmployees ? <input aria-label={`Phụ cấp ${emp.id}`} inputMode="numeric" value={formatMoneyInput(emp.allowance)} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, allowance: parseMoneyInputString(e.target.value, { emptyWhenBlank: false }), dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "right" }} /> : formatVND(emp.allowance)}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "center" }}>{apiConnected && apiEmployees ? <input aria-label={`TK chi phí ${emp.id}`} value={emp.expenseAccountCode || "6422"} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, expenseAccountCode: e.target.value, dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 6px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "center" }} /> : "6422"}</td>
+                        <td style={{ padding: "8px 10px", color: "#64748b" }}>{apiConnected && apiEmployees ? <input aria-label={`Tài khoản ngân hàng ${emp.id}`} value={emp.bankAcc} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, bankAcc: e.target.value, dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "left" }} /> : emp.bankAcc}</td>
+                        <td style={{ padding: "8px 10px", textAlign: "center" }}>{apiConnected && apiEmployees ? <input aria-label={`NPT ${emp.id}`} value={emp.dependents} onChange={(e) => setApiEmployees((rows) => (rows || []).map((row) => row.id === emp.id ? { ...row, dependents: e.target.value, dirty: true } : row))} style={{ width: "100%", height: 28, padding: "0 6px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12.5, boxSizing: "border-box", textAlign: "center" }} /> : emp.dependents}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                          <span style={{ padding: "2px 8px", borderRadius: 12, background: "#dcfce7", color: "#166534", fontSize: 11, fontWeight: 500 }}>
+                          <span style={{ padding: "2px 8px", borderRadius: 12, background: emp.status === "Chưa có hồ sơ lương" ? "#fef3c7" : "#dcfce7", color: emp.status === "Chưa có hồ sơ lương" ? "#92400e" : "#166534", fontSize: 11, fontWeight: 500 }}>
                             {emp.status}
                           </span>
                         </td>
+                        {apiConnected && (
+                          <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                            {emp.profileId ? (
+                              <button
+                                type="button"
+                                title="Xóa hồ sơ lương"
+                                onClick={async () => {
+                                  if (await apiSave((writer) => deletePayProfile(writer, emp.profileId))) {
+                                    refreshPayrollEmployees();
+                                  }
+                                }}
+                                style={{ border: "none", background: "none", color: "#ef4444", cursor: "pointer", padding: 2 }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            ) : null}
+                          </td>
+                        )}
                       </tr>
                     ))}
+                    {!modalFilteredEmployees.length && (
+                      <tr>
+                        <td colSpan={apiConnected ? 10 : 9} style={{ padding: 24, textAlign: "center", color: "#64748b" }}>
+                          Không có nhân sự phù hợp với điều kiện lọc.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
 
               <div style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12.5, color: "#64748b" }}>Tổng số nhân sự: {(apiConnected && apiEmployees ? apiEmployees : SAMPLE_EMPLOYEES).length} người</span>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (apiConnected && apiEmployees?.some((row) => row.dirty)) {
-                      if (!(await apiSave((writer) => savePayProfiles(writer, apiEmployees)))) return;
-                    }
-                    setShowEmployeesModal(false);
-                  }}
-                  style={{ height: 32, padding: "0 20px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, cursor: "pointer" }}
-                >
-                  Đóng
-                </button>
+                <span style={{ fontSize: 12.5, color: "#64748b" }}>Tổng số nhân sự: {modalFilteredEmployees.length} người</span>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {apiConnected && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (apiEmployees?.some((row) => row.dirty)) {
+                          if (await apiSave((writer) => savePayProfiles(writer, apiEmployees))) {
+                            refreshPayrollEmployees();
+                          }
+                        } else {
+                          notify("Chưa có thay đổi nào trên hồ sơ lương.");
+                        }
+                      }}
+                      style={{ height: 32, padding: "0 16px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+                    >
+                      <Save size={14} /> Lưu hồ sơ lương
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (apiConnected && apiEmployees?.some((row) => row.dirty)) {
+                        refreshPayrollEmployees();
+                      }
+                      setShowEmployeesModal(false);
+                    }}
+                    style={{ height: 32, padding: "0 20px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 13, cursor: "pointer" }}
+                  >
+                    Đóng
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -965,7 +1286,7 @@ export default function MisaPayrollWorkspace({
                       void apiSave(async () => {
                         const settings = await request<any>(`/api/v1/payroll/settings/?company_id=${encodeURIComponent(company.id)}`, apiToken, {
                           method: "PUT", body: JSON.stringify({
-                            integration_mode: payrollOption === "Tiền lương đám mây" ? "CLOUD" : "LOCAL",
+                            integration_mode: payrollOption.includes("đám mây") ? "CLOUD" : "LOCAL",
                             accounting_rule: accountingRule, standard_days: standardDaysOption,
                           }),
                         });
@@ -988,11 +1309,13 @@ export default function MisaPayrollWorkspace({
         {/* 8. Chi tiết Bảng lương Modal */}
         {showSalaryDetailModal && (
           <div className="misa-modal-overlay">
-            <div className="misa-modal-card" style={{ width: 1100, maxWidth: "95vw", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+            <div className="misa-modal-card" style={{ width: 1120, maxWidth: "95vw", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
               <div className="misa-modal-header" style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>{showSalaryDetailModal.name}</h3>
-                  <span style={{ fontSize: 12.5, color: "#64748b" }}>Mã: {showSalaryDetailModal.id} • Đơn vị: {showSalaryDetailModal.dept} • Người duyệt: {showSalaryDetailModal.approvedBy}</span>
+                  <span style={{ fontSize: 12.5, color: "#64748b" }}>
+                    Mã: {showSalaryDetailModal.code || showSalaryDetailModal.id} • Kỳ: {showSalaryDetailModal.period} • Đơn vị: {showSalaryDetailModal.dept} • Trạng thái: {showSalaryDetailModal.status}
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -1002,14 +1325,28 @@ export default function MisaPayrollWorkspace({
                   <X size={20} />
                 </button>
               </div>
-              <div style={{ padding: "12px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", gap: 14 }}>
+              <div style={{ padding: "12px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                   <div><span style={{ color: "#64748b", fontSize: 12 }}>Tổng quỹ lương:</span> <strong style={{ color: "#1e293b", fontSize: 14 }}>{formatVND(showSalaryDetailModal.grossSalary)} đ</strong></div>
-                  <div><span style={{ color: "#64748b", fontSize: 12 }}>BHXH khấu trừ:</span> <strong style={{ color: "#ea580c", fontSize: 14 }}>{formatVND(showSalaryDetailModal.insuranceAmount)} đ</strong></div>
+                  <div><span style={{ color: "#64748b", fontSize: 12 }}>BHXH khấu trừ NLĐ:</span> <strong style={{ color: "#ea580c", fontSize: 14 }}>{formatVND(showSalaryDetailModal.insuranceAmount)} đ</strong></div>
                   <div><span style={{ color: "#64748b", fontSize: 12 }}>Thuế TNCN:</span> <strong style={{ color: "#d97706", fontSize: 14 }}>{formatVND(showSalaryDetailModal.taxAmount)} đ</strong></div>
                   <div><span style={{ color: "#64748b", fontSize: 12 }}>Thực lĩnh:</span> <strong style={{ color: "var(--brand)", fontSize: 14 }}>{formatVND(showSalaryDetailModal.netSalary)} đ</strong></div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
+                  {apiConnected && showSalaryDetailModal.rawStatus === "CALCULATED" && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const targetId = showSalaryDetailModal.id;
+                        if (await apiSave((writer) => postSalarySheet(writer, targetId))) {
+                          setShowSalaryDetailModal(null);
+                        }
+                      }}
+                      style={{ height: 32, padding: "0 14px", background: "#2563eb", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+                    >
+                      <FileText size={15} /> Hạch toán chi phí
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -1035,41 +1372,67 @@ export default function MisaPayrollWorkspace({
                     <tr style={{ background: "#f8fafc", color: "#475569", borderBottom: "2px solid #cbd5e1", height: 36 }}>
                       <th style={{ padding: "6px 8px", textAlign: "left" }}>Mã NV</th>
                       <th style={{ padding: "6px 8px", textAlign: "left" }}>Họ và tên</th>
+                      <th style={{ padding: "6px 8px", textAlign: "left" }}>Phòng ban</th>
                       <th style={{ padding: "6px 8px", textAlign: "right" }}>Lương cơ bản</th>
                       <th style={{ padding: "6px 8px", textAlign: "center" }}>Công chuẩn</th>
                       <th style={{ padding: "6px 8px", textAlign: "center" }}>Công TT</th>
-                      <th style={{ padding: "6px 8px", textAlign: "right" }}>Lương TT</th>
                       <th style={{ padding: "6px 8px", textAlign: "right" }}>Phụ cấp</th>
                       <th style={{ padding: "6px 8px", textAlign: "right" }}>Tổng thu nhập</th>
-                      <th style={{ padding: "6px 8px", textAlign: "right" }}>BHXH (10.5%)</th>
+                      <th style={{ padding: "6px 8px", textAlign: "right" }}>BHXH NLĐ</th>
                       <th style={{ padding: "6px 8px", textAlign: "right" }}>Thuế TNCN</th>
                       <th style={{ padding: "6px 8px", textAlign: "right", color: "var(--brand)" }}>Thực lĩnh</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {SAMPLE_EMPLOYEES.map((emp) => {
-                      const base = emp.salaryRate;
-                      const allowance = emp.allowance;
-                      const gross = base + allowance;
-                      const insurance = Math.round(base * 0.105);
-                      const tax = Math.max(0, Math.round((gross - insurance - 11000000 - emp.dependents * 4400000) * 0.1));
-                      const net = gross - insurance - tax;
-                      return (
-                        <tr key={emp.id} style={{ borderBottom: "1px solid #f1f5f9", height: 36 }}>
-                          <td style={{ padding: "6px 8px", fontWeight: 600, color: "var(--brand)" }}>{emp.id}</td>
-                          <td style={{ padding: "6px 8px", fontWeight: 600, color: "#1e293b" }}>{emp.name}</td>
-                          <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(base)}</td>
-                          <td style={{ padding: "6px 8px", textAlign: "center" }}>22</td>
-                          <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 600 }}>22</td>
-                          <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(base)}</td>
-                          <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(allowance)}</td>
-                          <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>{formatVND(gross)}</td>
-                          <td style={{ padding: "6px 8px", textAlign: "right", color: "#ea580c" }}>{formatVND(insurance)}</td>
-                          <td style={{ padding: "6px 8px", textAlign: "right", color: "#d97706" }}>{formatVND(tax)}</td>
-                          <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(net)}</td>
-                        </tr>
-                      );
-                    })}
+                    {(Array.isArray(showSalaryDetailModal.lines)
+                      ? showSalaryDetailModal.lines.map((line: any) => ({
+                          id: line.employee_code,
+                          name: line.employee_name,
+                          dept: line.department_name || "—",
+                          base: apiNumber(line.base_salary),
+                          stdDays: apiNumber(showSalaryDetailModal.standardDays) || standardDaysOption,
+                          workDays: apiNumber(line.working_days),
+                          allowance: apiNumber(line.allowance),
+                          gross: apiNumber(line.gross),
+                          insurance: apiNumber(line.employee_insurance),
+                          tax: apiNumber(line.personal_income_tax),
+                          net: apiNumber(line.net),
+                        }))
+                      : SAMPLE_EMPLOYEES.map((emp) => {
+                          const base = emp.salaryRate;
+                          const allowance = emp.allowance;
+                          const gross = base + allowance;
+                          const insurance = Math.round(base * 0.105);
+                          const tax = Math.max(0, Math.round((gross - insurance - 11000000 - emp.dependents * 4400000) * 0.1));
+                          return {
+                            id: emp.id,
+                            name: emp.name,
+                            dept: emp.dept,
+                            base,
+                            stdDays: 22,
+                            workDays: 22,
+                            allowance,
+                            gross,
+                            insurance,
+                            tax,
+                            net: gross - insurance - tax,
+                          };
+                        })
+                    ).map((row: any) => (
+                      <tr key={row.id} style={{ borderBottom: "1px solid #f1f5f9", height: 36 }}>
+                        <td style={{ padding: "6px 8px", fontWeight: 600, color: "var(--brand)" }}>{row.id}</td>
+                        <td style={{ padding: "6px 8px", fontWeight: 600, color: "#1e293b" }}>{row.name}</td>
+                        <td style={{ padding: "6px 8px", color: "#475569" }}>{row.dept}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(row.base)}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "center" }}>{row.stdDays}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 600 }}>{row.workDays}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right" }}>{formatVND(row.allowance)}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>{formatVND(row.gross)}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right", color: "#ea580c" }}>{formatVND(row.insurance)}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right", color: "#d97706" }}>{formatVND(row.tax)}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(row.net)}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -1086,110 +1449,168 @@ export default function MisaPayrollWorkspace({
           </div>
         )}
 
-        {/* 9. Report Preview Modal */}
-        {previewReport && (
-          <div className="misa-modal-overlay">
-            <div className="misa-modal-card" style={{ width: 950, maxWidth: "95vw", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-              <div className="misa-modal-header" style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>{previewReport}</h3>
-                  <span style={{ fontSize: 12.5, color: "#64748b" }}>Kỳ báo cáo: Tháng 09/2026 • Đơn vị: {company.name}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPreviewReport(null)}
-                  style={{ border: "none", background: "none", cursor: "pointer", color: "#64748b" }}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={async (event) => { try { await printVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
-                  style={{ height: 30, padding: "0 12px", background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
-                >
-                  <Printer size={14} /> In báo cáo
-                </button>
-                <button
-                  type="button"
-                  onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Xuất báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
-                  style={{ height: 30, padding: "0 12px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
-                >
-                  <Download size={14} /> Xuất Excel
-                </button>
-              </div>
-              <div style={{ flex: 1, overflow: "auto", padding: "24px 30px", background: "#ffffff" }}>
-                <div style={{ textAlign: "center", marginBottom: 20 }}>
-                  <h2 style={{ margin: "0 0 6px 0", fontSize: 18, fontWeight: 700, color: "#111827", textTransform: "uppercase" }}>{previewReport}</h2>
-                  <div style={{ fontSize: 13, color: "#4b5563" }}>Kỳ tính lương: Tháng 09 năm 2026</div>
-                  <div style={{ fontSize: 12.5, color: "#6b7280", fontStyle: "italic", marginTop: 4 }}>Đơn vị tính: Đồng Việt Nam (VND)</div>
-                </div>
+        {/* 9. Report Preview Modal (Live Aggregated by Department) */}
+        {previewReport && (() => {
+          const isEnLang = reportLanguage === "Tiếng Anh";
+          const isBiLang = reportLanguage === "Song ngữ Việt - Anh";
+          const targetSheet = createdSalarySheets[0] || null;
+          const deptMap = new Map<string, { dept: string; count: number; gross: number; insurance: number; tax: number; net: number }>();
 
-                <table style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse", border: "1px solid #cbd5e1" }}>
-                  <thead>
-                    <tr style={{ background: "#f1f5f9", height: 36, borderBottom: "1px solid #cbd5e1" }}>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px" }}>STT</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "left" }}>Khối / Phòng ban</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>Số lao động</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>Tổng quỹ lương</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>BHXH & Các khoản trừ</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>Thuế TNCN</th>
-                      <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>Thực lĩnh</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>1</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", fontWeight: 600 }}>Khối Văn phòng & Ban Giám đốc</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>28</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>385.000.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>40.425.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>24.150.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>320.425.000</td>
-                    </tr>
-                    <tr>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>2</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", fontWeight: 600 }}>Phân xưởng Sản xuất & Cơ điện</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>45</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>495.000.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>51.975.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>14.200.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>428.825.000</td>
-                    </tr>
-                    <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
-                      <td colSpan={2} style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "center" }}>TỔNG CỘNG</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "center" }}>73</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "right", color: "#111827" }}>880.000.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "right", color: "#ea580c" }}>92.400.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "right", color: "#d97706" }}>38.350.000</td>
-                      <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "right", color: "var(--brand)" }}>749.250.000</td>
-                    </tr>
-                  </tbody>
-                </table>
+          if (apiConnected) {
+            if (targetSheet && Array.isArray(targetSheet.lines) && targetSheet.lines.length > 0) {
+              for (const ln of targetSheet.lines) {
+                const dName = String(ln.department_name || "Chưa phân bộ phận");
+                const cur = deptMap.get(dName) || { dept: dName, count: 0, gross: 0, insurance: 0, tax: 0, net: 0 };
+                cur.count += 1;
+                cur.gross += apiNumber(ln.gross);
+                cur.insurance += apiNumber(ln.employee_insurance);
+                cur.tax += apiNumber(ln.personal_income_tax);
+                cur.net += apiNumber(ln.net);
+                deptMap.set(dName, cur);
+              }
+            } else if (apiEmployees && apiEmployees.some((e) => apiNumber(e.salaryRate) > 0)) {
+              for (const e of apiEmployees) {
+                if (apiNumber(e.salaryRate) <= 0) continue;
+                const dName = String(e.dept || "Chưa phân bộ phận");
+                const gross = apiNumber(e.salaryRate) + apiNumber(e.allowance);
+                const ins = Math.round(apiNumber(e.insuranceSalary || e.salaryRate) * 0.105);
+                const cur = deptMap.get(dName) || { dept: dName, count: 0, gross: 0, insurance: 0, tax: 0, net: 0 };
+                cur.count += 1;
+                cur.gross += gross;
+                cur.insurance += ins;
+                cur.net += gross - ins;
+                deptMap.set(dName, cur);
+              }
+            } else if (calcKpis.gross > 0) {
+              deptMap.set("Tổng hợp từ Sổ cái (TK 334)", {
+                dept: "Tổng hợp từ Sổ cái (TK 334)",
+                count: (apiEmployees || []).length,
+                gross: calcKpis.gross,
+                insurance: calcKpis.insurance,
+                tax: calcKpis.tax,
+                net: calcKpis.net,
+              });
+            }
+          } else {
+            deptMap.set("Khối Văn phòng & Ban Giám đốc", { dept: "Khối Văn phòng & Ban Giám đốc", count: 28, gross: 385000000, insurance: 40425000, tax: 24150000, net: 320425000 });
+            deptMap.set("Phân xưởng Sản xuất & Cơ điện", { dept: "Phân xưởng Sản xuất & Cơ điện", count: 45, gross: 495000000, insurance: 51975000, tax: 14200000, net: 428825000 });
+          }
 
-                {/* Signatures */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", marginTop: 40, textAlign: "center", fontSize: 13 }}>
+          const deptRows = Array.from(deptMap.values());
+          const totCount = deptRows.reduce((s, r) => s + r.count, 0);
+          const totGross = deptRows.reduce((s, r) => s + r.gross, 0);
+          const totIns = deptRows.reduce((s, r) => s + r.insurance, 0);
+          const totTax = deptRows.reduce((s, r) => s + r.tax, 0);
+          const totNet = deptRows.reduce((s, r) => s + r.net, 0);
+          const repPeriodLabel = targetSheet ? targetSheet.period : calcKpis.labelPeriod;
+
+          return (
+            <div className="misa-modal-overlay">
+              <div className="misa-modal-card" style={{ width: 950, maxWidth: "95vw", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+                <div className="misa-modal-header" style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
                   <div>
-                    <strong>Người lập biểu</strong>
-                    <div style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>(Ký, họ tên)</div>
-                    <div style={{ marginTop: 60, fontWeight: 600 }}>Hoàng Thu Thảo</div>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>{previewReport}</h3>
+                    <span style={{ fontSize: 12.5, color: "#64748b" }}>Kỳ báo cáo: {repPeriodLabel} • Đơn vị: {company.name}</span>
                   </div>
-                  <div>
-                    <strong>Kế toán trưởng</strong>
-                    <div style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>(Ký, họ tên)</div>
-                    <div style={{ marginTop: 60, fontWeight: 600 }}>Trần Thị Bích</div>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewReport(null)}
+                    style={{ border: "none", background: "none", cursor: "pointer", color: "#64748b" }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={async (event) => { try { await printVisibleTable(event.currentTarget, "báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
+                    style={{ height: 30, padding: "0 12px", background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+                  >
+                    <Printer size={14} /> {isEnLang ? "Print" : "In báo cáo"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Xuất báo cáo"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
+                    style={{ height: 30, padding: "0 12px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+                  >
+                    <Download size={14} /> {isEnLang ? "Export Excel" : "Xuất Excel"}
+                  </button>
+                </div>
+                <div style={{ flex: 1, overflow: "auto", padding: "24px 30px", background: "#ffffff" }}>
+                  <div style={{ textAlign: "center", marginBottom: 20 }}>
+                    <h2 style={{ margin: "0 0 6px 0", fontSize: 18, fontWeight: 700, color: "#111827", textTransform: "uppercase" }}>
+                      {isEnLang ? "PAYROLL SUMMARY REPORT" : previewReport}
+                    </h2>
+                    <div style={{ fontSize: 13, color: "#4b5563" }}>
+                      {isEnLang ? `Period: ${repPeriodLabel}` : `Kỳ tính lương: ${repPeriodLabel}`}
+                    </div>
+                    <div style={{ fontSize: 12.5, color: "#6b7280", fontStyle: "italic", marginTop: 4 }}>
+                      {isEnLang ? "Currency: VND" : "Đơn vị tính: Đồng Việt Nam (VND)"}
+                    </div>
                   </div>
-                  <div>
-                    <strong>Giám đốc</strong>
-                    <div style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>(Ký, họ tên, đóng dấu)</div>
-                    <div style={{ marginTop: 60, fontWeight: 600 }}>Nguyễn Văn An</div>
+
+                  <table style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse", border: "1px solid #cbd5e1" }}>
+                    <thead>
+                      <tr style={{ background: "#f1f5f9", height: 36, borderBottom: "1px solid #cbd5e1" }}>
+                        <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px" }}>{isEnLang ? "No." : "STT"}</th>
+                        <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "left" }}>{isEnLang ? "Department" : isBiLang ? "Phòng ban / Department" : "Khối / Phòng ban"}</th>
+                        <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>{isEnLang ? "Headcount" : "Số lao động"}</th>
+                        <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>{isEnLang ? "Gross Payroll" : "Tổng quỹ lương"}</th>
+                        <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>{isEnLang ? "Insurance" : "BHXH & Các khoản trừ"}</th>
+                        <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>{isEnLang ? "PIT" : "Thuế TNCN"}</th>
+                        <th style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>{isEnLang ? "Net Pay" : "Thực lĩnh"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {deptRows.map((r, idx) => (
+                        <tr key={r.dept}>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>{idx + 1}</td>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", fontWeight: 600 }}>{r.dept}</td>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "center" }}>{r.count}</td>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>{formatVND(r.gross)}</td>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>{formatVND(r.insurance)}</td>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right" }}>{formatVND(r.tax)}</td>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "6px 8px", textAlign: "right", fontWeight: 600 }}>{formatVND(r.net)}</td>
+                        </tr>
+                      ))}
+                      {!deptRows.length && (
+                        <tr>
+                          <td colSpan={7} style={{ border: "1px solid #cbd5e1", padding: 20, textAlign: "center", color: "#64748b" }}>
+                            Chưa có dữ liệu bảng lương hoặc hạch toán lương phát sinh trong kỳ này.
+                          </td>
+                        </tr>
+                      )}
+                      <tr style={{ background: "#f8fafc", fontWeight: 700 }}>
+                        <td colSpan={2} style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "center" }}>{isEnLang ? "TOTAL" : "TỔNG CỘNG"}</td>
+                        <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "center" }}>{totCount}</td>
+                        <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "right", color: "#111827" }}>{formatVND(totGross)}</td>
+                        <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "right", color: "#ea580c" }}>{formatVND(totIns)}</td>
+                        <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "right", color: "#d97706" }}>{formatVND(totTax)}</td>
+                        <td style={{ border: "1px solid #cbd5e1", padding: "8px 10px", textAlign: "right", color: "var(--brand)" }}>{formatVND(totNet)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  {/* Signatures */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", marginTop: 40, textAlign: "center", fontSize: 13 }}>
+                    <div>
+                      <strong>{isEnLang ? "Prepared by" : "Người lập biểu"}</strong>
+                      <div style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>(Ký, họ tên)</div>
+                    </div>
+                    <div>
+                      <strong>{isEnLang ? "Chief Accountant" : "Kế toán trưởng"}</strong>
+                      <div style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>(Ký, họ tên)</div>
+                    </div>
+                    <div>
+                      <strong>{isEnLang ? "Director" : "Giám đốc"}</strong>
+                      <div style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>(Ký, họ tên, đóng dấu)</div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* 10. Thêm bảng chấm công Modal (Ảnh 1) */}
         {showAddAttendanceModal && (
@@ -1371,7 +1792,6 @@ export default function MisaPayrollWorkspace({
                           <option key={i + 1} value={i + 1}>{i + 1}</option>
                         ))}
                       </select>
-                      <ChevronDown size={13} style={{ position: "absolute", right: 6, top: 10, color: "#64748b", pointerEvents: "none" }} />
                     </div>
                   </div>
 
@@ -1511,7 +1931,7 @@ export default function MisaPayrollWorkspace({
                               style={{ accentColor: "var(--brand)", width: 15, height: 15, cursor: "pointer" }}
                             />
                           </td>
-                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500, borderRight: "1px dotted #cbd5e1" }}>{u.id}</td>
+                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500, borderRight: "1px dotted #cbd5e1" }}>{u.code || u.id}</td>
                           <td style={{ padding: "6px 12px", color: "#1e293b", borderRight: "1px dotted #cbd5e1" }}>{u.name}</td>
                           <td style={{ padding: "6px 12px", color: "#475569" }}>{u.level}</td>
                         </tr>
@@ -1565,7 +1985,19 @@ export default function MisaPayrollWorkspace({
                   type="button"
                   onClick={async () => {
                     if (apiConnected) {
-                      if (!(await apiSave((writer) => saveAttendanceSheet(writer, { month: attMonth, year: attYear, type: attendanceType, name: attSheetName }, "DETAIL")))) return;
+                      let createdId = "";
+                      const depts = selectedDeptUuids(orgUnits);
+                      const ok = await apiSave(async (writer) => {
+                        const res = await saveAttendanceSheet(
+                          writer,
+                          { month: attMonth, year: attYear, type: attendanceType, name: attSheetName, departments: depts },
+                          "DETAIL",
+                        );
+                        createdId = String(res.record?.id || "");
+                        return res;
+                      });
+                      if (!ok) return;
+                      if (createdId) setActiveDetailSheetId(createdId);
                       setShowAddAttendanceModal(false);
                       setAttendanceMode("sheet_view");
                       return;
@@ -1773,7 +2205,6 @@ export default function MisaPayrollWorkspace({
                           <option key={i + 1} value={i + 1}>{i + 1}</option>
                         ))}
                       </select>
-                      <ChevronDown size={13} style={{ position: "absolute", right: 6, top: 10, color: "#64748b", pointerEvents: "none" }} />
                     </div>
                   </div>
 
@@ -1867,7 +2298,7 @@ export default function MisaPayrollWorkspace({
                               style={{ accentColor: "var(--brand)", width: 15, height: 15, cursor: "pointer" }}
                             />
                           </td>
-                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500, borderRight: "1px dotted #cbd5e1" }}>{u.id}</td>
+                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500, borderRight: "1px dotted #cbd5e1" }}>{u.code || u.id}</td>
                           <td style={{ padding: "6px 12px", color: "#1e293b", borderRight: "1px dotted #cbd5e1" }}>{u.name}</td>
                           <td style={{ padding: "6px 12px", color: "#475569" }}>{u.level}</td>
                         </tr>
@@ -1921,7 +2352,24 @@ export default function MisaPayrollWorkspace({
                   type="button"
                   onClick={async () => {
                     if (apiConnected) {
-                      if (!(await apiSave((writer) => saveAttendanceSheet(writer, { month: summaryMonth, year: summaryYear, type: summaryType, name: summarySheetName }, "SUMMARY")))) return;
+                      const depts = selectedDeptUuids(summaryOrgUnits);
+                      if (
+                        !(await apiSave((writer) =>
+                          saveAttendanceSheet(
+                            writer,
+                            {
+                              month: summaryMonth,
+                              year: summaryYear,
+                              type: summaryType,
+                              name: summarySheetName,
+                              departments: depts,
+                              aggregateFromDetails: isAggregatedFromDetails,
+                            },
+                            "SUMMARY",
+                          ),
+                        ))
+                      )
+                        return;
                       setShowAddSummaryModal(false);
                       setSummaryMode("list_view");
                       return;
@@ -2148,7 +2596,6 @@ export default function MisaPayrollWorkspace({
                           <option key={i + 1} value={i + 1}>{i + 1}</option>
                         ))}
                       </select>
-                      <ChevronDown size={13} style={{ position: "absolute", right: 6, top: 10, color: "#64748b", pointerEvents: "none" }} />
                     </div>
                   </div>
 
@@ -2296,7 +2743,7 @@ export default function MisaPayrollWorkspace({
                               style={{ accentColor: "var(--brand)", width: 15, height: 15, cursor: "pointer" }}
                             />
                           </td>
-                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500, borderRight: "1px dotted #cbd5e1" }}>{u.id}</td>
+                          <td style={{ padding: "6px 12px", color: "#1e293b", fontWeight: 500, borderRight: "1px dotted #cbd5e1" }}>{u.code || u.id}</td>
                           <td style={{ padding: "6px 12px", color: "#1e293b", borderRight: "1px dotted #cbd5e1" }}>{u.name}</td>
                           <td style={{ padding: "6px 12px", color: "#475569" }}>{u.level}</td>
                         </tr>
@@ -2350,7 +2797,8 @@ export default function MisaPayrollWorkspace({
                   type="button"
                   onClick={async () => {
                     if (apiConnected) {
-                      if (!(await apiSave((writer) => saveSalarySheet(writer, { month: calcMonth, year: calcYear, type: salarySheetType, name: calcSheetName })))) return;
+                      const depts = selectedDeptUuids(calcOrgUnits);
+                      if (!(await apiSave((writer) => saveSalarySheet(writer, { month: calcMonth, year: calcYear, type: salarySheetType, name: calcSheetName, departments: depts })))) return;
                       setShowAddSalarySheetModal(false);
                       setCalcMode("sheet_view");
                       return;
@@ -2395,7 +2843,7 @@ export default function MisaPayrollWorkspace({
           </div>
         )}
 
-        {/* 13. Chọn bảng lương để hạch toán chi phí Modal (Ảnh 3) */}
+        {/* 13. Chọn bảng lương để hạch toán chi phí Modal */}
         {showSelectSalaryModal && (
           <div className="misa-modal-overlay">
             <div
@@ -2421,7 +2869,7 @@ export default function MisaPayrollWorkspace({
                 }}
               >
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
-                  Chọn bảng lương
+                  Chọn bảng lương cần hạch toán
                 </h3>
                 <button
                   type="button"
@@ -2434,7 +2882,7 @@ export default function MisaPayrollWorkspace({
 
               {/* Form Content */}
               <div style={{ padding: "16px 20px 24px 20px", background: "#ffffff" }}>
-                <div style={{ fontSize: 13, color: "#374151", marginBottom: 6 }}>Bảng lương</div>
+                <div style={{ fontSize: 13, color: "#374151", marginBottom: 6 }}>Bảng lương chưa hạch toán</div>
                 <div style={{ position: "relative" }}>
                   <div
                     onClick={() => setIsSelectSalaryDropdownOpen(!isSelectSalaryDropdownOpen)}
@@ -2457,7 +2905,9 @@ export default function MisaPayrollWorkspace({
                     }}
                   >
                     <span style={{ color: selectedSalarySheetForPosting ? "#1e293b" : "#94a3b8" }}>
-                      {selectedSalarySheetForPosting || ""}
+                      {(apiConnected
+                        ? unpostedSalarySheets.find((s: any) => s.id === selectedSalarySheetForPosting || s.name === selectedSalarySheetForPosting)?.name
+                        : selectedSalarySheetForPosting) || "Chọn bảng lương..."}
                     </span>
                     {isSelectSalaryDropdownOpen ? (
                       <ChevronUp size={16} style={{ color: "#64748b" }} />
@@ -2482,7 +2932,7 @@ export default function MisaPayrollWorkspace({
                         overflow: "hidden",
                       }}
                     >
-                      {createdSalarySheets.length === 0 ? (
+                      {(apiConnected ? unpostedSalarySheets : createdSalarySheets).length === 0 ? (
                         <div>
                           <div
                             style={{
@@ -2492,30 +2942,32 @@ export default function MisaPayrollWorkspace({
                               fontSize: 13,
                             }}
                           >
-                            Không có dữ liệu hiển thị.
+                            Chưa có bảng lương nào ở trạng thái chờ hạch toán.
                           </div>
                           <div style={{ borderTop: "1px solid #e2e8f0", padding: "8px 12px", textAlign: "center", background: "#f8fafc" }}>
                             <button
                               type="button"
                               onClick={() => {
-                                setSelectedSalarySheetForPosting("Bảng lương cố định tháng 10 năm 2026");
-                                setIsSelectSalaryDropdownOpen(false);
+                                setShowSelectSalaryModal(false);
+                                navigateTo("calculation");
+                                setShowAddSalarySheetModal(true);
                               }}
                               style={{ border: "none", background: "none", color: "#0073e6", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}
                             >
-                              + Chọn bảng lương mẫu tháng 10/2026
+                              + Lập bảng lương mới tại tab Tính lương
                             </button>
                           </div>
                         </div>
                       ) : (
                         <div>
-                          {createdSalarySheets.map((sheet: any) => {
-                            const isSelected = selectedSalarySheetForPosting === sheet.name;
+                          {(apiConnected ? unpostedSalarySheets : createdSalarySheets).map((sheet: any) => {
+                            const valKey = apiConnected ? sheet.id : sheet.name;
+                            const isSelected = selectedSalarySheetForPosting === valKey || selectedSalarySheetForPosting === sheet.name;
                             return (
                               <div
                                 key={sheet.id || sheet.name}
                                 onClick={() => {
-                                  setSelectedSalarySheetForPosting(sheet.name);
+                                  setSelectedSalarySheetForPosting(valKey);
                                   setIsSelectSalaryDropdownOpen(false);
                                 }}
                                 style={{
@@ -2533,7 +2985,7 @@ export default function MisaPayrollWorkspace({
                                   if (!isSelected) e.currentTarget.style.background = "#ffffff";
                                 }}
                               >
-                                {sheet.name}
+                                {sheet.name} ({formatVND(sheet.grossSalary)} đ)
                               </div>
                             );
                           })}
@@ -2566,19 +3018,25 @@ export default function MisaPayrollWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (!selectedSalarySheetForPosting && createdSalarySheets.length === 0) {
-                      notify("Vui lòng chọn bảng lương để hạch toán chi phí!");
-                      return;
-                    }
                     if (apiConnected) {
-                      const sheet = createdSalarySheets.find((row: any) => row.name === selectedSalarySheetForPosting);
-                      if (!sheet) { notify("Chọn bảng lương cần hạch toán."); return; }
+                      const sheet = unpostedSalarySheets.find(
+                        (row: any) => row.id === selectedSalarySheetForPosting || row.name === selectedSalarySheetForPosting,
+                      );
+                      if (!sheet) { notify("Chọn bảng lương chưa hạch toán cần ghi sổ."); return; }
                       void apiSave((writer) => postSalarySheet(writer, sheet.id)).then((saved) => {
-                        if (saved) { setShowSelectSalaryModal(false); setPostingMode("voucher_view"); }
+                        if (saved) {
+                          setSelectedSalarySheetForPosting("");
+                          setShowSelectSalaryModal(false);
+                          setPostingMode("voucher_view");
+                        }
                       });
                       return;
                     }
-                    notify(`Đã lập chứng từ hạch toán chi phí lương cho ${selectedSalarySheetForPosting || "Bảng lương"} thành công!`);
+                    if (!selectedSalarySheetForPosting) {
+                      notify("Vui lòng chọn bảng lương để hạch toán chi phí!");
+                      return;
+                    }
+                    notify(`Đã lập chứng từ hạch toán chi phí lương cho ${selectedSalarySheetForPosting} thành công!`);
                     setShowSelectSalaryModal(false);
                     setPostingMode("voucher_view");
                   }}
@@ -3554,11 +4012,24 @@ export default function MisaPayrollWorkspace({
     }
 
     // 2.2 DANH SÁCH / BẢNG CHẤM CÔNG CHI TIẾT (KHI BẤM XEM DANH SÁCH CHỨNG TỪ HOẶC SAU KHI TẠO)
+    const filteredEditableAttLines = editableAttLines.filter((line: any) => {
+      const matchDept =
+        selectedDept === "all" ||
+        String(line.department_name || "").toLowerCase() === selectedDept.toLowerCase() ||
+        String(line.department_name || "").toLowerCase().includes(selectedDept.toLowerCase());
+      const q = attendanceSearch.trim().toLowerCase();
+      const matchSearch =
+        !q ||
+        String(line.employee_code || "").toLowerCase().includes(q) ||
+        String(line.employee_name || "").toLowerCase().includes(q);
+      return matchDept && matchSearch;
+    });
+
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9" }}>
         {/* Toolbar */}
-        <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <button
               type="button"
               onClick={() => setAttendanceMode("empty")}
@@ -3580,6 +4051,21 @@ export default function MisaPayrollWorkspace({
               <ArrowLeft size={14} /> Quay lại
             </button>
 
+            {apiConnected && detailAttendanceSheets.length > 0 && (
+              <select
+                aria-label="Chọn bảng chấm công"
+                value={activeDetailSheet?.id || ""}
+                onChange={(e) => setActiveDetailSheetId(e.target.value)}
+                style={{ height: 30, padding: "0 28px 0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, background: "#ffffff", fontWeight: 600, color: "#1e293b" }}
+              >
+                {detailAttendanceSheets.map((s: any) => (
+                  <option key={s.id} value={String(s.id)}>
+                    {s.name} ({s.period})
+                  </option>
+                ))}
+              </select>
+            )}
+
             <div style={{ position: "relative", width: 200 }}>
               <Search size={14} style={{ position: "absolute", left: 9, top: 8, color: "#64748b" }} />
               <input
@@ -3593,19 +4079,26 @@ export default function MisaPayrollWorkspace({
             <select
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
-              style={{ height: 30, padding: "0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, background: "#ffffff" }}
+              style={{ height: 30, padding: "0 28px 0 10px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, background: "#ffffff" }}
             >
               <option value="all">Tất cả phòng ban</option>
-              <option value="văn phòng">Khối Văn phòng</option>
-              <option value="sản xuất">Phân xưởng Sản xuất</option>
-              <option value="kinh doanh">Phòng Kinh doanh</option>
+              {departmentOptions.map((d) => (
+                <option key={d.id} value={d.name}>{d.name}</option>
+              ))}
             </select>
             <div style={{ fontSize: 13, color: "#475569" }}>
-              Kỳ: <strong>Tháng 09/2026</strong>
+              Kỳ:{" "}
+              <strong>
+                {apiConnected
+                  ? activeDetailSheet
+                    ? `Tháng ${String(activeDetailSheet.period).slice(5, 7)}/${String(activeDetailSheet.period).slice(0, 4)}`
+                    : _period
+                  : "Tháng 09/2026"}
+              </strong>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <button
               type="button"
               onClick={() => setShowAddAttendanceModal(true)}
@@ -3613,14 +4106,45 @@ export default function MisaPayrollWorkspace({
             >
               <Plus size={14} /> Thêm bảng chấm công
             </button>
-            <button
-              type="button"
-              disabled
-              title="Chưa cấu hình kết nối máy chấm công. Bạn có thể thêm bảng chấm công thủ công."
-              style={{ height: 30, padding: "0 12px", background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
-            >
-              <RotateCw size={13} /> Máy chấm công chưa kết nối
-            </button>
+            {apiConnected && activeDetailSheet && (
+              <>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (await apiSave((writer) => updateAttendanceSheet(writer, String(activeDetailSheet.id), editableAttLines))) {
+                      setAttLinesDirty(false);
+                    }
+                  }}
+                  style={{ height: 30, padding: "0 12px", background: attLinesDirty ? "#2563eb" : "#eff6ff", color: attLinesDirty ? "#ffffff" : "#2563eb", border: "1px solid #93c5fd", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+                >
+                  <Save size={13} /> Lưu bảng chấm công
+                </button>
+                <button
+                  type="button"
+                  title="Xóa bảng chấm công đang chọn"
+                  onClick={async () => {
+                    const targetId = String(activeDetailSheet.id);
+                    const targetName = String(activeDetailSheet.name || "bảng chấm công");
+                    if (await apiSave((writer) => deleteAttendanceSheet(writer, targetId, targetName))) {
+                      setActiveDetailSheetId("");
+                    }
+                  }}
+                  style={{ height: 30, padding: "0 10px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+                >
+                  <Trash2 size={13} /> Xóa bảng
+                </button>
+              </>
+            )}
+            {!apiConnected && (
+              <button
+                type="button"
+                disabled
+                title="Chưa cấu hình kết nối máy chấm công. Bạn có thể thêm bảng chấm công thủ công."
+                style={{ height: 30, padding: "0 12px", background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+              >
+                <RotateCw size={13} /> Máy chấm công chưa kết nối
+              </button>
+            )}
             <button
               type="button"
               onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Xuất bảng chấm công chi tiết"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
@@ -3631,73 +4155,178 @@ export default function MisaPayrollWorkspace({
           </div>
         </div>
 
-        {/* Attendance Matrix Table */}
+        {/* Attendance Matrix / Editable Sheet Table */}
         <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
-          <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflowX: "auto" }}>
-            <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse", whiteSpace: "nowrap" }}>
-              <thead>
-                <tr style={{ background: "#f8fafc", color: "#334155", borderBottom: "2px solid #cbd5e1", height: 38 }}>
-                  <th style={{ padding: "6px 10px", textAlign: "left", width: 80, borderRight: "1px solid #e2e8f0" }}>Mã NV</th>
-                  <th style={{ padding: "6px 12px", textAlign: "left", width: 160, borderRight: "1px solid #e2e8f0" }}>Họ và tên</th>
-                  <th style={{ padding: "6px 12px", textAlign: "left", width: 140, borderRight: "1px solid #e2e8f0" }}>Phòng ban</th>
-                  
-                  {Array.from({ length: 20 }, (_, i) => (
-                    <th key={i} style={{ padding: "4px 2px", textAlign: "center", width: 28, borderRight: "1px solid #f1f5f9", fontSize: 11 }}>
-                      {i + 1}
-                    </th>
-                  ))}
-
-                  <th style={{ padding: "6px 8px", textAlign: "center", background: "#f0fdf4", color: "#166534", fontWeight: 700, width: 60 }}>Tổng công</th>
-                  <th style={{ padding: "6px 8px", textAlign: "center", background: "#eff6ff", color: "#1e40af", width: 50 }}>Phép</th>
-                  <th style={{ padding: "6px 8px", textAlign: "center", background: "#fef2f2", color: "#991b1b", width: 50 }}>Nghỉ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEmployees.map((emp, idx) => (
-                  <tr key={emp.id} style={{ borderBottom: "1px solid #e2e8f0", height: 34, background: idx % 2 === 0 ? "#ffffff" : "#fcfdfe" }}>
-                    <td style={{ padding: "6px 10px", fontWeight: 600, color: "var(--brand)", borderRight: "1px solid #e2e8f0" }}>{emp.id}</td>
-                    <td style={{ padding: "6px 12px", fontWeight: 600, color: "#1e293b", borderRight: "1px solid #e2e8f0" }}>{emp.name}</td>
-                    <td style={{ padding: "6px 12px", color: "#475569", borderRight: "1px solid #e2e8f0" }}>{emp.dept}</td>
-
-                    {Array.from({ length: 20 }, (_, d) => {
-                      const isWeekend = d % 7 === 5 || d % 7 === 6;
-                      const symbol = isWeekend ? "" : d === 4 && idx === 1 ? "P" : d === 10 && idx === 3 ? "Ô" : "+";
+          {apiConnected ? (
+            activeDetailSheet ? (
+              <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflowX: "auto" }}>
+                <table className="misa-table" style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse", whiteSpace: "nowrap" }}>
+                  <thead>
+                    <tr style={{ background: "#f8fafc", color: "#334155", borderBottom: "2px solid #cbd5e1", height: 38 }}>
+                      <th style={{ padding: "8px 12px", textAlign: "left", width: 110 }}>Mã NV</th>
+                      <th style={{ padding: "8px 12px", textAlign: "left" }}>Họ và tên</th>
+                      <th style={{ padding: "8px 12px", textAlign: "left" }}>Phòng ban</th>
+                      <th style={{ padding: "8px 12px", textAlign: "center", width: 110 }}>Công chuẩn</th>
+                      <th style={{ padding: "8px 12px", textAlign: "center", width: 130 }}>Công làm việc</th>
+                      <th style={{ padding: "8px 12px", textAlign: "center", width: 130 }}>Nghỉ phép hưởng lương</th>
+                      <th style={{ padding: "8px 12px", textAlign: "center", width: 130 }}>Làm thêm (Giờ OT)</th>
+                      <th style={{ padding: "8px 12px", textAlign: "center", background: "#f0fdf4", color: "#166534", fontWeight: 700, width: 130 }}>
+                        Tổng công hưởng lương
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEditableAttLines.map((line: any, idx: number) => {
+                      const totalPaidDays = apiNumber(line.working_days) + apiNumber(line.paid_leave_days);
                       return (
-                        <td
-                          key={d}
-                          style={{
-                            padding: "4px 2px",
-                            textAlign: "center",
-                            borderRight: "1px solid #f1f5f9",
-                            background: isWeekend ? "#f8fafc" : "#ffffff",
-                            fontWeight: 700,
-                            color: symbol === "+" ? "#16a34a" : symbol === "P" ? "#2563eb" : symbol === "Ô" ? "#ea580c" : "#94a3b8",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => notify(`Chỉnh sửa công ngày ${d + 1}/09 của ${emp.name}`)}
-                        >
-                          {symbol}
-                        </td>
+                        <tr key={line.employee} style={{ borderBottom: "1px solid #e2e8f0", height: 38, background: idx % 2 === 0 ? "#ffffff" : "#fcfdfe" }}>
+                          <td style={{ padding: "6px 12px", fontWeight: 600, color: "var(--brand)" }}>{line.employee_code}</td>
+                          <td style={{ padding: "6px 12px", fontWeight: 600, color: "#1e293b" }}>{line.employee_name}</td>
+                          <td style={{ padding: "6px 12px", color: "#475569" }}>{line.department_name || "—"}</td>
+                          <td style={{ padding: "6px 12px", textAlign: "center", color: "#64748b" }}>{standardDaysOption}</td>
+                          <td style={{ padding: "6px 12px", textAlign: "center" }}>
+                            <input
+                              type="number"
+                              step="0.5"
+                              min={0}
+                              max={31}
+                              aria-label={`Công làm việc ${line.employee_code}`}
+                              value={line.working_days}
+                              onChange={(e) => {
+                                const val = Math.max(0, Number(e.target.value) || 0);
+                                setEditableAttLines((prev) =>
+                                  prev.map((r) => (r.employee === line.employee ? { ...r, working_days: val } : r)),
+                                );
+                                setAttLinesDirty(true);
+                              }}
+                              style={{ width: 78, height: 26, textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, fontWeight: 600 }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 12px", textAlign: "center" }}>
+                            <input
+                              type="number"
+                              step="0.5"
+                              min={0}
+                              max={31}
+                              aria-label={`Nghỉ phép ${line.employee_code}`}
+                              value={line.paid_leave_days}
+                              onChange={(e) => {
+                                const val = Math.max(0, Number(e.target.value) || 0);
+                                setEditableAttLines((prev) =>
+                                  prev.map((r) => (r.employee === line.employee ? { ...r, paid_leave_days: val } : r)),
+                                );
+                                setAttLinesDirty(true);
+                              }}
+                              style={{ width: 78, height: 26, textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5 }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 12px", textAlign: "center" }}>
+                            <input
+                              type="number"
+                              step="0.5"
+                              min={0}
+                              aria-label={`Giờ OT ${line.employee_code}`}
+                              value={line.overtime_hours}
+                              onChange={(e) => {
+                                const val = Math.max(0, Number(e.target.value) || 0);
+                                setEditableAttLines((prev) =>
+                                  prev.map((r) => (r.employee === line.employee ? { ...r, overtime_hours: val } : r)),
+                                );
+                                setAttLinesDirty(true);
+                              }}
+                              style={{ width: 78, height: 26, textAlign: "center", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5 }}
+                            />
+                          </td>
+                          <td style={{ padding: "6px 12px", textAlign: "center", fontWeight: 700, color: "#166534", background: "#f0fdf4" }}>
+                            {totalPaidDays}
+                          </td>
+                        </tr>
                       );
                     })}
-
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: "#166534", background: "#f0fdf4" }}>21.5</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", color: "#1e40af", background: "#eff6ff" }}>{idx === 1 ? 1 : 0}</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", color: "#991b1b", background: "#fef2f2" }}>0</td>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", padding: "36px 20px", textAlign: "center" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>
+                  Chưa có bảng chấm công nào được lập cho doanh nghiệp
+                </div>
+                <div style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
+                  Doanh nghiệp hiện có <strong>{filteredEmployees.length}</strong> nhân sự đang làm việc. Bấm <strong>Thêm bảng chấm công</strong> để khởi tạo bảng công từ danh sách nhân sự thật.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddAttendanceModal(true)}
+                  style={{ height: 34, padding: "0 18px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+                >
+                  <Plus size={14} /> Thêm bảng chấm công
+                </button>
+              </div>
+            )
+          ) : (
+            <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflowX: "auto" }}>
+              <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse", whiteSpace: "nowrap" }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc", color: "#334155", borderBottom: "2px solid #cbd5e1", height: 38 }}>
+                    <th style={{ padding: "6px 10px", textAlign: "left", width: 80, borderRight: "1px solid #e2e8f0" }}>Mã NV</th>
+                    <th style={{ padding: "6px 12px", textAlign: "left", width: 160, borderRight: "1px solid #e2e8f0" }}>Họ và tên</th>
+                    <th style={{ padding: "6px 12px", textAlign: "left", width: 140, borderRight: "1px solid #e2e8f0" }}>Phòng ban</th>
+                    {Array.from({ length: 20 }, (_, i) => (
+                      <th key={i} style={{ padding: "4px 2px", textAlign: "center", width: 28, borderRight: "1px solid #f1f5f9", fontSize: 11 }}>
+                        {i + 1}
+                      </th>
+                    ))}
+                    <th style={{ padding: "6px 8px", textAlign: "center", background: "#f0fdf4", color: "#166534", fontWeight: 700, width: 60 }}>Tổng công</th>
+                    <th style={{ padding: "6px 8px", textAlign: "center", background: "#eff6ff", color: "#1e40af", width: 50 }}>Phép</th>
+                    <th style={{ padding: "6px 8px", textAlign: "center", background: "#fef2f2", color: "#991b1b", width: 50 }}>Nghỉ</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredEmployees.map((emp: any, idx: number) => (
+                    <tr key={emp.id} style={{ borderBottom: "1px solid #e2e8f0", height: 34, background: idx % 2 === 0 ? "#ffffff" : "#fcfdfe" }}>
+                      <td style={{ padding: "6px 10px", fontWeight: 600, color: "var(--brand)", borderRight: "1px solid #e2e8f0" }}>{emp.id}</td>
+                      <td style={{ padding: "6px 12px", fontWeight: 600, color: "#1e293b", borderRight: "1px solid #e2e8f0" }}>{emp.name}</td>
+                      <td style={{ padding: "6px 12px", color: "#475569", borderRight: "1px solid #e2e8f0" }}>{emp.dept}</td>
+                      {Array.from({ length: 20 }, (_, d) => {
+                        const isWeekend = d % 7 === 5 || d % 7 === 6;
+                        const symbol = isWeekend ? "" : d === 4 && idx === 1 ? "P" : d === 10 && idx === 3 ? "Ô" : "+";
+                        return (
+                          <td
+                            key={d}
+                            style={{
+                              padding: "4px 2px",
+                              textAlign: "center",
+                              borderRight: "1px solid #f1f5f9",
+                              background: isWeekend ? "#f8fafc" : "#ffffff",
+                              fontWeight: 700,
+                              color: symbol === "+" ? "#16a34a" : symbol === "P" ? "#2563eb" : symbol === "Ô" ? "#ea580c" : "#94a3b8",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => notify(`Chỉnh sửa công ngày ${d + 1}/09 của ${emp.name}`)}
+                          >
+                            {symbol}
+                          </td>
+                        );
+                      })}
+                      <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: "#166534", background: "#f0fdf4" }}>21.5</td>
+                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#1e40af", background: "#eff6ff" }}>{idx === 1 ? 1 : 0}</td>
+                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#991b1b", background: "#fef2f2" }}>0</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Footer info */}
         <div style={{ height: 38, background: "#f8fafc", borderTop: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", fontSize: 12.5, color: "#475569" }}>
-          <span>Số nhân sự đang hiển thị: <strong>{filteredEmployees.length}</strong></span>
+          <span>
+            Số nhân sự đang hiển thị:{" "}
+            <strong>{apiConnected ? (activeDetailSheet ? filteredEditableAttLines.length : filteredEmployees.length) : filteredEmployees.length}</strong>
+          </span>
           <div style={{ display: "flex", gap: 14 }}>
-            <span><strong style={{ color: "#16a34a" }}>+</strong>: Làm đủ ngày</span>
-            <span><strong style={{ color: "#2563eb" }}>P</strong>: Nghỉ phép năm</span>
-            <span><strong style={{ color: "#ea580c" }}>Ô</strong>: Nghỉ ốm</span>
+            <span>Công chuẩn: <strong style={{ color: "var(--brand)" }}>{standardDaysOption} ngày/tháng</strong></span>
           </div>
         </div>
 
@@ -3744,56 +4373,36 @@ export default function MisaPayrollWorkspace({
             {/* Center Vector Illustration (matching Image 1) */}
             <div style={{ width: 220, height: 160, position: "relative", marginBottom: 20 }}>
               <svg width="220" height="160" viewBox="0 0 220 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Decorative dots & starbursts */}
                 <circle cx="36" cy="42" r="2" fill="var(--brand)" opacity="0.6" />
                 <circle cx="192" cy="48" r="2.5" fill="var(--brand)" opacity="0.6" />
                 <circle cx="28" cy="100" r="2" fill="var(--brand)" opacity="0.5" />
                 <circle cx="196" cy="115" r="2" fill="var(--brand)" opacity="0.5" />
-                {/* 4-point green sparkle */}
                 <path d="M42 66 L44 62 L48 60 L44 58 L42 54 L40 58 L36 60 L40 62 Z" fill="#10b981" opacity="0.75" />
                 <path d="M126 128 L128 124 L132 122 L128 120 L126 116 L124 120 L120 122 L124 124 Z" fill="#10b981" opacity="0.75" />
-
-                {/* Fingerprint Scanner Container Box */}
                 <rect x="80" y="16" width="50" height="50" rx="10" fill="#f0fdf4" stroke="#bbf7d0" strokeWidth="1.5" />
-                {/* Reticle / scanner brackets */}
                 <path d="M85 28 L85 21 C85 21 85 21 85 21 L92 21" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" />
                 <path d="M125 28 L125 21 C125 21 125 21 125 21 L118 21" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" />
                 <path d="M85 54 L85 61 C85 61 85 61 85 61 L92 61" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" />
                 <path d="M125 54 L125 61 C125 61 125 61 125 61 L118 61" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" />
-                
-                {/* Fingerprint curves inside */}
                 <path d="M105 30 C99.5 30 96 33.5 96 39 C96 44.5 99.5 48 105 48 C110.5 48 114 44.5 114 39" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" fill="none" />
                 <path d="M105 35 C101.5 35 100 37 100 40 C100 43 102 44.5 105 44.5 C108 44.5 110 43 110 40" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" fill="none" />
                 <path d="M105 40 L105 41" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" />
                 <path d="M92 40 C92 32 97.5 27 105 27 C112.5 27 118 32 118 40 C118 47 113 52 105 52" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" fill="none" strokeDasharray="1.5 1.5" />
-
-                {/* Dotted curve connecting fingerprint to document */}
                 <path d="M130 41 C160 41 168 52 168 70" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 3" fill="none" />
-
-                {/* 3 Green Employees below */}
-                {/* Person 1 (Left) */}
                 <circle cx="68" cy="85" r="7" fill="var(--brand)" />
                 <path d="M57 107 C57 97 62 95 68 95 C74 95 79 97 79 107 Z" fill="var(--brand)" />
-
-                {/* Person 2 (Center) */}
                 <circle cx="105" cy="85" r="7" fill="var(--brand)" />
                 <path d="M94 107 C94 97 99 95 105 95 C111 95 116 97 116 107 Z" fill="var(--brand)" />
-
-                {/* Person 3 (Right) */}
                 <circle cx="142" cy="85" r="7" fill="var(--brand)" />
                 <path d="M131 107 C131 97 136 95 142 95 C148 95 153 97 153 107 Z" fill="var(--brand)" />
-
-                {/* Document on the right with folded corner */}
                 <path d="M160 66 L186 66 L198 78 L198 114 C198 116 196 118 194 118 L160 118 C158 118 156 116 156 114 L156 70 C156 68 158 66 160 66 Z" fill="var(--brand)" />
                 <path d="M186 66 L186 78 L198 78 Z" fill="#a7f3d0" />
-                {/* Horizontal lines on document */}
                 <line x1="163" y1="86" x2="191" y2="86" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
                 <line x1="163" y1="94" x2="186" y2="94" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
                 <line x1="163" y1="102" x2="180" y2="102" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
               </svg>
             </div>
 
-            {/* Title */}
             <h3
               style={{
                 margin: "0 0 20px 0",
@@ -3806,7 +4415,6 @@ export default function MisaPayrollWorkspace({
               Lập và quản lý bảng tổng hợp chấm công nhân viên
             </h3>
 
-            {/* Button Thêm */}
             <button
               id="btn-add-summary"
               type="button"
@@ -3827,7 +4435,6 @@ export default function MisaPayrollWorkspace({
               Thêm
             </button>
 
-            {/* Bottom Button: Xem danh sách chứng từ */}
             <div style={{ marginTop: 24, textAlign: "center" }}>
               <button
                 type="button"
@@ -3867,7 +4474,19 @@ export default function MisaPayrollWorkspace({
       );
     }
 
-    // 3.2 DANH SÁCH BẢNG TỔNG HỢP CHẤM CÔNG (KHI BẤM XEM DANH SÁCH CHỨNG TỪ HOẶC SAU KHI TẠO)
+    // 3.2 DANH SÁCH BẢNG TỔNG HỢP CHẤM CÔNG (LIVE DATA WHEN API CONNECTED)
+    const summarySourceSheets = summaryAttendanceSheets.length > 0 ? summaryAttendanceSheets : allAttendanceSheets;
+    const distinctAttEmployees = new Set<string>();
+    let totalActualWorkDays = 0;
+    let totalActualOtHours = 0;
+    for (const s of summarySourceSheets) {
+      for (const l of s.lines || []) {
+        distinctAttEmployees.add(String(l.employee));
+        totalActualWorkDays += apiNumber(l.working_days) + apiNumber(l.paid_leave_days);
+        totalActualOtHours += apiNumber(l.overtime_hours);
+      }
+    }
+
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9" }}>
         {/* Toolbar with Back Button */}
@@ -3894,7 +4513,7 @@ export default function MisaPayrollWorkspace({
               <ArrowLeft size={14} /> Quay lại
             </button>
             <div style={{ fontSize: 13, color: "#475569" }}>
-              Kỳ: <strong>Tháng 09/2026</strong>
+              Kỳ: <strong>{apiConnected ? (summarySourceSheets[0]?.period || _period) : "Tháng 09/2026"}</strong>
             </div>
           </div>
 
@@ -3920,19 +4539,25 @@ export default function MisaPayrollWorkspace({
         <div style={{ padding: "16px 20px 0 20px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14 }}>
           <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
             <div style={{ fontSize: 12, color: "#64748b" }}>Tổng số nhân sự chấm công</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", marginTop: 4 }}>73 CBNV</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", marginTop: 4 }}>
+              {apiConnected ? `${distinctAttEmployees.size} CBNV` : "73 CBNV"}
+            </div>
           </div>
           <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
             <div style={{ fontSize: 12, color: "#64748b" }}>Số ngày công chuẩn / tháng</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#2563eb", marginTop: 4 }}>22.0 ngày</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#2563eb", marginTop: 4 }}>{standardDaysOption} ngày</div>
           </div>
           <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
             <div style={{ fontSize: 12, color: "#64748b" }}>Tổng số ngày công thực tế</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)", marginTop: 4 }}>1.584,5 công</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--brand)", marginTop: 4 }}>
+              {apiConnected ? `${totalActualWorkDays.toLocaleString("vi-VN")} công` : "1.584,5 công"}
+            </div>
           </div>
           <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
             <div style={{ fontSize: 12, color: "#64748b" }}>Tổng giờ làm thêm (OT)</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#d97706", marginTop: 4 }}>320 giờ</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#d97706", marginTop: 4 }}>
+              {apiConnected ? `${totalActualOtHours.toLocaleString("vi-VN")} giờ` : "320 giờ"}
+            </div>
           </div>
         </div>
 
@@ -3943,8 +4568,8 @@ export default function MisaPayrollWorkspace({
               <thead>
                 <tr style={{ background: "#f8fafc", color: "#334155", borderBottom: "2px solid #cbd5e1", height: 38 }}>
                   <th style={{ padding: "8px 12px", textAlign: "left" }}>Mã bảng</th>
-                  <th style={{ padding: "8px 12px", textAlign: "left" }}>Tên bảng tổng hợp chấm công</th>
-                  <th style={{ padding: "8px 12px", textAlign: "left" }}>Khối / Phòng ban</th>
+                  <th style={{ padding: "8px 12px", textAlign: "left" }}>Tên bảng chấm công</th>
+                  <th style={{ padding: "8px 12px", textAlign: "left" }}>Loại bảng</th>
                   <th style={{ padding: "8px 12px", textAlign: "center" }}>Số CBNV</th>
                   <th style={{ padding: "8px 12px", textAlign: "center" }}>Tổng ngày công</th>
                   <th style={{ padding: "8px 12px", textAlign: "center" }}>Ngày lập</th>
@@ -3954,52 +4579,95 @@ export default function MisaPayrollWorkspace({
                 </tr>
               </thead>
               <tbody>
-                <tr style={{ borderBottom: "1px solid #f1f5f9", height: 40 }}>
-                  <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>THCC-2026-09-VP</td>
-                  <td style={{ padding: "8px 12px", fontWeight: 600, color: "#1e293b" }}>Tổng hợp chấm công Khối Văn phòng Tháng 09/2026</td>
-                  <td style={{ padding: "8px 12px", color: "#475569" }}>Khối Văn phòng</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 600 }}>28</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 600 }}>612.5</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>28/09/2026</td>
-                  <td style={{ padding: "8px 12px" }}>Hoàng Thu Thảo</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <span style={{ padding: "2px 8px", borderRadius: 12, background: "#dcfce7", color: "#166534", fontSize: 11, fontWeight: 500 }}>
-                      Đã duyệt
-                    </span>
-                  </td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <button
-                      type="button"
-                      onClick={() => navigateTo("calculation")}
-                      style={{ border: "none", background: "transparent", color: "#0073e6", cursor: "pointer", fontWeight: 600 }}
-                    >
-                      Xem chi tiết
-                    </button>
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: "1px solid #f1f5f9", height: 40 }}>
-                  <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>THCC-2026-09-SX</td>
-                  <td style={{ padding: "8px 12px", fontWeight: 600, color: "#1e293b" }}>Tổng hợp chấm công Phân xưởng SX Tháng 09/2026</td>
-                  <td style={{ padding: "8px 12px", color: "#475569" }}>Phân xưởng Sản xuất</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 600 }}>45</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 600 }}>972.0</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>28/09/2026</td>
-                  <td style={{ padding: "8px 12px" }}>Vũ Đình Trọng</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <span style={{ padding: "2px 8px", borderRadius: 12, background: "#dcfce7", color: "#166534", fontSize: 11, fontWeight: 500 }}>
-                      Đã duyệt
-                    </span>
-                  </td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <button
-                      type="button"
-                      onClick={() => navigateTo("calculation")}
-                      style={{ border: "none", background: "transparent", color: "#0073e6", cursor: "pointer", fontWeight: 600 }}
-                    >
-                      Xem chi tiết
-                    </button>
-                  </td>
-                </tr>
+                {apiConnected ? (
+                  allAttendanceSheets.length > 0 ? (
+                    allAttendanceSheets.map((sheet: any) => {
+                      const lines = sheet.lines || [];
+                      const sumDays = lines.reduce(
+                        (s: number, l: any) => s + apiNumber(l.working_days) + apiNumber(l.paid_leave_days),
+                        0,
+                      );
+                      const shortCode = `${sheet.kind === "SUMMARY" ? "THCC" : "BCC"}-${sheet.period}-${String(sheet.id).slice(0, 4).toUpperCase()}`;
+                      return (
+                        <tr key={sheet.id} style={{ borderBottom: "1px solid #f1f5f9", height: 40 }}>
+                          <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>{shortCode}</td>
+                          <td style={{ padding: "8px 12px", fontWeight: 600, color: "#1e293b" }}>{sheet.name}</td>
+                          <td style={{ padding: "8px 12px", color: "#475569" }}>
+                            {sheet.kind === "SUMMARY" ? "Tổng hợp chấm công" : "Chấm công chi tiết"}
+                          </td>
+                          <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 600 }}>{lines.length}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 600 }}>{sumDays.toLocaleString("vi-VN")}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "center" }}>{apiDate(sheet.created_at)}</td>
+                          <td style={{ padding: "8px 12px" }}>{sheet.created_by_name || "Hệ thống"}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                            <span style={{ padding: "2px 8px", borderRadius: 12, background: "#dcfce7", color: "#166534", fontSize: 11, fontWeight: 500 }}>
+                              Đang áp dụng
+                            </span>
+                          </td>
+                          <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (sheet.kind !== "SUMMARY") {
+                                    setActiveDetailSheetId(String(sheet.id));
+                                    setAttendanceMode("sheet_view");
+                                    navigateTo("attendance");
+                                  } else {
+                                    navigateTo("calculation");
+                                  }
+                                }}
+                                style={{ border: "none", background: "transparent", color: "#0073e6", cursor: "pointer", fontWeight: 600 }}
+                              >
+                                {sheet.kind !== "SUMMARY" ? "Sửa công" : "Tính lương"}
+                              </button>
+                              <button
+                                type="button"
+                                title="Xóa bảng chấm công"
+                                onClick={() => void apiSave((writer) => deleteAttendanceSheet(writer, String(sheet.id), String(sheet.name)))}
+                                style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer", padding: 2 }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={9} style={{ padding: "32px 16px", textAlign: "center", color: "#64748b", whiteSpace: "normal" }}>
+                        Chưa có bảng tổng hợp chấm công nào được lập cho doanh nghiệp. Bấm <strong>Thêm tổng hợp chấm công</strong> để khởi tạo.
+                      </td>
+                    </tr>
+                  )
+                ) : (
+                  <>
+                    <tr style={{ borderBottom: "1px solid #f1f5f9", height: 40 }}>
+                      <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>THCC-2026-09-VP</td>
+                      <td style={{ padding: "8px 12px", fontWeight: 600, color: "#1e293b" }}>Tổng hợp chấm công Khối Văn phòng Tháng 09/2026</td>
+                      <td style={{ padding: "8px 12px", color: "#475569" }}>Khối Văn phòng</td>
+                      <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 600 }}>28</td>
+                      <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 600 }}>612.5</td>
+                      <td style={{ padding: "8px 12px", textAlign: "center" }}>28/09/2026</td>
+                      <td style={{ padding: "8px 12px" }}>Hoàng Thu Thảo</td>
+                      <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                        <span style={{ padding: "2px 8px", borderRadius: 12, background: "#dcfce7", color: "#166534", fontSize: 11, fontWeight: 500 }}>
+                          Đã duyệt
+                        </span>
+                      </td>
+                      <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                        <button
+                          type="button"
+                          onClick={() => navigateTo("calculation")}
+                          style={{ border: "none", background: "transparent", color: "#0073e6", cursor: "pointer", fontWeight: 600 }}
+                        >
+                          Xem chi tiết
+                        </button>
+                      </td>
+                    </tr>
+                  </>
+                )}
               </tbody>
             </table>
           </div>
@@ -4198,7 +4866,7 @@ export default function MisaPayrollWorkspace({
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9" }}>
         {/* Toolbar with Back Button */}
-        <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+        <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, flexWrap: "wrap", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button
               type="button"
@@ -4221,11 +4889,18 @@ export default function MisaPayrollWorkspace({
               <ArrowLeft size={14} /> Quay lại
             </button>
             <div style={{ fontSize: 13, color: "#475569" }}>
-              Kỳ tính lương: <strong>Tháng 09/2026</strong>
+              Kỳ tính lương: <strong>{calcKpis.labelPeriod}</strong>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => setShowEmployeesModal(true)}
+              style={{ height: 30, padding: "0 12px", background: "#f8fafc", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
+            >
+              <Users size={14} /> Hồ sơ lương CBNV
+            </button>
             <button
               type="button"
               onClick={() => setShowAddSalarySheetModal(true)}
@@ -4292,7 +4967,7 @@ export default function MisaPayrollWorkspace({
                   Tổng quỹ lương (TK 334)
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: "#1e293b", fontVariantNumeric: "tabular-nums" }}>
-                  880.000.000 đ
+                  {formatVND(calcKpis.gross)} đ
                 </div>
               </div>
             </div>
@@ -4334,7 +5009,7 @@ export default function MisaPayrollWorkspace({
                   BHXH, BHYT, BHTN
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: "#ea580c", fontVariantNumeric: "tabular-nums" }}>
-                  92.400.000 đ
+                  {formatVND(calcKpis.insurance)} đ
                 </div>
               </div>
             </div>
@@ -4376,7 +5051,7 @@ export default function MisaPayrollWorkspace({
                   Thuế TNCN khấu trừ (TK 3335)
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: "#d97706", fontVariantNumeric: "tabular-nums" }}>
-                  38.350.000 đ
+                  {formatVND(calcKpis.tax)} đ
                 </div>
               </div>
             </div>
@@ -4418,7 +5093,7 @@ export default function MisaPayrollWorkspace({
                   Thực lĩnh trả CBNV
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: "var(--brand)", fontVariantNumeric: "tabular-nums" }}>
-                  749.250.000 đ
+                  {formatVND(calcKpis.net)} đ
                 </div>
               </div>
             </div>
@@ -4429,7 +5104,7 @@ export default function MisaPayrollWorkspace({
         </div>
 
         {/* Salary Sheets List Table */}
-        <div style={{ flex: 1, padding: "0 20px 16px 20px", overflow: "auto" }}>
+        <div style={{ flex: 1, padding: "10px 20px 16px 20px", overflow: "auto" }}>
           <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflowX: "auto" }}>
             <table className="misa-table" style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse" }}>
               <thead>
@@ -4443,36 +5118,76 @@ export default function MisaPayrollWorkspace({
                   <th style={{ padding: "8px 12px", textAlign: "right" }}>Thuế TNCN</th>
                   <th style={{ padding: "8px 12px", textAlign: "right" }}>Thực lĩnh</th>
                   <th style={{ padding: "8px 12px", textAlign: "center" }}>Trạng thái</th>
-                  <th style={{ padding: "8px 12px", textAlign: "center" }}>Chi tiết</th>
+                  <th style={{ padding: "8px 12px", textAlign: "center" }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {SAMPLE_SALARY_SHEETS.map((sheet) => (
-                  <tr key={sheet.id} style={{ borderBottom: "1px solid #f1f5f9", height: 42 }}>
-                    <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>{sheet.id}</td>
-                    <td style={{ padding: "8px 12px", fontWeight: 600, color: "#1e293b" }}>{sheet.name}</td>
-                    <td style={{ padding: "8px 12px", color: "#475569" }}>{sheet.dept}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 600 }}>{sheet.employeeCount}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600 }}>{formatVND(sheet.grossSalary)}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", color: "#ea580c" }}>{formatVND(sheet.insuranceAmount)}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", color: "#d97706" }}>{formatVND(sheet.taxAmount)}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(sheet.netSalary)}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                      <span style={{ padding: "2px 8px", borderRadius: 12, background: "#dcfce7", color: "#166534", fontSize: 11, fontWeight: 500 }}>
-                        {sheet.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                      <button
-                        type="button"
-                        onClick={() => setShowSalaryDetailModal(sheet)}
-                        style={{ border: "none", background: "transparent", color: "#0073e6", cursor: "pointer", fontWeight: 600 }}
-                      >
-                        Mở xem
-                      </button>
+                {displaySalarySheets.map((sheet: any) => {
+                  const isUnposted = sheet.rawStatus === "CALCULATED";
+                  return (
+                    <tr key={sheet.id} style={{ borderBottom: "1px solid #f1f5f9", height: 42 }}>
+                      <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--brand)" }}>{sheet.code || sheet.id}</td>
+                      <td style={{ padding: "8px 12px", fontWeight: 600, color: "#1e293b" }}>{sheet.name}</td>
+                      <td style={{ padding: "8px 12px", color: "#475569" }}>{sheet.dept}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 600 }}>{sheet.employeeCount}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600 }}>{formatVND(sheet.grossSalary)}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", color: "#ea580c" }}>{formatVND(sheet.insuranceAmount)}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", color: "#d97706" }}>{formatVND(sheet.taxAmount)}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "var(--brand)" }}>{formatVND(sheet.netSalary)}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: 12,
+                            background: isUnposted ? "#fef3c7" : "#dcfce7",
+                            color: isUnposted ? "#92400e" : "#166534",
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {sheet.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                          <button
+                            type="button"
+                            onClick={() => setShowSalaryDetailModal(sheet)}
+                            style={{ border: "none", background: "transparent", color: "#0073e6", cursor: "pointer", fontWeight: 600 }}
+                          >
+                            Mở xem
+                          </button>
+                          {apiConnected && isUnposted && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => void apiSave((writer) => postSalarySheet(writer, String(sheet.id)))}
+                                style={{ border: "none", background: "transparent", color: "var(--brand)", cursor: "pointer", fontWeight: 600 }}
+                              >
+                                Hạch toán
+                              </button>
+                              <button
+                                type="button"
+                                title="Xóa bảng lương chưa hạch toán"
+                                onClick={() => void apiSave((writer) => deleteSalarySheet(writer, String(sheet.id), String(sheet.name)))}
+                                style={{ border: "none", background: "transparent", color: "#ef4444", cursor: "pointer", padding: 2 }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!displaySalarySheets.length && (
+                  <tr>
+                    <td colSpan={10} style={{ padding: "32px 16px", textAlign: "center", color: "#64748b", whiteSpace: "normal" }}>
+                      Chưa có bảng tính lương nào được lập trực tiếp trên phân hệ Tiền lương. Hãy kiểm tra mức lương tại <strong>Hồ sơ lương CBNV</strong> rồi bấm <strong>Thêm bảng lương</strong> để tính lương tự động.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -4500,7 +5215,6 @@ export default function MisaPayrollWorkspace({
             flexDirection: "column",
           }}
         >
-          {/* Main White Card matching Image 1 */}
           <div
             style={{
               background: "#ffffff",
@@ -4518,34 +5232,21 @@ export default function MisaPayrollWorkspace({
               boxSizing: "border-box",
             }}
           >
-            {/* Center Vector Illustration (matching Image 1) */}
             <div style={{ width: 220, height: 160, position: "relative", marginBottom: 20 }}>
               <svg width="220" height="160" viewBox="0 0 220 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Subtle soft backdrop shape */}
                 <ellipse cx="110" cy="85" rx="70" ry="26" fill="#f8fafc" />
-
-                {/* Decorative sparkles & dots */}
                 <circle cx="28" cy="85" r="2" fill="var(--brand)" opacity="0.6" />
                 <circle cx="198" cy="74" r="2" fill="var(--brand)" opacity="0.5" />
                 <path d="M152 38 L156 38 M154 36 L154 40" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
                 <path d="M158 122 L162 122 M160 120 L160 124" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round" />
-
-                {/* Arc of green dots & Dollar coin above calculator */}
                 <circle cx="85" cy="52" r="2.5" fill="var(--brand)" />
                 <circle cx="94" cy="46" r="3" fill="var(--brand)" />
                 <circle cx="92" cy="74" r="9" fill="var(--brand)" />
                 <text x="92" y="77.5" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="bold" fontFamily="Roboto, Arial, sans-serif">$</text>
-
-                {/* Curved dotted line connecting calculator to ledger */}
                 <path d="M85 96 C115 102 120 78 140 76" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3 3" fill="none" />
-
-                {/* Left: Calculator in green */}
                 <g>
-                  {/* Body */}
                   <rect x="52" y="74" width="34" height="46" rx="5" fill="var(--brand)" />
-                  {/* Screen */}
                   <rect x="57" y="79" width="24" height="10" rx="2" fill="#ffffff" />
-                  {/* Buttons 3x3 */}
                   <circle cx="62" cy="95" r="2" fill="#ffffff" />
                   <circle cx="69" cy="95" r="2" fill="#ffffff" />
                   <circle cx="76" cy="95" r="2" fill="#ffffff" />
@@ -4556,27 +5257,18 @@ export default function MisaPayrollWorkspace({
                   <circle cx="69" cy="109" r="2" fill="#ffffff" />
                   <rect x="74" y="107" width="4" height="4" rx="1" fill="#a7f3d0" />
                 </g>
-
-                {/* Right: Ledger Book in green */}
                 <g>
-                  {/* Book outer */}
                   <rect x="138" y="52" width="42" height="48" rx="4" fill="var(--brand)" />
-                  {/* Inner white display */}
                   <rect x="144" y="58" width="30" height="36" rx="2" fill="#ffffff" />
-                  {/* Spine line */}
                   <line x1="144" y1="94" x2="174" y2="94" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" />
-                  {/* Up and Down Arrows ⇵ inside ledger */}
-                  {/* Down arrow (left) */}
                   <line x1="152" y1="66" x2="152" y2="78" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" />
                   <path d="M149 74 L152 78 L155 74" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  {/* Up arrow (right) */}
                   <line x1="166" y1="66" x2="166" y2="78" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" />
                   <path d="M163 70 L166 66 L169 70" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 </g>
               </svg>
             </div>
 
-            {/* Title */}
             <h3
               style={{
                 margin: "0 0 20px 0",
@@ -4589,7 +5281,6 @@ export default function MisaPayrollWorkspace({
               Thực hiện ghi nhận chi phí tiền lương vào các sổ tương ứng
             </h3>
 
-            {/* Button Thêm */}
             <button
               type="button"
               onClick={() => {
@@ -4612,7 +5303,6 @@ export default function MisaPayrollWorkspace({
               Thêm
             </button>
 
-            {/* Bottom Button: Xem danh sách chứng từ */}
             <div style={{ marginTop: 24, textAlign: "center" }}>
               <button
                 type="button"
@@ -4652,10 +5342,9 @@ export default function MisaPayrollWorkspace({
       );
     }
 
-    // 5.2 DANH SÁCH CHỨNG TỪ HẠCH TOÁN CHI PHÍ (KHI BẤM XEM DANH SÁCH CHỨNG TỪ HOẶC SAU KHI TẠO)
+    // 5.2 DANH SÁCH CHỨNG TỪ HẠCH TOÁN CHI PHÍ (REAL SỔ CÁI PAYROLL VOUCHERS)
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9" }}>
-        {/* Toolbar with Back Button */}
         <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button
@@ -4679,7 +5368,7 @@ export default function MisaPayrollWorkspace({
               <ArrowLeft size={14} /> Quay lại
             </button>
             <div style={{ fontSize: 13, color: "#475569" }}>
-              Kỳ hạch toán: <strong>Tháng 09/2026</strong>
+              Chứng từ hạch toán trên Sổ cái: <strong>{livePostingVouchers.length} chứng từ</strong>
             </div>
           </div>
 
@@ -4706,10 +5395,10 @@ export default function MisaPayrollWorkspace({
 
         {/* Posting Vouchers List */}
         <div style={{ flex: 1, padding: 16, overflow: "auto", display: "flex", flexDirection: "column", gap: 14 }}>
-          {SAMPLE_POSTING_VOUCHERS.map((v) => (
+          {livePostingVouchers.map((v: any) => (
             <div key={v.voucherNo} style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", overflow: "hidden" }}>
-              <div style={{ padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "var(--brand)" }}>{v.voucherNo}</span>
                   <span style={{ fontSize: 13, color: "#475569" }}>Ngày hạch toán: <strong>{v.postDate}</strong></span>
                   <span style={{ fontSize: 13, color: "#1e293b", fontWeight: 600 }}>{v.description}</span>
@@ -4722,7 +5411,6 @@ export default function MisaPayrollWorkspace({
                 </div>
               </div>
 
-              {/* Lines table */}
               <div style={{ padding: "8px 16px" }}>
                 <table style={{ width: "100%", fontSize: 12.5, borderCollapse: "collapse" }}>
                   <thead>
@@ -4734,7 +5422,7 @@ export default function MisaPayrollWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {v.lines.map((line, idx) => (
+                    {v.lines.map((line: any, idx: number) => (
                       <tr key={idx} style={{ borderBottom: "1px solid #f8fafc", height: 32 }}>
                         <td style={{ padding: "4px 8px", color: "#334155" }}>{line.desc}</td>
                         <td style={{ textAlign: "center", padding: "4px 8px", fontWeight: 600, color: "#2563eb" }}>{line.debitAcc}</td>
@@ -4747,6 +5435,11 @@ export default function MisaPayrollWorkspace({
               </div>
             </div>
           ))}
+          {!livePostingVouchers.length && (
+            <div style={{ background: "#ffffff", borderRadius: 6, border: "1px solid #cbd5e1", padding: "36px 20px", textAlign: "center", color: "#64748b" }}>
+              Chưa có chứng từ hạch toán chi phí lương nào trên Sổ cái. Bấm <strong>Hạch toán chi phí lương</strong> để ghi sổ từ bảng lương đã tính.
+            </div>
+          )}
         </div>
 
         {renderModals()}
@@ -4758,7 +5451,6 @@ export default function MisaPayrollWorkspace({
   // 6. TAB: KHẤU TRỪ THUẾ TNCN (tax-deduction)
   // =========================================================================
   if (tab === "tax-deduction") {
-    // 6.1 MÀN HÌNH CHÍNH (ẢNH 1 - BẠN CHƯA KẾT NỐI VỚI ỨNG DỤNG AMIS THUẾ TNCN)
     if (taxDeductionMode === "empty") {
       return (
         <div
@@ -4771,7 +5463,6 @@ export default function MisaPayrollWorkspace({
             flexDirection: "column",
           }}
         >
-          {/* Main White Card matching Image 1 */}
           <div
             style={{
               background: "#ffffff",
@@ -4788,44 +5479,25 @@ export default function MisaPayrollWorkspace({
               boxSizing: "border-box",
             }}
           >
-            {/* Center Vector Illustration (matching Image 1) */}
             <div style={{ width: 240, height: 160, position: "relative", marginBottom: 26 }}>
               <svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Desktop Monitor Stand Base */}
                 <ellipse cx="120" cy="144" rx="46" ry="6" fill="#e2e8f0" opacity="0.7" />
                 <ellipse cx="120" cy="140" rx="36" ry="5" fill="#cbd5e1" />
-                {/* Stand Neck */}
                 <path d="M112 110 L128 110 L132 140 L108 140 Z" fill="#94a3b8" />
-
-                {/* Monitor Bezel */}
                 <rect x="42" y="24" width="156" height="96" rx="6" fill="#64748b" />
-                {/* Inner Screen */}
                 <rect x="45" y="27" width="150" height="88" rx="4" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
                 <circle cx="120" cy="116" r="1.5" fill="#cbd5e1" />
-
-                {/* Inside Screen Content */}
-                {/* Soft backdrop */}
                 <ellipse cx="120" cy="71" rx="48" ry="18" fill="#f8fafc" />
-
-                {/* Left: Blue App Icon (MISA Kế toán) */}
                 <rect x="62" y="56" width="28" height="28" rx="7" fill="#2563eb" />
                 <path d="M68 76 L72 65 L76 72 L80 65 L84 76" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-
-                {/* Middle: Connection Plug & Sparks */}
                 <line x1="93" y1="70" x2="104" y2="70" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="2 2" />
                 <circle cx="120" cy="70" r="14" fill="#fff7ed" stroke="#fed7aa" strokeWidth="1.5" />
-                {/* Plug connector pins */}
                 <line x1="113" y1="64" x2="117" y2="64" stroke="#ea580c" strokeWidth="2.5" strokeLinecap="round" />
                 <line x1="113" y1="76" x2="117" y2="76" stroke="#ea580c" strokeWidth="2.5" strokeLinecap="round" />
-                {/* Plug block */}
                 <rect x="116" y="62" width="11" height="16" rx="3" fill="#f97316" />
-                {/* Lightning bolt inside plug */}
                 <path d="M122 65 L119 70 L122 70 L120 75" stroke="#ffffff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                 <line x1="136" y1="70" x2="147" y2="70" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="2 2" />
-
-                {/* Right: AMIS Colorful Ring Logo */}
                 <circle cx="172" cy="70" r="14" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
-                {/* Segments */}
                 <circle cx="172" cy="70" r="10" fill="none" stroke="#2563eb" strokeWidth="3" strokeDasharray="16 32" strokeDashoffset="0" />
                 <circle cx="172" cy="70" r="10" fill="none" stroke="#10b981" strokeWidth="3" strokeDasharray="16 32" strokeDashoffset="-16" />
                 <circle cx="172" cy="70" r="10" fill="none" stroke="#f59e0b" strokeWidth="3" strokeDasharray="16 32" strokeDashoffset="-32" />
@@ -4834,34 +5506,19 @@ export default function MisaPayrollWorkspace({
               </svg>
             </div>
 
-            {/* Title (2 lines bold, exactly matching Image 1) */}
             <div style={{ textAlign: "center", marginBottom: 24 }}>
-              <div
-                style={{
-                  fontSize: 16.5,
-                  fontWeight: 700,
-                  color: "#1e293b",
-                  marginBottom: 6,
-                }}
-              >
+              <div style={{ fontSize: 16.5, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>
                 Bạn chưa kết nối với ứng dụng Sổ Việt Thuế TNCN.
               </div>
-              <div
-                style={{
-                  fontSize: 16.5,
-                  fontWeight: 700,
-                  color: "#1e293b",
-                }}
-              >
+              <div style={{ fontSize: 16.5, fontWeight: 700, color: "#1e293b" }}>
                 Kết nối ngay để bắt đầu lập chứng từ khấu trừ thuế TNCN.
               </div>
             </div>
 
-            {/* Button Kết nối ngay */}
             <button
               type="button"
               onClick={() => {
-                notify("Đã kết nối thành công với ứng dụng Sổ Việt Thuế TNCN!");
+                notify("Đã kết nối đồng bộ dữ liệu Thuế TNCN từ Bảng lương!");
                 setTaxDeductionMode("detail_view");
               }}
               style={{
@@ -4886,11 +5543,55 @@ export default function MisaPayrollWorkspace({
       );
     }
 
-    // 6.2 DANH SÁCH KHẤU TRỪ THUẾ TNCN (KHI ĐÃ KẾT NỐI VỚI AMIS THUẾ TNCN)
+    // 6.2 DANH SÁCH KHẤU TRỪ THUẾ TNCN (LIVE COMPUTED FROM SALARY SHEETS / PAYROLL SETTINGS)
+    const selfDeductCfg = apiConnected ? apiNumber(payrollSettings?.personal_deduction) || 11000000 : 11000000;
+    const depDeductCfg = apiConnected ? apiNumber(payrollSettings?.dependent_deduction) || 4400000 : 4400000;
+    const latestRawSheet = apiRows.salarySheets?.[0] || null;
+    const taxRows = apiConnected
+      ? latestRawSheet?.lines?.length
+        ? latestRawSheet.lines.map((line: any) => ({
+            id: line.employee_code,
+            name: line.employee_name,
+            taxCode: line.personal_tax_code || "—",
+            gross: apiNumber(line.gross),
+            insurance: apiNumber(line.employee_insurance),
+            deductions: apiNumber(line.detail?.deductions) || selfDeductCfg,
+            taxable: apiNumber(line.taxable_income),
+            tax: apiNumber(line.personal_income_tax),
+          }))
+        : (apiEmployees || []).map((emp: any) => {
+            const gross = apiNumber(emp.salaryRate) + apiNumber(emp.allowance);
+            const ins = Math.round(apiNumber(emp.insuranceSalary || emp.salaryRate) * 0.105);
+            const deds = selfDeductCfg + apiNumber(emp.dependents) * depDeductCfg;
+            const taxable = Math.max(0, gross - ins - deds);
+            return {
+              id: emp.id,
+              name: emp.name,
+              taxCode: emp.taxCode || "—",
+              gross,
+              insurance: ins,
+              deductions: deds,
+              taxable,
+              tax: 0,
+            };
+          })
+      : SAMPLE_EMPLOYEES.map((emp) => ({
+          ...emp,
+          gross: emp.salaryRate + emp.allowance,
+          insurance: Math.round(emp.salaryRate * 0.105),
+          deductions: 11000000 + emp.dependents * 4400000,
+          taxable: Math.max(0, emp.salaryRate + emp.allowance - Math.round(emp.salaryRate * 0.105) - 11000000 - emp.dependents * 4400000),
+          tax: 0,
+        }));
+
+    const pitTaxPayersCount = taxRows.filter((r: any) => r.tax > 0).length;
+    const pitTotalGross = taxRows.reduce((s: number, r: any) => s + apiNumber(r.gross), 0);
+    const pitTotalDeductAndIns = taxRows.reduce((s: number, r: any) => s + apiNumber(r.deductions) + apiNumber(r.insurance), 0);
+    const pitTotalTax = taxRows.reduce((s: number, r: any) => s + apiNumber(r.tax), 0);
+
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f1f5f9" }}>
-        {/* Toolbar with Back Button */}
-        <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+        <div style={{ padding: "10px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, flexWrap: "wrap", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button
               type="button"
@@ -4913,24 +5614,28 @@ export default function MisaPayrollWorkspace({
               <ArrowLeft size={14} /> Quay lại
             </button>
             <div style={{ fontSize: 13, color: "#475569" }}>
-              Kỳ thuế: <strong>Quý 3/2026 (Tháng 09/2026)</strong> • <span style={{ color: "var(--brand)", fontWeight: 600 }}>● Đã kết nối Sổ Việt Thuế TNCN</span>
+              Kỳ thuế: <strong>{latestRawSheet?.period || _period}</strong> • <span style={{ color: "var(--brand)", fontWeight: 600 }}>● Đồng bộ trực tiếp từ Bảng lương</span>
             </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
               type="button"
-              onClick={() => notify("Lập tờ khai thuế TNCN mẫu 05/KK-TNCN thành công!")}
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.location.href = href("/tax");
+                }
+              }}
               style={{ height: 30, padding: "0 12px", background: "var(--brand)", color: "#ffffff", border: "none", borderRadius: 4, fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
-              <Plus size={14} /> Lập tờ khai 05/KK-TNCN
+              <Plus size={14} /> Mở phân hệ Thuế (05/KK-TNCN)
             </button>
             <button
               type="button"
-              onClick={() => notify("Kết xuất file XML tờ khai thuế nộp Cổng Tổng cục Thuế")}
+              onClick={async (event) => { try { await exportVisibleTable(event.currentTarget, "Đã xuất bảng kê khấu trừ thuế TNCN"); } catch (cause) { notify?.(cause instanceof Error ? cause.message : "Không thực hiện được thao tác."); } }}
               style={{ height: 30, padding: "0 12px", background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12.5, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
             >
-              <Download size={14} /> Xuất XML nộp thuế
+              <Download size={14} /> Xuất bảng kê Excel
             </button>
             <button
               type="button"
@@ -4945,20 +5650,20 @@ export default function MisaPayrollWorkspace({
         {/* KPI Header */}
         <div style={{ padding: "16px 20px 0 20px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14 }}>
           <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Số lao động nộp thuế</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", marginTop: 4 }}>35 người</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>Số lao động phát sinh thuế</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", marginTop: 4 }}>{pitTaxPayersCount} / {taxRows.length} người</div>
           </div>
           <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
             <div style={{ fontSize: 12, color: "#64748b" }}>Tổng thu nhập chịu thuế</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", marginTop: 4 }}>880.000.000 đ</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", marginTop: 4 }}>{formatVND(pitTotalGross)} đ</div>
           </div>
           <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
             <div style={{ fontSize: 12, color: "#64748b" }}>Tổng giảm trừ gia cảnh & BH</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#2563eb", marginTop: 4 }}>496.500.000 đ</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#2563eb", marginTop: 4 }}>{formatVND(pitTotalDeductAndIns)} đ</div>
           </div>
           <div style={{ background: "#ffffff", padding: "12px 16px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
             <div style={{ fontSize: 12, color: "#64748b" }}>Tổng thuế TNCN đã khấu trừ</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#d97706", marginTop: 4 }}>38.350.000 đ</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#d97706", marginTop: 4 }}>{formatVND(pitTotalTax)} đ</div>
           </div>
         </div>
 
@@ -4980,27 +5685,19 @@ export default function MisaPayrollWorkspace({
                 </tr>
               </thead>
               <tbody>
-                {(apiConnected ? (apiRows.salarySheets?.[0]?.lines || []).map((line: any) => ({
-                  id: line.employee_code, name: line.employee_name, taxCode: "—", gross: apiNumber(line.gross),
-                  insurance: apiNumber(line.employee_insurance), deductions: apiNumber(line.detail?.deductions),
-                  taxable: apiNumber(line.taxable_income), tax: apiNumber(line.personal_income_tax),
-                })) : SAMPLE_EMPLOYEES.map((emp) => ({
-                  ...emp, gross: emp.salaryRate + emp.allowance,
-                  insurance: Math.round(emp.salaryRate * 0.105), deductions: 11000000 + emp.dependents * 4400000,
-                  taxable: Math.max(0, emp.salaryRate + emp.allowance - Math.round(emp.salaryRate * 0.105) - 11000000 - emp.dependents * 4400000),
-                  tax: 0,
-                }))).map((emp: any) => {
-                  const gross = emp.gross, insurance = emp.insurance;
-                  const selfDeduct = apiConnected ? apiNumber(payrollSettings?.personal_deduction) : 11000000;
-                  const depDeduct = emp.deductions - selfDeduct;
-                  const taxable = emp.taxable, tax = emp.tax;
+                {taxRows.map((emp: any) => {
+                  const gross = emp.gross;
+                  const insurance = emp.insurance;
+                  const depDeduct = Math.max(0, emp.deductions - selfDeductCfg);
+                  const taxable = emp.taxable;
+                  const tax = emp.tax;
                   return (
                     <tr key={emp.id} style={{ borderBottom: "1px solid #f1f5f9", height: 36 }}>
                       <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--brand)" }}>{emp.id}</td>
                       <td style={{ padding: "8px 10px", fontWeight: 600, color: "#1e293b" }}>{emp.name}</td>
-                      <td style={{ padding: "8px 10px", color: "#64748b" }}>{emp.taxCode}</td>
+                      <td style={{ padding: "8px 10px", color: "#64748b" }}>{emp.taxCode || "—"}</td>
                       <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{formatVND(gross)}</td>
-                      <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(selfDeduct)}</td>
+                      <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(selfDeductCfg)}</td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>{formatVND(depDeduct)}</td>
                       <td style={{ padding: "8px 10px", textAlign: "right", color: "#ea580c" }}>{formatVND(insurance)}</td>
                       <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>{formatVND(taxable)}</td>
@@ -5198,17 +5895,6 @@ export default function MisaPayrollWorkspace({
                   <option value="Tiếng Anh">Tiếng Anh</option>
                   <option value="Song ngữ Việt - Anh">Song ngữ Việt - Anh</option>
                 </select>
-                <ChevronDown
-                  size={14}
-                  style={{
-                    position: "absolute",
-                    right: 8,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    pointerEvents: "none",
-                    color: "#64748b",
-                  }}
-                />
               </div>
             </div>
 
@@ -5479,13 +6165,13 @@ export default function MisaPayrollWorkspace({
 
         {/* Tab neo nhỏ mép phải màn hình màu xanh dương ‹ */}
         <div
-          title="Mở tiện ích bổ sung"
-          onClick={() => notify("Tiện ích trợ giúp & Báo cáo nâng cao Sổ Việt ERP")}
+          title="Tùy chọn phân hệ Tiền lương"
+          onClick={() => setShowOptionsModal(true)}
           style={{
             position: "fixed",
             right: 0,
             top: "42%",
-            width: 14,
+            width: 16,
             height: 48,
             background: "#0073e6",
             borderTopLeftRadius: 4,
@@ -5500,7 +6186,7 @@ export default function MisaPayrollWorkspace({
             userSelect: "none",
           }}
         >
-          <span style={{ fontSize: 13, fontWeight: 700, marginLeft: -2 }}>‹</span>
+          <ChevronLeft size={13} strokeWidth={2.4} />
         </div>
 
         {renderModals()}

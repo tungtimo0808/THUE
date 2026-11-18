@@ -528,8 +528,8 @@ th[data-numeric="true"] {
 .misa-tax-modal-window,
 .misa-modal-window,
 .misa-modal-card {
-  width: min(1120px, 95vw) !important;
-  max-width: 1180px !important;
+  width: min(1360px, 96vw) !important;
+  max-width: 1380px !important;
   box-sizing: border-box !important;
 }
 

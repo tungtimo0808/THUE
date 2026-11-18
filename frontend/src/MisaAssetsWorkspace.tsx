@@ -6022,9 +6022,12 @@ ${entries.length
                           Tỷ lệ tính KH thg (%)
                         </label>
                         <input
-                          type="text"
+                          type="number"
+                          min={0}
+                          step="any"
+                          placeholder="0"
                           disabled={incNoDepr}
-                          value={incDeprRateMonth === 0 ? "0,00" : incDeprRateMonth.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          value={incDeprRateMonth === 0 ? "" : incDeprRateMonth}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value.replace(",", "."));
                             setIncDeprRateMonth(isNaN(val) ? 0 : val);
@@ -6037,9 +6040,12 @@ ${entries.length
                           Tỷ lệ tính KH năm (%)
                         </label>
                         <input
-                          type="text"
+                          type="number"
+                          min={0}
+                          step="any"
+                          placeholder="0"
                           disabled={incNoDepr}
-                          value={incDeprRateYear === 0 ? "0,00" : incDeprRateYear.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          value={incDeprRateYear === 0 ? "" : incDeprRateYear}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value.replace(",", "."));
                             setIncDeprRateYear(isNaN(val) ? 0 : val);
@@ -6166,9 +6172,12 @@ ${entries.length
                           Thời gian sử dụng
                         </label>
                         <input
-                          type="text"
+                          type="number"
+                          min={0}
+                          step="any"
+                          placeholder="0"
                           disabled={incNoDepr}
-                          value={incUseDuration === 0 ? "0,00" : incUseDuration.toLocaleString("vi-VN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          value={incUseDuration === 0 ? "" : incUseDuration}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value.replace(",", "."));
                             handleIncUseDurationChange(isNaN(val) ? 0 : val);

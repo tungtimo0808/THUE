@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronDown, X } from "lucide-react";
 
 const recipients = [
   { name: "Nguyễn Minh", email: "minh@example.com" },
@@ -33,9 +34,12 @@ export default function ChatRecipientPicker() {
           flexWrap: "wrap",
           alignItems: "center",
           gap: 6,
-          border: "1px solid #cdd3da",
-          borderRadius: 3,
-          padding: 3,
+          minHeight: 34,
+          border: `1px solid ${open ? "var(--brand, #1d4ed8)" : "#cbd5e1"}`,
+          borderRadius: 6,
+          padding: "3px 4px 3px 8px",
+          background: "#ffffff",
+          boxSizing: "border-box",
         }}
       >
         {selected.map((email) => (
@@ -48,8 +52,22 @@ export default function ChatRecipientPicker() {
                 current.filter((value) => value !== email),
               )
             }
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2px 7px",
+              borderRadius: 5,
+              border: "1px solid #bfdbfe",
+              background: "#eff6ff",
+              color: "#1d4ed8",
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
           >
-            {recipients.find((person) => person.email === email)?.name} ×
+            <span>{recipients.find((person) => person.email === email)?.name}</span>
+            <X size={12.5} aria-hidden="true" />
           </button>
         ))}
         <input
@@ -62,14 +80,36 @@ export default function ChatRecipientPicker() {
             setQuery(event.target.value);
             setOpen(true);
           }}
-          style={{ flex: 1, minWidth: 140, border: 0 }}
+          style={{ flex: 1, minWidth: 140, border: 0, outline: "none", padding: "4px 2px" }}
         />
         <button
           type="button"
           aria-label="Chọn người nhận Sổ Việt Chat"
+          aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
+          style={{
+            width: 26,
+            height: 26,
+            padding: 0,
+            border: "none",
+            borderRadius: 5,
+            background: open ? "#eff6ff" : "transparent",
+            color: open ? "var(--brand, #1d4ed8)" : "#64748b",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
         >
-          ⌄
+          <ChevronDown
+            size={15}
+            strokeWidth={2.2}
+            aria-hidden="true"
+            style={{
+              transform: open ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.16s ease",
+            }}
+          />
         </button>
       </div>
       {open && (

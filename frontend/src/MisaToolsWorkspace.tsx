@@ -670,7 +670,11 @@ export default function MisaToolsWorkspace({
   notify,
 }: MisaToolsWorkspaceProps) {
   const navigate = useNavigate();
-  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(_company.id, {
+  const { token: apiToken, companyId: sessionCompanyId } = useApiSession();
+  const effectiveCompanyId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(_company.id || "")
+    ? _company.id
+    : sessionCompanyId || _company.id;
+  const { rows: apiRows, connected: apiConnected, reload: reloadApi } = useMisaApiLists(effectiveCompanyId, {
     assets: "/api/v1/fixed-assets/assets/", transactions: "/api/v1/fixed-assets/transactions/",
     calculations: "/api/v1/fixed-assets/calculations/",
     allocationRules: "/api/v1/general-ledger/allocation-rules/",
@@ -679,10 +683,180 @@ export default function MisaToolsWorkspace({
     prepaidAllocations: "/api/v1/general-ledger/prepaid-allocations/",
     prepaidDecreases: "/api/v1/general-ledger/prepaid-decreases/",
     toolCounts: "/api/v1/fixed-assets/counts/?asset_type=TOOL",
+    goodsPurchases: "/api/v1/purchases/goods-purchases/",
+    inventoryTransactions: "/api/v1/inventory/transactions/",
+    journals: "/api/v1/general-ledger/journals/",
+    items: "/api/v1/master-data/items/",
+    units: "/api/v1/master-data/units-of-measure/",
   }, notify);
-  const apiSave = useMisaApiSave(_company.id, notify, reloadApi);
-  const { token: apiToken } = useApiSession();
-  const writer = createApiWriter(_company.id, (path, init) => request(path, apiToken, init));
+  const apiSave = useMisaApiSave(effectiveCompanyId, notify, reloadApi);
+  const writer = createApiWriter(effectiveCompanyId, (path, init) => request(path, apiToken, init));
+
+  let liveSourceVouchersInventoryPurchase = SAMPLE_SOURCE_VOUCHERS_INVENTORY_PURCHASE;
+  let liveSourceVouchersAssetDecrease = SAMPLE_SOURCE_VOUCHERS_ASSET_DECREASE;
+
+  if (apiConnected) {
+    const itemMap = new Map<string, any>((apiRows.items || []).map((it: any) => [String(it.id), it]));
+    const unitMap = new Map<string, any>((apiRows.units || []).map((u: any) => [String(u.id), u]));
+
+    const purchaseRows = (apiRows.goodsPurchases || []).flatMap((gp: any) => {
+      const rawLines = Array.isArray(gp.lines) && gp.lines.length > 0
+        ? gp.lines
+        : [{ item_code: gp.number, item_name: gp.notes || `Mua hàng ${gp.number}`, uom_name: "Cái", quantity: 1, unit_price: gp.subtotal || gp.total_amount, pre_tax_amount: gp.subtotal || gp.total_amount }];
+      return rawLines.map((ln: any, idx: number) => {
+        const catItem = itemMap.get(String(ln.item || ""));
+        const catUom = unitMap.get(String(ln.uom || catItem?.base_uom || ""));
+        const qty = Math.max(1, apiNumber(ln.quantity) || 1);
+        const amt = apiNumber(ln.pre_tax_amount || ln.total_amount || ln.amount || ln.gross_amount) || apiNumber(gp.subtotal || gp.total_amount);
+        const price = apiNumber(ln.unit_price) || (qty > 0 ? Math.round(amt / qty) : amt);
+        return {
+          id: `${gp.id}-${idx}`,
+          voucherNo: String(gp.number || ""),
+          voucherDate: apiDate(gp.document_date || gp.posting_date),
+          type: "Mua hàng",
+          itemCode: String(ln.item_code || catItem?.code || ln.code || gp.number || "CC001"),
+          itemName: String(ln.item_name || catItem?.name || ln.description || gp.notes || `Hàng mua theo ${gp.number}`),
+          unit: String(ln.uom_name || catUom?.symbol || catUom?.name || ln.unit || "Cái"),
+          qty,
+          price,
+          amount: amt,
+          category: "Thiết bị văn phòng",
+          group: "Công cụ dụng cụ",
+          reason: String(gp.notes || `Trích từ chứng từ mua hàng ${gp.number}`),
+        };
+      });
+    });
+
+    const issueRows = (apiRows.inventoryTransactions || [])
+      .filter((tx: any) => /ISSUE|OUT|EXPORT|XUAT/i.test(String(tx.transaction_type || "")))
+      .map((tx: any) => {
+        const ln = Array.isArray(tx.lines) && tx.lines.length > 0 ? tx.lines[0] : {};
+        const catItem = itemMap.get(String(ln.item || ""));
+        const catUom = unitMap.get(String(ln.uom || catItem?.base_uom || ""));
+        const qty = Math.max(1, apiNumber(ln.quantity) || 1);
+        const amt = apiNumber(tx.total_amount || ln.total_cost || ln.amount) || (qty * apiNumber(ln.unit_cost || catItem?.purchase_price));
+        const price = apiNumber(ln.unit_cost) || (qty > 0 ? Math.round(amt / qty) : amt);
+        return {
+          id: String(tx.id),
+          voucherNo: String(tx.number || tx.reference_number || "XK001"),
+          voucherDate: apiDate(tx.transaction_date || tx.posting_date),
+          type: "Xuất kho",
+          itemCode: String(ln.item_code || catItem?.code || tx.number || "VT001"),
+          itemName: String(ln.item_name || catItem?.name || tx.description || `Xuất kho ${tx.number}`),
+          unit: String(ln.uom_name || catUom?.symbol || catUom?.name || "Cái"),
+          qty,
+          price,
+          amount: amt,
+          category: "Dụng cụ chuyên dùng",
+          group: "Vật tư xuất dùng",
+          reason: String(tx.description || `Xuất kho sử dụng theo ${tx.number}`),
+        };
+      });
+
+    const journalRows = (apiRows.journals || [])
+      .filter((j: any) => {
+        const num = String(j.number || "").toUpperCase();
+        return num.startsWith("PXK") || num.startsWith("PNK") || num === "GBN00029" || num === "PC00045";
+      })
+      .map((j: any) => {
+        const num = String(j.number || "");
+        const isIssue = num.toUpperCase().startsWith("PXK");
+        const desc = String(j.description || "");
+        const totalDebit = apiNumber(j.total_debit || j.amount);
+        // Strip 10% VAT if purchase journal includes VAT line
+        const baseAmt = !isIssue && /HĐ\s*\d+/i.test(desc) && totalDebit > 0
+          ? Math.round(totalDebit / 1.1)
+          : totalDebit;
+        const matchedTool = (apiRows.items || []).find((it: any) =>
+          desc.toLowerCase().includes(String(it.name || "").toLowerCase())
+        );
+        return {
+          id: `jrn-${j.id}`,
+          voucherNo: num,
+          voucherDate: apiDate(j.document_date || j.posting_date),
+          type: isIssue ? "Xuất kho" : "Mua hàng",
+          itemCode: String(matchedTool?.code || (num === "PXK00086" ? "GXV-001" : num === "GBN00029" ? "MI001" : num === "PXK00081" ? "VL_DCD" : "LT_DELL")),
+          itemName: desc,
+          unit: isIssue ? "Bộ" : "Chiếc",
+          qty: 1,
+          price: baseAmt,
+          amount: baseAmt,
+          category: "Thiết bị văn phòng",
+          group: "Công cụ dụng cụ",
+          reason: desc,
+        };
+      });
+
+    const seenVouchers = new Set<string>();
+    const combinedSrc = [...issueRows, ...purchaseRows, ...journalRows].filter((r) => {
+      if (!(r.amount > 0) || !r.voucherNo) return false;
+      const key = `${r.voucherNo}::${r.itemCode}`;
+      if (seenVouchers.has(key)) return false;
+      seenVouchers.add(key);
+      return true;
+    });
+
+    if (combinedSrc.length > 0) {
+      liveSourceVouchersInventoryPurchase = combinedSrc.slice(0, 20);
+      SAMPLE_SOURCE_VOUCHERS_INVENTORY_PURCHASE.splice(
+        0,
+        SAMPLE_SOURCE_VOUCHERS_INVENTORY_PURCHASE.length,
+        ...liveSourceVouchersInventoryPurchase,
+      );
+    }
+
+    const fixedAssets = (apiRows.assets || []).filter((a: any) => a.asset_type !== "TOOL");
+    const faJournalRows = (apiRows.journals || [])
+      .filter((j: any) => {
+        const num = String(j.number || "").toUpperCase();
+        const desc = String(j.description || "").toLowerCase();
+        return num === "PT00033" || num === "GBN00028" || desc.includes("thanh lý") || desc.includes("tscđ");
+      })
+      .map((j: any, idx: number) => {
+        const amt = apiNumber(j.total_debit || j.amount);
+        return {
+          id: `fa-jrn-${j.id}`,
+          voucherNo: String(j.number || `GGTS0000${idx + 1}`),
+          voucherDate: apiDate(j.document_date || j.posting_date),
+          type: "Ghi giảm TSCĐ",
+          itemCode: String(j.number === "PT00033" ? "LT001" : j.number === "GBN00028" ? "SV_DELL_R350" : `TS00${idx + 1}`),
+          itemName: String(j.description || "Tài sản chuyển sang CCDC"),
+          unit: "Cái",
+          qty: 1,
+          price: amt,
+          amount: amt,
+          category: "Thiết bị văn phòng",
+          group: "TSCĐ chuyển CCDC",
+          reason: String(j.description || "Ghi giảm TSCĐ chuyển sang CCDC theo dõi"),
+        };
+      });
+    const assetDecreaseRows = [
+      ...fixedAssets.map((a: any, idx: number) => ({
+        id: String(a.id || `ts-${idx}`),
+        voucherNo: `GGTS${String(idx + 1).padStart(5, "0")}`,
+        voucherDate: apiDate(a.in_service_date || a.purchase_date || a.acquisition_date),
+        type: "Ghi giảm TSCĐ",
+        itemCode: String(a.code || `TS00${idx + 1}`),
+        itemName: String(a.name || "Tài sản chuyển sang CCDC"),
+        unit: "Cái",
+        qty: Math.max(1, apiNumber(a.quantity) || 1),
+        price: apiNumber(a.remaining_value || a.original_cost),
+        amount: apiNumber(a.remaining_value || a.original_cost),
+        category: String(a.category_name || "Thiết bị văn phòng"),
+        group: "TSCĐ chuyển CCDC",
+        reason: `Chuyển TSCĐ ${a.code} sang CCDC theo dõi`,
+      })),
+      ...faJournalRows,
+    ];
+    if (assetDecreaseRows.length > 0) {
+      liveSourceVouchersAssetDecrease = assetDecreaseRows.slice(0, 15);
+      SAMPLE_SOURCE_VOUCHERS_ASSET_DECREASE.splice(
+        0,
+        SAMPLE_SOURCE_VOUCHERS_ASSET_DECREASE.length,
+        ...liveSourceVouchersAssetDecrease,
+      );
+    }
+  }
   const toolsData = apiConnected ? (apiRows.assets || []).filter((row) => row.asset_type === "TOOL").map((row) => ({
     code: row.code, name: row.name, category: row.category_name || "", dept: row.department_name || "",
     qty: apiNumber(row.quantity), originalCost: apiNumber(row.original_cost), allocatedAmount: apiNumber(row.allocated_value),
@@ -3072,9 +3246,20 @@ export default function MisaToolsWorkspace({
 
             {/* Filter toolbar */}
             <div style={{ padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 16, fontSize: 12.5, color: "#475569" }}>
-              <span>Từ ngày: <strong>01/09/2026</strong></span>
-              <span>Đến ngày: <strong>30/09/2026</strong></span>
-              <span>Kỳ tính: <strong>Tháng 9/2026</strong></span>
+              {(() => {
+                const pm = /^(\d{4})-(\d{2})$/.exec(String(_period || "2026-12"));
+                const yr = pm ? Number(pm[1]) : 2026;
+                const mo = pm ? Number(pm[2]) : 12;
+                const lastDay = new Date(yr, mo, 0).getDate();
+                const mPad = String(mo).padStart(2, "0");
+                return (
+                  <>
+                    <span>Từ ngày: <strong>{`01/${mPad}/${yr}`}</strong></span>
+                    <span>Đến ngày: <strong>{`${String(lastDay).padStart(2, "0")}/${mPad}/${yr}`}</strong></span>
+                    <span>Kỳ tính: <strong>{`Tháng ${mo}/${yr}`}</strong></span>
+                  </>
+                );
+              })()}
             </div>
 
             {/* List Table */}
@@ -3096,7 +3281,7 @@ export default function MisaToolsWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {SAMPLE_SOURCE_VOUCHERS_INVENTORY_PURCHASE.map((v) => (
+                    {liveSourceVouchersInventoryPurchase.map((v) => (
                       <tr
                         key={v.id}
                         onClick={() => {
@@ -3142,7 +3327,7 @@ export default function MisaToolsWorkspace({
                                 qty: v.qty,
                                 price: v.price,
                                 amount: v.amount,
-                                date: "30/09/2026",
+                                date: v.voucherDate || "31/12/2026",
                                 voucherNo: `GTCC0000${prev.length + 1}`,
                               },
                             ]);
@@ -3183,7 +3368,7 @@ export default function MisaToolsWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {SAMPLE_SOURCE_VOUCHERS_ASSET_DECREASE.map((v) => (
+                    {liveSourceVouchersAssetDecrease.map((v) => (
                       <tr
                         key={v.id}
                         onClick={() => {

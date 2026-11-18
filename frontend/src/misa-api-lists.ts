@@ -103,6 +103,9 @@ const CATALOG_PATH_PATTERNS = [
   "/inventory/warehouses/",
   "/inventory/item-categories/",
   "/payroll/salary-components/",
+  "/fixed-assets/assets/",
+  "/fixed-assets/categories/",
+  "/general-ledger/prepaid-expenses/",
 ];
 
 const ROW_DATE_FIELDS = [
@@ -248,11 +251,12 @@ const isUuidCompany = (value: string) =>
 
 /** Read the existing module tables from the company-scoped backend with SWR in-memory + warm storage caching. */
 export function useMisaApiLists(
-  companyId: string,
+  rawCompanyId: string,
   resources: Record<string, string>,
   notify: (message: string) => void,
 ) {
-  const { token } = useApiSession();
+  const { token, companyId: sessionCompanyId } = useApiSession();
+  const companyId = isUuidCompany(rawCompanyId || "") ? rawCompanyId : (sessionCompanyId || rawCompanyId);
   const validCompany = Boolean(token && companyId && isUuidCompany(companyId));
   const key = useMemo(() => JSON.stringify(resources), [resources]);
   const [branchScope, setBranchScope] = useState<string>(() => getActiveBranchScope());
@@ -361,7 +365,7 @@ export function useMisaApiLists(
             apiListCache.delete(`${companyId}::${scopeKey}::${path}`);
             batchUpdates[name] = [];
             hasUpdates = true;
-          } else {
+          } else if (!(error instanceof ApiError && [0, 502, 503, 504].includes(error.status))) {
             const hasData = (apiListCache.get(`${companyId}::${scopeKey}::${path}`)?.data.length ?? 0) > 0;
             if (!hasData) {
               notify(`${name}: ${error instanceof Error ? error.message : "lỗi tải dữ liệu"}`);
@@ -407,8 +411,9 @@ export function useMisaApiLists(
  * Saves a form through the backend: each call gets a fresh writer (fresh catalog lookups),
  * reports the outcome, clears stale cache and reloads the tables. Resolves false when nothing was saved.
  */
-export function useMisaApiSave(companyId: string, notify: (message: string) => void, reload: () => void) {
-  const { token } = useApiSession();
+export function useMisaApiSave(rawCompanyId: string, notify: (message: string) => void, reload: () => void) {
+  const { token, companyId: sessionCompanyId } = useApiSession();
+  const companyId = isUuidCompany(rawCompanyId || "") ? rawCompanyId : (sessionCompanyId || rawCompanyId);
   return async (save: (writer: ApiWriter) => Promise<{ message: string; record?: any } | any>): Promise<any> => {
     if (!token || !companyId) return false;
     try {

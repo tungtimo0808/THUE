@@ -15,6 +15,10 @@ export function toMoneyNumber(value: unknown): number {
     const parsed = Number(trimmed.replace(/\./g, "").replace(",", "."));
     return Number.isFinite(parsed) ? parsed : 0;
   }
+  if (/^-?\d+,\d+$/.test(trimmed)) {
+    const parsed = Number(trimmed.replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
   const parsed = Number(trimmed.replace(/,/g, ""));
   return Number.isFinite(parsed) ? parsed : 0;
 }
@@ -50,7 +54,11 @@ export function parseMoneyInput(raw: string): number {
   const trimmed = raw.trim();
   if (!trimmed) return 0;
   const negative = trimmed.startsWith("-");
-  const withoutTrailingZeroDecimals = trimmed.replace(/^(-?\d+)\.0+$/, "$1");
+  // In Vietnamese money inputs, "." is the thousands separator (e.g. "73.000" -> typing "0" gives "73.0000"),
+  // while "," is the decimal separator ("730.000,00"). Never strip ".0+" unless US comma-thousands are present.
+  const withoutTrailingZeroDecimals = /,\d{3}\.0+$/.test(trimmed)
+    ? trimmed.replace(/\.0+$/, "")
+    : trimmed.replace(/,0+$/, "");
   const digits = withoutTrailingZeroDecimals.replace(/\D/g, "");
   if (!digits) return 0;
   const num = Number(digits);

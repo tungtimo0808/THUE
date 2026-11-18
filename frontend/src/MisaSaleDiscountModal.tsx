@@ -19,7 +19,7 @@ import {
   Bot,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
-import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS } from "./MisaSalesModals";
+import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS, useSyncLiveSalesCatalogs } from "./MisaSalesModals";
 
 export interface SaleDiscountItem {
   id: string;
@@ -65,6 +65,7 @@ export function SaleDiscountModal({
   onOpenCustomerModal,
   notify = () => {},
 }: SaleDiscountModalProps) {
+  useSyncLiveSalesCatalogs();
   // Mode selection: "Giảm trừ công nợ" (debt) vs "Trả lại tiền mặt" (cash)
   const [returnType, setReturnType] = useState<"debt" | "cash">(
     initialData?.returnType || "debt"

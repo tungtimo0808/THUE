@@ -10,9 +10,11 @@ import "./process-layout.css";
 import "./practical-ui.css";
 import { installCalendarPickerFix } from "./calendar-picker-fix";
 import { installSelectEnhancer } from "./select-enhancer";
+import { installModalBackdropGuard } from "./modal-backdrop-guard";
 
 installCalendarPickerFix();
 installSelectEnhancer();
+installModalBackdropGuard();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

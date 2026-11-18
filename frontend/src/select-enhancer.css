@@ -11,8 +11,17 @@ select[size="1"]:not([multiple]):not([data-native-select]) {
   padding-right: 32px !important;
   border-radius: 4px;
   cursor: pointer;
-  text-overflow: ellipsis;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+select:not([multiple]):not([size]):not([data-native-select])::picker-icon,
+select[size="1"]:not([multiple]):not([data-native-select])::picker-icon,
+select:not([multiple]):not([size]):not([data-native-select])::-ms-expand {
+  display: none !important;
+  content: none !important;
 }
 
 select:not([multiple]):not([data-native-select]):hover:not(:disabled) {

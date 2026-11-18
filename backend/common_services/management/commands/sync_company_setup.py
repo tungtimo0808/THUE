@@ -11,7 +11,21 @@ class Command(BaseCommand):
     help = "Bổ sung thiết lập ban đầu (phân hệ, quỹ tiền mặt, kỳ kế toán…) cho các doanh nghiệp đang hoạt động."
 
     def handle(self, *args, **options):
+        from cash_management.models import CashFund
+        from common_services.models import CoreCompanySetting
+        from common_services.setup_services import WORKSPACE_MODULES
+        from general_ledger.models import Account, JournalEntry
+
         for company in Company.objects.filter(status=CompanyStatus.ACTIVE).order_by("name"):
+            setting = CoreCompanySetting.objects.filter(company=company).first()
+            cfg = (setting.configuration or {}) if setting else {}
+            if (
+                cfg.get("setup_completed") is True
+                and set(WORKSPACE_MODULES).issubset(set(cfg.get("enabled_modules") or []))
+                and Account.objects.filter(company=company).exists()
+                and CashFund.objects.filter(company=company).exists()
+            ):
+                continue
             membership = CompanyMembership.objects.filter(company=company, membership_status="ACTIVE").order_by("joined_at").first()
             actor = membership.user if membership else UserAccount.objects.order_by("created_at").first()
             if actor is None:
@@ -21,7 +35,8 @@ class Command(BaseCommand):
             self.stdout.write(f"Đã đồng bộ thiết lập cho {company.name}.")
         if os.getenv("SEED_DEMO_DATA") == "True" or os.getenv("SEED_CONTEXT_MATRIX") == "True":
             try:
-                from seed_context_matrix import seed_matrix
-                seed_matrix()
+                if not JournalEntry.objects.filter(number__startswith="MH-HCM-2026").exists():
+                    from seed_context_matrix import seed_matrix
+                    seed_matrix()
             except Exception as exc:
                 self.stdout.write(f"Lưu ý khi đồng bộ dữ liệu đa kỳ/đa sổ: {exc}")

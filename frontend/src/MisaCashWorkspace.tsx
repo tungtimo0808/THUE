@@ -11,6 +11,8 @@ import {CASH_PERIODS} from "./cash-report-periods";
 import {MISA_REPORT_ACCOUNTS} from "./misa-report-accounts";
 import BankAccountChoiceTable from "./BankAccountChoiceTable";
 import VoucherChoiceTable from "./VoucherChoiceTable";
+import { useLiveVoucherLookups, type LiveDebtItem, type LiveEmployeeOption } from "./live-voucher-lookups";
+import { safeRandomUUID } from "./crypto-polyfill";
 import CashReferencePicker from "./CashReferencePicker";
 import CashOptionsDialog from "./CashOptionsDialog";
 import CashExcelImport from "./CashExcelImport";
@@ -598,6 +600,7 @@ export function SupplierPaymentModal({
     invoices: any[];
   }) => boolean | void | Promise<boolean | void>;
 }) {
+  const liveLookup = useLiveVoucherLookups();
   const [payMethod, setPayMethod] = useState(initialMethod === "bank" ? "Tiền gửi" : "Tiền mặt");
   const [supplier, setSupplier] = useState("");
   const [employee, setEmployee] = useState("");
@@ -626,7 +629,61 @@ export function SupplierPaymentModal({
     }[]
   >([]);
 
-  const handleFetchData = () => {
+  const handleFetchData = async () => {
+    if (debtSource?.load && supplier) {
+      try {
+        const loaded = await debtSource.load(supplier);
+        if (Array.isArray(loaded) && loaded.length > 0) {
+          setInvoices(
+            loaded.map((row: any) => ({
+              id: String(row.id),
+              voucherDate: String(row.voucherDate || ""),
+              voucherCode: String(row.voucherCode || ""),
+              invoiceDate: String(row.invoiceDate || row.voucherDate || ""),
+              invoiceCode: String(row.invoiceCode || row.voucherCode || ""),
+              description: String(row.description || ""),
+              dueDate: String(row.dueDate || ""),
+              totalDebt: Number(row.totalDebt || 0),
+              remainingDebt: Number(row.remainingDebt || 0),
+              payAmount: Number(row.payAmount ?? row.remainingDebt ?? 0),
+              account: String(row.account || "331"),
+              terms: String(row.terms || row.paymentTerms || ""),
+              checked: Boolean(row.checked ?? true),
+            })),
+          );
+          return;
+        }
+      } catch {
+        /* fallback to liveLookup */
+      }
+    }
+    if (liveLookup.connected) {
+      const supLower = supplier.trim().toLowerCase();
+      const matched = liveLookup.supplierDebts.filter(
+        (d) =>
+          !supLower ||
+          d.partnerCode.toLowerCase() === supLower ||
+          d.partnerName.toLowerCase() === supLower,
+      );
+      setInvoices(
+        matched.map((d) => ({
+          id: d.payableId || d.id,
+          voucherDate: d.date,
+          voucherCode: d.voucherNo,
+          invoiceDate: d.date,
+          invoiceCode: d.no,
+          description: d.desc,
+          dueDate: d.dueDate,
+          totalDebt: d.total,
+          remainingDebt: d.remain,
+          payAmount: d.remain,
+          account: d.accountCode || "331",
+          terms: "",
+          checked: true,
+        })),
+      );
+      return;
+    }
     setInvoices([
       {
         id: "inv-1",
@@ -874,10 +931,15 @@ export function SupplierPaymentModal({
                   }}
                 >
                   <option value="">&nbsp;</option>
-                  {debtSource?.customers.map((row) => (
+                  {(debtSource?.customers?.length
+                    ? debtSource.customers
+                    : liveLookup.connected
+                      ? liveLookup.allParties.map((p: any) => ({ code: String(p.code || ""), name: String(p.name || "") }))
+                      : []
+                  ).map((row) => (
                     <option key={row.code} value={row.code}>{row.code} - {row.name}</option>
                   ))}
-                  {!debtSource && <>
+                  {!debtSource && !liveLookup.connected && <>
                   <option value="Công ty TNHH Thiết bị Văn phòng Hồng Hà">
                     Công ty TNHH Thiết bị Văn phòng Hồng Hà
                   </option>
@@ -927,9 +989,19 @@ export function SupplierPaymentModal({
                     }}
                   >
                     <option value="">&nbsp;</option>
-                    <option value="Nguyễn Văn Nam">Nguyễn Văn Nam</option>
-                    <option value="Lê Thị Mai">Lê Thị Mai</option>
-                    <option value="Phạm Hải Đăng">Phạm Hải Đăng</option>
+                    {liveLookup.connected ? (
+                      liveLookup.employees.map((emp) => (
+                        <option key={emp.id || emp.code} value={`${emp.code} - ${emp.name}`}>
+                          {emp.code} - {emp.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Nguyễn Văn Nam">Nguyễn Văn Nam</option>
+                        <option value="Lê Thị Mai">Lê Thị Mai</option>
+                        <option value="Phạm Hải Đăng">Phạm Hải Đăng</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown
                     size={14}
@@ -2790,6 +2862,45 @@ export function CreateVoucherModal({
     return merged.length > 0 || companyId ? merged : (currentType.samplePartners || []);
   }, [currentType, receiptCatalog.customers, receiptCatalog.parties, receiptCatalog.employees, bankPaymentCatalog.parties, bankPaymentCatalog.employees, companyId]);
 
+  const liveLookup = useLiveVoucherLookups(companyId);
+  const liveEmployeeChoices = useMemo<LiveEmployeeOption[]>(
+    () =>
+      liveLookup.connected || Boolean(companyId)
+        ? liveLookup.employees
+        : (SAMPLE_EMPLOYEES as any),
+    [liveLookup.connected, liveLookup.employees, companyId],
+  );
+  const liveCompanyBankChoices = useMemo(
+    () => {
+      if (liveLookup.connected && liveLookup.companyBankAccounts.length > 0) {
+        SAMPLE_BANK_ACCOUNTS.splice(
+          0,
+          SAMPLE_BANK_ACCOUNTS.length,
+          ...liveLookup.companyBankAccounts.map((acc) => ({
+            account: acc.account,
+            name: acc.name,
+          })),
+        );
+      }
+      if (liveLookup.connected && liveLookup.partyBankAccounts.length > 0) {
+        SAMPLE_BENEFICIARY_ACCOUNTS.splice(
+          0,
+          SAMPLE_BENEFICIARY_ACCOUNTS.length,
+          ...liveLookup.partyBankAccounts.map((acc) => ({
+            account: acc.account,
+            name: acc.name,
+          })),
+        );
+      }
+      return liveLookup.connected || Boolean(companyId)
+        ? liveLookup.companyBankAccounts
+        : SAMPLE_BANK_ACCOUNTS;
+    },
+    [liveLookup.connected, liveLookup.companyBankAccounts, liveLookup.partyBankAccounts, companyId],
+  );
+  const [debtSearchQuery, setDebtSearchQuery] = useState("");
+  const [debtShowAllPartners, setDebtShowAllPartners] = useState(false);
+
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showPartnerDropdown, setShowPartnerDropdown] = useState(false);
   const [partnerSearch,setPartnerSearch]=useState(false);
@@ -2994,7 +3105,7 @@ export function CreateVoucherModal({
       : (chosen.defaultCredit || "");
     setRows([
       {
-        id: crypto.randomUUID(),
+        id: safeRandomUUID(),
         description: chosen.defaultReason,
         debit: debitAccount,
         credit: creditAccount,
@@ -3011,7 +3122,7 @@ export function CreateVoucherModal({
     ]);
     setTaxRows([
       {
-        id: crypto.randomUUID(),
+        id: safeRandomUUID(),
         invoiceNo: "0001234",
         invoiceDate: currentCashDate(),
         invoiceSeries: "1C26TAA",
@@ -3117,6 +3228,163 @@ export function CreateVoucherModal({
     );
   };
 
+  const handleSelectEmployee = (emp: { id?: string; code: string; name: string }) => {
+    const label = emp.code && emp.name ? `${emp.code} - ${emp.name}` : emp.code || emp.name;
+    setEmployee(label);
+    if (emp.id) setEmployeeId(emp.id);
+    else {
+      const matched = liveEmployeeChoices.find(
+        (item) => item.code.toLowerCase() === String(emp.code || "").toLowerCase(),
+      );
+      if (matched?.id) setEmployeeId(matched.id);
+    }
+    setShowEmployeeDropdown(false);
+    setRows((prev) =>
+      prev.map((r, i) =>
+        i === 0 ? { ...r, employeeCode: emp.code, employeeName: emp.name } : r,
+      ),
+    );
+  };
+
+  const handleEmployeeInputChange = (val: string) => {
+    setEmployee(val);
+    const clean = val.split("-")[0]?.trim().toLowerCase() || "";
+    const matched = clean
+      ? liveEmployeeChoices.find((item) => item.code.toLowerCase() === clean)
+      : undefined;
+    if (matched) {
+      setEmployeeId(matched.id || "");
+      setRows((prev) =>
+        prev.map((r, i) =>
+          i === 0 ? { ...r, employeeCode: matched.code, employeeName: matched.name } : r,
+        ),
+      );
+    } else if (!val.trim()) {
+      setEmployeeId("");
+    }
+  };
+
+  const rawDebtItems: LiveDebtItem[] = useMemo(() => {
+    if (liveLookup.connected || Boolean(companyId)) {
+      return isReceipt ? liveLookup.customerDebts : liveLookup.supplierDebts;
+    }
+    return [
+      {
+        id: "demo-1",
+        no: "HĐ00291",
+        voucherNo: "HĐ00291",
+        date: "15/09/2026",
+        dueDate: "30/09/2026",
+        desc: "Mua máy in và văn phòng phẩm",
+        total: 18500000,
+        paid: 5000000,
+        remain: 13500000,
+        accountCode: isReceipt ? "131" : "331",
+        partnerId: "",
+        partnerCode: "NCC001",
+        partnerName: "Công ty TNHH Thiết bị Văn phòng",
+        contactPerson: "Công ty TNHH Thiết bị Văn phòng",
+        address: "Hà Nội",
+        taxCode: "",
+      },
+    ];
+  }, [
+    liveLookup.connected,
+    liveLookup.customerDebts,
+    liveLookup.supplierDebts,
+    companyId,
+    isReceipt,
+  ]);
+
+  const filteredDebtItems = useMemo(() => {
+    const codeFilter = !debtShowAllPartners ? partnerCode.trim().toLowerCase() : "";
+    const q = debtSearchQuery.trim().toLowerCase();
+    return rawDebtItems.filter((item) => {
+      if (codeFilter && item.partnerCode.toLowerCase() !== codeFilter) return false;
+      if (!q) return true;
+      return (
+        item.no.toLowerCase().includes(q) ||
+        item.voucherNo.toLowerCase().includes(q) ||
+        item.partnerCode.toLowerCase().includes(q) ||
+        item.partnerName.toLowerCase().includes(q) ||
+        item.desc.toLowerCase().includes(q)
+      );
+    });
+  }, [rawDebtItems, debtShowAllPartners, partnerCode, debtSearchQuery]);
+
+  const handleApplyDebtItem = (inv: LiveDebtItem) => {
+    if (inv.partnerCode || inv.partnerName) {
+      setPartnerCode(inv.partnerCode);
+      setPartnerName(inv.partnerName);
+      setPerson(inv.contactPerson || inv.partnerName || person);
+      if (inv.address) setAddress(inv.address);
+      if (!isReceipt && isBank) {
+        setBankBeneficiaryName(inv.partnerName);
+        const partyAccs = liveLookup.partyBankAccountsFor(inv.partnerCode);
+        if (partyAccs.length > 0) {
+          setReceiverAccount(partyAccs[0].account);
+          setReceiverBank(partyAccs[0].bankOnlyName || partyAccs[0].name);
+          setReceiverBankBranch(partyAccs[0].branchName || "");
+        }
+      }
+    }
+    const actionPrefix = isReceipt ? "Thu nợ" : "Thanh toán";
+    const fullDesc = `${actionPrefix} ${inv.no}${inv.desc ? ` - ${inv.desc}` : ""}`;
+    const masterReason = inv.partnerName
+      ? `${actionPrefix} chứng từ ${inv.no} - ${inv.partnerName}`
+      : fullDesc;
+    setReason(masterReason);
+
+    const debitAcc = isReceipt
+      ? isBank
+        ? currentType.defaultDebit || "1121"
+        : suggestedCashDebit
+      : inv.accountCode || "331";
+    const creditAcc = !isReceipt
+      ? isBank
+        ? bankCreditCode
+        : currentType.defaultCredit || "1111"
+      : inv.accountCode || "131";
+
+    setRows((prev) =>
+      prev.map((r, idx) =>
+        idx === 0
+          ? {
+              ...r,
+              description: fullDesc,
+              debit: debitAcc,
+              credit: creditAcc,
+              amount: inv.remain,
+              partnerCode: inv.partnerCode || r.partnerCode,
+              partnerName: inv.partnerName || r.partnerName,
+            }
+          : r,
+      ),
+    );
+    if (inv.voucherNo) {
+      setReferenceCodes((prev) =>
+        prev.includes(inv.voucherNo) ? prev : [...prev, inv.voucherNo],
+      );
+    }
+    if (inv.payableId) {
+      setBankAllocations([
+        { payable: inv.payableId, amount: String(inv.remain), discount: "0" },
+      ]);
+    } else {
+      setBankAllocations([]);
+    }
+    if (inv.receivableId) {
+      setAllocations([{ receivable: inv.receivableId, amount: String(inv.remain) }]);
+    } else {
+      setAllocations([]);
+    }
+    setShowDebtLookupModal(false);
+    setToastMessage(
+      `✓ Đã nạp công nợ ${inv.no} (${formatVND(inv.remain)} đ)${inv.partnerName ? ` — ${inv.partnerName}` : ""}`,
+    );
+    setTimeout(() => setToastMessage(null), 2800);
+  };
+
   const handlePartnerNameChange = (val: string) => {
     const oldName = partnerName;
     setPartnerName(val);
@@ -3139,7 +3407,7 @@ export function CreateVoucherModal({
     setRows((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: safeRandomUUID(),
         description: reason || currentType.defaultReason,
         debit: debitAccount,
         credit: creditAccount,
@@ -3166,7 +3434,7 @@ export function CreateVoucherModal({
     if (rows.length <= 1) {
       setRows([
         {
-          id: crypto.randomUUID(),
+          id: safeRandomUUID(),
           description: reason,
           debit: debitAccount,
           credit: creditAccount,
@@ -3195,7 +3463,7 @@ export function CreateVoucherModal({
       : (currentType.defaultCredit || "");
     setRows([
       {
-        id: crypto.randomUUID(),
+        id: safeRandomUUID(),
         description: reason,
         debit: debitAccount,
         credit: creditAccount,
@@ -3217,7 +3485,7 @@ export function CreateVoucherModal({
     setTaxRows((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: safeRandomUUID(),
         invoiceNo: "",
         invoiceDate: currentCashDate(),
         invoiceSeries: "1C26TAA",
@@ -3237,7 +3505,7 @@ export function CreateVoucherModal({
     if (taxRows.length <= 1) {
       setTaxRows([
         {
-          id: crypto.randomUUID(),
+          id: safeRandomUUID(),
           invoiceNo: "",
           invoiceDate: currentCashDate(),
           invoiceSeries: "1C26TAA",
@@ -3259,7 +3527,7 @@ export function CreateVoucherModal({
   const handleClearAllTaxRows = () => {
     setTaxRows([
       {
-        id: crypto.randomUUID(),
+        id: safeRandomUUID(),
         invoiceNo: "",
         invoiceDate: currentCashDate(),
         invoiceSeries: "1C26TAA",
@@ -3349,7 +3617,7 @@ export function CreateVoucherModal({
 
     setSaving(true);
     const saved = await onSave({
-      id: crypto.randomUUID(),
+      id: safeRandomUUID(),
       code,
       date: formattedIsoDate,
       partner: partnerName || partnerCode,
@@ -3367,6 +3635,7 @@ export function CreateVoucherModal({
       sourceBankAccountId,
       exchangeRate: !isReceipt && isBank ? bankExchangeRate : exchangeRate,
       allocations: !isReceipt && isBank ? bankAllocations : allocations,
+      referenceCodes,
       beneficiaryName: bankBeneficiaryName,
       receiverBankBranch,
       bankReference,
@@ -3412,7 +3681,7 @@ export function CreateVoucherModal({
         : (currentType.defaultCredit || "");
       setRows([
         {
-          id: crypto.randomUUID(),
+          id: safeRandomUUID(),
           description: currentType.defaultReason,
           debit: debitAccount,
           credit: creditAccount,
@@ -3850,7 +4119,11 @@ export function CreateVoucherModal({
                             type="button"
                             className="misa-voucher-circle-icon-btn"
                             title="Tra cứu công nợ nhà cung cấp"
-                            onClick={() => setShowDebtLookupModal(true)}
+                            onClick={() => {
+                              setDebtSearchQuery("");
+                              setDebtShowAllPartners(false);
+                              setShowDebtLookupModal(true);
+                            }}
                           >
                             $
                           </button>
@@ -3904,10 +4177,10 @@ export function CreateVoucherModal({
                             <ChevronDown size={13} />
                           </button>
                         </div>
-                        {showReceiverDropdown && <BankAccountChoiceTable rows={!isReceipt && isBank ? beneficiaryChoices : SAMPLE_BENEFICIARY_ACCOUNTS}
+                        {showReceiverDropdown && <BankAccountChoiceTable rows={!isReceipt && isBank ? beneficiaryChoices : (liveLookup.connected || Boolean(companyId) ? liveLookup.partyBankAccountsFor(partnerCode) : SAMPLE_BENEFICIARY_ACCOUNTS)}
                           onSelect={b=>{setReceiverAccount(b.account);if (!isReceipt && isBank) {
                             const selected = (bankPaymentCatalog.partyBankAccounts || []).find(row => row.party === selectedBankParty?.id && row.account_number === b.account);
-                            setReceiverBank((bankPaymentCatalog.banks || []).find(row => row.id === selected?.bank)?.name || "");
+                            setReceiverBank((bankPaymentCatalog.banks || []).find(row => row.id === selected?.bank)?.name || b.name || "");
                             setReceiverBankBranch(selected?.branch_name || "");
                           } else setReceiverBank(b.name);setShowReceiverDropdown(false);}}/>}
                       </div>
@@ -3936,7 +4209,7 @@ export function CreateVoucherModal({
                               type="text"
                               className="misa-voucher-input"
                               value={employee}
-                              onChange={(e) => setEmployee(e.target.value)}
+                              onChange={(e) => handleEmployeeInputChange(e.target.value)}
                             />
                             <div className="misa-voucher-combo-actions">
                               <button
@@ -3956,7 +4229,7 @@ export function CreateVoucherModal({
                                 <ChevronDown size={13} />
                               </button>
                             </div>
-                            {showEmployeeDropdown && <VoucherChoiceTable kind="employee" rows={SAMPLE_EMPLOYEES} onSelect={emp=>{setEmployee(`${emp.code} - ${emp.name}`);setShowEmployeeDropdown(false);}}/>}
+                            {showEmployeeDropdown && <VoucherChoiceTable kind="employee" rows={liveEmployeeChoices} onNew={() => setQuickDirectory("Nhân viên")} onSelect={handleSelectEmployee}/>}
                           </div>
                         </div>
 
@@ -4187,7 +4460,11 @@ export function CreateVoucherModal({
                             type="button"
                             className="misa-voucher-circle-icon-btn"
                             title={isReceipt ? "Tra cứu công nợ khách hàng" : "Tra cứu công nợ nhà cung cấp"}
-                            onClick={() => setShowDebtLookupModal(true)}
+                            onClick={() => {
+                              setDebtSearchQuery("");
+                              setDebtShowAllPartners(false);
+                              setShowDebtLookupModal(true);
+                            }}
                           >
                             $
                           </button>
@@ -4253,7 +4530,7 @@ export function CreateVoucherModal({
                               </button>
                             </div>
 
-                            {showBankAccountDropdown && <BankAccountChoiceTable rows={SAMPLE_BANK_ACCOUNTS} onSelect={b=>{setBankAccount(b.account);setBankName(b.name);setShowBankAccountDropdown(false);}}/>}
+                            {showBankAccountDropdown && <BankAccountChoiceTable rows={liveCompanyBankChoices} onSelect={b=>{setBankAccount(b.account);setBankName(b.name);setShowBankAccountDropdown(false);}}/>}
                           </div>
                         </div>
 
@@ -4279,7 +4556,7 @@ export function CreateVoucherModal({
                                 type="text"
                                 className="misa-voucher-input"
                                 value={employee}
-                                onChange={(e) => setEmployee(e.target.value)}
+                                onChange={(e) => handleEmployeeInputChange(e.target.value)}
                               />
                               <div className="misa-voucher-combo-actions">
                                 <button
@@ -4300,7 +4577,7 @@ export function CreateVoucherModal({
                                 </button>
                               </div>
 
-                              {showEmployeeDropdown && <VoucherChoiceTable kind="employee" rows={SAMPLE_EMPLOYEES} onSelect={emp=>{setEmployee(`${emp.code} - ${emp.name}`);setShowEmployeeDropdown(false);}}/>}
+                              {showEmployeeDropdown && <VoucherChoiceTable kind="employee" rows={liveEmployeeChoices} onNew={() => setQuickDirectory("Nhân viên")} onSelect={handleSelectEmployee}/>}
                             </div>
                           </div>
                         )}
@@ -4390,7 +4667,7 @@ export function CreateVoucherModal({
                                 type="text"
                                 className="misa-voucher-input"
                                 value={employee}
-                                onChange={(e) => setEmployee(e.target.value)}
+                                onChange={(e) => handleEmployeeInputChange(e.target.value)}
                               />
                               <div className="misa-voucher-combo-actions">
                                 <button
@@ -4411,7 +4688,7 @@ export function CreateVoucherModal({
                                 </button>
                               </div>
 
-                              {showEmployeeDropdown && <VoucherChoiceTable kind="employee" rows={SAMPLE_EMPLOYEES} onSelect={emp=>{setEmployee(`${emp.code} - ${emp.name}`);setShowEmployeeDropdown(false);}}/>}
+                              {showEmployeeDropdown && <VoucherChoiceTable kind="employee" rows={liveEmployeeChoices} onNew={() => setQuickDirectory("Nhân viên")} onSelect={handleSelectEmployee}/>}
                             </div>
                           </div>
                         )}
@@ -4523,7 +4800,11 @@ export function CreateVoucherModal({
                             type="button"
                             className="misa-voucher-circle-icon-btn"
                             title="Tra cứu công nợ nhà cung cấp"
-                            onClick={() => setShowDebtLookupModal(true)}
+                            onClick={() => {
+                              setDebtSearchQuery("");
+                              setDebtShowAllPartners(false);
+                              setShowDebtLookupModal(true);
+                            }}
                           >
                             $
                           </button>
@@ -4605,7 +4886,7 @@ export function CreateVoucherModal({
                               type="text"
                               className="misa-voucher-input"
                               value={employee}
-                              onChange={(e) => setEmployee(e.target.value)}
+                              onChange={(e) => handleEmployeeInputChange(e.target.value)}
                             />
                             <div className="misa-voucher-combo-actions">
                               <button
@@ -4620,11 +4901,12 @@ export function CreateVoucherModal({
                                 type="button"
                                 className="misa-voucher-mini-btn"
                                 title="Chọn nhân viên"
-                                onClick={() => setEmployee("NV0005 - Hoàng Thiên Bảo")}
+                                onClick={() => setShowEmployeeDropdown(!showEmployeeDropdown)}
                               >
                                 <ChevronDown size={13} />
                               </button>
                             </div>
+                            {showEmployeeDropdown && <VoucherChoiceTable kind="employee" rows={liveEmployeeChoices} onNew={() => setQuickDirectory("Nhân viên")} onSelect={handleSelectEmployee}/>}
                           </div>
                         </div>
 
@@ -5446,14 +5728,14 @@ export function CreateVoucherModal({
           </div>
         </footer>
 
-        {/* Modal Tra cứu công nợ nhà cung cấp ($) */}
+        {/* Modal Tra cứu công nợ nhà cung cấp / khách hàng ($) */}
         {showDebtLookupModal && (
           <div className="misa-tax-modal-overlay" style={{ zIndex: 10000 }}>
             <div
               className="misa-tax-modal-window misa-modal-md"
               style={{
-                width: "min(1080px, 94vw)",
-                maxWidth: 1120,
+                width: "min(1140px, 95vw)",
+                maxWidth: 1180,
                 borderRadius: 12,
                 boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
                 overflow: "hidden",
@@ -5468,6 +5750,7 @@ export function CreateVoucherModal({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  gap: 16,
                 }}
               >
                 <div>
@@ -5475,36 +5758,81 @@ export function CreateVoucherModal({
                     {isReceipt ? "Tra cứu công nợ khách hàng" : "Tra cứu công nợ nhà cung cấp"}
                   </h2>
                   <small style={{ fontSize: 13, color: "#64748b", marginTop: 4, display: "block" }}>
-                    {partnerCode ? `${partnerCode} - ${partnerName}` : (isReceipt ? "Tất cả khách hàng" : "Tất cả nhà cung cấp")}
+                    {partnerCode && !debtShowAllPartners
+                      ? `${partnerCode} - ${partnerName}`
+                      : isReceipt
+                        ? "Tất cả khách hàng còn công nợ phải thu"
+                        : "Tất cả nhà cung cấp còn công nợ phải trả"}
                   </small>
                 </div>
-                <button
-                  type="button"
-                  className="misa-tax-icon-btn"
-                  onClick={() => setShowDebtLookupModal(false)}
-                  title="Đóng"
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 6,
-                    border: "none",
-                    background: "#f1f5f9",
-                    color: "#475569",
-                    display: "grid",
-                    placeItems: "center",
-                    cursor: "pointer",
-                  }}
-                >
-                  <X size={18} />
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {partnerCode && (
+                    <button
+                      type="button"
+                      onClick={() => setDebtShowAllPartners((prev) => !prev)}
+                      style={{
+                        height: 32,
+                        padding: "0 12px",
+                        borderRadius: 6,
+                        border: "1px solid #bfdbfe",
+                        background: debtShowAllPartners ? "var(--brand)" : "#eff6ff",
+                        color: debtShowAllPartners ? "#ffffff" : "var(--brand)",
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {debtShowAllPartners
+                        ? `Chỉ lọc theo ${partnerCode}`
+                        : isReceipt
+                          ? "Xem tất cả khách hàng"
+                          : "Xem tất cả nhà cung cấp"}
+                    </button>
+                  )}
+                  <input
+                    type="text"
+                    value={debtSearchQuery}
+                    onChange={(e) => setDebtSearchQuery(e.target.value)}
+                    placeholder="Tìm số HĐ/CT, đối tượng, nội dung..."
+                    style={{
+                      width: 260,
+                      height: 32,
+                      padding: "0 10px",
+                      borderRadius: 6,
+                      border: "1px solid #cbd5e1",
+                      fontSize: 12.5,
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="misa-tax-icon-btn"
+                    onClick={() => setShowDebtLookupModal(false)}
+                    title="Đóng"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 6,
+                      border: "none",
+                      background: "#f1f5f9",
+                      color: "#475569",
+                      display: "grid",
+                      placeItems: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </header>
 
               <div
                 className="misa-tax-modal-body"
                 style={{
-                  padding: "20px 24px",
+                  padding: "18px 24px",
                   background: "#f8fafc",
-                  overflowX: "hidden",
+                  overflowX: "auto",
                   overflowY: "auto",
                   maxHeight: "calc(85vh - 140px)",
                 }}
@@ -5514,7 +5842,7 @@ export function CreateVoucherModal({
                     background: "#ffffff",
                     borderRadius: 8,
                     border: "1px solid #e2e8f0",
-                    overflow: "hidden",
+                    overflowX: "auto",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                   }}
                 >
@@ -5522,44 +5850,59 @@ export function CreateVoucherModal({
                     className="misa-voucher-table"
                     style={{
                       width: "100%",
+                      minWidth: 880,
                       borderCollapse: "collapse",
-                      tableLayout: "auto",
+                      tableLayout: "fixed",
                     }}
                   >
                     <thead>
                       <tr style={{ height: 40 }}>
-                        <th style={{ width: 55, minWidth: 55, textAlign: "center", padding: "0 6px" }}>STT</th>
-                        <th style={{ width: 120, minWidth: 110, padding: "0 10px" }}>Số hóa đơn</th>
-                        <th style={{ width: 105, minWidth: 100, padding: "0 10px" }}>Ngày HĐ</th>
-                        <th style={{ padding: "0 14px" }}>Nội dung</th>
-                        <th style={{ width: 145, minWidth: 140, textAlign: "right", padding: "0 14px" }}>{isReceipt ? "Số tiền phải thu" : "Số tiền phải trả"}</th>
-                        <th style={{ width: 130, minWidth: 120, textAlign: "right", padding: "0 14px" }}>{isReceipt ? "Đã thu" : "Đã trả"}</th>
-                        <th style={{ width: 145, minWidth: 140, textAlign: "right", padding: "0 14px" }}>{isReceipt ? "Còn phải thu" : "Còn phải trả"}</th>
-                        <th style={{ width: 90, minWidth: 85, textAlign: "center", padding: "0 6px" }}>Chọn</th>
+                        <th style={{ width: 52, textAlign: "center", padding: "0 4px", textOverflow: "clip" }}>STT</th>
+                        <th style={{ width: 132, padding: "0 8px" }}>Số HĐ / CT</th>
+                        <th style={{ width: 102, padding: "0 8px" }}>Ngày CT</th>
+                        <th style={{ width: 196, padding: "0 8px" }}>{isReceipt ? "Khách hàng" : "Nhà cung cấp"}</th>
+                        <th style={{ padding: "0 10px" }}>Nội dung</th>
+                        <th style={{ width: 124, textAlign: "right", padding: "0 10px" }}>{isReceipt ? "Số tiền phải thu" : "Số tiền phải trả"}</th>
+                        <th style={{ width: 96, textAlign: "right", padding: "0 10px" }}>{isReceipt ? "Đã thu" : "Đã trả"}</th>
+                        <th style={{ width: 124, textAlign: "right", padding: "0 10px" }}>{isReceipt ? "Còn phải thu" : "Còn phải trả"}</th>
+                        <th style={{ width: 92, textAlign: "center", padding: "0 6px", textOverflow: "clip" }}>Chọn</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {[
-                        { no: "HĐ00291", date: "15/09/2026", desc: "Mua máy in và văn phòng phẩm", total: 18500000, paid: 5000000, remain: 13500000 },
-                        { no: "HĐ00342", date: "22/09/2026", desc: "Giấy in A4 và mực in văn phòng", total: 9200000, paid: 0, remain: 9200000 },
-                        { no: "HĐ00411", date: "28/09/2026", desc: "Bảo dưỡng máy photocopy định kỳ", total: 4500000, paid: 0, remain: 4500000 },
-                      ].map((inv, idx) => (
+                      {filteredDebtItems.map((inv, idx) => (
                         <tr
-                          key={inv.no}
+                          key={inv.id}
                           style={{
                             height: 44,
                             borderBottom: "1px solid #f1f5f9",
                             transition: "background 0.15s ease",
                           }}
                         >
-                          <td style={{ textAlign: "center", color: "#64748b", padding: "0 6px" }}>{idx + 1}</td>
-                          <td style={{ padding: "0 10px", whiteSpace: "nowrap" }}><strong style={{ color: "#0f172a" }}>{inv.no}</strong></td>
-                          <td style={{ padding: "0 10px", color: "#475569", whiteSpace: "nowrap" }}>{inv.date}</td>
-                          <td style={{ padding: "0 14px", color: "#334155" }} title={inv.desc}>{inv.desc}</td>
-                          <td style={{ textAlign: "right", padding: "0 14px", color: "#0f172a", fontWeight: 600, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{formatVND(inv.total)}</td>
-                          <td style={{ textAlign: "right", padding: "0 14px", color: "var(--brand)", fontWeight: 600, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{formatVND(inv.paid)}</td>
-                          <td style={{ textAlign: "right", padding: "0 14px", fontWeight: 700, color: "#dc2626", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{formatVND(inv.remain)}</td>
-                          <td style={{ textAlign: "center", padding: "0 6px", whiteSpace: "nowrap" }}>
+                          <td style={{ textAlign: "center", color: "#64748b", padding: "0 4px", overflow: "visible", textOverflow: "clip" }}>{idx + 1}</td>
+                          <td style={{ padding: "0 8px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={inv.no}>
+                            <strong style={{ color: "#0f172a" }}>{inv.no}</strong>
+                          </td>
+                          <td style={{ padding: "0 8px", color: "#475569", whiteSpace: "nowrap", overflow: "visible", textOverflow: "clip" }}>{inv.date || "—"}</td>
+                          <td
+                            style={{ padding: "0 8px", color: "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                            title={`${inv.partnerCode} - ${inv.partnerName}`}
+                          >
+                            {inv.partnerCode ? (
+                              <>
+                                <strong style={{ color: "var(--brand)" }}>{inv.partnerCode}</strong>
+                                {inv.partnerName ? ` - ${inv.partnerName}` : ""}
+                              </>
+                            ) : (
+                              inv.partnerName || "—"
+                            )}
+                          </td>
+                          <td style={{ padding: "0 10px", color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={inv.desc}>
+                            {inv.desc}
+                          </td>
+                          <td style={{ textAlign: "right", padding: "0 10px", color: "#0f172a", fontWeight: 600, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{formatVND(inv.total)}</td>
+                          <td style={{ textAlign: "right", padding: "0 10px", color: "var(--brand)", fontWeight: 600, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{formatVND(inv.paid)}</td>
+                          <td style={{ textAlign: "right", padding: "0 10px", fontWeight: 700, color: "#dc2626", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{formatVND(inv.remain)}</td>
+                          <td style={{ textAlign: "center", padding: "0 6px", whiteSpace: "nowrap", overflow: "visible", textOverflow: "clip" }}>
                             <button
                               type="button"
                               style={{
@@ -5579,17 +5922,30 @@ export function CreateVoucherModal({
                               }}
                               onMouseEnter={(e) => (e.currentTarget.style.background = "var(--brand-hover)")}
                               onMouseLeave={(e) => (e.currentTarget.style.background = "var(--brand)")}
-                              onClick={() => {
-                                handleUpdateRow(rows[0].id, "amount", inv.remain);
-                                handleUpdateRow(rows[0].id, "description", `${isReceipt ? "Thu nợ" : "Thanh toán"} ${inv.no} - ${inv.desc}`);
-                                setShowDebtLookupModal(false);
-                              }}
+                              onClick={() => handleApplyDebtItem(inv)}
                             >
                               {isReceipt ? "Thu nợ" : "Trả nợ"}
                             </button>
                           </td>
                         </tr>
                       ))}
+                      {!filteredDebtItems.length && (
+                        <tr>
+                          <td
+                            colSpan={9}
+                            style={{
+                              padding: "28px 16px",
+                              textAlign: "center",
+                              color: "#64748b",
+                              fontSize: 13,
+                            }}
+                          >
+                            {partnerCode && !debtShowAllPartners
+                              ? `Đối tượng ${partnerCode}${partnerName ? ` (${partnerName})` : ""} hiện không có chứng từ công nợ còn ${isReceipt ? "phải thu" : "phải trả"}.`
+                              : `Không có chứng từ công nợ còn ${isReceipt ? "phải thu" : "phải trả"} phù hợp trong doanh nghiệp hiện tại.`}
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -5603,10 +5959,16 @@ export function CreateVoucherModal({
                   borderTop: "1px solid #e2e8f0",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "flex-end",
+                  justifyContent: "space-between",
                   gap: 10,
                 }}
               >
+                <div style={{ fontSize: 13, color: "#475569" }}>
+                  Tổng số: <strong>{filteredDebtItems.length}</strong> chứng từ · Tổng còn {isReceipt ? "phải thu" : "phải trả"}:{" "}
+                  <strong style={{ color: "#dc2626", fontVariantNumeric: "tabular-nums" }}>
+                    {formatVND(filteredDebtItems.reduce((sum, item) => sum + item.remain, 0))} đ
+                  </strong>
+                </div>
                 <button
                   type="button"
                   className="misa-voucher-btn-white"
@@ -5631,9 +5993,9 @@ export function CreateVoucherModal({
         )}
 
         {/* Modal Tham chiếu chứng từ */}
-        {referenceCodes.length>0&&<p>Tham chiếu: {referenceCodes.join(", ")}</p>}
+        {referenceCodes.length>0&&<p style={{ padding: "4px 20px", fontSize: 12.5, color: "#1d4ed8", fontWeight: 500 }}>Tham chiếu: {referenceCodes.join(", ")}</p>}
         <datalist id="voucher-ledger-account-options">{MISA_REPORT_ACCOUNTS.map(account=><option key={account.code} value={account.code}>{account.name}</option>)}</datalist>
-        {quickDirectory&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"transparent",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickDirectory(null)}>Đóng thêm nhanh</button>{quickDirectory==="Nhà cung cấp"?<SupplierModal onClose={()=>setQuickDirectory(null)} onSubmit={async data=>{let savedCode=data.code||"";let savedName=data.name||"";if(token&&companyId&&(savedCode||savedName)){try{const rawTax=String(data.taxCode||"").trim().replace(/[\s-]/g,"");const created=await request<any>(`/api/v1/master-data/parties/?company_id=${encodeURIComponent(companyId)}`,token,{method:"POST",body:JSON.stringify({company:companyId,code:savedCode||"AUTO",name:savedName||savedCode,legal_name:savedName||savedCode,party_type:"ORGANIZATION",status:"ACTIVE",tax_code:/^\d{10}(\d{3})?$/.test(rawTax)?rawTax:null})});if(created?.code)savedCode=String(created.code);if(created?.name)savedName=String(created.name);}catch{}}handleSelectPartner({code:savedCode,name:savedName,person:data.contactName||savedName,address:data.address||""});reloadReceiptCatalog();reloadBankPaymentCatalog();setQuickDirectory(null);}}/>:<MisaDirectoryWorkspace key={quickDirectory} initialName={quickDirectory} initialCreate legacy={null} notify={()=>{}} onEditorClose={()=>setQuickDirectory(null)} onEntrySaved={values=>{const code=Object.entries(values).find(([key])=>/^Mã(?! số)(?: |$)|^Số tài khoản/.test(key))?.[1]||values["Mã khách hàng"]||values["Mã nhà cung cấp"]||values["Mã"]||"";const name=Object.entries(values).find(([key])=>/^Tên(?: |$)|^Họ và tên$/.test(key))?.[1]||Object.entries(values).find(([key])=>/^Tên/.test(key))?.[1]||"";const addr=values["Địa chỉ"]||values["Thông tin liên hệ:Địa chỉ"]||"";if(quickDirectory==="Nhân viên")setEmployee(code);else if(quickDirectory==="Tài khoản ngân hàng")setBankAccount(code);else handleSelectPartner({code,name:name||partnerName,person:name||person||partnerName,address:addr||address});reloadReceiptCatalog();reloadBankPaymentCatalog();setQuickDirectory(null);}}/>}</div>}
+        {quickDirectory&&<div style={{position:"fixed",inset:0,zIndex:11000,background:"transparent",overflow:"auto"}}><button style={{position:"fixed",right:16,top:12,zIndex:12000}} onClick={()=>setQuickDirectory(null)}>Đóng thêm nhanh</button>{quickDirectory==="Nhà cung cấp"?<SupplierModal onClose={()=>setQuickDirectory(null)} onSubmit={async data=>{let savedCode=data.code||"";let savedName=data.name||"";if(token&&companyId&&(savedCode||savedName)){try{const rawTax=String(data.taxCode||"").trim().replace(/[\s-]/g,"");const created=await request<any>(`/api/v1/master-data/parties/?company_id=${encodeURIComponent(companyId)}`,token,{method:"POST",body:JSON.stringify({company:companyId,code:savedCode||"AUTO",name:savedName||savedCode,legal_name:savedName||savedCode,party_type:"ORGANIZATION",status:"ACTIVE",tax_code:/^\d{10}(\d{3})?$/.test(rawTax)?rawTax:null})});if(created?.code)savedCode=String(created.code);if(created?.name)savedName=String(created.name);}catch{}}handleSelectPartner({code:savedCode,name:savedName,person:data.contactName||savedName,address:data.address||""});reloadReceiptCatalog();reloadBankPaymentCatalog();liveLookup.reload();setQuickDirectory(null);}}/>:<MisaDirectoryWorkspace key={quickDirectory} initialName={quickDirectory} initialCreate legacy={null} notify={()=>{}} onEditorClose={()=>setQuickDirectory(null)} onEntrySaved={values=>{const code=Object.entries(values).find(([key])=>/^Mã(?! số)(?: |$)|^Số tài khoản/.test(key))?.[1]||values["Mã khách hàng"]||values["Mã nhà cung cấp"]||values["Mã"]||"";const name=Object.entries(values).find(([key])=>/^Tên(?: |$)|^Họ và tên$/.test(key))?.[1]||Object.entries(values).find(([key])=>/^Tên/.test(key))?.[1]||"";const addr=values["Địa chỉ"]||values["Thông tin liên hệ:Địa chỉ"]||"";if(quickDirectory==="Nhân viên")setEmployee(code&&name?`${code} - ${name}`:code||name);else if(quickDirectory==="Tài khoản ngân hàng")setBankAccount(code);else handleSelectPartner({code,name:name||partnerName,person:name||person||partnerName,address:addr||address});reloadReceiptCatalog();reloadBankPaymentCatalog();liveLookup.reload();setQuickDirectory(null);}}/>}</div>}
         {showRefModal&&<CashReferencePicker onClose={()=>setShowRefModal(false)} onSelect={codes=>{setReferenceCodes(codes);setShowRefModal(false);}}/>}
       </div>
     </div>
@@ -6756,7 +7118,7 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
     const dParts = newItem.date.split("-");
     const formattedDate = `${dParts[2]}/${dParts[1]}/${dParts[0]}`;
     const created: ForecastItem = {
-      id: crypto.randomUUID(),
+      id: safeRandomUUID(),
       date: formattedDate,
       kind: newItem.kind,
       category: newItem.category,
@@ -7631,8 +7993,8 @@ export function PaymentRequestsTab({
       </div>
 
       {/* Toolbar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, minWidth: 0 }}>
           <div style={{ position: "relative", width: 240 }}>
             <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
             <input
@@ -9061,6 +9423,22 @@ export default function MisaCashWorkspace({
   const [showCreateVoucher, setShowCreateVoucher] = useState<"receipt" | "payment" | null>(null);
   const [voucherCategoryChoice, setVoucherCategoryChoice] = useState<"cash" | "bank">("cash");
   const [createVoucherTypeIndex, setCreateVoucherTypeIndex] = useState<number>(0);
+
+  useEffect(() => {
+    const consumeQuickCreate = (raw?: string | null) => {
+      const target = raw || sessionStorage.getItem("sv_pending_quick_create");
+      if (target === "cash-receipt" || target === "cash-payment") {
+        try { sessionStorage.removeItem("sv_pending_quick_create"); } catch {}
+        setVoucherCategoryChoice("cash");
+        setCreateVoucherTypeIndex(0);
+        setShowCreateVoucher(target === "cash-receipt" ? "receipt" : "payment");
+      }
+    };
+    consumeQuickCreate();
+    const onQuick = (ev: Event) => consumeQuickCreate((ev as CustomEvent)?.detail);
+    window.addEventListener("sv_quick_create", onQuick);
+    return () => window.removeEventListener("sv_quick_create", onQuick);
+  }, []);
   const [showCashPaymentSubmenu, setShowCashPaymentSubmenu] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [showInsuranceModal, setShowInsuranceModal] = useState(false);
@@ -9603,7 +9981,7 @@ export default function MisaCashWorkspace({
       return saved;
     }
     const newDoc = {
-      id: crypto.randomUUID(),
+      id: safeRandomUUID(),
       code: `PC${String(transactions.length + 1).padStart(5, "0")}`,
       date: taxData.taxDate,
       partner: "Kho bạc Nhà nước / Chi cục Thuế",
@@ -9629,7 +10007,7 @@ export default function MisaCashWorkspace({
       return saved;
     }
     const newDoc = {
-      id: crypto.randomUUID(),
+      id: safeRandomUUID(),
       code: `PC${String(transactions.length + 1).padStart(5, "0")}`,
       date: data.payDate,
       partner: data.supplier,
@@ -9657,7 +10035,7 @@ export default function MisaCashWorkspace({
     }
     const ptCode = `PT${String(transactions.length + 1).padStart(5, "0")}`;
     const newDoc = {
-      id: crypto.randomUUID(),
+      id: safeRandomUUID(),
       code: ptCode,
       date: data.collectDate,
       partner: data.customer,
@@ -9838,11 +10216,14 @@ export default function MisaCashWorkspace({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 14,
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 12,
               padding: "12px 16px 8px 16px",
               background: "#f8fafc",
               borderBottom: "1px solid #e2e8f0",
+              minWidth: 0,
+              maxWidth: "100%",
+              boxSizing: "border-box",
             }}
           >
             {/* Card 1: Tổng thu */}
@@ -10023,6 +10404,7 @@ export default function MisaCashWorkspace({
           className="misa-toolbar"
           style={{
             display: "flex",
+            flexWrap: "wrap",
             alignItems: "center",
             justifyContent: "space-between",
             padding: "8px 14px",
@@ -10037,7 +10419,7 @@ export default function MisaCashWorkspace({
           }}
         >
           {/* Left Controls: Search, Loại phiếu, Period, Utility Icons */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", flex: "1 1 auto", minWidth: 0 }}>
             {/* Search Box */}
             <div style={{ position: "relative", width: 165, flexShrink: 0 }}>
               <Search

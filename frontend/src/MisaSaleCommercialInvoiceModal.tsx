@@ -19,7 +19,7 @@ import {
   Keyboard,
 } from "lucide-react";
 import { formatVND } from "./MisaPurchaseModals";
-import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS } from "./MisaSalesModals";
+import { SAMPLE_SALE_ITEMS, SAMPLE_SALE_CUSTOMERS, useSyncLiveSalesCatalogs } from "./MisaSalesModals";
 import MisaSaveSplitButton from "./components/MisaSaveSplitButton";
 
 export interface CommercialInvoiceItem {
@@ -54,6 +54,7 @@ export function SaleCommercialInvoiceModal({
   onOpenCustomerModal,
   notify = () => {},
 }: SaleCommercialInvoiceModalProps) {
+  useSyncLiveSalesCatalogs();
   // Master fields Left (Row 1)
   const [customerCode, setCustomerCode] = useState(initialData?.customerCode || "");
   const [customerName, setCustomerName] = useState(initialData?.customer || initialData?.customerName || "");

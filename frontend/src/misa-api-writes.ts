@@ -25,7 +25,20 @@ export function toViDate(value: unknown) {
 }
 
 export function num(value: unknown) {
-  const parsed = typeof value === "number" ? value : Number(String(value ?? "").replace(/[^\d.-]/g, ""));
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) return 0;
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(trimmed)) {
+    const parsedVi = Number(trimmed.replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(parsedVi) ? parsedVi : 0;
+  }
+  if (/^-?\d+,\d+$/.test(trimmed)) {
+    const parsedDec = Number(trimmed.replace(",", "."));
+    return Number.isFinite(parsedDec) ? parsedDec : 0;
+  }
+  const parsed = Number(trimmed.replace(/[^\d.-]/g, ""));
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
@@ -81,6 +94,7 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
   const post = (path: string, body: Row) => fetchJson(scoped(path), { method: "POST", body: JSON.stringify({ company: companyId, ...body }) });
   const put = (path: string, body: Row) => fetchJson(scoped(path), { method: "PUT", body: JSON.stringify({ company: companyId, ...body }) });
   const patch = (path: string, body: Row) => fetchJson(scoped(path), { method: "PATCH", body: JSON.stringify({ company: companyId, ...body }) });
+  const remove = (path: string) => fetchJson(scoped(path), { method: "DELETE" });
   const action = (path: string, id: string, name: string, body: Row = {}) =>
     fetchJson(scoped(`${path}${id}/${name}/`), { method: "POST", body: JSON.stringify(body) });
   const upload = (path: string, file: File) => {
@@ -123,6 +137,7 @@ export function createApiWriter(companyId: string, fetchJson: FetchJson) {
     post,
     put,
     patch,
+    remove,
     action,
     upload,
     invalidate: () => cache.clear(),
@@ -2639,9 +2654,16 @@ export async function saveCashReceiptDraft(w: ApiWriter, d: Row) {
     party = await w.customer(rawCode || "AUTO", rawName || rawCode);
   }
   if (businessType.startsWith("CUSTOMER") && !party) throw new FormDataError("Vui lòng chọn hoặc nhập mã/tên khách hàng.");
-  const employee = businessType === "EMPLOYEE_RETURN"
-    ? (await w.list("/api/v1/organization/employees/")).find(row => row.id === d.employeeId)
-    : undefined;
+  const empCodeInput = String(d.employee || "").split("-")[0]?.trim().toLowerCase() || "";
+  const allEmployees =
+    businessType === "EMPLOYEE_RETURN" || d.employeeId || empCodeInput
+      ? await w.list("/api/v1/organization/employees/")
+      : [];
+  const employee = allEmployees.find(
+    (row) =>
+      (d.employeeId && row.id === d.employeeId) ||
+      (empCodeInput && String(row.employee_code || "").toLowerCase() === empCodeInput),
+  );
   if (businessType === "EMPLOYEE_RETURN" && !employee) throw new FormDataError("Vui lòng chọn nhân viên hoàn ứng.");
   const bank = businessType === "BANK_WITHDRAWAL"
     ? (await w.list("/api/v1/master-data/company-bank-accounts/")).find(row => row.id === d.sourceBankAccountId)
@@ -2667,7 +2689,12 @@ export async function saveCashReceiptDraft(w: ApiWriter, d: Row) {
   }
   const amount = lines.reduce((sum, row) => sum + num(row.amount), 0);
   const allocations = Array.isArray(d.allocations) ? d.allocations : [];
-  if (businessType === "CUSTOMER_INVOICE" && !allocations.length) throw new FormDataError("Vui lòng chọn chứng từ công nợ cần thu.");
+  const refCodes = Array.isArray(d.referenceCodes) ? d.referenceCodes.filter(Boolean) : [];
+  const effectiveReceiptBusinessType =
+    businessType === "CUSTOMER_INVOICE" && !allocations.length && refCodes.length > 0
+      ? "CUSTOMER_ADVANCE"
+      : businessType;
+  if (effectiveReceiptBusinessType === "CUSTOMER_INVOICE" && !allocations.length) throw new FormDataError("Vui lòng chọn chứng từ công nợ cần thu.");
   const date = toApiDate(d.date);
   const payerPayee = String(d.person || resolvedPartnerName || employee?.full_name || "").trim();
   const rawMasterDesc = String(d.description || "").trim();
@@ -2678,7 +2705,7 @@ export async function saveCashReceiptDraft(w: ApiWriter, d: Row) {
     : (isBareDesc && payerPayee && /\b(của|cho)$/i.test(rawMasterDesc) ? `${rawMasterDesc} ${payerPayee}` : (rawMasterDesc || firstLineDesc));
   const record = await w.post(`/api/v1/cash/transactions/?branch_id=${encodeURIComponent(fund.branch)}`, {
     fund: fund.id, number: String(d.code || "").trim(), transaction_type: "RECEIPT",
-    business_type: businessType, transaction_date: date, party: party?.id || null,
+    business_type: effectiveReceiptBusinessType, transaction_date: date, party: party?.id || null,
     payer_payee: payerPayee,
     currency: fund.currency, exchange_rate: String(rate), amount: String(amount),
     description: resolvedMasterDesc, attachments: d.attachedFiles || [],
@@ -2711,8 +2738,16 @@ export async function saveBankPaymentDraft(w: ApiWriter, d: Row) {
   const party = partyText ? (await w.list("parties")).find(row =>
     String(row.code).toLowerCase() === partyText || String(row.name).toLowerCase() === partyText) : undefined;
   if (businessType.startsWith("SUPPLIER") && !party) throw new FormDataError("Vui lòng chọn nhà cung cấp trong danh mục.");
-  const employee = businessType === "EMPLOYEE_ADVANCE"
-    ? (await w.list("/api/v1/organization/employees/")).find(row => row.id === d.employeeId) : undefined;
+  const bankEmpCodeInput = String(d.employee || "").split("-")[0]?.trim().toLowerCase() || "";
+  const allBankEmployees =
+    businessType === "EMPLOYEE_ADVANCE" || d.employeeId || bankEmpCodeInput
+      ? await w.list("/api/v1/organization/employees/")
+      : [];
+  const employee = allBankEmployees.find(
+    (row) =>
+      (d.employeeId && row.id === d.employeeId) ||
+      (bankEmpCodeInput && String(row.employee_code || "").toLowerCase() === bankEmpCodeInput),
+  );
   if (businessType === "EMPLOYEE_ADVANCE" && !employee) throw new FormDataError("Vui lòng chọn nhân viên tạm ứng.");
   const rows = Array.isArray(d.rows) ? d.rows : [];
   if (!rows.length) throw new FormDataError("Cần ít nhất một dòng hạch toán.");
@@ -2727,7 +2762,12 @@ export async function saveBankPaymentDraft(w: ApiWriter, d: Row) {
   }
   const amount = lines.reduce((sum, row) => sum + num(row.amount), 0);
   const allocations = Array.isArray(d.allocations) ? d.allocations : [];
-  if (businessType === "SUPPLIER_INVOICE" && !allocations.length) throw new FormDataError("Vui lòng chọn công nợ cần trả.");
+  const bankRefCodes = Array.isArray(d.referenceCodes) ? d.referenceCodes.filter(Boolean) : [];
+  const effectiveBankBusinessType =
+    businessType === "SUPPLIER_INVOICE" && !allocations.length && bankRefCodes.length > 0
+      ? "SUPPLIER_ADVANCE"
+      : businessType;
+  if (effectiveBankBusinessType === "SUPPLIER_INVOICE" && !allocations.length) throw new FormDataError("Vui lòng chọn công nợ cần trả.");
   const counterpartyName = String(d.beneficiaryName || d.partner || employee?.full_name || (d.bankFee ? profile.bank_name : "")).trim();
   const rawBankDesc = String(d.description || "").trim();
   const firstBankLineDesc = String(lines[0]?.description || "").trim();
@@ -2737,7 +2777,7 @@ export async function saveBankPaymentDraft(w: ApiWriter, d: Row) {
     : (isBareBankDesc && counterpartyName && /\b(của|cho)$/i.test(rawBankDesc) ? `${rawBankDesc} ${counterpartyName}` : (rawBankDesc || firstBankLineDesc));
   const record = await w.post(`/api/v1/bank/transactions/?branch_id=${encodeURIComponent(String(d.branchId || ""))}`, {
     account: profile.id, number: String(d.code || "").trim(), transaction_type: "PAYMENT",
-    business_type: businessType, transaction_date: toApiDate(d.date), value_date: toApiDate(d.postDate || d.date),
+    business_type: effectiveBankBusinessType, transaction_date: toApiDate(d.date), value_date: toApiDate(d.postDate || d.date),
     party: party?.id || null, counterparty_name: counterpartyName,
     counterparty_account: String(d.receiverAccount || "").trim(), currency: profile.currency_id,
     exchange_rate: String(rate), amount: String(amount), description: resolvedBankDesc,
@@ -3840,17 +3880,35 @@ const PAYROLL = "/api/v1/payroll/";
 
 /** Employees with their pay profile (if any), shaped like the payroll employee table. */
 export async function payrollEmployees(w: ApiWriter) {
-  const [employees, profiles, departments] = await Promise.all([
-    w.list("/api/v1/organization/employees/"), w.list(`${PAYROLL}profiles/`), w.list("/api/v1/organization/departments/"),
+  const [employees, profiles, departments, positions] = await Promise.all([
+    w.list("/api/v1/organization/employees/"),
+    w.list(`${PAYROLL}profiles/`),
+    w.list("/api/v1/organization/departments/"),
+    w.list("/api/v1/organization/positions/").catch(() => [] as Row[]),
   ]);
   return employees.filter((row) => row.status === "ACTIVE").map((employee) => {
     const profile = profiles.find((row) => row.employee === employee.id);
+    const baseSalary = profile ? num(profile.base_salary) : num(employee.agreed_salary);
+    const insSalary = profile ? num(profile.insurance_salary) : num(employee.insurance_salary || employee.agreed_salary);
+    const deps = profile ? num(profile.dependents) : num(employee.dependent_count);
+    const posName = employee.job_title || positions.find((p) => p.id === employee.position)?.name || "";
     return {
-      id: employee.employee_code, employeeId: employee.id, profileId: profile?.id || "", name: employee.full_name,
-      dept: departments.find((row) => row.id === employee.department)?.name || "", title: "",
-      salaryRate: num(profile?.base_salary), allowance: num(profile?.allowance), bankAcc: profile?.bank_account || "",
-      dependents: num(profile?.dependents), insuranceSalary: num(profile?.insurance_salary),
-      status: profile?.is_active === false ? "Ngừng tính lương" : profile ? "Đang làm việc" : "Chưa có hồ sơ lương",
+      id: employee.employee_code,
+      employeeId: employee.id,
+      profileId: profile?.id || "",
+      name: employee.full_name,
+      deptId: employee.department ? String(employee.department) : "",
+      branchId: employee.branch ? String(employee.branch) : "",
+      dept: departments.find((row) => row.id === employee.department)?.name || "",
+      title: posName,
+      taxCode: employee.personal_tax_code || profile?.personal_tax_code || "",
+      salaryRate: baseSalary,
+      allowance: num(profile?.allowance),
+      bankAcc: profile?.bank_account || employee.bank_account || "",
+      dependents: deps,
+      insuranceSalary: insSalary,
+      expenseAccountCode: profile?.expense_account_code || employee.expense_account || "6422",
+      status: profile?.is_active === false ? "Ngừng tính lương" : profile || baseSalary > 0 ? "Đang làm việc" : "Chưa có hồ sơ lương",
     };
   });
 }
@@ -3859,36 +3917,92 @@ export async function payrollEmployees(w: ApiWriter) {
 export async function savePayProfiles(w: ApiWriter, rows: Row[]) {
   const changed = rows.filter((row) => row.dirty);
   if (!changed.length) return { message: "Không có thay đổi hồ sơ lương." };
-  const expense = await w.account("642", "TK chi phí lương");
   for (const row of changed) {
+    const expense = await w.account(row.expenseAccountCode || "642", "TK chi phí lương");
     const body = {
-      base_salary: String(num(row.salaryRate)), allowance: String(num(row.allowance)), dependents: Math.round(num(row.dependents)),
-      insurance_salary: String(num(row.insuranceSalary) || num(row.salaryRate)), bank_account: String(row.bankAcc || ""),
+      base_salary: String(num(row.salaryRate)),
+      allowance: String(num(row.allowance)),
+      dependents: Math.max(0, Math.round(num(row.dependents))),
+      insurance_salary: String(num(row.insuranceSalary) || num(row.salaryRate)),
+      bank_account: String(row.bankAcc || ""),
+      expense_account: expense.id,
+      is_active: row.status !== "Ngừng tính lương",
     };
     if (row.profileId) await w.patch(`${PAYROLL}profiles/${row.profileId}/`, body);
-    else await w.post(`${PAYROLL}profiles/`, { ...body, employee: row.employeeId, expense_account: expense.id });
+    else await w.post(`${PAYROLL}profiles/`, { ...body, employee: row.employeeId });
   }
+  w.invalidate();
   return { message: `Đã lưu hồ sơ lương của ${changed.length} nhân viên.` };
+}
+
+export async function deletePayProfile(w: ApiWriter, profileId: string) {
+  await w.remove(`${PAYROLL}profiles/${profileId}/`);
+  w.invalidate();
+  return { message: "Đã xóa hồ sơ lương." };
 }
 
 /** "Bảng chấm công" (DETAIL) / "Bảng tổng hợp chấm công" (SUMMARY) of a month, prefilled with active employees. */
 export async function saveAttendanceSheet(w: ApiWriter, d: Row, kind: "DETAIL" | "SUMMARY") {
   const month = String(d.month).padStart(2, "0");
+  const depts = Array.isArray(d.departments) ? d.departments.filter(Boolean) : [];
   const record = await w.post(`${PAYROLL}attendance-sheets/`, {
-    kind, method: /giờ/i.test(String(d.type)) ? "HOUR" : "SESSION", name: String(d.name || ""), period: `${d.year}-${month}`,
+    kind,
+    method: /giờ/i.test(String(d.type)) ? "HOUR" : "SESSION",
+    name: String(d.name || ""),
+    period: `${d.year}-${month}`,
+    ...(depts.length ? { departments: depts } : {}),
+    ...(kind === "SUMMARY" && d.aggregateFromDetails ? { aggregate_from_details: true } : {}),
   });
+  w.invalidate();
   return { record, message: `Đã tạo ${record.name} (${(record.lines || []).length} nhân viên).` };
+}
+
+export async function updateAttendanceSheet(w: ApiWriter, sheetId: string, lines: Row[]) {
+  const record = await w.patch(`${PAYROLL}attendance-sheets/${sheetId}/`, {
+    lines: lines.map((l) => ({
+      employee: l.employee,
+      working_days: String(num(l.working_days)),
+      paid_leave_days: String(num(l.paid_leave_days)),
+      overtime_hours: String(num(l.overtime_hours)),
+    })),
+  });
+  w.invalidate();
+  return { record, message: `Đã lưu cập nhật ngày công cho ${record.name}.` };
+}
+
+export async function deleteAttendanceSheet(w: ApiWriter, sheetId: string, name = "bảng chấm công") {
+  await w.remove(`${PAYROLL}attendance-sheets/${sheetId}/`);
+  w.invalidate();
+  return { message: `Đã xóa ${name}.` };
 }
 
 /** "Bảng lương": calculated on the backend from pay profiles (and the month's attendance sheet when one exists). */
 export async function saveSalarySheet(w: ApiWriter, d: Row) {
   const period = `${d.year}-${String(d.month).padStart(2, "0")}`;
   const basedOnAttendance = !/cố định/i.test(String(d.type || ""));
-  const attendance = basedOnAttendance
-    ? (await w.list(`${PAYROLL}attendance-sheets/`)).find((row) => row.period === period) : null;
-  if (basedOnAttendance && !attendance) throw new FormDataError(`Chưa có bảng chấm công tháng ${d.month}/${d.year}.`);
-  const record = await w.post(`${PAYROLL}salary-sheets/`, { name: String(d.name || ""), period, attendance_sheet: attendance?.id || null });
+  let attendance: Row | undefined | null = null;
+  if (basedOnAttendance) {
+    const sheets = (await w.list(`${PAYROLL}attendance-sheets/`)).filter((row) => row.period === period);
+    attendance = sheets.find((row) => row.kind === "SUMMARY") || sheets[0] || null;
+  }
+  if (basedOnAttendance && !attendance) {
+    throw new FormDataError(`Chưa có bảng chấm công tháng ${d.month}/${d.year}. Hãy tạo bảng chấm công trước hoặc chọn Lương cố định.`);
+  }
+  const depts = Array.isArray(d.departments) ? d.departments.filter(Boolean) : [];
+  const record = await w.post(`${PAYROLL}salary-sheets/`, {
+    name: String(d.name || ""),
+    period,
+    attendance_sheet: attendance?.id || null,
+    ...(depts.length ? { departments: depts } : {}),
+  });
+  w.invalidate();
   return { record, message: `Đã tính ${record.name}: ${(record.lines || []).length} nhân viên.` };
+}
+
+export async function deleteSalarySheet(w: ApiWriter, sheetId: string, name = "bảng lương") {
+  await w.remove(`${PAYROLL}salary-sheets/${sheetId}/`);
+  w.invalidate();
+  return { message: `Đã xóa ${name}.` };
 }
 
 /** "Hạch toán chi phí lương" of a calculated salary sheet. */
@@ -4288,6 +4402,53 @@ export async function directoryInput(w: ApiWriter, name: string, values: Row): P
       direction: "AUTO",
       sequence: Math.max(1, Math.round(num(text("Thứ tự kết chuyển") || "1"))),
       is_active: text("Trạng thái") !== "Ngừng sử dụng",
+    };
+  }
+  if (name === "Tài khoản ngầm định") {
+    const rawType = text("Loại") || "Mua hàng (PUR)";
+    const modMatch = rawType.match(/\(([A-Z]+)\)/);
+    const sourceModule = modMatch ? modMatch[1] : "PUR";
+    const ruleName = text("Tên") || rawType;
+    const debitAcc = await w.account(extractCode(text("TK Nợ") || "1561"), "TK Nợ");
+    const creditAcc = await w.account(extractCode(text("TK Có") || "331"), "TK Có");
+    return {
+      source_module: sourceModule,
+      source_business_type: unitCode(ruleName).slice(0, 40) || "DEFAULT_RULE",
+      name: ruleName,
+      debit_account: debitAcc.id,
+      credit_account: creditAcc.id,
+      is_active: true,
+    };
+  }
+  if (name === "Biểu thuế tiêu thụ đặc biệt") {
+    const code = text("Mã") || `SCT-${Date.now().toString().slice(-4)}`;
+    const title = text("Tên nhóm HHDV chịu thuế TTĐB") || text("Tên") || code;
+    return {
+      code,
+      name: title,
+      tax_type: "SCT",
+      rate_percent: String(Math.max(0, num(text("Thuế suất (%)") || "0"))),
+      effective_from: "2026-01-01",
+      application_form: "PERCENT",
+      business_scope: "BOTH",
+      description: text("Đơn vị tính") ? `ĐVT: ${text("Đơn vị tính")}` : "",
+      status: "ACTIVE",
+    };
+  }
+  if (name === "Biểu thuế tài nguyên") {
+    const code = text("Mã") || `NRT-${Date.now().toString().slice(-4)}`;
+    const title = text("Tên tài nguyên") || text("Tên") || code;
+    const rawStart = text("Ngày bắt đầu") || text("Ngày hiệu lực từ");
+    return {
+      code,
+      name: title,
+      tax_type: "NRT",
+      rate_percent: String(Math.max(0, num(text("Thuế suất(%)") || text("Thuế suất (%)") || "0"))),
+      effective_from: rawStart ? toApiDate(rawStart) : "2026-01-01",
+      application_form: "PERCENT",
+      business_scope: "BOTH",
+      description: text("Đơn vị tính") ? `ĐVT: ${text("Đơn vị tính")}` : "",
+      status: "ACTIVE",
     };
   }
   if (name === "Nhân viên") {

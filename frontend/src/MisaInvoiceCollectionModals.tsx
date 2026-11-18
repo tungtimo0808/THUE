@@ -2,6 +2,7 @@ import {CASH_PERIODS,cashPeriodDates} from "./cash-report-periods";
 import {formatMoneyInput} from "./formatMoney";
 import {currentCashDate} from './cash-date';
 import { useState, useMemo } from "react";
+import { useLiveVoucherLookups } from "./live-voucher-lookups";
 import {
   X,
   HelpCircle,
@@ -45,6 +46,38 @@ export function SingleCustomerInvoiceCollectionModal({
   onSubmit,
   debtSource,
 }: SingleCustomerInvoiceCollectionModalProps) {
+  const liveLookup = useLiveVoucherLookups();
+  const effectiveDebtSource: CollectionDebtSource | undefined = useMemo(() => {
+    if (debtSource) return debtSource;
+    if (!liveLookup.connected) return undefined;
+    return {
+      customers: liveLookup.saleCustomers.map((c) => ({ code: c.code, name: c.name })),
+      load: async (customerCode?: string) => {
+        const list = customerCode
+          ? liveLookup.customerDebts.filter(
+              (d) => d.partnerCode === customerCode || d.partnerName === customerCode,
+            )
+          : liveLookup.customerDebts;
+        return list.map((d) => ({
+          id: d.id,
+          voucherDate: d.date,
+          voucherCode: d.voucherNo,
+          invoiceCode: d.no,
+          description: d.desc,
+          dueDate: d.dueDate || d.date,
+          totalDebt: d.total,
+          remainingDebt: d.remain,
+          collectAmount: 0,
+          account: d.accountCode || "131",
+          paymentTerms: "TT 30 ngày",
+          discountRate: "0",
+          discountAmount: 0,
+          discountAccount: "635",
+          checked: false,
+        }));
+      },
+    };
+  }, [debtSource, liveLookup.connected, liveLookup.saleCustomers, liveLookup.customerDebts]);
   const [payMethod, setPayMethod] = useState<"cash" | "bank">(initialMethod);
   const [customer, setCustomer] = useState("");
   const [employee, setEmployee] = useState("");
@@ -424,10 +457,10 @@ export function SingleCustomerInvoiceCollectionModal({
                   }}
                 >
                   <option value="">&nbsp;</option>
-                  {debtSource?.customers.map((row) => (
+                  {effectiveDebtSource?.customers.map((row) => (
                     <option key={row.code} value={row.code}>{row.code} - {row.name}</option>
                   ))}
-                  {!debtSource && <>
+                  {!effectiveDebtSource && <>
                   <option value="Bệnh viện Bãi Cháy">Bệnh viện Bãi Cháy</option>
                   <option value="Công ty CP Dược phẩm Sao Thái Dương">Công ty CP Dược phẩm Sao Thái Dương</option>
                   <option value="Bệnh viện Đa khoa Quốc tế Vinmec">Bệnh viện Đa khoa Quốc tế Vinmec</option>
@@ -470,10 +503,20 @@ export function SingleCustomerInvoiceCollectionModal({
                     }}
                   >
                     <option value="">&nbsp;</option>
-                    <option value="Nguyễn Văn Tuấn">Nguyễn Văn Tuấn</option>
-                    <option value="Trần Thị Mai">Trần Thị Mai</option>
-                    <option value="Lê Văn Hoàng">Lê Văn Hoàng</option>
-                    <option value="Phạm Đức Minh">Phạm Đức Minh</option>
+                    {liveLookup.connected && liveLookup.employees.length > 0 ? (
+                      liveLookup.employees.map((emp) => (
+                        <option key={emp.code} value={`${emp.code} - ${emp.name}`}>
+                          {emp.code} - {emp.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Nguyễn Văn Tuấn">Nguyễn Văn Tuấn</option>
+                        <option value="Trần Thị Mai">Trần Thị Mai</option>
+                        <option value="Lê Văn Hoàng">Lê Văn Hoàng</option>
+                        <option value="Phạm Đức Minh">Phạm Đức Minh</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown
                     size={14}
@@ -524,9 +567,9 @@ export function SingleCustomerInvoiceCollectionModal({
                 type="button"
                 className="misa-invoice-fetch-btn"
                 onClick={() => {
-                  if (debtSource) {
+                  if (effectiveDebtSource) {
                     if (!customer) { showNotice("Vui lòng chọn khách hàng."); return; }
-                    debtSource.load(customer)
+                    effectiveDebtSource.load(customer)
                       .then((rows) => { setRecords(rows); setHasFetched(true); })
                       .catch((error) => showNotice(`Không lấy được công nợ: ${error instanceof Error ? error.message : String(error)}`));
                     return;
@@ -842,6 +885,35 @@ export function MultiCustomerInvoiceCollectionModal({
   onSubmit,
   debtSource,
 }: MultiCustomerInvoiceCollectionModalProps) {
+  const liveLookup = useLiveVoucherLookups();
+  const effectiveDebtSource: CollectionDebtSource | undefined = useMemo(() => {
+    if (debtSource) return debtSource;
+    if (!liveLookup.connected) return undefined;
+    return {
+      customers: liveLookup.saleCustomers.map((c) => ({ code: c.code, name: c.name })),
+      load: async () =>
+        liveLookup.customerDebts.map((d) => ({
+          id: d.id,
+          voucherDate: d.date,
+          voucherCode: d.voucherNo,
+          invoiceCode: d.no,
+          customerCode: d.partnerCode,
+          customerName: d.partnerName,
+          customerGroup: "Doanh nghiệp",
+          description: d.desc,
+          dueDate: d.dueDate || d.date,
+          totalDebt: d.total,
+          remainingDebt: d.remain,
+          collectAmount: 0,
+          account: d.accountCode || "131",
+          paymentTerms: "TT 30 ngày",
+          discountRate: "0",
+          discountAmount: 0,
+          discountAccount: "635",
+          checked: false,
+        })),
+    };
+  }, [debtSource, liveLookup.connected, liveLookup.saleCustomers, liveLookup.customerDebts]);
   const [payMethod, setPayMethod] = useState<"cash" | "bank">(initialMethod);
   const [timeRange, setTimeRange] = useState("Hôm nay");
   const [fromDate, setFromDate] = useState(currentCashDate);
@@ -1356,9 +1428,19 @@ export function MultiCustomerInvoiceCollectionModal({
                     }}
                   >
                     <option value="">&nbsp;</option>
-                    <option value="Nguyễn Văn Tuấn">Nguyễn Văn Tuấn</option>
-                    <option value="Trần Thị Mai">Trần Thị Mai</option>
-                    <option value="Lê Văn Hoàng">Lê Văn Hoàng</option>
+                    {liveLookup.connected && liveLookup.employees.length > 0 ? (
+                      liveLookup.employees.map((emp) => (
+                        <option key={emp.code} value={`${emp.code} - ${emp.name}`}>
+                          {emp.code} - {emp.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Nguyễn Văn Tuấn">Nguyễn Văn Tuấn</option>
+                        <option value="Trần Thị Mai">Trần Thị Mai</option>
+                        <option value="Lê Văn Hoàng">Lê Văn Hoàng</option>
+                      </>
+                    )}
                   </select>
                   <ChevronDown
                     size={14}
@@ -1451,8 +1533,8 @@ export function MultiCustomerInvoiceCollectionModal({
                 type="button"
                 className="misa-invoice-fetch-btn"
                 onClick={() => {
-                  if (!debtSource) { setHasFetched(true); return; }
-                  debtSource.load()
+                  if (!effectiveDebtSource) { setHasFetched(true); return; }
+                  effectiveDebtSource.load()
                     .then((rows) => { setRecords(rows); setHasFetched(true); })
                     .catch((error) => showNotice(`Không lấy được công nợ: ${error instanceof Error ? error.message : String(error)}`));
                 }}

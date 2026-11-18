@@ -211,6 +211,21 @@ export default function MisaBankWorkspace({
   const [showCreateVoucher, setShowCreateVoucher] = useState<"receipt" | "payment" | null>(null);
   const [statementVoucherSource, setStatementVoucherSource] = useState<{ account: string; accountNumber: string; date: string; amount: number; description: string; counterparty: string; counterpartyAccount: string; reference: string } | null>(null);
   const [createVoucherTypeIndex, setCreateVoucherTypeIndex] = useState(0);
+
+  useEffect(() => {
+    const consumeQuickCreate = (raw?: string | null) => {
+      const target = raw || sessionStorage.getItem("sv_pending_quick_create");
+      if (target === "bank-receipt" || target === "bank-payment") {
+        try { sessionStorage.removeItem("sv_pending_quick_create"); } catch {}
+        setCreateVoucherTypeIndex(0);
+        setShowCreateVoucher(target === "bank-receipt" ? "receipt" : "payment");
+      }
+    };
+    consumeQuickCreate();
+    const onQuick = (ev: Event) => consumeQuickCreate((ev as CustomEvent)?.detail);
+    window.addEventListener("sv_quick_create", onQuick);
+    return () => window.removeEventListener("sv_quick_create", onQuick);
+  }, []);
   const [showBankReceiptSubmenu, setShowBankReceiptSubmenu] = useState(false);
   const [showBankPaymentSubmenu, setShowBankPaymentSubmenu] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
@@ -1903,6 +1918,7 @@ export default function MisaBankWorkspace({
           className="misa-toolbar"
           style={{
             display: "flex",
+            flexWrap: "wrap",
             alignItems: "center",
             justifyContent: "space-between",
             padding: "8px 14px",
@@ -1917,7 +1933,7 @@ export default function MisaBankWorkspace({
           }}
         >
           {/* Left Controls: Search, Loại phiếu, Period, Utility Icons */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap", flexShrink: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", flex: "1 1 auto", minWidth: 0 }}>
             {/* Search Box */}
             <div style={{ position: "relative", width: 140, flexShrink: 0 }}>
               <Search

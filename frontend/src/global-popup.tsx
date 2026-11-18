@@ -310,6 +310,8 @@ export function classifyNoticeType(message: string): GlobalPopupType {
     lower.includes("vui lòng nhập") ||
     lower.includes("vui lòng chọn") ||
     lower.includes("cần chọn") ||
+    lower.includes("chưa xử lý được") ||
+    lower.includes("tạm thời chưa") ||
     lower.includes("thiếu")
   ) {
     return "error";
@@ -335,7 +337,7 @@ export function GlobalFeedbackPopupHost() {
     if (!popup) return;
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setPopup(null); };
     window.addEventListener("keydown", onKey);
-    const duration = popup.autoCloseMs ?? (popup.type === "success" || popup.type === "info" ? 5000 : 0);
+    const duration = popup.autoCloseMs ?? 10000;
     const timer = duration > 0 ? setTimeout(() => setPopup(null), duration) : null;
     return () => { window.removeEventListener("keydown", onKey); if (timer) clearTimeout(timer); };
   }, [popup]);

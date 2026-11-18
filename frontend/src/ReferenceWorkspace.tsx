@@ -278,49 +278,49 @@ export type ReferenceHref = (
 
 const quickCreateGroups: {
   title: string;
-  items: { label: string; kind?: Kind; path: string }[];
+  items: { label: string; kind?: Kind; path: string; quickCreate: string }[];
 }[] = [
     {
       title: "TIỀN MẶT",
       items: [
-        { label: "Thu tiền mặt", kind: "receipt", path: "/cash/transactions" },
-        { label: "Chi tiền mặt", kind: "payment", path: "/cash/transactions" },
+        { label: "Thu tiền mặt", kind: "receipt", path: "/cash/transactions", quickCreate: "cash-receipt" },
+        { label: "Chi tiền mặt", kind: "payment", path: "/cash/transactions", quickCreate: "cash-payment" },
       ],
     },
     {
       title: "TIỀN GỬI",
       items: [
-        { label: "Thu tiền gửi", kind: "bank", path: "/bank/transactions" },
-        { label: "Chi tiền gửi", kind: "payment", path: "/bank/transactions" },
+        { label: "Thu tiền gửi", kind: "bank", path: "/bank/transactions", quickCreate: "bank-receipt" },
+        { label: "Chi tiền gửi", kind: "payment", path: "/bank/transactions", quickCreate: "bank-payment" },
       ],
     },
     {
       title: "KHO",
       items: [
-        { label: "Nhập kho", path: "/inventory/receipts" },
-        { label: "Xuất kho", path: "/inventory/issues" },
-        { label: "Chuyển kho", path: "/inventory/transfers" },
+        { label: "Nhập kho", path: "/inventory/receipts", quickCreate: "inv-receipt" },
+        { label: "Xuất kho", path: "/inventory/issues", quickCreate: "inv-issue" },
+        { label: "Chuyển kho", path: "/inventory/transfers", quickCreate: "inv-transfer" },
       ],
     },
     {
       title: "MUA HÀNG",
       items: [
-        { label: "Mua hàng", kind: "purchase", path: "/purchases/transactions" },
-        { label: "Mua dịch vụ", kind: "purchase", path: "/purchases/service-purchases" },
+        { label: "Mua hàng", kind: "purchase", path: "/purchases/transactions", quickCreate: "pur-goods" },
+        { label: "Mua dịch vụ", kind: "purchase", path: "/purchases/service-purchases", quickCreate: "pur-service" },
       ],
     },
     {
       title: "BÁN HÀNG",
       items: [
-        { label: "Bán hàng", kind: "sale", path: "/sales/transactions" },
-        { label: "Bán dịch vụ", kind: "sale", path: "/sales/invoices" },
+        { label: "Bán hàng", kind: "sale", path: "/sales/transactions", quickCreate: "sal-goods" },
+        { label: "Bán dịch vụ", kind: "sale", path: "/sales/transactions", quickCreate: "sal-service" },
       ],
     },
     {
       title: "TỔNG HỢP",
       items: [
-        { label: "Chứng từ nghiệp vụ khác", path: "/ledger/transactions" },
-        { label: "Quyết toán tạm ứng", path: "/ledger/advance-settlement-request" },
+        { label: "Chứng từ nghiệp vụ khác", path: "/ledger/transactions", quickCreate: "gl-voucher" },
+        { label: "Quyết toán tạm ứng", path: "/ledger/advance-settlement-request", quickCreate: "gl-advance" },
       ],
     },
   ];
@@ -3165,7 +3165,13 @@ function ReferenceWorkspace() {
                             key={item.label}
                             onClick={() => {
                               setPanel(null);
+                              try {
+                                sessionStorage.setItem("sv_pending_quick_create", item.quickCreate);
+                              } catch {}
                               navigate(href(item.path));
+                              window.setTimeout(() => {
+                                window.dispatchEvent(new CustomEvent("sv_quick_create", { detail: item.quickCreate }));
+                              }, 60);
                             }}
                           >
                             <Plus size={15} />
