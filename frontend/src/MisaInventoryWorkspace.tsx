@@ -2835,7 +2835,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -3095,7 +3095,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -3335,7 +3335,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -3590,7 +3590,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -3803,7 +3803,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
           </button>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -4441,7 +4441,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
         </div>
 
         {/* Data Table (Exact layout matching Screenshot 5) */}
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table className="misa-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #cbd5e1" }}>
@@ -4537,7 +4537,7 @@ ${withPrice ? `<p>- Tổng giá trị điều chuyển (viết bằng chữ): <e
         </div>
 
         {/* Bottom Pagination Bar (Exact match to Screenshot 5) */}
-        <div style={{ padding: "8px 16px", borderTop: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12.5, color: "#64748b" }}>
+        <div style={{ flexShrink: 0, padding: "8px 16px", borderTop: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12.5, color: "#64748b" }}>
           <div>Tổng số: <strong>{filteredItems.length}</strong></div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>

@@ -1598,7 +1598,7 @@ export default function MisaBankWorkspace({
   // --------------------------------------------------------------------
   if (tab === "transactions" || tab === "all") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#f8fafc" }}>
         {/* Sổ Việt AI Smart Analysis Banner (Image 4 & 5) */}
         {showAvaBanner && (
           <div
@@ -1917,6 +1917,7 @@ export default function MisaBankWorkspace({
         <div
           className="misa-toolbar"
           style={{
+            flexShrink: 0,
             display: "flex",
             flexWrap: "wrap",
             alignItems: "center",
@@ -2724,7 +2725,7 @@ export default function MisaBankWorkspace({
         </div>
 
         {/* Master Table (Image 4 & 5) */}
-        <div style={{ flex: 1, minHeight: 220, overflow: "auto", background: "#ffffff", borderBottom: "1px solid #e5e7eb" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto", background: "#ffffff", borderBottom: "1px solid #e5e7eb" }}>
           {checkedBankRows.length>0&&<div className="ce-toolbar" role="toolbar" aria-label="Thao tác chứng từ tiền gửi đã chọn"><strong>Đã chọn {checkedBankRows.length}</strong><button onClick={()=>setBankPosting('posted')}>Ghi sổ</button><button onClick={()=>setBankPosting('draft')}>Bỏ ghi sổ</button><button disabled title="Not supported by backend">Xóa</button><button onClick={()=>setBankCheckedIds([])}>Bỏ chọn</button></div>}
           {bankDeletedRows.length>0&&<div className="ce-toolbar" role="status">Đã xóa {bankDeletedRows.length} chứng từ trên frontend.<button onClick={()=>{setTransactions(previous=>[...bankDeletedRows.filter(row=>!previous.some(existing=>existing.id===row.id)),...previous]);setBankDeletedRows([]);}}>Hoàn tác</button></div>}
           {bankDeletePending&&<div className="ce-overlay"><section className="ce-panel" role="alertdialog" aria-modal="true" aria-label="Xóa chứng từ tiền gửi"><header><h2>Xóa chứng từ tiền gửi</h2></header><div className="ce-panel-body">Xóa {checkedBankRows.length} chứng từ đã chọn khỏi danh sách frontend?</div><footer><button onClick={()=>setBankDeletePending(false)}>Hủy</button><button className="ce-primary" onClick={()=>{const ids=new Set(checkedBankRows.map(row=>row.id));setBankDeletedRows(checkedBankRows);setTransactions(previous=>previous.filter(row=>!ids.has(row.id)));setBankCheckedIds(previous=>previous.filter(id=>!ids.has(id)));setBankDeletePending(false);}}>Xóa chứng từ</button></footer></section></div>}

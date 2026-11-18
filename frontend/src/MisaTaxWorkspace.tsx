@@ -917,7 +917,7 @@ export default function MisaTaxWorkspace({
           </div>
 
           {/* Table of declarations */}
-          <div style={{ overflowX: "auto" }}>
+          <div style={{ overflow: "auto", maxHeight: "calc(100dvh - 280px)", minHeight: 220 }}>
             <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f8fafc", height: 42, borderBottom: "1px solid #e2e8f0", color: "#475569" }}>
@@ -1467,8 +1467,10 @@ export default function MisaTaxWorkspace({
       <div
         style={{
           background: "#ffffff",
-          minHeight: "100%",
-          padding: "16px 20px 24px 20px",
+          height: "100%",
+          minHeight: 0,
+          overflow: "hidden",
+          padding: "16px 20px 20px 20px",
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
@@ -1549,10 +1551,10 @@ export default function MisaTaxWorkspace({
         <div
           style={{
             flex: 1,
-            minHeight: "calc(100vh - 180px)",
+            minHeight: 200,
             border: "1px solid #cbd5e1",
             borderRadius: 4,
-            overflow: "hidden",
+            overflow: "auto",
             display: "flex",
             flexDirection: "column",
           }}

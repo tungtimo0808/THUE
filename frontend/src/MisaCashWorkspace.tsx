@@ -7971,7 +7971,7 @@ export function PaymentRequestsTab({
   }, [requests]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc", padding: 14 }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#f8fafc", padding: 14 }}>
       {/* KPI Header */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
@@ -8057,7 +8057,7 @@ export function PaymentRequestsTab({
       </div>
 
       {/* Table */}
-      <div style={{ flex: 1, overflowX: "auto", overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+      <div style={{ flex: "1 1 0%", minHeight: 180, overflowX: "auto", overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
         <table className="misa-tax-table" style={{ width: "100%", minWidth: 1260, borderCollapse: "collapse", tableLayout: "auto" }}>
           <thead>
             <tr>
@@ -8806,7 +8806,7 @@ export function AdvanceSettlementTab({
   }, [settlements]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc", padding: 14 }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#f8fafc", padding: 14 }}>
       {/* KPI Header */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 14 }}>
         <div style={{ background: "#ffffff", padding: "12px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
@@ -8867,7 +8867,7 @@ export function AdvanceSettlementTab({
       </div>
 
       {/* Table */}
-      <div style={{ flex: 1, overflowX: "auto", overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+      <div style={{ flex: "1 1 0%", minHeight: 180, overflowX: "auto", overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
         <table className="misa-tax-table" style={{ width: "100%", minWidth: 1260, borderCollapse: "collapse", tableLayout: "auto" }}>
           <thead>
             <tr>
@@ -10204,7 +10204,7 @@ export default function MisaCashWorkspace({
   // --------------------------------------------------------------------
   if (tab === "transactions" || tab === "all") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#f8fafc" }}>
         {cashImportKind&&<CashExcelImport kind={cashImportKind} existingCodes={transactions.map(row=>row.code)} onClose={()=>setCashImportKind(null)} onImport={documents=>{setTransactions(previous=>[...documents,...previous]);setCashPage(1);setSelectedRowId(documents[0]?.id||selectedRowId);notify(`Đã nhập ${documents.length} chứng từ từ Excel vào frontend.`);}}/>}
         {cashControlPanel==='filters'&&<CashAdvancedPanel mode="filters" filter={cashFilter} hidden={[]} reasons={[...MISA_RECEIPT_TYPES,...MISA_PAYMENT_TYPES].map(type=>type.label.replace(/^\d+\.\s*/,''))} onClose={()=>setCashControlPanel(null)} onColumns={()=>{}} onFilter={value=>{setCashFilter(value);setStatusFilter(value.status);setFilterPeriod('custom');setCashPage(1);}}/>}
         {cashControlPanel==='columns'&&<CashColumnDialog value={cashColumns} onClose={()=>setCashControlPanel(null)} onSave={value=>{setCashColumns(value);try{localStorage.setItem(cashColumnsKey,JSON.stringify(value));}catch{notify('Đã áp dụng cột, nhưng trình duyệt không lưu được tùy chọn.');}}}/>}
@@ -10215,6 +10215,7 @@ export default function MisaCashWorkspace({
         {!kpiCollapsed && (
           <div
             style={{
+              flexShrink: 0,
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
               gap: 12,
@@ -10367,7 +10368,7 @@ export default function MisaCashWorkspace({
         )}
 
         {/* Center Collapse/Expand Button for KPI strip */}
-        <div style={{ display: "flex", justifyContent: "center", background: "#ffffff", borderBottom: "1px solid #e5e7eb", paddingBottom: 2 }}>
+        <div style={{ flexShrink: 0, display: "flex", justifyContent: "center", background: "#ffffff", borderBottom: "1px solid #e5e7eb", paddingBottom: 2 }}>
           <button
             type="button"
             onClick={() => setKpiCollapsed(!kpiCollapsed)}
@@ -11113,8 +11114,8 @@ export default function MisaCashWorkspace({
         </div>
 
         {/* Data Table */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 14px", background: "#ffffff" }}>
-          <table className="misa-tax-table cash-transactions-table" style={{ marginTop: 8 }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto", margin: "0 14px", background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+          <table className="misa-tax-table cash-transactions-table">
             <thead>
               <tr>
                 <th style={{ width: 36, textAlign: "center" }}>
@@ -11312,31 +11313,31 @@ export default function MisaCashWorkspace({
             </tbody>
             <tfoot><tr><td/>{cashColumns.filter(column=>column.visible).map(column=><td key={column.id}><strong>{column.id===6?formatVND(filteredList.reduce((sum,t)=>sum+t.amount,0)):column.id===2?'Tổng':''}</strong></td>)}</tr></tfoot>
           </table>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 0',fontSize:13}}>
-            <span>Tổng số: <strong>{filteredList.length}</strong>{checkedCashRows.length > 0 && ` · Đã chọn ${checkedCashRows.length}`}</span>
-            <div style={{display:'flex',alignItems:'center',gap:10}}>
-              <div style={{display:'flex',alignItems:'center',gap:6}}>
-                <span>Số dòng/trang:</span>
-                <MisaDropdownSelect
-                  value={cashPageSize}
-                  onChange={(val) => {
-                    setCashPageSize(Number(val));
-                    setCashPage(1);
-                  }}
-                  options={[
-                    { value: 20, label: "20" },
-                    { value: 50, label: "50" },
-                    { value: 100, label: "100" },
-                  ]}
-                  minWidth={90}
-                  buttonStyle={{ height: 26, padding: "0 8px", fontSize: 12 }}
-                  ariaLabel="Số dòng/trang"
-                />
-              </div>
-              <button aria-label="Trang trước thu chi" disabled={visibleCashPage===1} onClick={()=>setCashPage(visibleCashPage-1)}>‹</button>
-              <span>{visibleCashPage}/{cashPageCount}</span>
-              <button aria-label="Trang sau thu chi" disabled={visibleCashPage===cashPageCount} onClick={()=>setCashPage(visibleCashPage+1)}>›</button>
+        </div>
+        <div style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px',background:'#ffffff',borderTop:'1px solid #e2e8f0',fontSize:13}}>
+          <span>Tổng số: <strong>{filteredList.length}</strong>{checkedCashRows.length > 0 && ` · Đã chọn ${checkedCashRows.length}`}</span>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span>Số dòng/trang:</span>
+              <MisaDropdownSelect
+                value={cashPageSize}
+                onChange={(val) => {
+                  setCashPageSize(Number(val));
+                  setCashPage(1);
+                }}
+                options={[
+                  { value: 20, label: "20" },
+                  { value: 50, label: "50" },
+                  { value: 100, label: "100" },
+                ]}
+                minWidth={90}
+                buttonStyle={{ height: 26, padding: "0 8px", fontSize: 12 }}
+                ariaLabel="Số dòng/trang"
+              />
             </div>
+            <button aria-label="Trang trước thu chi" disabled={visibleCashPage===1} onClick={()=>setCashPage(visibleCashPage-1)}>‹</button>
+            <span>{visibleCashPage}/{cashPageCount}</span>
+            <button aria-label="Trang sau thu chi" disabled={visibleCashPage===cashPageCount} onClick={()=>setCashPage(visibleCashPage+1)}>›</button>
           </div>
         </div>
 
@@ -11431,7 +11432,7 @@ export default function MisaCashWorkspace({
               </div>
             </div>
 
-            <div style={{ flex: 1, overflowY: "auto", padding: "6px 14px" }}>
+            <div style={{ flex: "1 1 0%", minHeight: 0, overflow: "auto", padding: "0 14px" }}>
               <table className="misa-tax-table">
                 <thead>
                   <tr>
@@ -11478,59 +11479,61 @@ export default function MisaCashWorkspace({
                   </tr>
                 </tfoot>
               </table>
-              <div
-                className="ce-toolbar"
-                style={{
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "6px 0 2px",
-                  margin: "6px 0 0",
-                  fontSize: 12.5,
-                }}
-              >
-                <span>Tổng số: <strong>{cashDetailRows.length}</strong> bản ghi chi tiết</span>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <span>Số dòng/trang:</span>
-                    <MisaDropdownSelect
-                      value={cashDetailSize}
-                      onChange={(val) => {
-                        setCashDetailSize(Number(val));
-                        setCashDetailPage(1);
-                      }}
-                      options={[
-                        { value: 20, label: "20" },
-                        { value: 50, label: "50" },
-                        { value: 100, label: "100" },
-                      ]}
-                      minWidth={86}
-                      buttonStyle={{ height: 26, padding: "0 8px", fontSize: 12 }}
-                      ariaLabel="Số dòng/trang chi tiết hạch toán"
-                    />
-                  </div>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <button
-                      type="button"
-                      aria-label="Trang trước chi tiết"
-                      disabled={cashDetailVisiblePage === 1}
-                      onClick={() => setCashDetailPage(cashDetailVisiblePage - 1)}
-                      style={{ padding: "2px 8px", minWidth: 26, fontSize: 13, height: 26 }}
-                    >
-                      ‹
-                    </button>
-                    <span>
-                      {cashDetailVisiblePage}/{cashDetailPages}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label="Trang sau chi tiết"
-                      disabled={cashDetailVisiblePage === cashDetailPages}
-                      onClick={() => setCashDetailPage(cashDetailVisiblePage + 1)}
-                      style={{ padding: "2px 8px", minWidth: 26, fontSize: 13, height: 26 }}
-                    >
-                      ›
-                    </button>
-                  </div>
+            </div>
+            <div
+              className="ce-toolbar"
+              style={{
+                flexShrink: 0,
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "6px 14px",
+                margin: 0,
+                borderTop: "1px solid #e5e7eb",
+                fontSize: 12.5,
+              }}
+            >
+              <span>Tổng số: <strong>{cashDetailRows.length}</strong> bản ghi chi tiết</span>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span>Số dòng/trang:</span>
+                  <MisaDropdownSelect
+                    value={cashDetailSize}
+                    onChange={(val) => {
+                      setCashDetailSize(Number(val));
+                      setCashDetailPage(1);
+                    }}
+                    options={[
+                      { value: 20, label: "20" },
+                      { value: 50, label: "50" },
+                      { value: 100, label: "100" },
+                    ]}
+                    minWidth={86}
+                    buttonStyle={{ height: 26, padding: "0 8px", fontSize: 12 }}
+                    ariaLabel="Số dòng/trang chi tiết hạch toán"
+                  />
+                </div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <button
+                    type="button"
+                    aria-label="Trang trước chi tiết"
+                    disabled={cashDetailVisiblePage === 1}
+                    onClick={() => setCashDetailPage(cashDetailVisiblePage - 1)}
+                    style={{ padding: "2px 8px", minWidth: 26, fontSize: 13, height: 26 }}
+                  >
+                    ‹
+                  </button>
+                  <span>
+                    {cashDetailVisiblePage}/{cashDetailPages}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Trang sau chi tiết"
+                    disabled={cashDetailVisiblePage === cashDetailPages}
+                    onClick={() => setCashDetailPage(cashDetailVisiblePage + 1)}
+                    style={{ padding: "2px 8px", minWidth: 26, fontSize: 13, height: 26 }}
+                  >
+                    ›
+                  </button>
                 </div>
               </div>
             </div>

@@ -5,6 +5,21 @@
   font-size: 13px;
   color: #1e293b;
   padding: 18px 22px;
+  box-sizing: border-box;
+}
+.md-list:not(.md-editor-only) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px 22px 10px;
+}
+.md-list:not(.md-editor-only) > header,
+.md-list:not(.md-editor-only) > .md-toolbar,
+.md-list:not(.md-editor-only) > .md-column-picker,
+.md-list:not(.md-editor-only) > footer {
+  flex-shrink: 0;
 }
 .md-home button,
 .md-list button:not(:where(.md-choice-trigger, .md-choice-option, .md-choice-clear, .md-choice-manage, .md-date-trigger)),
@@ -167,10 +182,11 @@
   align-items: center;
 }
 .md-table {
+  flex: 1 1 0;
+  min-height: 200px;
   overflow: auto;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  min-height: 350px;
 }
 .md-table table {
   border-collapse: collapse;
@@ -184,6 +200,9 @@
   text-align: left;
   white-space: nowrap;
   font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 12;
 }
 .md-table th,
 .md-table td {

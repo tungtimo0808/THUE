@@ -14774,7 +14774,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
     const totalAssetsCount = (filteredAssets || []).length;
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#f8fafc" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#f8fafc" }}>
         {/* 4 Modern Bento KPI Cards for Fixed Assets */}
         <div
           style={{
@@ -15071,7 +15071,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600, height: 40 }}>
@@ -15164,7 +15164,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
         </div>
 
         {/* Footer Summary & Pagination (Steps 19–22 & AF07) */}
-        <div style={{ height: 40, background: "#f8fafc", borderTop: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", fontSize: 12.5, fontWeight: 600, color: "#1e293b" }}>
+        <div style={{ flexShrink: 0, height: 40, background: "#f8fafc", borderTop: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", fontSize: 12.5, fontWeight: 600, color: "#1e293b" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <span>Số lượng tài sản: {filteredAssets.length}</span>
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 500, fontSize: 12, color: "#475569" }}>
@@ -15325,7 +15325,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
 
     // VIEW 2: DATA TABLE VIEW
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
@@ -15372,7 +15372,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -15533,7 +15533,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
 
     // VIEW 2: DATA TABLE VIEW
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
@@ -15573,7 +15573,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
           </div>
         </div>
 
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -15765,7 +15765,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
       );
     }
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* Toolbar */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -15807,7 +15807,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
         </div>
 
         {/* Table View */}
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -15908,7 +15908,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
       );
     }
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* Toolbar */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -15950,7 +15950,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
         </div>
 
         {/* Table View */}
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -16053,7 +16053,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
       );
     }
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* Toolbar */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -16095,7 +16095,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
         </div>
 
         {/* Table View */}
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
@@ -16199,7 +16199,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
       );
     }
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#ffffff" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden", background: "#ffffff" }}>
         {/* Toolbar */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -16241,7 +16241,7 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
         </div>
 
         {/* Table View */}
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ flex: "1 1 0%", minHeight: 180, overflow: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "#e6ebe6", borderBottom: "1px solid #cbd5e1", color: "#1e293b", fontWeight: 600 }}>
