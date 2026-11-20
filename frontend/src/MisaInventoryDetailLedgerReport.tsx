@@ -135,7 +135,9 @@ export default function MisaInventoryDetailLedgerReport({ onBack, embedded = fal
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a"); link.href = url; link.download = `so-chi-tiet-vat-tu-${report.date_from}-${report.date_to}.csv`; link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 5000);
-    } catch { setError("Xuất báo cáo thất bại. Vui lòng thử lại."); }
+    } catch (caught) {
+      setError(`Xuất báo cáo thất bại: ${caught instanceof Error ? caught.message : "Vui lòng kiểm tra quyền tải tệp trên trình duyệt và thử lại."}`);
+    }
   };
   const save = () => {
     if (!applied) return;

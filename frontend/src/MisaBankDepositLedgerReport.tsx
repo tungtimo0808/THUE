@@ -63,7 +63,7 @@ export default function MisaBankDepositLedgerReport({ onBack, notify }: { onBack
   };
   useEffect(() => {
     if (!token || !companyId) return;
-    request<Options>(`/api/v1/bank/deposit-ledger/options/?company_id=${encodeURIComponent(companyId)}`, token).then(setOptions).catch(() => setError("Không thể tải danh sách tài khoản ngân hàng."));
+    request<Options>(`/api/v1/bank/deposit-ledger/options/?company_id=${encodeURIComponent(companyId)}`, token).then(setOptions).catch((caught) => setError(caught instanceof Error ? `Không thể tải danh sách tài khoản ngân hàng: ${caught.message}` : "Không thể tải danh sách tài khoản ngân hàng."));
     void load(defaults());
   }, [token, companyId]);
   const apply = async () => {

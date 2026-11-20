@@ -52,6 +52,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-123456}
       ADMIN_DISPLAY_NAME: ${ADMIN_DISPLAY_NAME:-Đỗ Đức Tùng}
       COMMON_REQUIRE_VERIFICATION: ${COMMON_REQUIRE_VERIFICATION:-True}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:2601}
       EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.locmem.EmailBackend}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-no-reply@example.local}
       EMAIL_HOST: ${EMAIL_HOST:-localhost}

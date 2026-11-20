@@ -144,6 +144,28 @@ export default function MisaSalesWorkspace({
   const [salesParams, setSalesParams] = useSearchParams();
   const correctionCreateMode = salesParams.get("create");
   useEffect(() => {
+    if (correctionCreateMode === "sale") {
+      const customerCode = salesParams.get("customerCode") || "";
+      const customerName = salesParams.get("customerName") || "";
+      const taxCode = salesParams.get("taxCode") || "";
+      const address = salesParams.get("address") || "";
+      setSelectedVoucher({
+        customerCode,
+        customer: customerName,
+        taxCode,
+        address,
+      });
+      setIsServiceSale(false);
+      setShowVoucherModal(true);
+      const next = new URLSearchParams(salesParams);
+      next.delete("create");
+      next.delete("customerCode");
+      next.delete("customerName");
+      next.delete("taxCode");
+      next.delete("address");
+      setSalesParams(next, { replace: true });
+      return;
+    }
     if (correctionCreateMode !== "adjustment" && correctionCreateMode !== "replacement") return;
     if (correctionCreateMode === "adjustment") setShowInvoiceAdjustmentModal(true);
     else {

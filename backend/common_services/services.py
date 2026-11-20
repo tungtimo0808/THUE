@@ -1,3 +1,4 @@
+import logging
 import secrets
 import time
 import hashlib
@@ -7,8 +8,11 @@ import json
 import re
 from urllib import error as urllib_error
 from urllib import request as urllib_request
+from urllib.parse import quote
 from datetime import timedelta
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
@@ -88,6 +92,25 @@ def _enforce_rate_limit(bucket, identities, *, limit, window_seconds, message=No
             raise Throttled(wait=window_seconds, detail=message or "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.")
 
 
+def _frontend_base_url(request=None):
+    if request is not None:
+        origin = (request.headers.get("Origin") or "").strip().rstrip("/")
+        if origin.startswith(("http://", "https://")):
+            return origin
+    return getattr(settings, "FRONTEND_URL", "http://localhost:2601").rstrip("/")
+
+
+def _build_reset_token(user, challenge, *, via_link=False):
+    payload = {
+        "user_id": user.pk,
+        "challenge_id": str(challenge.id),
+        "purpose": "PASSWORD_RESET",
+    }
+    if via_link:
+        payload["via_link"] = True
+    return signing.dumps(payload, salt="common.password_reset")
+
+
 def _challenge(user, identifier, purpose, request=None, *, send_code=True, enforce_cooldown=False):
     now = timezone.now()
     identifier = identifier.strip().lower()
@@ -104,24 +127,83 @@ def _challenge(user, identifier, purpose, request=None, *, send_code=True, enfor
         raise ValidationError({"detail": f"Vui lòng thử lại sau {remaining} giây.", "retry_after": remaining})
     VerificationChallenge.objects.filter(identifier__iexact=identifier, purpose=purpose, consumed_at__isnull=True).update(consumed_at=now)
     code = f"{secrets.randbelow(1_000_000):06d}"
+    expiry_minutes = (
+        getattr(settings, "COMMON_RESET_LINK_MINUTES", 15)
+        if purpose == VerificationChallenge.Purpose.PASSWORD_RESET
+        else getattr(settings, "COMMON_VERIFICATION_MINUTES", 5)
+    )
     challenge = VerificationChallenge.objects.create(
         user=user, identifier=identifier.lower(), purpose=purpose, code_hash=make_password(code),
-        expires_at=now + timedelta(minutes=getattr(settings, "COMMON_VERIFICATION_MINUTES", 5)),
+        expires_at=now + timedelta(minutes=expiry_minutes),
         requested_ip=_client_ip(request) if request else "",
     )
     challenge.raw_code = code
     challenge.email_sent = True
+    reset_url = None
+    if purpose == VerificationChallenge.Purpose.PASSWORD_RESET and user is not None:
+        reset_token = _build_reset_token(user, challenge, via_link=True)
+        reset_url = f"{_frontend_base_url(request)}/reset-password?token={quote(reset_token, safe='')}"
+        challenge.reset_token = reset_token
+        challenge.reset_url = reset_url
     if getattr(settings, "DEBUG", False):
         print(f"[OTP DEV] Mã OTP cho '{identifier}' (Purpose: {purpose}, Challenge: {challenge.id}): {code}")
     if send_code and "@" in identifier:
         try:
+            from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@example.local")
+            if purpose == VerificationChallenge.Purpose.PASSWORD_RESET and reset_url:
+                subject = "Đặt lại mật khẩu tài khoản Sổ Việt"
+                message = (
+                    f"Xin chào,\n\n"
+                    f"Bạn vừa yêu cầu đặt lại mật khẩu cho tài khoản Sổ Việt.\n"
+                    f"Vui lòng nhấn vào liên kết bên dưới để nhập mật khẩu mới (hiệu lực trong {expiry_minutes} phút):\n\n"
+                    f"{reset_url}\n\n"
+                    f"Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này."
+                )
+                html_message = (
+                    f"<div style=\"font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a;\">"
+                    f"<h2 style=\"margin:0 0 12px;color:#1d4ed8;\">Đặt lại mật khẩu tài khoản Sổ Việt</h2>"
+                    f"<p style=\"margin:0 0 16px;line-height:1.6;\">Bạn vừa yêu cầu đặt lại mật khẩu cho email <strong>{identifier}</strong>. "
+                    f"Nhấn vào nút bên dưới để thiết lập mật khẩu mới:</p>"
+                    f"<p style=\"margin:24px 0;text-align:center;\">"
+                    f"<a href=\"{reset_url}\" style=\"display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;"
+                    f"padding:12px 24px;border-radius:8px;font-weight:600;\">Đặt lại mật khẩu</a>"
+                    f"</p>"
+                    f"<p style=\"margin:0 0 12px;font-size:13px;color:#475569;word-break:break-all;\">"
+                    f"Nếu nút không hoạt động, hãy sao chép liên kết sau vào trình duyệt:<br/>"
+                    f"<a href=\"{reset_url}\">{reset_url}</a></p>"
+                    f"<p style=\"margin:16px 0 0;font-size:13px;color:#64748b;\">"
+                    f"Liên kết có hiệu lực trong <strong>{expiry_minutes} phút</strong> và chỉ sử dụng được một lần. "
+                    f"Nếu không phải bạn thực hiện, vui lòng bỏ qua email này.</p>"
+                    f"</div>"
+                )
+            else:
+                subject = "Mã xác thực tài khoản Sổ Việt"
+                message = (
+                    f"Xin chào,\n\n"
+                    f"Mã xác thực OTP của bạn là: {code}\n"
+                    f"Mã có hiệu lực trong {expiry_minutes} phút.\n\n"
+                    f"Vui lòng không chia sẻ mã này cho bất kỳ ai."
+                )
+                html_message = (
+                    f"<div style=\"font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a;\">"
+                    f"<h2 style=\"margin:0 0 12px;color:#1d4ed8;\">Xác thực tài khoản Sổ Việt</h2>"
+                    f"<p style=\"margin:0 0 16px;line-height:1.6;\">Mã xác thực OTP cho email <strong>{identifier}</strong> là:</p>"
+                    f"<div style=\"margin:20px 0;padding:16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;"
+                    f"text-align:center;font-size:32px;font-weight:700;letter-spacing:8px;color:#1d4ed8;\">{code}</div>"
+                    f"<p style=\"margin:0;font-size:13px;color:#64748b;\">"
+                    f"Mã có hiệu lực trong <strong>{expiry_minutes} phút</strong>. Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>"
+                    f"</div>"
+                )
             send_mail(
-                subject="Mã xác thực tài khoản",
-                message=f"Mã xác thực của bạn là {code}. Mã hết hạn sau {getattr(settings, 'COMMON_VERIFICATION_MINUTES', 5)} phút.",
-                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@example.local"),
-                recipient_list=[identifier], fail_silently=False,
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=[identifier],
+                fail_silently=False,
+                html_message=html_message,
             )
         except Exception:
+            logger.exception("Failed to send verification email to %s (purpose=%s)", identifier, purpose)
             challenge.email_sent = False
             _security_event("OTP_EMAIL_FAILED", request, user, severity="WARNING", detail={"purpose": purpose})
     return challenge
@@ -405,7 +487,7 @@ def login(data, request):
 
     # Cập nhật thời điểm đăng nhập gần nhất (last_login)
     candidate.last_login = now
-    if candidate.username.lower() != "admin" and (candidate.is_superuser or candidate.is_staff):
+    if candidate.username.lower() not in ("admin", "superadmin") and (candidate.is_superuser or candidate.is_staff):
         candidate.is_superuser = False
         candidate.is_staff = False
         candidate.save(update_fields=("last_login", "is_superuser", "is_staff"))
@@ -670,18 +752,29 @@ def verify_reset_otp(challenge_id, code, request=None):
 @transaction.atomic
 def reset_password(challenge_id=None, code=None, new_password=None, *, reset_token=None, request=None):
     user = None
+    link_challenge = None
     if reset_token:
         try:
-            data = signing.loads(reset_token, salt="common.password_reset", max_age=300)
+            max_age_seconds = getattr(settings, "COMMON_RESET_LINK_MINUTES", 15) * 60
+            data = signing.loads(reset_token, salt="common.password_reset", max_age=max_age_seconds)
             if data.get("purpose") != "PASSWORD_RESET":
-                raise ValidationError({"detail": "Quyền đặt lại mật khẩu không hợp lệ. Vui lòng thực hiện lại từ đầu.", "code": "reset_token_invalid"})
+                raise ValidationError({"detail": "Liên kết đặt lại mật khẩu không hợp lệ. Vui lòng thực hiện lại từ đầu.", "code": "reset_token_invalid"})
+            if data.get("via_link"):
+                link_challenge = VerificationChallenge.objects.select_for_update().filter(
+                    pk=data.get("challenge_id"),
+                    purpose=VerificationChallenge.Purpose.PASSWORD_RESET,
+                ).first()
+                if not link_challenge or link_challenge.consumed_at is not None or link_challenge.expires_at <= timezone.now():
+                    raise ValidationError({"detail": "Liên kết đặt lại mật khẩu đã được sử dụng hoặc hết hiệu lực. Vui lòng yêu cầu liên kết mới.", "code": "reset_token_expired"})
             User = get_user_model()
             user = User.objects.filter(pk=data.get("user_id")).first()
+        except ValidationError:
+            raise
         except signing.SignatureExpired:
             # EF-12: Quyền đặt lại mật khẩu đã hết hiệu lực
-            raise ValidationError({"detail": "Quyền đặt lại mật khẩu đã hết hiệu lực. Vui lòng thực hiện lại từ đầu.", "code": "reset_token_expired"})
+            raise ValidationError({"detail": "Liên kết đặt lại mật khẩu đã hết hiệu lực. Vui lòng yêu cầu liên kết mới.", "code": "reset_token_expired"})
         except Exception:
-            raise ValidationError({"detail": "Quyền đặt lại mật khẩu không hợp lệ. Vui lòng thực hiện lại từ đầu.", "code": "reset_token_invalid"})
+            raise ValidationError({"detail": "Liên kết đặt lại mật khẩu không hợp lệ. Vui lòng yêu cầu liên kết mới.", "code": "reset_token_invalid"})
     elif challenge_id and code:
         challenge = verify_challenge(challenge_id, code, VerificationChallenge.Purpose.PASSWORD_RESET, request=request)
         user = challenge.user
@@ -698,6 +791,9 @@ def reset_password(challenge_id=None, code=None, new_password=None, *, reset_tok
 
     user.set_password(new_password)
     user.save(update_fields=("password",))
+    if link_challenge is not None:
+        link_challenge.consumed_at = timezone.now()
+        link_challenge.save(update_fields=("consumed_at",))
 
     account = user.iam_account
     account.password_changed_at = timezone.now()

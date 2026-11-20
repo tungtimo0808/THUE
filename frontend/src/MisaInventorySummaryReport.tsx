@@ -111,14 +111,16 @@ export default function MisaInventorySummaryReport({ onBack, notify, embedded = 
       const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
       const anchor = document.createElement("a"); anchor.href = url; anchor.download = `tong-hop-ton-kho-${applied?.from}-${applied?.to}.csv`;
       anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch { setError("Xuất báo cáo thất bại. Vui lòng thử lại."); }
+    } catch (caught) {
+      setError(`Xuất báo cáo thất bại: ${caught instanceof Error ? caught.message : "Vui lòng kiểm tra quyền tải tệp trên trình duyệt và thử lại."}`);
+    }
   }
   function save() {
     if (!applied || !companyId) return;
     const name = `Tổng hợp tồn kho (${applied.from} – ${applied.to})`;
     const next = [...saved, { name, parameters: structuredClone(applied) }].slice(-20);
     try { localStorage.setItem(`soviet:stock-summary:${companyId}`, JSON.stringify(next)); setSaved(next); notify?.("Đã lưu cấu hình báo cáo."); }
-    catch { setError("Không thể lưu cấu hình báo cáo."); }
+    catch (caught) { setError(`Không thể lưu cấu hình báo cáo trên trình duyệt: ${caught instanceof Error ? caught.message : "Bộ nhớ trình duyệt đã đầy hoặc bị hạn chế."}`); }
   }
 
   return <div className={`inventory-summary-report${embedded ? " embedded" : ""}`}>

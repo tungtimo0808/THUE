@@ -14,17 +14,17 @@ class RevocableJWTAuthentication(JWTAuthentication):
         try:
             user_id = validated_token[api_settings.USER_ID_CLAIM]
         except KeyError as exc:
-            raise InvalidToken("Token contained no recognizable user identification") from exc
+            raise InvalidToken("Phiên đăng nhập không hợp lệ (thiếu thông tin định danh tài khoản). Vui lòng đăng nhập lại.") from exc
 
         try:
             user = self.user_model.objects.select_related(
                 "iam_account", "common_session_state"
             ).get(**{api_settings.USER_ID_FIELD: user_id})
         except self.user_model.DoesNotExist as exc:
-            raise AuthenticationFailed("User not found", code="user_not_found") from exc
+            raise AuthenticationFailed("Tài khoản không tồn tại hoặc đã bị xóa.", code="user_not_found") from exc
 
         if not api_settings.USER_AUTHENTICATION_RULE(user):
-            raise AuthenticationFailed("User is inactive", code="user_inactive")
+            raise AuthenticationFailed("Tài khoản đã bị vô hiệu hóa hoặc chưa được kích hoạt.", code="user_inactive")
 
         try:
             state = user.common_session_state

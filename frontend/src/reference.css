@@ -994,7 +994,7 @@ html {
 }
 .ref-main {
   margin: var(--ref-header) 0 0 var(--ref-sidebar);
-  padding: 0 16px 22px;
+  padding: 0 16px 10px;
   width: calc(100% - var(--ref-sidebar));
   max-width: calc(100vw - var(--ref-sidebar));
   min-width: 0;
@@ -4681,6 +4681,118 @@ button[title="Gợi ý & Kiểm tra nhanh"],
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
+}
+
+/* Keep horizontal scrollbar always visible inside the viewport for tall data tables across all modules
+   without pushing the outer page past 100dvh (avoids double vertical scrollbars). */
+.ref-main :is(
+  div[style*="overflow-x: auto"],
+  div[style*="overflow: auto"],
+  .md-table,
+  .il-table-wrap,
+  .live-customers-table
+):has(> table) {
+  max-height: calc(100dvh - 355px);
+  min-height: 220px;
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ref-main select:not([multiple]) {
+  min-height: 34px;
+  line-height: normal !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.ref-main table select:not([multiple]) {
+  min-height: 26px;
+}
+
+/* Uniform 34px control heights across all filter bars and toolbars */
+.ref-main :is(.br-filters, .br-statement-filters, .ce-toolbar, .filter-bar)
+  :is(input:not([type="checkbox"]):not([type="radio"]), select:not([multiple]), button) {
+  height: 34px;
+  min-height: 34px;
+  box-sizing: border-box;
+}
+
+.ref-main :is(.br-filters, .br-statement-filters, .ce-toolbar, .filter-bar)
+  :is(input:not([type="checkbox"]):not([type="radio"]), select:not([multiple])) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.ref-main :is(.br-filters, .br-statement-filters, .ce-toolbar, .filter-bar) button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Ensure ReportDateInput (.pc-date-input) always renders as a single unified date field everywhere */
+.pc-date-input {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  min-width: 140px;
+}
+
+.pc-date-input > input:first-child {
+  box-sizing: border-box;
+  width: 100%;
+  height: 34px;
+  padding: 0 34px 0 10px;
+}
+
+.pc-date-input > svg {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+}
+
+.pc-date-input > .pc-native-date {
+  position: absolute !important;
+  right: 0 !important;
+  top: 0 !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  opacity: 0 !important;
+  cursor: pointer;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+}
+
+.pc-date-input > .pc-native-date::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.ref-main :is(
+  div[style*="overflow-x: auto"],
+  div[style*="overflow: auto"],
+  .md-table,
+  .il-table-wrap,
+  .live-customers-table
+):has(> table) > table > thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
 }
 
 .ref-main :is(

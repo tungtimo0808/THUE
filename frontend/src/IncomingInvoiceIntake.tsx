@@ -229,17 +229,16 @@ export default function IncomingInvoiceIntake({
   }
 
   return <div className="erp3-workspace">
-    <header className="erp3-page-header">
+    <header className="erp3-page-header" style={{ alignItems: "center", marginBottom: 14 }}>
       <div>
-        <p className="erp3-eyebrow">KHÔNG GIAN LÀM VIỆC</p>
-        <h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", margin: "0 0 4px", lineHeight: 1.3 }}>
           {childTab === "unprocessed"
             ? "Hóa đơn đầu vào - Chưa hạch toán"
             : childTab === "processed"
               ? "Hóa đơn đầu vào - Đã hạch toán"
               : "Hộp thư hóa đơn đầu vào"}
         </h2>
-        <p>
+        <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
           {childTab === "unprocessed"
             ? "Danh sách hóa đơn đầu vào hợp lệ chưa liên kết với chứng từ mua hàng / hạch toán."
             : childTab === "processed"

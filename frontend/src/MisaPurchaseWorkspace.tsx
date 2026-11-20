@@ -5124,33 +5124,33 @@ export default function MisaPurchaseWorkspace({
             >
               <defs>
                 <marker id="misa-arrow-pur" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-                  <polygon points="0 0, 7 3.5, 0 7" fill="#94a3b8" />
+                  <polygon points="0 0, 7 3.5, 0 7" fill="#3b82f6" />
                 </marker>
               </defs>
 
               {/* 1. Left vertical link with 2 circle ends */}
-              <circle cx="75" cy="115" r="3.2" fill="#94a3b8" />
-              <circle cx="75" cy="175" r="3.2" fill="#94a3b8" />
-              <path d="M 75 115 L 75 175" stroke="#94a3b8" strokeWidth="1.8" fill="none" />
+              <circle cx="75" cy="115" r="3.2" fill="#3b82f6" />
+              <circle cx="75" cy="175" r="3.2" fill="#3b82f6" />
+              <path d="M 75 115 L 75 175" stroke="#3b82f6" strokeWidth="1.8" fill="none" />
 
               {/* 2. Main horizontal axis line */}
-              <path d="M 75 145 L 610 145" stroke="#94a3b8" strokeWidth="1.5" fill="none" markerEnd="url(#misa-arrow-pur)" />
+              <path d="M 75 145 L 610 145" stroke="#3b82f6" strokeWidth="1.5" fill="none" markerEnd="url(#misa-arrow-pur)" />
 
               {/* 3. Col 2: Nhận hàng hóa, dịch vụ <-> Nhận hóa đơn */}
-              <path d="M 238 145 L 238 115" stroke="#94a3b8" strokeWidth="1.5" fill="none" />
-              <path d="M 238 145 L 238 175" stroke="#94a3b8" strokeWidth="1.5" fill="none" />
+              <path d="M 238 145 L 238 115" stroke="#3b82f6" strokeWidth="1.5" fill="none" />
+              <path d="M 238 145 L 238 175" stroke="#3b82f6" strokeWidth="1.5" fill="none" />
 
               {/* 4. Col 3: Xử lý hóa đơn đầu vào <-> Trả lại hàng mua */}
-              <circle cx="408" cy="125" r="3" fill="#94a3b8" />
-              <path d="M 408 145 L 408 125" stroke="#94a3b8" strokeWidth="1.5" fill="none" />
-              <circle cx="408" cy="175" r="3" fill="#94a3b8" />
-              <path d="M 408 145 L 408 175" stroke="#94a3b8" strokeWidth="1.5" fill="none" />
+              <circle cx="408" cy="125" r="3" fill="#3b82f6" />
+              <path d="M 408 145 L 408 125" stroke="#3b82f6" strokeWidth="1.5" fill="none" />
+              <circle cx="408" cy="175" r="3" fill="#3b82f6" />
+              <path d="M 408 145 L 408 175" stroke="#3b82f6" strokeWidth="1.5" fill="none" />
 
               {/* 5. Col 4: Trả tiền theo hóa đơn <-> Giảm giá hàng mua */}
-              <circle cx="578" cy="125" r="3" fill="#94a3b8" />
-              <path d="M 578 145 L 578 125" stroke="#94a3b8" strokeWidth="1.5" fill="none" />
-              <circle cx="578" cy="175" r="3" fill="#94a3b8" />
-              <path d="M 578 145 L 578 175" stroke="#94a3b8" strokeWidth="1.5" fill="none" />
+              <circle cx="578" cy="125" r="3" fill="#3b82f6" />
+              <path d="M 578 145 L 578 125" stroke="#3b82f6" strokeWidth="1.5" fill="none" />
+              <circle cx="578" cy="175" r="3" fill="#3b82f6" />
+              <path d="M 578 145 L 578 175" stroke="#3b82f6" strokeWidth="1.5" fill="none" />
             </svg>
 
             {/* Col 1 Top: Đơn mua hàng */}
@@ -5175,8 +5175,8 @@ export default function MisaPurchaseWorkspace({
                 <span
                   className="ref-document-sheet"
                   style={{
-                    background: "linear-gradient(90deg, #10b981, #059669)",
-                    border: "1px solid #34d399",
+                    background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                    border: "1px solid #60a5fa",
                   }}
                 >
                   <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐMH</b>
@@ -5216,8 +5216,8 @@ export default function MisaPurchaseWorkspace({
                 <span
                   className="ref-document-sheet"
                   style={{
-                    background: "linear-gradient(90deg, #10b981, #059669)",
-                    border: "1px solid #34d399",
+                    background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                    border: "1px solid #60a5fa",
                   }}
                 >
                   <b style={{ color: "#ffffff", fontWeight: 800 }}>HĐ</b>
@@ -5268,8 +5268,8 @@ export default function MisaPurchaseWorkspace({
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
-                      border: "1px solid #34d399",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                      border: "1px solid #60a5fa",
                     }}
                   >
                     <b style={{ color: "#ffffff", fontWeight: 800 }}>NH</b>
@@ -5425,8 +5425,8 @@ export default function MisaPurchaseWorkspace({
                 <span
                   className="ref-document-sheet"
                   style={{
-                    background: "linear-gradient(90deg, #10b981, #059669)",
-                    border: "1px solid #34d399",
+                    background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                    border: "1px solid #60a5fa",
                   }}
                 >
                   <b style={{ color: "#ffffff", fontWeight: 800 }}>HĐ</b>
@@ -5466,8 +5466,8 @@ export default function MisaPurchaseWorkspace({
                 <span
                   className="ref-document-sheet"
                   style={{
-                    background: "linear-gradient(90deg, #10b981, #059669)",
-                    border: "1px solid #34d399",
+                    background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                    border: "1px solid #60a5fa",
                   }}
                 >
                   <b style={{ color: "#ffffff", fontWeight: 800 }}>XL</b>
@@ -5507,8 +5507,8 @@ export default function MisaPurchaseWorkspace({
                 <span
                   className="ref-document-sheet"
                   style={{
-                    background: "linear-gradient(90deg, #10b981, #059669)",
-                    border: "1px solid #34d399",
+                    background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                    border: "1px solid #60a5fa",
                   }}
                 >
                   <b style={{ color: "#ffffff", fontWeight: 800 }}>TL</b>
@@ -5548,8 +5548,8 @@ export default function MisaPurchaseWorkspace({
                 <span
                   className="ref-document-sheet"
                   style={{
-                    background: "linear-gradient(90deg, #10b981, #059669)",
-                    border: "1px solid #34d399",
+                    background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                    border: "1px solid #60a5fa",
                   }}
                 >
                   <b style={{ color: "#ffffff", fontWeight: 800 }}>CHI</b>
@@ -5589,8 +5589,8 @@ export default function MisaPurchaseWorkspace({
                 <span
                   className="ref-document-sheet"
                   style={{
-                    background: "linear-gradient(90deg, #10b981, #059669)",
-                    border: "1px solid #34d399",
+                    background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                    border: "1px solid #60a5fa",
                   }}
                 >
                   <b style={{ color: "#ffffff", fontWeight: 800 }}>GG</b>

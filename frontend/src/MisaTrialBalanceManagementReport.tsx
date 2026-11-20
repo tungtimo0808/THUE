@@ -147,18 +147,18 @@ export default function MisaTrialBalanceManagementReport({
   const [searchKeyword, setSearchKeyword] = useState<string>("");
 
   // Active applied parameters
-  const [period, setPeriod] = useState<string>("Tháng 10");
-  const [fromDate, setFromDate] = useState<string>(`01/10/${CURRENT_YEAR}`);
-  const [toDate, setToDate] = useState<string>(`31/10/${CURRENT_YEAR}`);
+  const [period, setPeriod] = useState<string>("Năm nay");
+  const [fromDate, setFromDate] = useState<string>(`01/01/${CURRENT_YEAR}`);
+  const [toDate, setToDate] = useState<string>(`31/12/${CURRENT_YEAR}`);
   const [accountLevel, setAccountLevel] = useState<string>("3");
   const [showBothSides, setShowBothSides] = useState<boolean>(true);
   const [accumulateFrom, setAccumulateFrom] = useState<"data_start" | "fiscal_start">("fiscal_start");
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
   // Draft parameters inside "Chọn tham số" drawer
-  const [draftPeriod, setDraftPeriod] = useState<string>("Tháng 10");
-  const [draftFromDate, setDraftFromDate] = useState<string>(`01/10/${CURRENT_YEAR}`);
-  const [draftToDate, setDraftToDate] = useState<string>(`31/10/${CURRENT_YEAR}`);
+  const [draftPeriod, setDraftPeriod] = useState<string>("Năm nay");
+  const [draftFromDate, setDraftFromDate] = useState<string>(`01/01/${CURRENT_YEAR}`);
+  const [draftToDate, setDraftToDate] = useState<string>(`31/12/${CURRENT_YEAR}`);
   const [draftAccountLevel, setDraftAccountLevel] = useState<string>("3");
   const [draftShowBothSides, setDraftShowBothSides] = useState<boolean>(true);
   const [draftAccumulateFrom, setDraftAccumulateFrom] = useState<"data_start" | "fiscal_start">("fiscal_start");

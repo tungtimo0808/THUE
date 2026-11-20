@@ -344,7 +344,12 @@ export function AuthField({ id, label, icon: Icon, type, ...input }: AuthFieldPr
   const isPassword = type === "password";
   return (
     <div className="auth-field">
-      <label className="auth-label" htmlFor={id}>{label}</label>
+      <label className="auth-label" htmlFor={id}>
+        {label}
+        {input.required && (
+          <span style={{ color: "#dc2626", marginLeft: 3 }} aria-hidden="true">*</span>
+        )}
+      </label>
       <div className="auth-input-wrap">
         <span className="auth-input-icon" aria-hidden="true"><Icon size={18} /></span>
         <input id={id} className="auth-input" type={isPassword && revealed ? "text" : type} {...input} />

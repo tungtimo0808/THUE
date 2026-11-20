@@ -228,7 +228,7 @@ class UserAccountViewSet(ProtectedModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
     def get_queryset(self):
-        queryset = UserAccount.objects.select_related("auth_user")
+        queryset = UserAccount.objects.select_related("auth_user").exclude(auth_user__is_superuser=True)
         company_id = self.request.query_params.get("company_id")
         if not company_id:
             return queryset.none()
@@ -308,7 +308,7 @@ class CompanyMembershipViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
             "SYS.USER.VIEW_SECURITY" if self.action == "lock_history" else
             "SYS.USER.EDIT" if self.action == "partial_update" else "SYS.USER.VIEW"
         )
-        queryset = self.queryset.filter(company=company)
+        queryset = self.queryset.filter(company=company).exclude(user__auth_user__is_superuser=True)
         if not self.request.user.is_superuser:
             queryset = queryset.filter(pk__in=memberships_in_scope(actor, company, permission).values("pk"))
         params = self.request.query_params
@@ -345,8 +345,12 @@ class CompanyMembershipViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         account = getattr(request.user, "iam_account", None)
         if not company_id or not account:
             return Response(None)
+        try:
+            company_uuid = uuid.UUID(str(company_id))
+        except (ValueError, TypeError, AttributeError):
+            return Response(None)
         membership = (
-            self.queryset.filter(company_id=company_id, user=account, membership_status="ACTIVE")
+            self.queryset.filter(company_id=company_uuid, user=account, membership_status="ACTIVE")
             .first()
         )
         if not membership:

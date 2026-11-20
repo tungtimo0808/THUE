@@ -114,7 +114,7 @@ class PaymentTermViewSet(ModelViewSet):
     def company_id(self):
         value = self.request.query_params.get("company_id")
         if not value:
-            raise ValidationError({"company_id": "Working company is required."})
+            raise ValidationError({"company_id": "Vui lòng chọn doanh nghiệp làm việc."})
         return value
 
     def get_queryset(self):
@@ -132,11 +132,11 @@ class PaymentTermViewSet(ModelViewSet):
     def _check_company(self, serializer):
         company = serializer.validated_data.get("company") or getattr(serializer.instance, "company", None)
         if not company or str(company.pk) != str(self.company_id()):
-            raise ValidationError({"company": "Company does not match working company."})
+            raise ValidationError({"company": "Doanh nghiệp của bản ghi không khớp với doanh nghiệp đang làm việc."})
 
     def _check_version(self, term):
         if str(self.request.data.get("version")) != str(term.version):
-            raise ValidationError({"version": "Record changed; reload before editing."})
+            raise ValidationError({"version": "Dữ liệu đã được thay đổi ở phiên khác. Vui lòng tải lại trước khi sửa."})
 
     def _referenced_in_documents(self, term):
         from purchases.models import PurchaseOrder
@@ -161,7 +161,7 @@ class PaymentTermViewSet(ModelViewSet):
             term = serializer.save()
             self._assign_defaults(term)
         except IntegrityError as exc:
-            raise ValidationError({"code": "Duplicate payment term code."}) from exc
+            raise ValidationError({"code": "Mã điều khoản thanh toán đã tồn tại."}) from exc
         self._audit(term, "CREATE", after=self.get_serializer(term).data)
 
     @transaction.atomic
@@ -171,7 +171,7 @@ class PaymentTermViewSet(ModelViewSet):
         self._check_version(term)
         Company.objects.select_for_update().get(pk=self.company_id())
         if serializer.validated_data.get("code", term.code).strip().upper() != term.code and self._referenced_in_documents(term):
-            raise ValidationError({"code": "Code cannot change after a document uses this term."})
+            raise ValidationError({"code": "Không thể đổi mã điều khoản thanh toán sau khi đã có chứng từ sử dụng."})
         before = self.get_serializer(term).data
         term = serializer.save(version=term.version + 1)
         self._assign_defaults(term)
@@ -186,7 +186,7 @@ class PaymentTermViewSet(ModelViewSet):
         data["default_purchase"] = False
         data["default_sale"] = False
         if not request.data.get("code"):
-            raise ValidationError({"code": "New code is required."})
+            raise ValidationError({"code": "Vui lòng nhập mã điều khoản mới."})
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -197,13 +197,13 @@ class PaymentTermViewSet(ModelViewSet):
             term = self.get_object()
             self._check_version(term)
             if not active and (term.default_purchase or term.default_sale) and self.request.data.get("clear_default") is not True:
-                raise ValidationError({"clear_default": "Confirm removing this default."})
+                raise ValidationError({"clear_default": "Vui lòng xác nhận bỏ chọn điều khoản mặc định này."})
             before = self.get_serializer(term).data
             term.status = "ACTIVE" if active else "INACTIVE"
             if not active:
                 term.default_purchase = term.default_sale = False
             if active and not term.is_available(timezone.localdate(), "PURCHASE") and not term.is_available(timezone.localdate(), "SALE"):
-                raise ValidationError({"effective_to": "Term is outside its effective period."})
+                raise ValidationError({"effective_to": "Điều khoản thanh toán đã hết hoặc chưa đến thời gian hiệu lực."})
             validate_term(term)
             term.version += 1
             term.save()
@@ -222,13 +222,13 @@ class PaymentTermViewSet(ModelViewSet):
     def set_default(self, request, pk=None):
         scope = request.data.get("scope")
         if scope not in ("PURCHASE", "SALE"):
-            raise ValidationError({"scope": "PURCHASE or SALE is required."})
+            raise ValidationError({"scope": "Phạm vi áp dụng phải là Mua hàng (PURCHASE) hoặc Bán hàng (SALE)."})
         with transaction.atomic():
             Company.objects.select_for_update().get(pk=self.company_id())
             term = self.get_object()
             self._check_version(term)
             if not term.is_available(timezone.localdate(), scope):
-                raise ValidationError({"scope": "Term is not available for this scope today."})
+                raise ValidationError({"scope": "Điều khoản thanh toán không áp dụng cho phạm vi này vào ngày hiện tại."})
             before = self.get_serializer(term).data
             setattr(term, "default_purchase" if scope == "PURCHASE" else "default_sale", True)
             term.version += 1
@@ -246,7 +246,7 @@ class PaymentTermViewSet(ModelViewSet):
             if raw:
                 values[field] = parse_date(raw)
                 if values[field] is None:
-                    raise ValidationError({field: "Invalid ISO date."})
+                    raise ValidationError({field: "Ngày không đúng định dạng hợp lệ (YYYY-MM-DD)."})
         result = calculate_payment_dates(term, **values)
         return Response(result)
 
@@ -255,12 +255,12 @@ class PaymentTermViewSet(ModelViewSet):
         scope = request.query_params.get("scope")
         on_date = parse_date(request.query_params.get("on_date", ""))
         if scope not in ("PURCHASE", "SALE") or on_date is None:
-            raise ValidationError({"detail": "scope and on_date are required."})
+            raise ValidationError({"detail": "Vui lòng cung cấp đầy đủ phạm vi áp dụng và ngày tính hạn."})
         party = None
         if party_id := request.query_params.get("party_id"):
             party = Party.objects.filter(pk=party_id, company_id=self.company_id()).first()
             if party is None:
-                raise ValidationError({"party_id": "Party not found in this company."})
+                raise ValidationError({"party_id": "Không tìm thấy đối tượng (khách hàng/nhà cung cấp) trong doanh nghiệp này."})
         term = resolve_payment_term(company=Company.objects.get(pk=self.company_id()), scope=scope, on_date=on_date, party=party)
         return Response(self.get_serializer(term).data if term else None)
 
@@ -279,7 +279,7 @@ class PaymentTermViewSet(ModelViewSet):
         if rows is None and request.FILES.get("file"):
             upload = request.FILES["file"]
             if upload.size > 2 * 1024 * 1024:
-                raise ValidationError({"file": "CSV file exceeds 2 MB."})
+                raise ValidationError({"file": "Tệp CSV vượt quá dung lượng tối đa 2 MB."})
             try:
                 reader = csv.DictReader(io.StringIO(upload.read().decode("utf-8-sig")))
                 if not reader.fieldnames:
@@ -292,7 +292,7 @@ class PaymentTermViewSet(ModelViewSet):
             except (UnicodeDecodeError, csv.Error, ValueError) as exc:
                 raise ValidationError({"file": str(exc)}) from exc
         if not isinstance(rows, list) or not rows or len(rows) > 500:
-            raise ValidationError({"rows": "Provide 1 to 500 rows."})
+            raise ValidationError({"rows": "Số lượng dòng nhập khẩu phải từ 1 đến 500 dòng."})
         seen, valid, errors = set(), [], []
         for number, row in enumerate(rows, 1):
             if not isinstance(row, dict):
@@ -300,7 +300,7 @@ class PaymentTermViewSet(ModelViewSet):
                 continue
             data = dict(row)
             if str(data.get("company")) != str(self.company_id()):
-                errors.append({"row": number, "errors": {"company": "Company does not match working company."}})
+                errors.append({"row": number, "errors": {"company": "Doanh nghiệp của bản ghi không khớp với doanh nghiệp đang làm việc."}})
                 continue
             code = str(data.get("code", "")).strip().upper()
             if code in seen:
@@ -334,12 +334,12 @@ class PaymentTermViewSet(ModelViewSet):
             for serializer in valid:
                 serializer.validate(serializer.validated_data)
                 if serializer.instance and serializer.validated_data.get("code", serializer.instance.code).strip().upper() != serializer.instance.code and self._referenced_in_documents(serializer.instance):
-                    raise ValidationError({"code": "Code cannot change after a document uses this term."})
+                    raise ValidationError({"code": "Không thể đổi mã điều khoản thanh toán sau khi đã có chứng từ sử dụng."})
                 old = self.get_serializer(serializer.instance).data if serializer.instance else None
                 try:
                     term = serializer.save(version=serializer.instance.version + 1) if serializer.instance else serializer.save()
                 except IntegrityError as exc:
-                    raise ValidationError({"rows": "Import conflicts with existing data."}) from exc
+                    raise ValidationError({"rows": "Dữ liệu nhập khẩu bị trùng hoặc xung đột với dữ liệu hiện có."}) from exc
                 self._assign_defaults(term)
                 self._audit(term, "IMPORT", before=old, after=self.get_serializer(term).data)
                 result.append(self.get_serializer(term).data)

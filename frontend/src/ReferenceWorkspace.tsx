@@ -754,7 +754,7 @@ function ReferenceWorkspace() {
     const compId = company?.id || "default";
     const localList = loadStoredDatasets(compId, activeCompanyRegime);
     setCompanyDatasets(localList);
-    if (!apiToken || !company?.id) return;
+    if (!apiToken || !company?.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(company.id)) return;
     try {
       const res = await request<any>(
         `/api/v1/common/settings/?company_id=${encodeURIComponent(company.id)}`,
@@ -803,7 +803,7 @@ function ReferenceWorkspace() {
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
 
   const fetchBranches = useCallback(async () => {
-    if (!apiToken || !company?.id) return;
+    if (!apiToken || !company?.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(company.id)) return;
     const warmKey = buildBranchesWarmKey(apiToken, company.id);
     const cachedBranches = readWarmSnapshot<BranchData[]>(warmKey);
     if (cachedBranches && cachedBranches.length > 0) {
@@ -1113,7 +1113,7 @@ function ReferenceWorkspace() {
     try {
       localStorage.removeItem("ref_work_mode");
     } catch {}
-    if (!apiToken || !company?.id) return;
+    if (!apiToken || !company?.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(company.id)) return;
     const compAny = company as any;
     if (Array.isArray(compAny.role_codes) && compAny.role_codes.length > 0) {
       setAssignedRoleCodes(compAny.role_codes);
@@ -1255,7 +1255,7 @@ function ReferenceWorkspace() {
   const [payrollOption, setPayrollOption] = useState("Tiền lương Sổ Việt ERP");
 
   useEffect(() => {
-    if (!apiToken || !company?.id) return;
+    if (!apiToken || !company?.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(company.id)) return;
     let active = true;
     const branchParam = effectiveBranchId && effectiveBranchId !== "all" ? `&branch_id=${encodeURIComponent(effectiveBranchId)}` : "";
     const runFetch = () => {
@@ -2933,33 +2933,6 @@ function ReferenceWorkspace() {
                 <Lightbulb size={14} color="#ffffff" />
               </button>
             ) : null}
-
-            {moduleId === "bank" && (
-              <button
-                type="button"
-                className="misa-ebank-header-btn"
-                onClick={() => setNotice("Mở kết nối Ngân hàng điện tử Sổ Việt eBanking...")}
-                title="Kết nối Ngân hàng điện tử"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "4px 12px",
-                  borderRadius: 6,
-                  height: 30,
-                  marginRight: 6,
-                  flexShrink: 0,
-                }}
-              >
-                <span className="misa-ebank-badge-dot" />
-                <div style={{ display: "flex", alignItems: "baseline", gap: 5, lineHeight: 1 }}>
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: "#ffffff", whiteSpace: "nowrap" }}>
-                    Ngân hàng điện tử
-                  </span>
-                  <span style={{ fontSize: 10.5, color: "#bae6fd", whiteSpace: "nowrap" }}>· Kết nối ngay</span>
-                </div>
-              </button>
-            )}
 
             {moduleId !== "budget" && (
               <div className="ref-tab-tools-wrap" ref={tabOptionsRef}>

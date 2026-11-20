@@ -41,7 +41,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         validate_payment_term_selection(term, company=company, scope="PURCHASE", on_date=invoice_date, previous=getattr(self.instance, "payment_term", None))
         if term and (not self.instance or "payment_term" in attrs or "invoice_date" in attrs):
             if term.due_base not in ("DOCUMENT", "INVOICE"):
-                raise serializers.ValidationError({"payment_term": "This invoice does not have the date required by the payment term."})
+                raise serializers.ValidationError({"payment_term": "Hóa đơn này chưa có loại ngày làm căn cứ tính hạn thanh toán theo điều khoản đã chọn."})
             attrs["due_date"] = calculate_payment_dates(term, document_date=invoice_date, invoice_date=invoice_date)["due_date"]
         if supplier.company_id != company.id or supplier.status != "ACTIVE":
             raise serializers.ValidationError({"supplier": "Nhà cung cấp không hợp lệ."})

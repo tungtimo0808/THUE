@@ -58,12 +58,11 @@ def _ensure_dedicated_superadmin():
         auth_user=super_user,
         defaults={"display_name": "Super Admin Hệ Thống", "phone": "0900000000"},
     )
-    if acc.display_name != "Super Admin Hệ Thống" or acc.status != ActiveStatus.ACTIVE:
+    if acc.display_name != "Super Admin Hệ Thống" or acc.locked_until is not None or acc.failed_login_count != 0:
         acc.display_name = "Super Admin Hệ Thống"
-        acc.status = ActiveStatus.ACTIVE
         acc.locked_until = None
         acc.failed_login_count = 0
-        acc.save(update_fields=("display_name", "status", "locked_until", "failed_login_count", "updated_at"))
+        acc.save(update_fields=("display_name", "locked_until", "failed_login_count", "updated_at"))
 
     from common_services.models import UserPreference
     pref, _ = UserPreference.objects.get_or_create(user=acc)
@@ -126,7 +125,7 @@ class PlatformLoginView(APIView):
             target_user = candidate
             target_acc, _ = UserAccount.objects.get_or_create(
                 auth_user=target_user,
-                defaults={"display_name": target_user.get_full_name() or target_user.username, "status": ActiveStatus.ACTIVE},
+                defaults={"display_name": target_user.get_full_name() or target_user.username},
             )
 
         if not target_user.check_password(raw_pass):

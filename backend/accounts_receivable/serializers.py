@@ -40,10 +40,10 @@ class DocumentSerializer(serializers.ModelSerializer):
         if term and (not self.instance or "payment_term" in attrs or "document_date" in attrs):
             doc_type=attrs.get("document_type") or getattr(self.instance,"document_type",None)
             if term.due_base not in ("DOCUMENT","INVOICE") or (term.due_base=="INVOICE" and doc_type!="SALES_INVOICE"):
-                raise serializers.ValidationError({"payment_term":"This document does not have the date required by the payment term."})
+                raise serializers.ValidationError({"payment_term":"Chứng từ này chưa có loại ngày làm căn cứ tính hạn thanh toán theo điều khoản đã chọn."})
             attrs["due_date"]=calculate_payment_dates(term,document_date=doc_date,invoice_date=doc_date if doc_type=="SALES_INVOICE" else None)["due_date"]
         if not self.instance and "due_date" not in attrs:
-            raise serializers.ValidationError({"due_date":"Due date or an applicable payment term is required."})
+            raise serializers.ValidationError({"due_date":"Vui lòng nhập hạn thanh toán hoặc chọn điều khoản thanh toán phù hợp."})
         branch=attrs.get("branch") or getattr(self.instance,"branch",None)
         if branch and branch.company_id!=company.id: raise serializers.ValidationError({"branch":"Chi nhánh phải thuộc cùng doanh nghiệp."})
         for name in ("sales_order","sales_contract","invoice_request"):

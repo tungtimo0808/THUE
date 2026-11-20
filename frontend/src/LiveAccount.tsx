@@ -7,7 +7,14 @@ import { request } from "./live-api";
 const STEPS = ["Thông tin", "Xác thực email", "Hoàn tất"] as const;
 const TITLES = { register: "Đăng ký tài khoản", verify: "Xác thực email", complete: "Đăng ký thành công" };
 
-type RegistrationResponse = { challenge: string; verification_required: boolean; dev_otp?: string; warning?: string };
+type RegistrationResponse = {
+  challenge: string | null;
+  verification_required: boolean;
+  email_sent?: boolean;
+  dev_otp?: string;
+  warning?: string;
+  message?: string;
+};
 type VerificationResponse = { verified: boolean; access: string; refresh: string };
 
 export default function LiveAccount() {
@@ -50,9 +57,20 @@ export default function LiveAccount() {
         }),
       });
       setPassword(""); setConfirmPassword("");
+      if (!result.verification_required || !result.challenge) {
+        setChallenge("");
+        setDevOtp("");
+        setStep("complete");
+        setMessage("Tài khoản đã được tạo thành công. Bạn có thể đăng nhập vào hệ thống.");
+        return;
+      }
       setChallenge(result.challenge);
       setDevOtp(result.dev_otp || "");
-      setMessage(result.warning || "Đã gửi mã xác thực đến email của bạn.");
+      if (result.email_sent === false && result.warning) {
+        setError(result.warning);
+      } else {
+        setMessage(result.message || "Đã gửi mã xác thực 6 số đến Gmail của bạn. Vui lòng kiểm tra hộp thư (kể cả mục Spam).");
+      }
       setStep("verify");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không đăng ký được."); }
     finally { setBusy(false); }
@@ -74,11 +92,15 @@ export default function LiveAccount() {
   async function resend() {
     setBusy(true); setError(""); setMessage("");
     try {
-      const result = await request<{ challenge: string; dev_otp?: string; warning?: string }>("/api/v1/common/auth/resend-verification/", undefined, {
+      const result = await request<{ challenge: string; dev_otp?: string; warning?: string; email_sent?: boolean }>("/api/v1/common/auth/resend-verification/", undefined, {
         method: "POST", body: JSON.stringify({ challenge }),
       });
       setChallenge(result.challenge); setCode(""); setDevOtp(result.dev_otp || "");
-      setMessage(result.warning || "Đã gửi mã xác thực mới.");
+      if (result.email_sent === false && result.warning) {
+        setError(result.warning);
+      } else {
+        setMessage(result.warning || "Đã gửi lại mã xác thực 6 số đến Gmail của bạn.");
+      }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không gửi lại được mã."); }
     finally { setBusy(false); }
   }
@@ -86,11 +108,16 @@ export default function LiveAccount() {
   async function changeEmail(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError(""); setMessage("");
     try {
-      const result = await request<{ challenge: string; dev_otp?: string }>("/api/v1/common/auth/change-registration-email/", undefined, {
+      const result = await request<{ challenge: string; dev_otp?: string; warning?: string; email_sent?: boolean }>("/api/v1/common/auth/change-registration-email/", undefined, {
         method: "POST", body: JSON.stringify({ challenge, email: newEmail }),
       });
       setChallenge(result.challenge); setEmail(newEmail); setNewEmail(""); setCode("");
-      setDevOtp(result.dev_otp || ""); setMessage("Đã gửi mã đến email mới.");
+      setDevOtp(result.dev_otp || "");
+      if (result.email_sent === false && result.warning) {
+        setError(result.warning);
+      } else {
+        setMessage("Đã gửi mã xác thực 6 số đến email mới.");
+      }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không đổi được email."); }
     finally { setBusy(false); }
   }
@@ -140,7 +167,7 @@ export default function LiveAccount() {
                 }}
               >
                 Điều khoản sử dụng hệ thống
-              </button>.
+              </button>. <span style={{ color: "#dc2626" }} aria-hidden="true">*</span>
             </span>
           </label>
           <label className="auth-checkbox-label">
@@ -171,7 +198,7 @@ export default function LiveAccount() {
               >
                 Chính sách bảo vệ dữ liệu cá nhân (Luật 91/2025/QH15 &amp; NĐ 356/2025/NĐ-CP)
               </button>
-              .
+              . <span style={{ color: "#dc2626" }} aria-hidden="true">*</span>
             </span>
           </label>
           <AuthSubmit busy={busy} busyLabel="Đang tạo tài khoản…">Tạo tài khoản</AuthSubmit>

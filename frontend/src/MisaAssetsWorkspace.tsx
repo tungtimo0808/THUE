@@ -14450,8 +14450,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
-                      border: "1px solid #34d399",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                      border: "1px solid #60a5fa",
                     }}
                   >
                     <b style={{ color: "#ffffff", fontWeight: 800 }}>GT</b>
@@ -14476,8 +14476,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
-                      border: "1px solid #34d399",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                      border: "1px solid #60a5fa",
                     }}
                   >
                     <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐC</b>
@@ -14502,8 +14502,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
-                      border: "1px solid #34d399",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                      border: "1px solid #60a5fa",
                     }}
                   >
                     <b style={{ color: "#ffffff", fontWeight: 800 }}>KH</b>
@@ -14528,8 +14528,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
-                      border: "1px solid #34d399",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                      border: "1px solid #60a5fa",
                     }}
                   >
                     <b style={{ color: "#ffffff", fontWeight: 800 }}>TC</b>
@@ -14556,8 +14556,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
-                      border: "1px solid #34d399",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                      border: "1px solid #60a5fa",
                     }}
                   >
                     <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐG</b>
@@ -14582,8 +14582,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
-                      border: "1px solid #34d399",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                      border: "1px solid #60a5fa",
                     }}
                   >
                     <b style={{ color: "#ffffff", fontWeight: 800 }}>GG</b>
@@ -14608,8 +14608,8 @@ ${rep.rows.length ? "" : `<p>${escapeHtml(rep.empty_message)}</p>`}
                   <span
                     className="ref-document-sheet"
                     style={{
-                      background: "linear-gradient(90deg, #10b981, #059669)",
-                      border: "1px solid #34d399",
+                      background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                      border: "1px solid #60a5fa",
                     }}
                   >
                     <b style={{ color: "#ffffff", fontWeight: 800 }}>KK</b>

@@ -433,7 +433,7 @@ export default function MisaTaxWorkspace({
                 }}
               >
                 <Building2 size={12} />
-                MST: {company?.id || "0108923456"}
+                MST: {(company as any)?.tax_code || (company as any)?.taxCode || "Chưa cập nhật"}
               </span>
             </div>
 

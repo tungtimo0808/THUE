@@ -3332,8 +3332,8 @@ export default function MisaPayrollWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
-                        border: "1px solid #34d399",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>CC</b>
@@ -3373,8 +3373,8 @@ export default function MisaPayrollWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
-                        border: "1px solid #34d399",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>THC</b>
@@ -3414,8 +3414,8 @@ export default function MisaPayrollWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
-                        border: "1px solid #34d399",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>TL</b>
@@ -3455,8 +3455,8 @@ export default function MisaPayrollWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
-                        border: "1px solid #34d399",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>HT</b>
@@ -3496,8 +3496,8 @@ export default function MisaPayrollWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
-                        border: "1px solid #34d399",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>BH</b>
@@ -3537,8 +3537,8 @@ export default function MisaPayrollWorkspace({
                     <span
                       className="ref-document-sheet"
                       style={{
-                        background: "linear-gradient(90deg, #10b981, #059669)",
-                        border: "1px solid #34d399",
+                        background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>TRL</b>

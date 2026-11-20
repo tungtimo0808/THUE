@@ -2179,7 +2179,7 @@ class DrilldownViewSet(CompanyMemberMixin, ViewSet):
         company_id = self._get_company_id(request)
         ctx = ReportCellContext.objects.filter(pk=context_id, company_id=company_id).first()
         if not ctx:
-            return Response({"detail": "Không tìm thấy Cell Context."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Không tìm thấy thông tin chi tiết của chỉ tiêu báo cáo (vui lòng tải lại báo cáo)."}, status=status.HTTP_404_NOT_FOUND)
         comps = list(ctx.contributions.all().values("component_key", "component_name", "raw_value", "sign_multiplier", "contribution_value"))
         return Response({
             "context_id": str(ctx.id),
@@ -2192,7 +2192,7 @@ class DrilldownViewSet(CompanyMemberMixin, ViewSet):
         company_id = self._get_company_id(request)
         ctx = ReportCellContext.objects.filter(pk=context_id, company_id=company_id).first()
         if not ctx:
-            return Response({"detail": "Không tìm thấy Cell Context."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Không tìm thấy thông tin chi tiết của chỉ tiêu báo cáo (vui lòng tải lại báo cáo)."}, status=status.HTTP_404_NOT_FOUND)
         comps = list(ctx.contributions.all().values("component_key", "component_name", "contribution_value"))
         return Response({
             "context_id": str(ctx.id),
@@ -2238,7 +2238,7 @@ class DrilldownViewSet(CompanyMemberMixin, ViewSet):
         company_id = self._get_company_id(request)
         ctx = ReportCellContext.objects.filter(pk=context_id, company_id=company_id).first()
         if not ctx:
-            return Response({"detail": "Không tìm thấy Cell Context."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Không tìm thấy thông tin chi tiết của chỉ tiêu báo cáo (vui lòng tải lại báo cáo)."}, status=status.HTTP_404_NOT_FOUND)
         return Response({
             "context_id": str(ctx.id),
             "adjustments": [],
@@ -2249,7 +2249,7 @@ class DrilldownViewSet(CompanyMemberMixin, ViewSet):
         company_id = self._get_company_id(request)
         ctx = ReportCellContext.objects.filter(pk=context_id, company_id=company_id).first()
         if not ctx:
-            return Response({"detail": "Không tìm thấy Cell Context."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Không tìm thấy thông tin chi tiết của chỉ tiêu báo cáo (vui lòng tải lại báo cáo)."}, status=status.HTTP_404_NOT_FOUND)
         contrib_sum = ctx.contributions.aggregate(total=Sum("contribution_value"))["total"] or Decimal("0")
         diff = ctx.display_value - contrib_sum
         status_val = "MATCHED" if abs(diff) < Decimal("0.0001") else "DIFFERENCE"
@@ -2265,7 +2265,7 @@ class DrilldownViewSet(CompanyMemberMixin, ViewSet):
         company_id = self._get_company_id(request)
         ctx = ReportCellContext.objects.filter(pk=context_id, company_id=company_id).first()
         if not ctx:
-            return Response({"detail": "Không tìm thấy Cell Context."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Không tìm thấy thông tin chi tiết của chỉ tiêu báo cáo (vui lòng tải lại báo cáo)."}, status=status.HTTP_404_NOT_FOUND)
         return Response({
             "breadcrumbs": [
                 {"level": 0, "title": ctx.report_code, "action": "ROOT_REPORT"},

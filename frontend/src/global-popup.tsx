@@ -78,6 +78,52 @@ const FIELD_LABELS_VI: Record<string, string> = {
   role_code: "Vai trò",
   status: "Trạng thái",
   version: "Phiên bản dữ liệu",
+  full_name: "Họ và tên",
+  display_name: "Họ và tên",
+  first_name: "Tên",
+  last_name: "Họ",
+  new_password_confirm: "Xác nhận mật khẩu mới",
+  challenge: "Phiên xác thực",
+  otp: "Mã xác thực OTP",
+  reset_token: "Liên kết đặt lại mật khẩu",
+  terms_accepted: "Điều khoản sử dụng",
+  privacy_accepted: "Chính sách bảo vệ dữ liệu cá nhân",
+  party: "Đối tượng",
+  party_id: "Đối tượng",
+  party_type: "Loại đối tượng",
+  base_uom: "Đơn vị tính chính",
+  category: "Nhóm danh mục",
+  branch: "Chi nhánh",
+  branch_id: "Chi nhánh",
+  department: "Phòng ban / Đơn vị",
+  department_id: "Phòng ban / Đơn vị",
+  employee_code: "Mã nhân viên",
+  contract_type: "Loại hợp đồng",
+  identity_number: "Số CCCD/CMND",
+  identity_no: "Số CCCD/CMND",
+  date_of_birth: "Ngày sinh",
+  invoice_number: "Số hóa đơn",
+  serial: "Ký hiệu hóa đơn",
+  form_code: "Mẫu số hóa đơn",
+  payment_term: "Điều khoản thanh toán",
+  payment_method: "Phương thức thanh toán",
+  credit_limit: "Hạn mức công nợ",
+  due_days: "Số ngày được nợ",
+  opening_date: "Ngày mở sổ",
+  start_date: "Ngày bắt đầu",
+  end_date: "Ngày kết thúc",
+  from_date: "Từ ngày",
+  to_date: "Đến ngày",
+  bank_name: "Tên ngân hàng",
+  account_number: "Số tài khoản ngân hàng",
+  tax_rate: "Thuế suất",
+  vat_rate: "Thuế suất GTGT",
+  purchase_price: "Đơn giá mua",
+  sales_price: "Đơn giá bán",
+  unit_cost: "Đơn giá vốn",
+  debit: "Số tiền Nợ",
+  credit: "Số tiền Có",
+  file: "Tệp tải lên",
 };
 
 const IGNORED_META_KEYS = new Set([
@@ -126,6 +172,81 @@ function cleanSingleMessage(rawText: string, fieldKey?: string): string {
     return fieldLabel
       ? `Vui lòng nhập thông tin bắt buộc: ${fieldLabel}.`
       : "Vui lòng nhập đầy đủ các thông tin bắt buộc.";
+  }
+
+  if (lower.includes("a valid number is required") || lower.includes("a valid integer is required")) {
+    return fieldLabel
+      ? `${fieldLabel} phải là một giá trị số hợp lệ.`
+      : "Vui lòng nhập một giá trị số hợp lệ.";
+  }
+
+  if (lower.includes("date has wrong format") || lower.includes("datetime has wrong format")) {
+    return fieldLabel
+      ? `${fieldLabel} không đúng định dạng ngày tháng (vui lòng chọn hoặc nhập theo định dạng hợp lệ).`
+      : "Ngày tháng không đúng định dạng hợp lệ.";
+  }
+
+  const maxLenMatch = text.match(/ensure this field has no more than (\d+) characters/i);
+  if (maxLenMatch) {
+    return fieldLabel
+      ? `${fieldLabel} không được vượt quá ${maxLenMatch[1]} ký tự.`
+      : `Nội dung không được vượt quá ${maxLenMatch[1]} ký tự.`;
+  }
+
+  const minLenMatch = text.match(/ensure this field has at least (\d+) characters/i);
+  if (minLenMatch) {
+    return fieldLabel
+      ? `${fieldLabel} phải có ít nhất ${minLenMatch[1]} ký tự.`
+      : `Nội dung phải có ít nhất ${minLenMatch[1]} ký tự.`;
+  }
+
+  const minValMatch = text.match(/ensure this value is greater than or equal to ([\d.,-]+)/i);
+  if (minValMatch) {
+    return fieldLabel
+      ? `${fieldLabel} phải lớn hơn hoặc bằng ${minValMatch[1]}.`
+      : `Giá trị phải lớn hơn hoặc bằng ${minValMatch[1]}.`;
+  }
+
+  const maxValMatch = text.match(/ensure this value is less than or equal to ([\d.,-]+)/i);
+  if (maxValMatch) {
+    return fieldLabel
+      ? `${fieldLabel} phải nhỏ hơn hoặc bằng ${maxValMatch[1]}.`
+      : `Giá trị phải nhỏ hơn hoặc bằng ${maxValMatch[1]}.`;
+  }
+
+  if (lower.includes("enter a valid email address")) {
+    return fieldLabel
+      ? `${fieldLabel} không đúng định dạng email (ví dụ: ten@congty.vn).`
+      : "Địa chỉ email không đúng định dạng (ví dụ: ten@congty.vn).";
+  }
+
+  if (lower.includes("is not a valid choice")) {
+    return fieldLabel
+      ? `Giá trị đã chọn cho ${fieldLabel} không hợp lệ.`
+      : "Giá trị lựa chọn không hợp lệ.";
+  }
+
+  if (lower.includes("must be a valid uuid") || lower.includes("is not a valid uuid")) {
+    return fieldLabel
+      ? `Mã định danh của ${fieldLabel} không hợp lệ. Vui lòng chọn lại.`
+      : "Mã định danh dữ liệu không hợp lệ. Vui lòng tải lại trang và thử lại.";
+  }
+
+  if (lower.includes("you do not have permission to perform this action")) {
+    return "Bạn không có quyền thực hiện thao tác này trên doanh nghiệp hiện tại.";
+  }
+
+  if (lower.includes("authentication credentials were not provided")) {
+    return "Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.";
+  }
+
+  const throttleMatch = text.match(/request was throttled.*?(\d+)\s*seconds/i);
+  if (throttleMatch) {
+    return `Bạn thao tác quá nhanh. Vui lòng thử lại sau ${throttleMatch[1]} giây.`;
+  }
+
+  if (lower === "not found." || lower.includes("matches the given query")) {
+    return "Không tìm thấy bản ghi yêu cầu (có thể đã bị xóa hoặc bạn không có quyền truy cập).";
   }
 
   if (lower.includes("invalid pk") || lower.includes("object does not exist") || lower.includes("does not exist")) {
@@ -208,7 +329,13 @@ export function humanizeErrorMessage(body: unknown, status?: number): string {
     // Priority 3: field-level validation messages
     const messages: string[] = [];
     for (const [field, value] of Object.entries(obj)) {
-      if (IGNORED_META_KEYS.has(field.toLowerCase())) continue;
+      const lowerField = field.toLowerCase();
+      if (lowerField === "code") {
+        // Ignore machine-readable error codes (e.g. "pending_verification"), but keep OTP field validation messages.
+        if (typeof value === "string" && /^[a-z0-9_.-]+$/i.test(value.trim())) continue;
+      } else if (IGNORED_META_KEYS.has(lowerField)) {
+        continue;
+      }
       if (value === null || value === undefined || value === "") continue;
 
       if (Array.isArray(value)) {
@@ -325,31 +452,77 @@ export function classifyNoticeType(message: string): GlobalPopupType {
 
 export function GlobalFeedbackPopupHost() {
   const [popup, setPopup] = useState<GlobalPopupPayload | null>(null);
+  const [closing, setClosing] = useState(false);
+  const [paused, setPaused] = useState(false);
+
+  const dismissPopup = () => {
+    setClosing(true);
+  };
+
   useEffect(() => {
     const handler = (event: Event) => {
       const payload = (event as CustomEvent<GlobalPopupPayload>).detail;
-      if (payload?.message) setPopup(payload);
+      if (payload?.message) {
+        setClosing(false);
+        setPaused(false);
+        setPopup(payload);
+      }
     };
     window.addEventListener(POPUP_EVENT_NAME, handler);
     return () => window.removeEventListener(POPUP_EVENT_NAME, handler);
   }, []);
+
+  const duration = popup
+    ? (popup.autoCloseMs ?? (popup.type === "error" || popup.type === "warning" ? 5000 : 4000))
+    : 0;
+
   useEffect(() => {
     if (!popup) return;
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setPopup(null); };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismissPopup();
+    };
     window.addEventListener("keydown", onKey);
-    const duration = popup.autoCloseMs ?? 10000;
-    const timer = duration > 0 ? setTimeout(() => setPopup(null), duration) : null;
-    return () => { window.removeEventListener("keydown", onKey); if (timer) clearTimeout(timer); };
+    return () => window.removeEventListener("keydown", onKey);
   }, [popup]);
+
+  useEffect(() => {
+    if (!popup || closing || paused || duration <= 0) return;
+    const timer = window.setTimeout(() => setClosing(true), duration);
+    return () => window.clearTimeout(timer);
+  }, [popup, closing, paused, duration]);
+
+  useEffect(() => {
+    if (!closing) return;
+    const timer = window.setTimeout(() => {
+      setPopup(null);
+      setClosing(false);
+    }, 260);
+    return () => window.clearTimeout(timer);
+  }, [closing]);
+
   if (!popup) return null;
   const urgent = popup.type === "error" || popup.type === "warning";
   const Icon = popup.type === "error" ? XCircle : popup.type === "warning" ? AlertTriangle : popup.type === "success" ? CheckCircle2 : Info;
   const title = popup.title || (popup.type === "error" ? "Không thực hiện được" : popup.type === "warning" ? "Cần kiểm tra" : popup.type === "success" ? "Đã hoàn tất" : "Thông báo");
   return (
-    <section className={`feedback-toast ${popup.type}`} role={urgent ? "alert" : "status"} aria-live={urgent ? "assertive" : "polite"}>
+    <section
+      key={popup.id}
+      className={`feedback-toast ${popup.type}${closing ? " closing" : ""}${paused ? " paused" : ""}`}
+      role={urgent ? "alert" : "status"}
+      aria-live={urgent ? "assertive" : "polite"}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
       <Icon size={18} aria-hidden="true" />
       <div><strong>{title}</strong><p>{popup.message}</p></div>
-      <button type="button" aria-label="Đóng thông báo" onClick={() => setPopup(null)}><X size={16} /></button>
+      <button type="button" aria-label="Đóng thông báo" onClick={dismissPopup}><X size={16} /></button>
+      {duration > 0 && (
+        <span
+          className="feedback-toast-progress"
+          aria-hidden="true"
+          style={{ animationDuration: `${duration}ms` }}
+        />
+      )}
     </section>
   );
 }

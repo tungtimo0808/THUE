@@ -2194,7 +2194,7 @@ export const MISA_PAYMENT_TYPES: VoucherTypeOption[] = [
     defaultAddress: "",
     defaultReason: "Chi tiền cho",
     defaultDebit: "331",
-    defaultCredit: "111",
+    defaultCredit: "1111",
     defaultAmount: 0,
     hasEmployeeField: true,
     hasCustomerDebtBtn: true,
@@ -2221,7 +2221,7 @@ export const MISA_PAYMENT_TYPES: VoucherTypeOption[] = [
     defaultAddress: "",
     defaultReason: "Tạm ứng cho nhân viên",
     defaultDebit: "141",
-    defaultCredit: "111",
+    defaultCredit: "1111",
     defaultAmount: 0,
     hasEmployeeField: false,
     hasCustomerDebtBtn: false,
@@ -2249,7 +2249,7 @@ export const MISA_PAYMENT_TYPES: VoucherTypeOption[] = [
     defaultAddress: "",
     defaultReason: "Chi tiền cho",
     defaultDebit: "",
-    defaultCredit: "111",
+    defaultCredit: "1111",
     defaultAmount: 0,
     hasEmployeeField: false,
     hasCustomerDebtBtn: false,
@@ -2276,7 +2276,7 @@ export const MISA_PAYMENT_TYPES: VoucherTypeOption[] = [
     defaultAddress: "",
     defaultReason: "Trả lương tạm ứng cho nhân viên",
     defaultDebit: "334",
-    defaultCredit: "111",
+    defaultCredit: "1111",
     defaultAmount: 0,
     hasEmployeeField: false,
     hasCustomerDebtBtn: false,
@@ -2303,7 +2303,7 @@ export const MISA_PAYMENT_TYPES: VoucherTypeOption[] = [
     defaultAddress: "",
     defaultReason: "Trả lương nhân viên",
     defaultDebit: "334",
-    defaultCredit: "111",
+    defaultCredit: "1111",
     defaultAmount: 0,
     hasEmployeeField: false,
     hasCustomerDebtBtn: false,
@@ -2329,7 +2329,7 @@ export const MISA_PAYMENT_TYPES: VoucherTypeOption[] = [
     defaultAddress: "",
     defaultReason: "Gửi tiền vào ngân hàng",
     defaultDebit: "1121",
-    defaultCredit: "111",
+    defaultCredit: "1111",
     defaultAmount: 0,
     hasEmployeeField: false,
     hasCustomerDebtBtn: false,
@@ -2356,7 +2356,7 @@ export const MISA_PAYMENT_TYPES: VoucherTypeOption[] = [
     defaultAddress: "",
     defaultReason: "Chi tiền cho vay",
     defaultDebit: "1283",
-    defaultCredit: "111",
+    defaultCredit: "1111",
     defaultAmount: 0,
     hasEmployeeField: true,
     hasCustomerDebtBtn: false,
@@ -2382,7 +2382,7 @@ export const MISA_PAYMENT_TYPES: VoucherTypeOption[] = [
     defaultAddress: "",
     defaultReason: "Chi tiền cho",
     defaultDebit: "",
-    defaultCredit: "111",
+    defaultCredit: "1111",
     defaultAmount: 0,
     hasEmployeeField: true,
     hasCustomerDebtBtn: false,
@@ -2408,7 +2408,7 @@ export const MISA_PAYMENT_TYPES: VoucherTypeOption[] = [
     defaultAddress: "",
     defaultReason: "Nộp thuế thu nhập doanh nghiệp tạm tính",
     defaultDebit: "3334",
-    defaultCredit: "111",
+    defaultCredit: "1111",
     defaultAmount: 0,
     hasEmployeeField: false,
     hasCustomerDebtBtn: false,
@@ -2765,7 +2765,7 @@ export function CreateVoucherModal({
   const [bankAllocations, setBankAllocations] = useState<Array<{ payable: string; amount: string; discount: string }>>([]);
   const selectedBankProfile = (bankPaymentCatalog.profiles || []).find(row => row.id === bankProfileId);
   const selectedCompanyBankAccount = (bankPaymentCatalog.bankAccounts || []).find(row => row.id === selectedBankProfile?.account);
-  const bankCreditCode = selectedBankProfile?.gl_code || (selectedBankProfile?.currency_code === "VND" ? "1121" : "1122");
+  const bankCreditCode = selectedBankProfile?.gl_code || (!selectedBankProfile?.currency_code || selectedBankProfile.currency_code === "VND" ? "1121" : "1122");
   const previousBankCredit = useRef(bankCreditCode);
   useEffect(() => {
     if (!bankProfileId && bankPaymentCatalog.profiles?.length) {
@@ -2961,7 +2961,7 @@ export function CreateVoucherModal({
     ? (isBank ? (currentType.defaultDebit || "1121") : suggestedCashDebit)
     : (isBank ? suggestedBankDebit : (currentType.defaultDebit || ""));
   const initialCredit = !isReceipt
-    ? (isBank ? bankCreditCode : (currentType.defaultCredit || "111"))
+    ? (isBank ? bankCreditCode : (currentType.defaultCredit || "1111"))
     : (currentType.defaultCredit || "");
 
   // Rows state in detail table
@@ -3064,7 +3064,7 @@ export function CreateVoucherModal({
         prev.map((r) => ({
           ...r,
           debit: isReceipt ? suggestedCashDebit : (nextType.defaultDebit || r.debit),
-          credit: !isReceipt ? "111" : nextType.defaultCredit,
+          credit: !isReceipt ? "1111" : nextType.defaultCredit,
         }))
       );
     }
@@ -3402,7 +3402,7 @@ export function CreateVoucherModal({
       ? (isBank ? (currentType.defaultDebit || "1121") : suggestedCashDebit)
       : (isBank ? suggestedBankDebit : (currentType.defaultDebit || ""));
     const creditAccount = !isReceipt
-      ? (isBank ? bankCreditCode : (currentType.defaultCredit || "111"))
+      ? (isBank ? bankCreditCode : (currentType.defaultCredit || "1111"))
       : (currentType.defaultCredit || "");
     setRows((prev) => [
       ...prev,
@@ -3677,7 +3677,7 @@ export function CreateVoucherModal({
         ? (isBank ? (currentType.defaultDebit || "1121") : suggestedCashDebit)
         : (isBank ? suggestedBankDebit : (currentType.defaultDebit || ""));
       const creditAccount = !isReceipt
-        ? (isBank ? bankCreditCode : (currentType.defaultCredit || "111"))
+        ? (isBank ? bankCreditCode : (currentType.defaultCredit || "1111"))
         : (currentType.defaultCredit || "");
       setRows([
         {
@@ -7111,8 +7111,11 @@ export function CashForecastTab({ notify }: { notify: (msg: string) => void }) {
 
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItem.partner || !newItem.amount) {
-      notify("Vui lòng nhập đầy đủ đối tác và số tiền!");
+    const missing: string[] = [];
+    if (!newItem.partner?.trim()) missing.push("Đối tác");
+    if (!newItem.amount) missing.push("Số tiền");
+    if (missing.length > 0) {
+      notify(`Vui lòng nhập đầy đủ thông tin bắt buộc: ${missing.join(", ")}.`);
       return;
     }
     const dParts = newItem.date.split("-");
@@ -8019,7 +8022,8 @@ export function PaymentRequestsTab({
             onChange={(e) => setFilterStatus(e.target.value)}
             style={{
               height: 32,
-              padding: "0 10px",
+              lineHeight: "30px",
+              padding: "0 28px 0 10px",
               border: "1px solid #d1d5db",
               borderRadius: 6,
               fontSize: 12.5,
@@ -8058,7 +8062,7 @@ export function PaymentRequestsTab({
 
       {/* Table */}
       <div style={{ flex: "1 1 0%", minHeight: 180, overflowX: "auto", overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-        <table className="misa-tax-table" style={{ width: "100%", minWidth: 1260, borderCollapse: "collapse", tableLayout: "auto" }}>
+        <table className="misa-tax-table" style={{ width: "100%", minWidth: 860, borderCollapse: "collapse", tableLayout: "auto" }}>
           <thead>
             <tr>
               <th style={{ width: 32, textAlign: "center" }}><input type="checkbox" aria-label="Chọn tất cả" /></th>
@@ -8868,7 +8872,7 @@ export function AdvanceSettlementTab({
 
       {/* Table */}
       <div style={{ flex: "1 1 0%", minHeight: 180, overflowX: "auto", overflowY: "auto", background: "#ffffff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-        <table className="misa-tax-table" style={{ width: "100%", minWidth: 1260, borderCollapse: "collapse", tableLayout: "auto" }}>
+        <table className="misa-tax-table" style={{ width: "100%", minWidth: 860, borderCollapse: "collapse", tableLayout: "auto" }}>
           <thead>
             <tr>
               <th style={{ width: 32, textAlign: "center" }}><input type="checkbox" aria-label="Chọn tất cả" /></th>

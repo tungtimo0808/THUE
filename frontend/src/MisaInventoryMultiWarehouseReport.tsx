@@ -127,7 +127,9 @@ export default function MisaInventoryMultiWarehouseReport({ onBack, embedded = f
       sheet["!cols"] = [{ wch: 18 }, { wch: 38 }, { wch: 10 }, ...Array.from({ length: 5 }, () => ({ wch: 20 }))];
       const book = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(book, sheet, "Nhap-xuat-ton");
       XLSX.writeFileXLSX(book, `tong-hop-nhap-xuat-ton-${applied.from}-${applied.to}.xlsx`);
-    } catch { setError("Xuất báo cáo Excel thất bại. Vui lòng thử lại."); }
+    } catch (caught) {
+      setError(`Xuất báo cáo Excel thất bại: ${caught instanceof Error ? caught.message : "Vui lòng kiểm tra quyền tải tệp trên trình duyệt và thử lại."}`);
+    }
     finally { setExporting(false); }
   }
   const sameUom = Boolean(report?.rows.length) && report!.rows.every((row) => row.uom === report!.rows[0].uom);

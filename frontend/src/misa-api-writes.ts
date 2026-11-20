@@ -2860,7 +2860,17 @@ export async function saveMoneyVoucher(w: ApiWriter, module: "cash" | "bank", d:
   const number = await nextVoucherNumber(w, path, module === "cash" ? (receipt ? "PT" : "PC") : (receipt ? "NTTK" : "UNC"), d.code);
   let record = await w.post(path, {
     ...(module === "cash"
-      ? { fund: fund?.id, currency: fund?.currency, payer_payee: counterpart }
+      ? {
+          fund: fund?.id,
+          currency: fund?.currency,
+          payer_payee: counterpart,
+          receipt_details: {
+            posting_date: date,
+            partner_code: rawPartnerCode || String(party?.code || ""),
+            partner_name: rawPartnerName || String(party?.name || ""),
+            lines,
+          },
+        }
       : { account: profile?.id, currency: profile?.currency_id || profile?.currency, counterparty_name: counterpart }),
     number, transaction_type: receipt ? "RECEIPT" : "PAYMENT", business_type: "GENERAL",
     transaction_date: date, party: party?.id || null, amount: String(amount), description,
@@ -2872,10 +2882,12 @@ export async function saveMoneyVoucher(w: ApiWriter, module: "cash" | "bank", d:
   } catch (error) {
     return { record, message: `Đã lưu ${label} ${number} nhưng chưa ghi sổ: ${errorText(error)}` };
   }
-  try {
-    record = await w.action(path, record.id, "post-gl", { lines });
-  } catch (error) {
-    return { record, message: `Đã ghi sổ quỹ ${label} ${number} nhưng chưa hạch toán sổ cái: ${errorText(error)}` };
+  if (record.gl_status !== "POSTED") {
+    try {
+      record = await w.action(path, record.id, "post-gl", { lines });
+    } catch (error) {
+      return { record, message: `Đã ghi sổ quỹ ${label} ${number} nhưng chưa hạch toán sổ cái: ${errorText(error)}` };
+    }
   }
   return { record, message: `Đã lưu và ghi sổ ${label} ${number} (${amount.toLocaleString("vi-VN")}đ, bút toán ${record.gl_reference}).` };
 }

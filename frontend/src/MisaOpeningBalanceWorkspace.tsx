@@ -2574,7 +2574,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         </option>
                       ))}
                     </select>
-                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Khách hàng")} style={{ width: 32, height: 32, padding: 0, justifyContent: "center" }}>
+                    <button type="button" title="Thêm khách hàng" aria-label="Thêm khách hàng" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Khách hàng")} style={{ width: 32, height: 32, padding: 0, justifyContent: "center" }}>
                       +
                     </button>
                   </div>
@@ -2720,7 +2720,7 @@ export default function MisaOpeningBalanceWorkspace({ notify }: MisaOpeningBalan
                         </option>
                       ))}
                     </select>
-                    <button type="button" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Nhà cung cấp")} style={{ width: 32, height: 32, padding: 0, justifyContent: "center" }}>+</button>
+                    <button type="button" title="Thêm nhà cung cấp" aria-label="Thêm nhà cung cấp" className="misa-opening-btn-secondary" onClick={() => navigate("/directory?directory=Nhà cung cấp")} style={{ width: 32, height: 32, padding: 0, justifyContent: "center" }}>+</button>
                   </div>
                 </div>
                 <div className="misa-opening-field" style={{ flex: 1 }}>

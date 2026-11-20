@@ -40,6 +40,14 @@ from .serializers import (
 )
 
 
+def _expose_dev_otp():
+    return settings.DEBUG and settings.EMAIL_BACKEND.endswith((
+        "locmem.EmailBackend",
+        "console.EmailBackend",
+        "dummy.EmailBackend",
+    ))
+
+
 class RegisterView(APIView):
     throttle_classes = (ScopedRateThrottle,)
     throttle_scope = "auth"
@@ -64,7 +72,7 @@ class RegisterView(APIView):
         if challenge and hasattr(challenge, "email_sent") and not challenge.email_sent:
             response_data["email_sent"] = False
             response_data["warning"] = "Chưa thể gửi mã xác thực. Vui lòng thử lại."
-        if settings.DEBUG and challenge and hasattr(challenge, "raw_code"):
+        if _expose_dev_otp() and challenge and hasattr(challenge, "raw_code"):
             response_data["dev_otp"] = challenge.raw_code
         status_code = status.HTTP_200_OK if is_resumed else status.HTTP_201_CREATED
         return Response(response_data, status=status_code)
@@ -107,7 +115,7 @@ class ResendVerificationView(APIView):
         if challenge and hasattr(challenge, "email_sent") and not challenge.email_sent:
             response_data["email_sent"] = False
             response_data["warning"] = "Chưa thể gửi mã xác thực. Vui lòng thử lại."
-        if settings.DEBUG and hasattr(challenge, "raw_code"):
+        if _expose_dev_otp() and hasattr(challenge, "raw_code"):
             response_data["dev_otp"] = challenge.raw_code
         return Response(response_data, status=status.HTTP_202_ACCEPTED)
 
@@ -123,7 +131,10 @@ class RegistrationEmailChangeView(APIView):
             serializer.validated_data["challenge"], serializer.validated_data["email"], request
         )
         response_data = {"challenge": str(challenge.id)}
-        if settings.DEBUG and hasattr(challenge, "raw_code"):
+        if challenge and hasattr(challenge, "email_sent") and not challenge.email_sent:
+            response_data["email_sent"] = False
+            response_data["warning"] = "Chưa thể gửi mã xác thực đến email mới. Vui lòng thử lại."
+        if _expose_dev_otp() and hasattr(challenge, "raw_code"):
             response_data["dev_otp"] = challenge.raw_code
         return Response(response_data, status=status.HTTP_202_ACCEPTED)
 
@@ -195,10 +206,10 @@ class PasswordResetRequestView(APIView):
         email_or_identifier = serializer.validated_data.get("email") or serializer.validated_data["identifier"]
         challenge = services.request_password_reset(email_or_identifier, request)
         response_data = {
-            "detail": "Nếu email đã được đăng ký, mã xác thực sẽ được gửi đến email.",
+            "detail": "Nếu email đã được đăng ký, liên kết đặt lại mật khẩu đã được gửi đến hộp thư của bạn.",
             "challenge": str(challenge.id),
         }
-        if settings.DEBUG and hasattr(challenge, "raw_code") and challenge.raw_code:
+        if _expose_dev_otp() and hasattr(challenge, "raw_code") and challenge.raw_code:
             response_data["dev_otp"] = challenge.raw_code
         return Response(response_data, status=status.HTTP_202_ACCEPTED)
 
@@ -547,9 +558,36 @@ class CompanyDiscoveryView(APIView):
             raise drf_serializers.ValidationError({"q": "Nhập ít nhất 2 ký tự."})
 
         try:
-            companies = Company.objects.filter(status="ACTIVE").filter(
-                Q(code__icontains=cleaned) | Q(name__icontains=cleaned) | Q(tax_code__icontains=cleaned)
-            )[:20]
+            import unicodedata
+
+            def _fold_vn(value: str) -> str:
+                norm = unicodedata.normalize("NFD", str(value or ""))
+                stripped = "".join(ch for ch in norm if unicodedata.category(ch) != "Mn")
+                return " ".join(stripped.replace("đ", "d").replace("Đ", "D").lower().split())
+
+            folded_q = _fold_vn(cleaned)
+            compact_q = folded_q.replace(" ", "")
+            direct = list(
+                Company.objects.filter(status="ACTIVE").filter(
+                    Q(code__icontains=cleaned) | Q(name__icontains=cleaned) | Q(tax_code__icontains=cleaned)
+                )[:20]
+            )
+            seen_ids = {c.id for c in direct}
+            companies = list(direct)
+            if len(companies) < 20 and folded_q:
+                for candidate in Company.objects.filter(status="ACTIVE").exclude(id__in=seen_ids).only(
+                    "id", "code", "name", "tax_code", "address", "status"
+                ).iterator(chunk_size=200):
+                    haystack = " ".join([
+                        _fold_vn(candidate.name),
+                        _fold_vn(candidate.code),
+                        _fold_vn(candidate.tax_code),
+                    ])
+                    if folded_q in haystack or (compact_q and compact_q in haystack.replace(" ", "")):
+                        companies.append(candidate)
+                        seen_ids.add(candidate.id)
+                        if len(companies) >= 20:
+                            break
             return Response([
                 {
                     "id": str(x.id),

@@ -7966,7 +7966,7 @@ export default function MisaToolsWorkspace({
                       className="ref-document-sheet"
                       style={{
                         background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
-                        border: "1px solid #34d399",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>GT</b>
@@ -7995,7 +7995,7 @@ export default function MisaToolsWorkspace({
                       className="ref-document-sheet"
                       style={{
                         background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
-                        border: "1px solid #34d399",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐC</b>
@@ -8025,7 +8025,7 @@ export default function MisaToolsWorkspace({
                       className="ref-document-sheet"
                       style={{
                         background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
-                        border: "1px solid #34d399",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>PB</b>
@@ -8056,7 +8056,7 @@ export default function MisaToolsWorkspace({
                       className="ref-document-sheet"
                       style={{
                         background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
-                        border: "1px solid #34d399",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>ĐCH</b>
@@ -8086,7 +8086,7 @@ export default function MisaToolsWorkspace({
                       className="ref-document-sheet"
                       style={{
                         background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
-                        border: "1px solid #34d399",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>GG</b>
@@ -8116,7 +8116,7 @@ export default function MisaToolsWorkspace({
                       className="ref-document-sheet"
                       style={{
                         background: "linear-gradient(90deg, #3b82f6, #1d4ed8)",
-                        border: "1px solid #34d399",
+                        border: "1px solid #60a5fa",
                       }}
                     >
                       <b style={{ color: "#ffffff", fontWeight: 800 }}>KK</b>

@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  MoreVertical,
   Plus,
   RefreshCw,
   Search,
@@ -312,6 +313,7 @@ export default function MisaDirectoryWorkspace({
   const employeeDirectory = definition?.name === "Nhân viên";
   const itemDirectory = definition?.name === "Vật tư hàng hóa";
   const vendorDirectory = definition?.name === "Nhà cung cấp";
+  const customerDirectory = definition?.name === "Khách hàng";
   const warehouseDirectory = definition?.name === "Kho";
   const bankAccDirectory = definition?.name === "Tài khoản ngân hàng";
   const customerOrVendor = definition?.name === "Khách hàng" || vendorDirectory;
@@ -400,14 +402,24 @@ export default function MisaDirectoryWorkspace({
       ? { id: safeRandomUUID(), values: definition.radios.length ? { Loại: definition.radios[0] } : {} }
       : null,
   );
+  const [editorReadOnly, setEditorReadOnly] = useState(false);
+  const [openActionRowId, setOpenActionRowId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [pageSize, setPageSize] = useState(20);
   const [page, setPage] = useState(1);
   const [tab, setTab] = useState(initialCreate ? definition?.tabs[0] || "" : "");
   const editorRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!openActionRowId) return;
+    const handleDocClick = () => setOpenActionRowId(null);
+    document.addEventListener("click", handleDocClick);
+    return () => document.removeEventListener("click", handleDocClick);
+  }, [openActionRowId]);
+
   const closeEditor = () => {
     setEditor(null);
+    setEditorReadOnly(false);
     onEditorClose?.();
   };
   const updateEditor = (key: string, value: string) =>
@@ -777,7 +789,8 @@ export default function MisaDirectoryWorkspace({
     return [];
   };
 
-  const showEditor = (row?: DirectoryRow) => {
+  const showEditor = (row?: DirectoryRow, readOnly = false) => {
+    setEditorReadOnly(readOnly);
     setEditor(
       row
         ? structuredClone(row)
@@ -906,6 +919,68 @@ export default function MisaDirectoryWorkspace({
     );
     reloadApi();
     return true;
+  };
+
+  const toggleCustomerStatus = async (row: DirectoryRow) => {
+    if (!apiConnected || !companyId || !token) return;
+    const raw = (apiRows.entries || []).find((entry) => String(entry.id) === row.id);
+    const isCurrentlyActive = (raw?.status || "ACTIVE") === "ACTIVE";
+    const nextStatus = isCurrentlyActive ? "INACTIVE" : "ACTIVE";
+    let reason = "";
+    if (isCurrentlyActive) {
+      const input = window.prompt(
+        `Nhập lý do ngừng sử dụng khách hàng "${row.values["Tên khách hàng"] || row.values["Mã khách hàng"] || ""}":`,
+        "Ngừng giao dịch",
+      );
+      if (input === null) return;
+      reason = input.trim() || "Ngừng giao dịch";
+    } else if (!window.confirm("Kích hoạt lại khách hàng này?")) {
+      return;
+    }
+    const payload: Record<string, any> = { status: nextStatus, reason };
+    if (raw?.version !== undefined) payload.version = raw.version;
+    const res = await request<Record<string, any>>(
+      `/api/v1/master-data/customers/${row.id}/set-status/?company_id=${encodeURIComponent(companyId)}`,
+      token,
+      { method: "POST", body: JSON.stringify(payload) },
+    );
+    reloadApi();
+    notify(
+      res?.warning ||
+        (nextStatus === "INACTIVE"
+          ? "Đã ngừng sử dụng khách hàng."
+          : "Đã kích hoạt lại khách hàng."),
+    );
+  };
+
+  const deleteCustomerRow = async (row: DirectoryRow) => {
+    if (!apiConnected || !companyId || !token) return;
+    const label = row.values["Tên khách hàng"] || row.values["Mã khách hàng"] || "khách hàng này";
+    if (!window.confirm(`Xóa khách hàng "${label}"? (Chỉ xóa được khi chưa phát sinh dữ liệu)`)) {
+      return;
+    }
+    await request(
+      `/api/v1/master-data/customers/${row.id}/?company_id=${encodeURIComponent(companyId)}`,
+      token,
+      { method: "DELETE" },
+    );
+    reloadApi();
+    notify(`Đã xóa khách hàng "${label}".`);
+  };
+
+  const createSalesVoucherForCustomer = (row: DirectoryRow) => {
+    const raw = (apiRows.entries || []).find((entry) => String(entry.id) === row.id);
+    const params = new URLSearchParams();
+    params.set("create", "sale");
+    const code = String(raw?.code || row.values["Mã khách hàng"] || "").trim();
+    const name = String(raw?.name || row.values["Tên khách hàng"] || "").trim();
+    const taxCode = String(raw?.tax_code || row.values["Mã số thuế/CCCD chủ hộ"] || "").trim();
+    const address = String(raw?.default_address || row.values["Địa chỉ"] || "").trim();
+    if (code) params.set("customerCode", code);
+    if (name) params.set("customerName", name);
+    if (taxCode) params.set("taxCode", taxCode);
+    if (address) params.set("address", address);
+    directoryNavigate(`/sales?${params.toString()}`);
   };
 
   const exportEmployees = async () => {
@@ -1603,7 +1678,7 @@ export default function MisaDirectoryWorkspace({
         </button>
         <h1>{definition.name}</h1>
         {definition.canAdd && (
-          <button disabled={employeeDirectory && !apiConnected} onClick={() => showEditor()}>
+          <button type="button" onClick={() => showEditor()}>
             <Plus size={15} /> Thêm
           </button>
         )}
@@ -1774,9 +1849,144 @@ export default function MisaDirectoryWorkspace({
                   {headers.map((header) => (
                     <td key={header}>
                       {header === "Chức năng" ? (
+                        customerDirectory ? (
+                          <div style={{ position: "relative", display: "inline-flex", justifyContent: "center" }}>
+                            <button
+                              type="button"
+                              aria-label={`Thao tác khách hàng ${row.values["Mã khách hàng"] || ""}`}
+                              title="Thao tác"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenActionRowId((prev) => (prev === row.id ? null : row.id));
+                              }}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: 28,
+                                height: 28,
+                                padding: 0,
+                                borderRadius: 6,
+                                border: "1px solid #e2e8f0",
+                                background: openActionRowId === row.id ? "#f1f5f9" : "#ffffff",
+                                color: "#334155",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <MoreVertical size={15} />
+                            </button>
+                            {openActionRowId === row.id && (() => {
+                              const raw = (apiRows.entries || []).find((entry) => String(entry.id) === row.id);
+                              const isInactive = (raw?.status || "ACTIVE") !== "ACTIVE";
+                              const menuBtnStyle: React.CSSProperties = {
+                                display: "block",
+                                width: "100%",
+                                textAlign: "left",
+                                padding: "7px 12px",
+                                border: "none",
+                                background: "transparent",
+                                fontSize: 13,
+                                color: "#1e293b",
+                                cursor: "pointer",
+                                whiteSpace: "nowrap",
+                              };
+                              return (
+                                <div
+                                  role="menu"
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    position: "absolute",
+                                    right: 0,
+                                    top: "calc(100% + 4px)",
+                                    zIndex: 60,
+                                    minWidth: 185,
+                                    background: "#ffffff",
+                                    border: "1px solid #e2e8f0",
+                                    borderRadius: 8,
+                                    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.14)",
+                                    padding: "4px 0",
+                                  }}
+                                >
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    style={menuBtnStyle}
+                                    onClick={() => {
+                                      setOpenActionRowId(null);
+                                      showEditor(row, true);
+                                    }}
+                                  >
+                                    Xem
+                                  </button>
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    style={menuBtnStyle}
+                                    onClick={() => {
+                                      setOpenActionRowId(null);
+                                      showEditor(row, false);
+                                    }}
+                                  >
+                                    Sửa
+                                  </button>
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    style={menuBtnStyle}
+                                    onClick={() => {
+                                      setOpenActionRowId(null);
+                                      createSalesVoucherForCustomer(row);
+                                    }}
+                                  >
+                                    Lập chứng từ bán hàng
+                                  </button>
+                                  {canWriteApi && (
+                                    <>
+                                      <div style={{ height: 1, background: "#f1f5f9", margin: "4px 0" }} />
+                                      <button
+                                        type="button"
+                                        role="menuitem"
+                                        style={menuBtnStyle}
+                                        onClick={() => {
+                                          setOpenActionRowId(null);
+                                          toggleCustomerStatus(row).catch((reason) =>
+                                            notify(
+                                              reason instanceof Error
+                                                ? reason.message
+                                                : "Không đổi được trạng thái khách hàng.",
+                                            ),
+                                          );
+                                        }}
+                                      >
+                                        {isInactive ? "Kích hoạt lại" : "Ngừng sử dụng"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        role="menuitem"
+                                        style={{ ...menuBtnStyle, color: "#dc2626" }}
+                                        onClick={() => {
+                                          setOpenActionRowId(null);
+                                          deleteCustomerRow(row).catch((reason) =>
+                                            notify(
+                                              reason instanceof Error
+                                                ? reason.message
+                                                : "Không thể xóa khách hàng (có thể đã phát sinh dữ liệu).",
+                                            ),
+                                          );
+                                        }}
+                                      >
+                                        Xóa
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        ) : (
                         <div style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
                           {definition.canAdd || writableDirectories.has(definition.name) ? (
-                            <button onClick={() => showEditor(row)}>Sửa</button>
+                            <button type="button" onClick={() => showEditor(row)}>Sửa</button>
                           ) : (
                             <span style={{ color: "#64748b", fontSize: 12 }}>Chuẩn hệ thống</span>
                           )}
@@ -1852,6 +2062,7 @@ export default function MisaDirectoryWorkspace({
                               </button>
                             )}
                         </div>
+                        )
                       ) : (
                         row.values[header]
                       )}
@@ -1918,7 +2129,10 @@ export default function MisaDirectoryWorkspace({
             aria-label={`Thông tin ${definition.name.toLocaleLowerCase("vi")}`}
           >
             <header>
-              <h2>Thông tin {definition.name.toLocaleLowerCase("vi")}</h2>
+              <h2>
+                {editorReadOnly ? "Xem thông tin" : "Thông tin"}{" "}
+                {definition.name.toLocaleLowerCase("vi")}
+              </h2>
               <button
                 aria-label="Đóng thông tin danh mục"
                 onClick={() => closeEditor()}
@@ -1926,6 +2140,10 @@ export default function MisaDirectoryWorkspace({
                 <X size={20} />
               </button>
             </header>
+            <fieldset
+              disabled={editorReadOnly}
+              style={{ border: "none", padding: 0, margin: 0, minWidth: 0, display: "contents" }}
+            >
             <div className="md-editor-body">
               {definition.radios.length > 0 && (
                 <div
@@ -2085,7 +2303,8 @@ export default function MisaDirectoryWorkspace({
                 </>
               )}
             </div>
-            {definition.name === "Tài khoản ngân hàng" && (
+            </fieldset>
+            {false && definition.name === "Tài khoản ngân hàng" && (
               <div
                 style={{
                   padding: "12px 18px",
@@ -2114,17 +2333,32 @@ export default function MisaDirectoryWorkspace({
               </p>
             )}
             <footer>
-              <button onClick={() => closeEditor()}>Hủy</button>
-              <button className="md-secondary-save" onClick={() => save()}>
-                Lưu
-              </button>
-              <MisaSaveSplitButton
-                defaultMode="save_and_add"
-                showPrint={false}
-                height={34}
-                onSaveAndClose={() => save(false)}
-                onSaveAndAdd={() => save(true)}
-              />
+              {editorReadOnly ? (
+                <>
+                  <button type="button" onClick={() => closeEditor()}>Đóng</button>
+                  <button
+                    type="button"
+                    className="md-secondary-save"
+                    onClick={() => setEditorReadOnly(false)}
+                  >
+                    Sửa
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" onClick={() => closeEditor()}>Hủy</button>
+                  <button type="button" className="md-secondary-save" onClick={() => save()}>
+                    Lưu
+                  </button>
+                  <MisaSaveSplitButton
+                    defaultMode="save_and_add"
+                    showPrint={false}
+                    height={34}
+                    onSaveAndClose={() => save(false)}
+                    onSaveAndAdd={() => save(true)}
+                  />
+                </>
+              )}
             </footer>
           </div>
         </div>

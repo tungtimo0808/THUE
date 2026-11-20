@@ -262,7 +262,6 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("advance-settlement", "Đề nghị quyết toán tạm ứng"),
     node("reconciliation", "Đối chiếu ngân hàng"),
     node("cashflow", "Dự báo dòng tiền"),
-    node("ebanking", "Ngân hàng điện tử"),
     node("loans", "Khế ước cho vay"),
     node("borrowings", "Khế ước đi vay"),
     node("extended-apis", "Nghiệp vụ mở rộng"),
@@ -381,7 +380,6 @@ const auditedTabs: Record<string, ReferenceTabNode[]> = {
     node("transfer", "Điều chuyển"),
     node("decrease", "Ghi giảm"),
     node("stocktake", "Kiểm kê"),
-    node("extended-apis", "Nghiệp vụ mở rộng"),
     node("reports", "Báo cáo"),
   ],
   payroll: [

@@ -26,7 +26,6 @@ export const MISA_MODULE_FLYOUTS: Record<string, MisaFlyoutModule> = {
       { label: "Thu, chi tiền", path: "/bank/transactions" },
       { label: "Đối chiếu ngân hàng", path: "/bank/reconciliation" },
       { label: "Dự báo dòng tiền", path: "/bank/cashflow" },
-      { label: "Ngân hàng điện tử", path: "/bank/ebanking" },
       { label: "Khế ước đi vay", path: "/bank/borrowings" },
     ],
     utilities: [

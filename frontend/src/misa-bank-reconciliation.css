@@ -62,11 +62,24 @@
 .br-workspace input,
 .br-workspace select {
   font: inherit;
+  height: 34px;
+  min-height: 34px;
   border: 1px solid #cfd4da;
-  border-radius: 3px;
-  padding: 7px 9px;
+  border-radius: 4px;
+  padding: 0 10px;
   max-width: 100%;
   box-sizing: border-box;
+}
+.br-filters button,
+.br-statement-filters button {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 4px;
 }
 .br-workspace input[type="checkbox"] {
   accent-color: var(--brand);

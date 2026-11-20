@@ -54,14 +54,18 @@ export function parseMoneyInput(raw: string): number {
   const trimmed = raw.trim();
   if (!trimmed) return 0;
   const negative = trimmed.startsWith("-");
-  // In Vietnamese money inputs, "." is the thousands separator (e.g. "73.000" -> typing "0" gives "73.0000"),
-  // while "," is the decimal separator ("730.000,00"). Never strip ".0+" unless US comma-thousands are present.
-  const withoutTrailingZeroDecimals = /,\d{3}\.0+$/.test(trimmed)
-    ? trimmed.replace(/\.0+$/, "")
-    : trimmed.replace(/,0+$/, "");
-  const digits = withoutTrailingZeroDecimals.replace(/\D/g, "");
+  // Only strip 1-2 digit trailing zero decimals when matching full formatted currency strings
+  // (e.g. "730.000,00" or "730,000.00"). Never strip ".0000" or ",0000" when user types "0" at the end.
+  let cleaned = trimmed;
+  if (/^-?\d{1,3}(?:,\d{3})+\.0{1,2}$/.test(cleaned)) {
+    cleaned = cleaned.replace(/\.0{1,2}$/, "");
+  } else if (/^-?\d{1,3}(?:\.\d{3})+,0{1,2}$/.test(cleaned)) {
+    cleaned = cleaned.replace(/,0{1,2}$/, "");
+  }
+  const digits = cleaned.replace(/\D/g, "");
   if (!digits) return 0;
   const num = Number(digits);
+  if (!Number.isFinite(num)) return 0;
   return negative ? -num : num;
 }
 

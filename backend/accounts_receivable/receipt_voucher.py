@@ -245,7 +245,7 @@ def transition(voucher, action, request):
         voucher.cancel_reason = reason
         voucher.cancelled_at = timezone.now()
     else:
-        raise ValidationError("Thao tác không hợp lệ.")
+        raise ValidationError(f"Thao tác '{action}' không được hỗ trợ cho phiếu thu ở trạng thái hiện tại.")
     voucher.save()
     if action in {"submit","approve","reject","request_revision"} and voucher.workflow_snapshot.get("version_id"):
         from approval_workflows.requests import sync_source_decision

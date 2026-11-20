@@ -57,15 +57,15 @@ def validate_method_selection(method, *, company, scope, on_date, reference="", 
         if not cash_fund:
             raise ValidationError({"cash_fund": "Cash fund is required."})
         if cash_fund.company_id != company.pk or cash_fund.status != "ACTIVE":
-            raise ValidationError({"cash_fund": "Cash fund is not active in this company."})
+            raise ValidationError({"cash_fund": "Quỹ tiền mặt được chọn không hoạt động trong doanh nghiệp này."})
         if bank_account:
-            raise ValidationError({"company_bank_account": "Cash method cannot use a bank account."})
+            raise ValidationError({"company_bank_account": "Phương thức tiền mặt không được gắn tài khoản ngân hàng."})
     elif cash_fund:
-        raise ValidationError({"cash_fund": "Cash fund is only valid for a cash method."})
+        raise ValidationError({"cash_fund": "Quỹ tiền mặt chỉ áp dụng cho phương thức thanh toán bằng tiền mặt."})
     if bank_account and (bank_account.company_id != company.pk or bank_account.status != "ACTIVE"):
-        raise ValidationError({"company_bank_account": "Bank account is not active in this company."})
+        raise ValidationError({"company_bank_account": "Tài khoản ngân hàng được chọn không hoạt động trong doanh nghiệp này."})
     if bank_account and ((scope == "RECEIPT" and not bank_account.allow_receipt) or (scope == "PAYMENT" and not bank_account.allow_payment)):
-        raise ValidationError({"company_bank_account": "Bank account does not allow this direction."})
+        raise ValidationError({"company_bank_account": "Tài khoản ngân hàng không hỗ trợ chiều thu/chi đã chọn."})
     if method.requires_bank_account and not bank_account:
         raise ValidationError({"company_bank_account": "Bank account is required."})
 
@@ -137,7 +137,7 @@ class PaymentMethodViewSet(ModelViewSet):
     def company_id(self):
         value = self.request.query_params.get("company_id")
         if not value:
-            raise ValidationError({"company_id": "Working company is required."})
+            raise ValidationError({"company_id": "Vui lòng chọn doanh nghiệp làm việc."})
         return value
 
     def get_queryset(self):
@@ -155,11 +155,11 @@ class PaymentMethodViewSet(ModelViewSet):
     def _check_company(self, serializer):
         company = serializer.validated_data.get("company") or getattr(serializer.instance, "company", None)
         if not company or str(company.pk) != str(self.company_id()):
-            raise ValidationError({"company": "Company does not match working company."})
+            raise ValidationError({"company": "Doanh nghiệp của bản ghi không khớp với doanh nghiệp đang làm việc."})
 
     def _check_version(self, method):
         if str(self.request.data.get("version")) != str(method.version):
-            raise ValidationError({"version": "Record changed; reload before editing."})
+            raise ValidationError({"version": "Dữ liệu đã được thay đổi ở phiên khác. Vui lòng tải lại trước khi sửa."})
 
     def _used(self, method):
         from accounts_payable.models import Payment, SupplierInvoice
@@ -202,7 +202,7 @@ class PaymentMethodViewSet(ModelViewSet):
         Company.objects.select_for_update().get(pk=self.company_id())
         data = serializer.validated_data
         if self._used(method) and (data.get("code", method.code).strip().upper() != method.code or data.get("group", method.group) != method.group):
-            raise ValidationError({"detail": "Code and group cannot change after use."})
+            raise ValidationError({"detail": "Không thể đổi mã hoặc nhóm phương thức thanh toán sau khi đã sử dụng."})
         before = self.get_serializer(method).data
         method = serializer.save(version=method.version + 1)
         self._assign_defaults(method)
@@ -258,7 +258,7 @@ class PaymentMethodViewSet(ModelViewSet):
             method = self.get_object()
             self._check_version(method)
             if not method.is_available(timezone.localdate(), scope):
-                raise ValidationError({"scope": "Method is not available today."})
+                raise ValidationError({"scope": "Phương thức thanh toán hiện không nằm trong thời gian hiệu lực."})
             before = self.get_serializer(method).data
             setattr(method, "default_receipt" if scope == "RECEIPT" else "default_payment", True)
             method.version += 1
@@ -312,7 +312,7 @@ class PaymentMethodViewSet(ModelViewSet):
                 continue
             data = dict(row)
             if str(data.get("company")) != str(self.company_id()):
-                errors.append({"row": number, "errors": {"company": "Company does not match working company."}})
+                errors.append({"row": number, "errors": {"company": "Doanh nghiệp của bản ghi không khớp với doanh nghiệp đang làm việc."}})
                 continue
             code = str(data.get("code", "")).strip().upper()
             if code in seen:
@@ -346,7 +346,7 @@ class PaymentMethodViewSet(ModelViewSet):
             for serializer in valid:
                 serializer.validate(serializer.validated_data)
                 if serializer.instance and self._used(serializer.instance) and serializer.validated_data.get("group", serializer.instance.group) != serializer.instance.group:
-                    raise ValidationError({"group": "Group cannot change after use."})
+                    raise ValidationError({"group": "Không thể thay đổi nhóm phương thức thanh toán sau khi đã sử dụng."})
                 before = self.get_serializer(serializer.instance).data if serializer.instance else None
                 try:
                     method = serializer.save(version=serializer.instance.version + 1) if serializer.instance else serializer.save()

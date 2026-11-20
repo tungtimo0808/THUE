@@ -106,13 +106,13 @@ def serialize_error(exc):
 def parse_upload(upload):
     max_bytes, max_rows = limits()
     if upload.size > max_bytes:
-        raise ValidationError({"file": f"File exceeds {max_bytes} bytes."})
+        raise ValidationError({"file": f"Dung lượng tệp vượt quá giới hạn cho phép ({max_bytes} byte)."})
     suffix = upload.name.rsplit(".", 1)[-1].lower()
     if suffix not in ("csv", "xlsx"):
-        raise ValidationError({"file": "CSV or XLSX file is required."})
+        raise ValidationError({"file": "Chỉ hỗ trợ tệp định dạng CSV hoặc XLSX."})
     raw = upload.read(max_bytes + 1)
     if len(raw) > max_bytes:
-        raise ValidationError({"file": "File is too large."})
+        raise ValidationError({"file": "Dung lượng tệp quá lớn. Vui lòng chia nhỏ tệp và thử lại."})
     try:
         if suffix == "csv":
             text = raw.decode("utf-8-sig")
@@ -131,13 +131,13 @@ def parse_upload(upload):
             finally:
                 workbook.close()
     except (UnicodeDecodeError, csv.Error, ValueError, OSError, KeyError, TypeError, ImportError) as exc:
-        raise ValidationError({"file": "Unreadable file."}) from exc
+        raise ValidationError({"file": "Không thể đọc tệp tải lên. Vui lòng kiểm tra tệp có bị hỏng hoặc đặt mật khẩu không."}) from exc
     if not headers or not all(headers) or len(set(headers)) != len(headers) or not rows:
-        raise ValidationError({"file": "A unique header and at least one data row are required."})
+        raise ValidationError({"file": "Tệp phải có dòng tiêu đề duy nhất và ít nhất một dòng dữ liệu."})
     if len(rows) > max_rows:
-        raise ValidationError({"file": f"File exceeds {max_rows} rows."})
+        raise ValidationError({"file": f"Số dòng dữ liệu vượt quá giới hạn tối đa ({max_rows} dòng)."})
     if any(None in row or any(isinstance(value, str) and value.lstrip().startswith("=") for value in row.values()) for row in rows):
-        raise ValidationError({"file": "Malformed rows or formulas are not allowed."})
+        raise ValidationError({"file": "Tệp chứa dòng sai định dạng hoặc công thức Excel không được phép nhập."})
     return headers, rows, raw
 
 
@@ -186,10 +186,10 @@ def resolve_references(data, target, company):
             continue
         related = field.remote_field.model
         if related is Company:
-            raise ValidationError({name: "Company is selected by the session."})
+            raise ValidationError({name: "Doanh nghiệp được xác định tự động theo phiên làm việc hiện tại."})
         identifier = "employee_code" if related is Employee else "code"
         if not any(f.name == identifier for f in related._meta.fields):
-            raise ValidationError({name: "Reference by business code is unavailable."})
+            raise ValidationError({name: "Không hỗ trợ tham chiếu theo mã nghiệp vụ cho trường này."})
         queryset = related.objects.filter(**{f"{identifier}__iexact": str(value).strip()})
         if any(f.name == "company" for f in related._meta.fields):
             queryset = queryset.filter(company=company)
@@ -197,7 +197,7 @@ def resolve_references(data, target, company):
             queryset = queryset.filter(company=company)
         obj = queryset.first()
         if not obj or (hasattr(obj, "status") and obj.status != "ACTIVE") or (hasattr(obj, "is_active") and not obj.is_active):
-            raise ValidationError({name: f"Active reference code {value} was not found in this company."})
+            raise ValidationError({name: f"Không tìm thấy mã tham chiếu đang hoạt động '{value}' trong doanh nghiệp này."})
         converted[name] = str(obj.pk)
     return converted
 
@@ -237,15 +237,15 @@ def process_rows(batch, request=None, *, commit=False):
             try:
                 with transaction.atomic():
                     if existing and "status" in row.mapped_data and row.mapped_data["status"] != existing.status:
-                        raise ValidationError({"status": "Use the catalogue status action instead of import update."})
+                        raise ValidationError({"status": "Vui lòng dùng chức năng đổi trạng thái trên danh mục thay vì cập nhật qua nhập khẩu."})
                     if not existing and target.model is models.Party and row.mapped_data.get("status", "ACTIVE") not in ("ACTIVE", "DRAFT", "INACTIVE"):
-                        raise ValidationError({"status": "Unsupported initial party status."})
+                        raise ValidationError({"status": "Trạng thái khởi tạo của đối tượng không được hỗ trợ."})
                     if existing and target.model is Account and "chart_of_accounts" in row.mapped_data and row.mapped_data["chart_of_accounts"].strip().upper() != existing.chart_of_accounts.code.upper():
-                        raise ValidationError({"chart_of_accounts": "Move accounts through the chart management workflow."})
+                        raise ValidationError({"chart_of_accounts": "Vui lòng di chuyển tài khoản trong màn hình quản lý Hệ thống tài khoản."})
                     if existing and batch.target == "payment-methods" and row.mapped_data.get("group", existing.group) != existing.group and PaymentMethodViewSet()._used(existing):
-                        raise ValidationError({"group": "Group cannot change after use."})
+                        raise ValidationError({"group": "Không thể thay đổi nhóm sau khi bản ghi đã phát sinh sử dụng."})
                     if existing and batch.target == "tax-rates" and existing.tax_type_ref.source != "COMPANY":
-                        raise PermissionDenied("System tax rate cannot be edited.")
+                        raise PermissionDenied("Không được phép chỉnh sửa thuế suất mặc định của hệ thống.")
                     data = resolve_references(row.mapped_data, target, batch.company)
                     if not batch.created_by.auth_user.is_superuser:
                         branch_id = data.get("branch") or getattr(existing, "branch_id", None)
@@ -254,7 +254,7 @@ def process_rows(batch, request=None, *, commit=False):
                                  "bank_account_id": existing.pk if target.model is models.CompanyBankAccount and existing else None}
                         for permission in ("IMPORT", "EDIT") if existing and batch.duplicate_mode == "UPDATE" else ("IMPORT",):
                             if not has_effective_permission(batch.created_by, batch.company, f"{target.resource}.{permission}", **scope):
-                                raise PermissionDenied("Row is outside the permitted data scope.")
+                                raise PermissionDenied("Dòng dữ liệu nằm ngoài phạm vi chi nhánh/dữ liệu được phân quyền.")
                     data["company"] = str(batch.company_id)
                     if batch.target == "tax-types":
                         data["source"] = "COMPANY"
@@ -295,19 +295,19 @@ def result_hash(rows, results):
 def execute_batch(batch, request=None):
     """Worker-safe execution. Caller owns the transaction and company lock."""
     if hashlib.sha256(batch.source_file).hexdigest() != batch.source_hash:
-        raise ValidationError({"file": "Stored source file failed integrity check."})
+        raise ValidationError({"file": "Tệp nguồn lưu trữ không khớp mã kiểm tra toàn vẹn. Vui lòng tải lên lại."})
     if batch.company.status != "ACTIVE":
-        raise ValidationError({"company": "Company is inactive."})
+        raise ValidationError({"company": "Doanh nghiệp đang ngừng hoạt động nên không thể thực hiện thao tác này."})
     if not batch.created_by.auth_user.is_superuser:
         target = TARGETS[batch.target]
         if not catalogue_grant(batch.created_by, batch.company, target, "IMPORT"):
-            raise PermissionDenied("Import permission was revoked.")
+            raise PermissionDenied("Quyền nhập khẩu danh mục của bạn đã bị thu hồi.")
         if batch.duplicate_mode == "UPDATE" and not catalogue_grant(batch.created_by, batch.company, target, "EDIT"):
-            raise PermissionDenied("Edit permission was revoked.")
+            raise PermissionDenied("Quyền chỉnh sửa danh mục của bạn đã bị thu hồi.")
     rows = list(batch.rows.all())
     current = process_rows(batch, request)
     if result_hash(rows, current) != batch.preview_hash:
-        raise ValidationError({"preview": "Catalogue changed since preview. Run preview again."}, code="conflict")
+        raise ValidationError({"preview": "Dữ liệu danh mục đã thay đổi sau khi xem trước. Vui lòng chạy xem trước lại."}, code="conflict")
     batch.status = "IMPORTING"
     batch.save(update_fields=("status",))
     results = process_rows(batch, request, commit=True)
@@ -340,24 +340,24 @@ class CatalogImportViewSet(viewsets.GenericViewSet):
     def _company(self):
         company_id = self.request.query_params.get("company_id")
         if not company_id:
-            raise ValidationError({"company_id": "Working company is required."})
+            raise ValidationError({"company_id": "Vui lòng chọn doanh nghiệp làm việc trước khi thực hiện."})
         try:
             return Company.objects.get(pk=company_id)
         except (Company.DoesNotExist, ValueError):
-            raise ValidationError({"company_id": "Unknown company."})
+            raise ValidationError({"company_id": "Không tìm thấy doanh nghiệp đã chọn."})
 
     def _authorize(self, company, target, *, update=False, view=False):
         if target not in TARGETS:
-            raise ValidationError({"target": "Unsupported catalogue."})
+            raise ValidationError({"target": "Loại danh mục nhập khẩu chưa được hỗ trợ."})
         if self.request.user.is_superuser:
             return
         account = getattr(self.request.user, "iam_account", None)
         config = TARGETS[target]
         action_code = "VIEW" if view else "IMPORT"
         if not account or not catalogue_grant(account, company, config, action_code):
-            raise PermissionDenied("Catalogue permission is required.")
+            raise PermissionDenied("Bạn chưa có quyền thao tác với danh mục này.")
         if update and not catalogue_grant(account, company, config, "EDIT"):
-            raise PermissionDenied("Edit permission is required for update mode.")
+            raise PermissionDenied("Bạn cần có quyền chỉnh sửa để sử dụng chế độ cập nhật dữ liệu.")
 
     def get_queryset(self):
         return self.queryset.filter(company=self._company())
@@ -365,10 +365,10 @@ class CatalogImportViewSet(viewsets.GenericViewSet):
     def _batch(self, pk, *, write=False):
         batch = self.get_queryset().filter(pk=pk).first()
         if not batch:
-            raise ValidationError({"batch": "Batch was not found."})
+            raise ValidationError({"batch": "Không tìm thấy lô nhập khẩu yêu cầu."})
         account = getattr(self.request.user, "iam_account", None)
         if not self.request.user.is_superuser and batch.created_by_id != getattr(account, "pk", None):
-            raise PermissionDenied("Only the batch owner can view it.")
+            raise PermissionDenied("Chỉ người tạo lô nhập khẩu mới có quyền xem lô này.")
         self._authorize(batch.company, batch.target, update=write and batch.duplicate_mode == "UPDATE")
         return batch
 
@@ -423,22 +423,22 @@ class CatalogImportViewSet(viewsets.GenericViewSet):
     def upload(self, request):
         company = self._company()
         if company.status != "ACTIVE":
-            raise ValidationError({"company": "Company is inactive."})
+            raise ValidationError({"company": "Doanh nghiệp đang ngừng hoạt động nên không thể thực hiện thao tác này."})
         target_name = request.data.get("target")
         mode = request.data.get("duplicate_mode", "ERROR")
         error_mode = request.data.get("error_mode", "ATOMIC")
         self._authorize(company, target_name, update=mode == "UPDATE")
         if mode not in ("ERROR", "SKIP", "UPDATE", "CREATE_ONLY") or error_mode not in ("ATOMIC", "PARTIAL"):
-            raise ValidationError({"mode": "Invalid duplicate or error mode."})
+            raise ValidationError({"mode": "Chế độ xử lý trùng lặp hoặc xử lý lỗi không hợp lệ."})
         upload = request.FILES.get("file")
         if not upload:
-            raise ValidationError({"file": "File is required."})
+            raise ValidationError({"file": "Vui lòng chọn tệp dữ liệu cần nhập khẩu."})
         headers, rows, raw = parse_upload(upload)
         allowed = fields_for(TARGETS[target_name])
         if set(headers) & SYSTEM_FIELDS or set(headers) & SECURE_FIELDS:
-            raise ValidationError({"file": "System or sensitive fields are not importable."})
+            raise ValidationError({"file": "Không được phép nhập khẩu các trường hệ thống hoặc trường bảo mật."})
         if target_name == "company-bank-accounts" and any(name.startswith("connection_") for name in headers):
-            raise ValidationError({"file": "Connection data is not importable."})
+            raise ValidationError({"file": "Không được phép nhập khẩu thông tin cấu hình kết nối."})
         with transaction.atomic():
             batch = models.CatalogImportBatch.objects.create(company=company, target=target_name, file_name=upload.name[:255],
                 source_file=raw, source_hash=hashlib.sha256(raw).hexdigest(), duplicate_mode=mode, error_mode=error_mode,
@@ -474,9 +474,9 @@ class CatalogImportViewSet(viewsets.GenericViewSet):
     def preview(self, request, pk=None):
         batch = self._batch(pk, write=True)
         if hashlib.sha256(batch.source_file).hexdigest() != batch.source_hash:
-            raise ValidationError({"file": "Stored source file failed integrity check."})
+            raise ValidationError({"file": "Tệp nguồn lưu trữ không khớp mã kiểm tra toàn vẹn. Vui lòng tải lên lại."})
         if batch.status not in ("UPLOADED", "ERROR", "READY"):
-            raise ValidationError({"status": "Batch cannot be previewed now."})
+            raise ValidationError({"status": "Lô nhập khẩu hiện không ở trạng thái cho phép xem trước."})
         mapping = request.data.get("mapping", batch.column_mapping or {
             name: name for name in batch.rows.first().source_data if name in fields_for(TARGETS[batch.target])
         })
@@ -492,7 +492,7 @@ class CatalogImportViewSet(viewsets.GenericViewSet):
         if any(source not in headers for source in mapping):
             raise ValidationError({"mapping": "Unknown source column."})
         if TARGETS[batch.target].key not in mapping.values():
-            raise ValidationError({"mapping": "Business code must be mapped."})
+            raise ValidationError({"mapping": "Vui lòng ghép cột Mã nghiệp vụ trước khi tiếp tục."})
         with transaction.atomic():
             batch.status = "VALIDATING"
             batch.column_mapping = mapping
@@ -518,16 +518,16 @@ class CatalogImportViewSet(viewsets.GenericViewSet):
     def confirm(self, request, pk=None):
         batch = self._batch(pk, write=True)
         if batch.status not in ("READY", "ERROR") or batch.status == "ERROR" and batch.error_mode != "PARTIAL":
-            raise ValidationError({"status": "Preview must be ready, or partial mode must be selected."})
+            raise ValidationError({"status": "Vui lòng hoàn tất bước xem trước hợp lệ hoặc chọn chế độ nhập từng phần."})
         with transaction.atomic():
             batch = models.CatalogImportBatch.objects.select_for_update().get(pk=batch.pk)
             if batch.status not in ("READY", "ERROR"):
-                raise ValidationError({"status": "Batch was already processed."})
+                raise ValidationError({"status": "Lô nhập khẩu này đã được xử lý trước đó."})
             Company.objects.select_for_update().get(pk=batch.company_id)
             rows = list(batch.rows.all())
             current = process_rows(batch, request)
             if result_hash(rows, current) != batch.preview_hash:
-                raise ValidationError({"preview": "Catalogue changed since preview. Run preview again."}, code="conflict")
+                raise ValidationError({"preview": "Dữ liệu danh mục đã thay đổi sau khi xem trước. Vui lòng chạy xem trước lại."}, code="conflict")
             threshold = int(getattr(settings, "CATALOG_IMPORT_BACKGROUND_ROWS", 1000))
             if batch.total_rows >= threshold:
                 batch.status = "QUEUED"

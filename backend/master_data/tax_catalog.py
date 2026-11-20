@@ -65,9 +65,9 @@ class TaxRateConfigSerializer(serializers.ModelSerializer):
         for key, value in attrs.items():
             setattr(instance, key, value)
         if not instance.tax_type_ref_id:
-            raise ValidationError({"tax_type_ref": "Tax type is required."})
+            raise ValidationError({"tax_type_ref": "Vui lòng chọn loại thuế."})
         if instance.tax_type_ref.status != "ACTIVE" and instance.status == "ACTIVE":
-            raise ValidationError({"tax_type_ref": "Tax type is inactive."})
+            raise ValidationError({"tax_type_ref": "Loại thuế đã chọn đang ngừng sử dụng."})
         instance.tax_type = instance.tax_type_ref.code
         _validate_model(instance)
         return attrs
@@ -97,16 +97,16 @@ class CatalogViewSet(ModelViewSet):
     def company_id(self):
         value = self.request.query_params.get("company_id")
         if not value:
-            raise ValidationError({"company_id": "Working company is required."})
+            raise ValidationError({"company_id": "Vui lòng chọn doanh nghiệp làm việc."})
         return value
 
     def _company_write(self, serializer):
         company_id = self.company_id()
         company = serializer.validated_data.get("company", getattr(serializer.instance, "company", None))
         if company is None or str(company.pk) != str(company_id):
-            raise ValidationError({"company": "Company does not match working company."})
+            raise ValidationError({"company": "Doanh nghiệp của bản ghi không khớp với doanh nghiệp đang làm việc."})
         if serializer.instance and str(self.request.data.get("version")) != str(serializer.instance.version):
-            raise ValidationError({"version": "Record changed; reload before editing."})
+            raise ValidationError({"version": "Dữ liệu đã được thay đổi ở phiên khác. Vui lòng tải lại trước khi sửa."})
 
     def audit(self, obj, action, before=None, after=None):
         record_audit(company=obj.company, actor_user=self.request.user.iam_account, module_code="MDM", action_code=action, entity=obj, before=before or {}, after=after or {}, request=self.request, source=AuditSource.IMPORT if action == "IMPORT" else AuditSource.API)
@@ -117,7 +117,7 @@ class CatalogViewSet(ModelViewSet):
         try:
             obj = serializer.save()
         except IntegrityError as exc:
-            raise ValidationError({"code": "Duplicate code or version."}) from exc
+            raise ValidationError({"code": "Mã hoặc phiên bản thuế suất đã tồn tại."}) from exc
         self.audit(obj, "CREATE", after=serializer.data)
 
     @transaction.atomic
@@ -125,10 +125,10 @@ class CatalogViewSet(ModelViewSet):
         self._company_write(serializer)
         obj = serializer.instance
         if isinstance(obj, TaxType) and obj.source != "COMPANY":
-            raise PermissionDenied("System tax type cannot be edited.")
+            raise PermissionDenied("Không được phép chỉnh sửa loại thuế mặc định của hệ thống.")
         before = self.get_serializer(obj).data
         if isinstance(obj, TaxRate) and obj.tax_type_ref.source != "COMPANY":
-            raise PermissionDenied("System tax rate cannot be edited.")
+            raise PermissionDenied("Không được phép chỉnh sửa thuế suất mặc định của hệ thống.")
         obj = serializer.save(version=obj.version + 1)
         self.audit(obj, "EDIT", before=before, after=self.get_serializer(obj).data)
 
@@ -136,9 +136,9 @@ class CatalogViewSet(ModelViewSet):
         with transaction.atomic():
             obj = self.get_object()
             if str(self.request.data.get("version")) != str(obj.version):
-                raise ValidationError({"version": "Record changed; reload before editing."})
+                raise ValidationError({"version": "Dữ liệu đã được thay đổi ở phiên khác. Vui lòng tải lại trước khi sửa."})
             if not active and isinstance(obj, TaxType) and obj.rates.filter(status="ACTIVE").exists():
-                raise ValidationError({"rates": "Deactivate active rates first."})
+                raise ValidationError({"rates": "Vui lòng ngừng sử dụng các mức thuế suất đang hoạt động trước."})
             before = self.get_serializer(obj).data
             obj.status = "ACTIVE" if active else "INACTIVE"
             _validate_model(obj)
@@ -169,7 +169,7 @@ class CatalogViewSet(ModelViewSet):
         rows = request.data.get("rows")
         if rows is None and request.FILES.get("file"):
             if request.FILES["file"].size > 2 * 1024 * 1024:
-                raise ValidationError({"file": "CSV file exceeds 2 MB."})
+                raise ValidationError({"file": "Tệp CSV vượt quá dung lượng tối đa 2 MB."})
             try:
                 content = request.FILES["file"].read().decode("utf-8-sig")
                 reader = csv.DictReader(io.StringIO(content))
@@ -183,7 +183,7 @@ class CatalogViewSet(ModelViewSet):
             except (UnicodeDecodeError, csv.Error, ValueError) as exc:
                 raise ValidationError({"file": str(exc)}) from exc
         if not isinstance(rows, list) or not rows or len(rows) > 500:
-            raise ValidationError({"rows": "Provide 1 to 500 records."})
+            raise ValidationError({"rows": "Số lượng bản ghi nhập khẩu phải từ 1 đến 500 dòng."})
         company_id = self.company_id()
         seen = set()
         serializers_list = []
@@ -195,7 +195,7 @@ class CatalogViewSet(ModelViewSet):
                 continue
             data = dict(row)
             if str(data.get("company")) != str(company_id):
-                errors.append({"row": index, "errors": {"company": "Company does not match working company."}})
+                errors.append({"row": index, "errors": {"company": "Doanh nghiệp của bản ghi không khớp với doanh nghiệp đang làm việc."}})
                 continue
             code = str(data.get("code", "")).strip().upper()
             key = (code, str(data.get("effective_from", ""))) if self.resource.endswith("RATE") else code
@@ -236,7 +236,7 @@ class CatalogViewSet(ModelViewSet):
                 try:
                     obj = serializer.save()
                 except IntegrityError as exc:
-                    raise ValidationError({"rows": "Import conflicts with existing data."}) from exc
+                    raise ValidationError({"rows": "Dữ liệu nhập khẩu bị trùng hoặc xung đột với dữ liệu hiện có."}) from exc
                 self.audit(obj, "IMPORT", after=self.get_serializer(obj).data)
                 created.append(self.get_serializer(obj).data)
             return Response({"created": created}, status=status.HTTP_201_CREATED)
@@ -275,7 +275,7 @@ class TaxRateConfigViewSet(CatalogViewSet):
         on_date = parse_date(request.query_params.get("on_date", ""))
         scope = request.query_params.get("business_scope")
         if not on_date or scope not in ("INPUT", "OUTPUT"):
-            raise ValidationError({"detail": "Valid on_date and business_scope are required."})
+            raise ValidationError({"detail": "Vui lòng nhập đầy đủ ngày áp dụng và phạm vi nghiệp vụ hợp lệ."})
         queryset = self.get_queryset().filter(status="ACTIVE", tax_type_ref__status="ACTIVE", effective_from__lte=on_date).filter(Q(effective_to__isnull=True) | Q(effective_to__gte=on_date)).filter(business_scope__in=(scope, "BOTH"))
         if value := request.query_params.get("tax_type_ref_id"):
             queryset = queryset.filter(tax_type_ref_id=value)
@@ -285,7 +285,7 @@ class TaxRateConfigViewSet(CatalogViewSet):
     def new_version(self, request, pk=None):
         old = self.get_object()
         if str(request.data.get("version")) != str(old.version):
-            raise ValidationError({"version": "Record changed; reload before editing."})
+            raise ValidationError({"version": "Dữ liệu đã được thay đổi ở phiên khác. Vui lòng tải lại trước khi sửa."})
         with transaction.atomic():
             data = dict(self.get_serializer(old).data)
             data.update(request.data)
@@ -295,9 +295,9 @@ class TaxRateConfigViewSet(CatalogViewSet):
                 from django.utils.dateparse import parse_date
                 new_start = parse_date(str(data.get("effective_from", "")))
                 if not new_start:
-                    raise ValidationError({"effective_from": "Valid start date is required."})
+                    raise ValidationError({"effective_from": "Vui lòng nhập ngày bắt đầu hiệu lực hợp lệ."})
                 if new_start <= old.effective_from:
-                    raise ValidationError({"effective_from": "New version must start later."})
+                    raise ValidationError({"effective_from": "Ngày bắt đầu của phiên bản mới phải sau phiên bản hiện tại."})
                 old.effective_to = new_start - timedelta(days=1)
                 old.version += 1
                 old.save(update_fields=("effective_to", "version", "updated_at"))

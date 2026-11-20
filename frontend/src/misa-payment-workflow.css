@@ -1,15 +1,21 @@
 .pw-workspace {
+  display: flex;
+  flex-direction: column;
   background: #f6f7f8;
-  min-height: 100%;
-  padding: 16px;
+  height: calc(100dvh - 118px);
+  min-height: 460px;
+  overflow: hidden;
+  padding: 10px 16px 8px;
+  box-sizing: border-box;
   color: #26313a;
   font-size: 14px;
 }
 .pw-workspace > nav {
   display: flex;
+  flex-shrink: 0;
   gap: 18px;
   border-bottom: 1px solid #e0e3e7;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 .pw-workspace > nav button,
 .pw-workspace > header button {

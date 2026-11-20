@@ -51,8 +51,15 @@ class MasterDataViewSet(
         company_id = self.request.query_params.get("company_id")
         if not company_id:
             return queryset.none()
+        company = Company.objects.filter(pk=company_id).first()
+        account = getattr(self.request.user, "iam_account", None)
+        if not company or not account:
+            return queryset.none()
+        from iam.permissions import is_company_admin_member
+        if is_company_admin_member(account, company):
+            return queryset
         branches, owned = set(), False
-        for assignment in effective_assignments(self.request.user.iam_account, Company.objects.get(pk=company_id)):
+        for assignment in effective_assignments(account, company):
             code = "MD.PARTY.EDIT" if self.request.method in ("PUT", "PATCH") else "MD.PARTY.VIEW"
             if code not in assignment_permission_codes(assignment):
                 continue
@@ -63,8 +70,10 @@ class MasterDataViewSet(
             owned |= scope.allow_owned_records
         prefix = "" if queryset.model is models.Party else "party__"
         condition = Q(**{f"{prefix}branch_id__in": branches})
+        if branches:
+            condition |= Q(**{f"{prefix}branch__isnull": True})
         if owned:
-            condition |= Q(**{f"{prefix}owner": self.request.user.iam_account})
+            condition |= Q(**{f"{prefix}owner": account})
         return queryset.filter(condition)
 
     def _scope_branch_permission_queryset(self, queryset, code, *, branch_field="branch_id", warehouse_field=None, bank_account_field=None):

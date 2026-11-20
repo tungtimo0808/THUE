@@ -99,10 +99,14 @@ export function SaleVoucherModal({
     if (initialData?.code) return initialData.code;
     return collectionType === "collected_now" ? "PT00001" : initialCode;
   });
+  const todayDmy = (() => {
+    const now = new Date();
+    return `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+  })();
   const [postingDate, setPostingDate] = useState(
-    initialData?.postingDate || (isService ? "03/10/2026" : "03/10/2026 21:09:17")
+    initialData?.postingDate || todayDmy
   );
-  const [voucherDate, setVoucherDate] = useState(initialData?.date || "03/10/2026");
+  const [voucherDate, setVoucherDate] = useState(initialData?.date || todayDmy);
 
   // Delivery tab fields
   const [deliveryCode, setDeliveryCode] = useState(initialData?.deliveryCode || "XK00001");
@@ -127,7 +131,7 @@ export function SaleVoucherModal({
   const [invoiceForm, setInvoiceForm] = useState(initialData?.invoiceForm || "");
   const [invoiceSerial, setInvoiceSerial] = useState(initialData?.invoiceSerial || "");
   const [invoiceNumber, setInvoiceNumber] = useState(initialData?.invoiceNumber || "");
-  const [invoiceDate, setInvoiceDate] = useState(initialData?.invoiceDate || "03/10/2026");
+  const [invoiceDate, setInvoiceDate] = useState(initialData?.invoiceDate || todayDmy);
 
   // Customer dropdown
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
