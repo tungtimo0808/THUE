@@ -72,13 +72,16 @@ class CommonServicesApiTests(TestCase):
         self.assertIn("challenge", request_reset.data)
         challenge = VerificationChallenge.objects.filter(user=user, purpose="PASSWORD_RESET").latest("created_at")
         self.assertEqual(request_reset.data["challenge"], str(challenge.id))
-        reset_code = re.search(r"\b(\d{6})\b", mail.outbox[-1].body).group(1)
-        reset = self.client.post("/api/v1/common/auth/password-reset/confirm/", {"challenge": str(challenge.id), "code": reset_code, "new_password": "NewStrongPass!2026", "new_password_confirm": "NewStrongPass!2026"}, format="json")
+        from urllib.parse import unquote
+        reset_match = re.search(r"reset-password\?token=([^\s\"'<>]+)", mail.outbox[-1].body)
+        self.assertIsNotNone(reset_match, mail.outbox[-1].body)
+        reset_token = unquote(reset_match.group(1).rstrip(".,;)"))
+        reset = self.client.post("/api/v1/common/auth/password-reset/confirm/", {"reset_token": reset_token, "new_password": "NewStrongPass!2026", "new_password_confirm": "NewStrongPass!2026"}, format="json")
         self.assertEqual(reset.status_code, 200, reset.data)
         self.assertTrue(self.client.login(username=user.username, password="NewStrongPass!2026"))
 
         reused = self.client.post("/api/v1/common/auth/reset-password/", {
-            "challenge": str(challenge.id), "code": reset_code,
+            "reset_token": reset_token,
             "new_password": "AnotherStrongPass!2026", "new_password_confirm": "AnotherStrongPass!2026",
         }, format="json")
         self.assertEqual(reused.status_code, 400, reused.data)

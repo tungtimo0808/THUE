@@ -228,7 +228,9 @@ class UserAccountViewSet(ProtectedModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
     def get_queryset(self):
-        queryset = UserAccount.objects.select_related("auth_user").exclude(auth_user__is_superuser=True)
+        queryset = UserAccount.objects.select_related("auth_user")
+        if self.action == "list":
+            queryset = queryset.exclude(auth_user__is_superuser=True)
         company_id = self.request.query_params.get("company_id")
         if not company_id:
             return queryset.none()
